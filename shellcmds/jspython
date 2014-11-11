@@ -1,5 +1,7 @@
 #!/bin/bash
 if [ -z "$JSBASE" ]; then
+    export JSBASE=/opt/jumpscale7
+    export PYTHONPATH=/usr/local/lib/python2.7/dist-packages/JumpScale:$JSBASE/lib:$JSBASE/lib/python.zip:$JSBASE/libjs
     python "$@"
 else
     export PYTHONPATH=$JSBASE/lib:$JSBASE/python.zip:$JSBASE/libjs

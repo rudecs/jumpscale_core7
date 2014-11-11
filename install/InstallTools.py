@@ -13,7 +13,7 @@ import subprocess
 import time
 import fnmatch
 
-from JumpScale import j
+# from JumpScale import j
 
 class InstallTools():
     def __init__(self,debug=True):
@@ -26,7 +26,7 @@ class InstallTools():
             self.TMP=tempfile.gettempdir().replace("\\","/")
         else:
             self.TYPE="LINUX"
-            self.BASE="/opt/jumpscale"
+            self.BASE="/opt/jumpscale7"
             self.TMP="/tmp"
         self.debug=False
         self.createDir("%s/jumpscaleinstall"%(self.TMP))
@@ -67,25 +67,23 @@ class InstallTools():
     def joinPaths(self,*args):
         return os.path.join(*args)
 
-    def copyTreeDeleteFirst(self,source,dest):
-        self.delete(dest)
+    def copyTree(self,source,dest,deletefirst=True):
+        if deletefirst:
+            self.delete(dest)
         if self.debug:
             print("copy %s %s" % (source,dest))
         shutil.copytree(source,dest)
 
-    def copyFileDeleteFirst(self,source,dest):
-        #try:
-        #    os.remove(dest)
-        #except:
-        #    pass
-        self.delete(dest)
+    def copyFile(self,source,dest,deletefirst=False):
+        if deletefirst:
+            self.delete(dest)
         if self.debug:
             print("copy %s %s" % (source,dest))
         shutil.copy(source,dest)
 
     def createDir(self,path):
         if self.debug:
-            print("createdir: %s" % path)
+            print("createDir: %s" % path)
         if not os.path.exists(path) and not os.path.islink(path):
             os.makedirs(path)
 
@@ -207,40 +205,41 @@ class InstallTools():
         return deps
 
     def copyDependencies(self,path,dest):
-        self.installtools.createdir(dest)
+        self.installtools.createDir(dest)
         deps=self.findDependencies(path)
         for name in deps.keys():
             path=deps[name]
             self.installtools.copydeletefirst(path,"%s/%s"%(dest,name))
-
 
     def symlink(self,src,dest):
         """
         dest is where the link will be created pointing to src
         """
         if self.debug:
-            print("symlink: src:%s dest:%s" % (src,dest))
-        
-        #if os.path.exists(dest):
-        #try:
-        #    os.remove(dest)    
-        #except:        
-        #    pass
-        self.createdir(dest)
+            print("symlink: src:%s dest(islink):%s" % (src,dest))        
         if self.TYPE=="WIN":
             self.removesymlink(dest)
             self.delete(dest)
         else:
             self.delete(dest)
-        print("symlink %s to %s" %(dest, src))
         if self.TYPE=="WIN":
-            if self.debug:
-                print("symlink %s %s" % (src,dest))
             cmd="junction %s %s 2>&1 > null" % (dest,src)
             os.system(cmd)
             #raise RuntimeError("not supported on windows yet")
         else:
+            dest=dest.rstrip("/")
+            src=src.rstrip("/")
+            if not self.exists(src):
+                raise RuntimeError("could not find src for link:%s"%src)
             os.symlink(src,dest)
+
+    def symlinkFilesInDir(self,src,dest):
+        for item in self.listFilesInDir(src, recursive=False,followSymlinks=True,listSymlinks=True):
+            dest2="%s/%s"%(dest,self.getBaseName(item))
+            dest2=dest2.replace("//","/")
+            print "%s:%s"%(item,dest2)
+            self.symlink(item,dest2)
+
 
     def removesymlink(self,path):
         if self.TYPE=="WIN":
@@ -260,7 +259,6 @@ class InstallTools():
             return os.path.basename(path.rstrip(os.path.sep))
         except Exception,e:
             raise RuntimeError('Failed to get base name of the given path: %s, Error: %s'% (path,str(e)))
-
 
     def checkDirOrLinkToDir(self,fullpath):
         """
@@ -301,7 +299,6 @@ class InstallTools():
             else:
                 raise RuntimeError ("Cannot find part of dir %s levels up, path %s is not long enough" % (levelsUp,path))
         return dname+os.sep
-
 
     def readlink(self, path):
         """Works only for unix
@@ -623,11 +620,10 @@ class InstallTools():
             return True
         return False
 
-    def executeCmds(self,cmdstr, dieOnNonZeroExitCode=True, outputToStdout=True, useShell = False, ignoreErrorOutput=False):
+    def executeCmds(self,cmdstr, dieOnNonZeroExitCode=True, outputToStdout=True, useShell = False, ignoreErrorOutput=False):        
         for cmd in cmdstr.split("\n"):
             if cmd.strip()=="" or cmd[0]=="#":
                 continue
-            print "exec:%s"%cmd
             self.execute(cmd,dieOnNonZeroExitCode=dieOnNonZeroExitCode, outputToStdout=outputToStdout, useShell = useShell, ignoreErrorOutput=ignoreErrorOutput)
 
     def execute(self, command , dieOnNonZeroExitCode=True, outputToStdout=True, useShell = False, ignoreErrorOutput=False):
@@ -646,7 +642,8 @@ class InstallTools():
         # on stdout or stdin of the child process, we log it
         #
         # When the process terminates, we log the final lines (and add a \n to them)
-        self.log("exec:%s" % command)
+        if outputToStdout:
+            self.log("exec:%s" % command)
         def _logentry(entry):
             if outputToStdout:
                 self.log(entry)
@@ -936,8 +933,33 @@ class InstallTools():
 
 ############# package installation
 
-    def installJS(self):
-        pass
+    def installJS(self,base="/opt/jumpscale7",clean=True):
+        if clean:
+            self.cleanSystem()
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
+        src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
+        self.debug=False
+        print "install js"
+        dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        self.symlink(src, dest)
+        src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
+        dest="/usr/local/bin"        
+        self.symlinkFilesInDir(src, dest)
+
+        self.debug=True
+        self.createDir(base)        
+        self.copyTree("/opt/code/git/binary/base/root/",base)
+        self.copyTree("/opt/code/github/jumpscale/jumpscale_core7/jsbox/cfg/hrd/","%s/hrd/"%base)
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
+        src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
+        dest="%s/lib/JumpScale"%base
+        self.symlink(src, dest)
+
+        for item in ["InstallTools","ExtraTools"]:
+            src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
+            dest="%s/lib/%s.py"%(base,item)
+            self.symlink(src, dest)        
+
 
     def loadScript(self,path):
         print "load jumpscript: %s"%path
@@ -969,11 +991,11 @@ class InstallTools():
 
 ############# custom install items
 
-    def prepareUbuntu14Development(self,js=False):
-        print "prepare ubuntu for development"
+    def cleanSystem(self):
+        print "clean platform"
         CMDS="""
 pip uninstall JumpScale-core
-killall tmux  #dangerous
+# killall tmux  #dangerous
 killall redis-server
 rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale*
 rm -rf /usr/local/lib/python2.7/site-packages/jumpscale*
@@ -983,9 +1005,9 @@ rm -rf /usr/local/lib/python2.7/site-packages/JumpScale/
 rm -rf /usr/local/lib/python2.7/site-packages/jumpscale/
 rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale/
 rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale/
-rm -rf /opt/jumpscale
 rm /usr/local/bin/js*
 rm /usr/local/bin/jpack*
+rm /usr/local/bin/osis*
 rm -rf /opt/sentry/
 sudo stop redisac
 sudo stop redisp
@@ -994,7 +1016,11 @@ sudo stop redisc
 killall redis-server
 rm -rf /opt/redis/
 """
-        self.executeCmds(CMDS,dieOnNonZeroExitCode=False, outputToStdout=True, useShell = False, ignoreErrorOutput=False)
+        self.executeCmds(CMDS,dieOnNonZeroExitCode=False, outputToStdout=False, useShell = False, ignoreErrorOutput=True)
+
+    def prepareUbuntu14Development(self,js=False):
+        self.cleanSystem()
+        print "prepare ubuntu for development"
 
         CMDS="""
 apt-get update
@@ -1009,16 +1035,7 @@ apt-get install byobu tmux libmhash2 libpython-all-dev python-redis python-hired
         self.executeCmds(CMDS)
 
         if js:
-            CMDS="""
-pip install https://github.com/Jumpscale/jumpscale_core/archive/master.zip
-jpackage mdupdate
-jpackage install -n base -r
-jpackage install -n core -r --debug
-jpackage install -n libs -r --debug
-"""
-            self.executeCmds(CMDS)
-
-
+            self.installJS(clean=False)
         print "done"
 
     def gitConfig(self,name,email):

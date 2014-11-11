@@ -1,2 +1,16 @@
 
-bin.local=/usr/local/bin
+paths.base=/opt/jumpscale/
+paths.bin=/usr/local/bin
+paths.python_lib=/usr/local/lib/python2.7/dist-packages/
+paths.tmp=/tmp/jumpscale7
+paths.code=/opt/code
+
+paths.jslib=$(paths.python_lib)/JumpScale
+paths.python_libext=$(paths.base)/libext
+paths.app=$(paths.base)/app
+paths.lib=$(paths.base)/lib
+paths.var=$(paths.base)/jumpscale7
+paths.log=$(paths.var)/log
+paths.pid=$(paths.var)/pid
+
+
