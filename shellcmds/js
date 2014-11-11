@@ -1,0 +1,12 @@
+#!/usr/bin/env jspython
+
+from JumpScale import j
+import JumpScale.baselib.jpackages
+
+#j.packages._runPendingReconfigeFiles()
+j.application.start("jsshell")
+
+from IPython import embed
+embed()
+
+j.application.stop()

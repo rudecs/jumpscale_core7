@@ -1,0 +1,7 @@
+h2. Stats Actions
+
+[Reset All Stats|/rest/system/infomgr/reset?key=&format=text]
+
+h2. Stats Overview
+
+{{liststats}}

@@ -1,0 +1,202 @@
+#!/usr/bin/env jspython
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+import JumpScale.lib.docker
+import JumpScale.lib.diskmanager
+import sys
+
+j.application.start("jsmachine_docker")
+
+parser = cmdutils.ArgumentParser()
+#'mountdisks','unmountdisks'
+parser.add_argument("action", choices=['ps','new','pull','commit','list','destroyall','destroy','cmd','ssh','start','stop','restart','getip','exportTGZ','importTGZ','exportR','importR'], help='Command to perform')
+parser.add_argument("-n", '--name', help='machine name')
+parser.add_argument("-m", '--bname', help='name of backup (used for import/export)')
+parser.add_argument("-b", '--base', help='base to clone from')
+parser.add_argument("-p",'--passwd', help='password for machine')
+parser.add_argument("-r",'--prefix', help='prefix')
+parser.add_argument("-k",'--key', help='key for syncing')
+parser.add_argument('--ports', help='format "22:8022 80:8080"  the first arg e.g. 22 is the port in the container')
+parser.add_argument('--vols', help='format: "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."')
+parser.add_argument('--volsro', help='same as vols but now mounted read only')
+parser.add_argument('--cpu', help='cpu shares (min 0, max 1000')
+parser.add_argument('--mem', help='max mem in MB')
+parser.add_argument("-c",'--cmd', help='cmd to execute')
+parser.add_argument("-a",'--pubip', help='set pub ip addr of machine (192.168.1.207/24)',default='')
+parser.add_argument("-g",'--gw', help='set ip gateway of machine (192.168.1.1)',default='')
+parser.add_argument('--start', help='start after creation', action='store_true', default=False)
+
+
+opts = parser.parse_args()
+
+l=j.tools.docker
+
+if opts.prefix<>None:
+    l.prefix=opts.prefix
+
+############PS
+if opts.action =='ps':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+    l.getProcessList(opts.name)
+
+
+##########NEW
+if opts.action =='list':
+    #@todo bug list is not working on jsdocker
+    running,stopped=l.list()
+    print "## running:"
+    for item in running:
+        print "  machine: %-25s %s"%(item,l.getIp(item))
+    print "## stopped:"
+    for item in stopped:
+        print "  machine: %-25s %s"%(item,l.getIp(item))
+
+if opts.action =='pull':
+    if opts.base==None:
+        opts.base="despiegk/mc"
+    cmd="docker pull %s"%opts.base
+    j.system.process.executeWithoutPipe(cmd)
+
+if opts.action =='commit':
+    if opts.name==None:
+        print "specify name of machine with -n"
+        sys.exit(1)
+    if opts.base==None:
+        print "specify name of image to commit to with -b"
+        sys.exit(1)
+    cmd="docker rmi %s"%opts.base
+    print cmd
+    j.system.process.executeWithoutPipe(cmd,dieOnNonZeroExitCode=False)
+    cmd="docker commit %s %s"%(opts.name,opts.base)
+    print cmd
+    j.system.process.executeWithoutPipe(cmd)
+
+if opts.action =='new':
+    if opts.base==None:
+        opts.base="despiegk/mc"
+    l.create(name=opts.name,stdout=True,base=opts.base,ports=opts.ports,vols=opts.vols,volsro=opts.volsro,cpu=opts.cpu,mem=opts.mem)
+
+
+if opts.action =='getip':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+    ip=l.getIp(opts.name)
+    print "%s"%ip
+
+if opts.action =='exportTGZ':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+    if opts.bname==None:
+        raise RuntimeError("specify backup name")    
+    print "export %s to %s"%(opts.name,opts.bname)
+    l.exportTgz(opts.name,opts.bname)
+
+if opts.action =='importTGZ':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+    if opts.bname==None:
+        raise RuntimeError("specify backup name")    
+    print "import %s to %s"%(opts.bname,opts.name)
+    l.importTgz(opts.bname,opts.name)
+
+if opts.action =='exportR':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+    if opts.bname==None:
+        raise RuntimeError("specify backup name")    
+    print "export %s to %s"%(opts.name,opts.bname)
+    l.exportRsync(opts.name,opts.bname,key=opts.key)
+
+if opts.action =='importR':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+    if opts.bname==None:
+        raise RuntimeError("specify backup name")    
+    print "import %s to %s"%(opts.bname,opts.name)
+    if opts.base<>None:
+        l.importRsync(opts.bname,opts.name,basename=opts.base)
+    else:
+        l.importRsync(opts.bname,opts.name,key=opts.key)
+
+if opts.action =='cmd':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+
+    # if j.system.net.waitConnectionTest(ip,22,4)==False:
+    #     print "could not connect over ssh to ip:%s"%(22)
+    #     j.application.stop(1)        
+
+    c=l.getSSH(opts.name)
+
+    print c.run(opts.cmd)
+
+    # #this will make sure new password is set
+    # seedpasswd="rooter"
+    # cl=j.tools.expect.new("sh")
+
+    # if opts.passwd==None:
+    #     opts.passwd="rooter"
+    
+    # if j.system.net.waitConnectionTest(ip,22,5)==False:
+    #     print "could not connect to port:%s on ip:%s"%(22,ip)
+    #     j.application.stop(1)
+
+    # cl.login(remote=ip,passwd=opts.passwd,seedpasswd="",initial=True)
+
+    # cl.send("/etc/init.d/xrdp start")
+
+    # #cl.wait()
+
+    # nr=0
+    
+    # if j.system.net.waitConnectionTest(ip,3389,0.1)==False:
+    #     if nr==10:
+    #         print "could not connect to rdp port:%s on ip:%s"%(3389,ip)
+    #         j.application.stop(1)            
+    #     nr+=1
+
+    # print "machine:%s:%s:started"%(nr,ip)
+
+if opts.action =='rdp':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")    
+    if ip=="":
+        ip=getip(opts.nr)
+    time.sleep(2)    
+    j.system.net.waitConnectionTest(ip,3389,2)
+    j.system.installtools.execute("rmachine %s -g 1600x900 -e & 2>&1 > /dev/null"%ip)
+
+if opts.action =='destroyall':
+    l.destroyall()
+
+if opts.action =='destroy':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")
+    l.destroy(opts.name)
+
+if opts.action =='stop':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")
+    l.stop(opts.name)
+
+if opts.action =='start':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")
+    l.start(opts.name)
+
+if opts.action =='restart':
+    if opts.name==None:
+        raise RuntimeError("specify machine name")
+    l.stop(opts.name)
+    l.start(opts.name)
+#
+#if opts.action =="mountdisks":
+#    j.system.platform.diskmanager.partitionsFind()
+#    j.system.platform.diskmanager.partitionsMount_Ext4Data()
+
+#if opts.action =="unmountdisks":
+#    j.system.platform.diskmanager.partitionsUnmount_Ext4Data()
+
+
+j.application.stop()

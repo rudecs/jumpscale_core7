@@ -1,0 +1,216 @@
+#!/usr/bin/env jspython
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+import os
+
+try:
+    import ujson as json
+except:
+    import json
+
+import sys,time
+
+j.application.start("jsgrid")
+
+parser = cmdutils.ArgumentParser()
+parser.add_argument("action", choices=['reconfigure', 'healthcheck', 'purgeall', 'purgelogs', 'purgejobs', \
+        'purgeecos', 'restartprocessmgrs', 'reloadjumpscripts','resetlocks', 'restartworkers'],
+    help='Command to perform')
+# parser.add_argument("-n", '--nr', help='desktop nr')
+# parser.add_argument("-d", '--desktop', action='store_true', help='opendesktop')
+# parser.add_argument('--passwd', help='password for desktop')
+
+parser.add_argument('--force',required=False, action='store_true',help='dont ask yes, do immediate')
+parser.add_argument('--debug',required=False, action='store_true',help='will stop on errors and show all relevant info')
+parser.add_argument('--from', dest='ffrom', required=False, type=str, help='used with purgelogs, ex: --from=-2h, --from=-2d (note the = sign)')
+parser.add_argument('--to', required=False, type=str, help='used with purgelogs, ex: --to=-1h, --to=-1d (note the = sign)')
+parser.add_argument('-nid', '--nodeid', dest='nid', required=False, type=int, help='Used with healtcheck')
+parser.add_argument('--roles', dest='roles', required=False, type=str, help='Used with setroles or deleterole. ex: -roles=node, computenode.kvm(note the = sign). List is comma seperated')
+
+
+#check redis is there if not try to start
+if not j.system.net.tcpPortConnectionTest("127.0.0.1",9999):
+    j.packages.findNewest(name="redis").install()
+    j.packages.findNewest(name="redis").start()
+
+
+opts = parser.parse_args()
+
+# if opts.action =='reinit' or opts.action =='reinitsentry':
+#     j.packages.findNewest(name="sentry").stop()
+#     sentrytemplate = "/opt/sentry/data/sentry_template.db"
+#     if j.system.fs.exists(sentrytemplate):
+#         j.system.fs.copyFile(sentrytemplate,"/opt/sentry/data/sentry.db")
+#         j.packages.findNewest(name="sentry").start()
+
+
+############RECONFIGURE
+if opts.action =='reconfigure':
+    packages=["grid_master","grid_node","osis","logger","agentcontroller","workers"]
+    for package in packages:
+        jp=j.packages.findNewest(name=package)
+        jp.configure()
+
+    packages=["osis","logger","agentcontroller","workers"]
+    for package in packages:
+        jp=j.packages.findNewest(name=package)        
+        jp.restart()
+
+    j.tools.startupmanager.startAll()
+
+
+
+############PS
+
+if opts.action =='resetlocks':
+    LOCKPATH = os.path.join(j.dirs.tmpDir, 'locks')
+    j.system.fs.removeDirTree(LOCKPATH)
+
+if opts.action =='reinit':
+
+    jp=j.packages.findNewest(name="osis")
+    jp.start()
+    
+    if opts.force<>None:
+        j.system.process.executeWithoutPipe("osis deleteall")
+    else:
+        j.system.process.executeWithoutPipe("osis deleteall --force=1")
+
+
+
+    j.packages.findNewest(name="graphite").stop()
+
+    for item in ["%s/graphite/storage/whisper/"%j.dirs.baseDir,"%s/var/log/"%j.dirs.baseDir,"%s/var/tmp/"%j.dirs.baseDir]:
+        j.system.fs.removeDirTree(item)
+        j.system.fs.createDir(item)
+    
+    j.packages.findNewest(name="graphite").start()
+
+    packages=["grid_master","grid_node","osis","agentcontroller","workers"]
+    for package in packages:
+        jp=j.packages.findNewest(name=package)
+        if not jp.isInstalled():
+            jp.install()
+        elif jp.isInstalled():
+            print "RECONFIGURE:%s"%jp
+            jp.configure()
+
+
+    jp=j.packages.findNewest(name="grid_portal")
+    jp.restart()
+
+# packages=["osis","logger"]
+#     for package in packages:
+#         jp=j.packages.findNewest(name=package)        
+#         jp.restart()
+
+    j.tools.startupmanager.startAll()
+
+    j.system.process.executeWithoutPipe("jsuser add -d admin:admin:admin::")
+
+    print "has set user admin with passwd admin, please change using command 'jsuser' if required."
+
+#################HEALTHCHECK
+if opts.action == 'healthcheck':
+    import JumpScale.grid.gridhealthchecker
+    if not opts.nid:
+        j.core.grid.healthchecker.runAll()
+    else:
+        j.core.grid.healthchecker.runAllOnNode(opts.nid)
+
+
+if opts.action == 'restartprocessmgrs':
+    import JumpScale.grid.agentcontroller
+    ac=j.clients.agentcontroller.get()
+    ac.restartProcessmanagerWorkers()
+
+if opts.action == 'restartworkers':
+    import JumpScale.baselib.redis
+    rcl = j.clients.redis.getRedisClient('127.0.0.1', 9999)
+    for proc in j.tools.startupmanager.getProcessDefs('workers'):
+        for num in xrange(1, proc.numprocesses +1):
+            name = "%s_%s" % (proc.name, num)
+            print "Sending command to %s" % name
+            rcl.set("workers:action:%s" % name,"STOP")
+
+if opts.action == 'reloadjumpscripts':
+    import JumpScale.grid.jumpscripts
+    import JumpScale.grid.agentcontroller
+    ac=j.clients.agentcontroller.get()
+    ac.reloadjumpscripts()
+
+# if opts.action == 'restartWorkers':
+#     import JumpScale.grid.agentcontroller
+#     ac=j.clients.agentcontroller.get()
+#     ac.restartWorkers()
+
+
+#################PURGELOGS
+
+
+def purge(opts,action):
+
+    def _getEpoch(time):
+        if not time:
+            return time
+        if isinstance(time, int):
+            return time
+        if time.startswith('-'):
+            return j.base.time.getEpochAgo(time)
+        return j.base.time.getEpochFuture(time)
+
+    esclient = j.clients.elasticsearch.get()
+    query = dict()
+
+        
+    if action in ['purgejobs']:
+        timeElement='timeStart'
+    else:
+        timeElement='epoch'
+    
+    if opts.ffrom:
+        query['range'] = dict()
+        query['range'][timeElement] = dict()
+        query['range'][timeElement]['gt'] = int(_getEpoch(opts.ffrom))
+    
+    if opts.to==None:
+        opts.to="-4h"
+
+    if opts.to:
+        if 'range' not in query:
+            query['range'] = dict()
+            query['range'][timeElement] = dict()
+        query['range'][timeElement]['lt'] = int(_getEpoch(opts.to))
+
+    queryfull={"query":query}
+
+    # print queryfull
+
+    if query:
+        if action in ['purgelogs']:
+            index='system_log'
+        elif action in ['purgejobs']:
+            index='system_job'
+        elif action in ['purgeecos']:
+            index='system_eco'
+
+        beforecount = esclient.count(index=index, query=query, doc_type='json')['count']
+        result = esclient.delete_by_query(index=index, query=query, doc_type='json')
+        aftercount = esclient.count(index=index, query=query, doc_type='json')['count']
+
+        if result['_indices'][index]['_shards']['successful'] == result['_indices'][index]['_shards']['total'] and result['ok']:
+            print 'purge %s executed successfully. %s records deleted.' % (index, beforecount-aftercount)
+
+
+if opts.action in ['purgeall','purgelogs','purgejobs', 'purgeecos']:
+    import JumpScale.baselib.elasticsearch
+    if opts.action=="purgeall":
+        opts.to="+1h"
+        purge(opts,'purgelogs')
+        purge(opts,'purgejobs')
+        purge(opts,'purgeecos')
+    else:
+        purge(opts,opts.action)
+
+
+j.application.stop()

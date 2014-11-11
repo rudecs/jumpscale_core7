@@ -1,0 +1,8 @@
+#!/usr/bin/env jspython
+from JumpScale import j
+j.application.start("jsprocess_reset_startall")
+
+j.tools.startupmanager.reset()
+j.tools.startupmanager.startAll()
+
+j.application.stop()

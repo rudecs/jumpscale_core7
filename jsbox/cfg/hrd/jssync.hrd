@@ -1,0 +1,4 @@
+jssync.addr=install.jumpscale.org
+jssync.login=
+jssync.passwd=
+jssync.key.default=stable

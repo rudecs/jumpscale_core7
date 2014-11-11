@@ -1,0 +1,5 @@
+blobclient.blobserver.1.name=default
+blobclient.blobserver.1.addr=95.85.60.252
+blobclient.blobserver.1.port=2344
+blobclient.blobserver.1.login=
+blobclient.blobserver.1.passwd=

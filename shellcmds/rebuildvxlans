@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+__author__ = 'delandtj'
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+import JumpScale.lib.ovsnetconfig.VXNet.netclasses as netcl
+import JumpScale.lib.ovsnetconfig.VXNet.vxlan as vx
+
+
+import sys,time
+
+j.application.start("rebuildvxlans")
+
+# assuming vxbackend
+vxbackend = 'vxbackend'
+
+# verify Multicast memberships, and set them
+def verify_memberships():
+    with open ('/proc/sys/net/ipv4/igmp_max_memberships','r+') as f:
+        val = f.read()
+        if int(val.split()[0]) < 400:
+            print("WARNING: set net.ipv4.igmp_max_memberships = 400 in /etc/sysctl.conf")
+            f.write('400')
+    with open ('/proc/sys/net/ipv4/igmp_max_msf','r+') as f:
+        val = f.read()
+        if int(val.split()[0]) < 400:
+            print("WARNING: set net.ipv4.igmp_max_memberships = 400 in /etc/sysctl.conf")
+            f.write('400')
+
+# Loop through netlayout and create vxlans if needed.
+# Afterwards, reconnect them to the OVS bridge
+if __name__ == "__main__":
+    print('Getting Config')
+    verify_memberships()
+    a = vx.NetLayout()
+    a.load()
+    layout = a.nicdetail
+    spaces = []
+    for i in layout:
+        if not layout[i]['params'].has_key('type'): continue
+        if layout[i]['params']['type'] == 'bridge' and 'space_' in i:
+            oid = netcl.NetID(i[6:])
+            ostr = oid.tostring()
+            if not layout.has_key('vx-%s' % ostr):
+                print('vx-%s not existing, creating' % ostr)
+                vxlan = netcl.VXlan(oid, vxbackend)
+                vxlan.create()
+                bridge = netcl.VXBridge(oid)
+                print('connecting vx-%s to space_%s' %(ostr,ostr))
+                bridge.connect(vxlan.name)
+
+j.application.stop()

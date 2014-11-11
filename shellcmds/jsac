@@ -1,0 +1,49 @@
+#!/usr/bin/env jspython
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+
+import sys,time
+
+j.application.start("jsac")
+
+parser = cmdutils.ArgumentParser()
+parser.add_argument("action", choices=['reload', 'exec', 'listsessions', 'pushjs'], help='Command to perform')
+parser.add_argument('-nid', '--nodeid', dest='nid', required=False, type=int, help='Use for exec')
+parser.add_argument('-gid', '--gridid', dest='gid', required=False, type=int, help='Use for exec')
+parser.add_argument('-r', '--role', required=False, help='Use for exec')
+parser.add_argument('-n', '--name', required=False, help='Use for exec')
+parser.add_argument('-o', '--organization', required=False, help='Use for exec')
+parser.add_argument('-a', '--arguments', required=False, default="", help='Use for exec, eg. msg:test')
+parser.add_argument('-q', '--queue', required=False, default=None, help='Specify queue to execute tas on')
+
+opts = parser.parse_args()
+
+import JumpScale.grid.agentcontroller
+with j.logger.nostdout():
+    ac = j.clients.agentcontroller.getByInstance('main')
+
+if opts.action == 'reload':
+    print 'Reloading Jumpscripts'
+    ac.reloadjumpscripts()
+elif opts.action == 'listsessions':
+    import yaml
+    sessions = ac.listSessions()
+    print 'Sessions:\n\n', yaml.dump(sessions)
+elif opts.action == 'exec':
+    import yaml
+    args = dict()
+    argss = opts.arguments.split(',')
+    for arg in argss:
+        if ':' in arg:
+            key, value = arg.split(':')
+            if value.isdigit():
+                value = int(value)
+            args[key] = value
+    job = ac.executeJumpscript(opts.organization, opts.name, nid=opts.nid, gid=opts.gid, role=opts.role, args=args, queue=opts.queue)
+    print "Job:\n\n:", yaml.dump(job)
+elif opts.action == 'pushjs':
+    import JumpScale.grid.jumpscripts
+    print 'Pushing Jumpscripts to webdis'
+    j.core.jumpscripts.pushToGridMaster()
+
+j.application.stop()

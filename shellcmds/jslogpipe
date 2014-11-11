@@ -1,0 +1,23 @@
+#!/usr/bin/env jspython
+from JumpScale.baselib import cmdutils
+import sys
+
+parser = cmdutils.ArgumentParser()
+parser.add_argument('-n', '--name', help='Application name to log under')
+parser.add_argument('-l', '--level', default=1, type=int,  help='Log level to use')
+parser.add_argument('-c', '--category', default='stdout', help='Category used for logging')
+
+options = parser.parse_args()
+from JumpScale import j
+j.application.start(options.name)
+j.logger.setLogTargetLogForwarder(bulk=True)
+while True:
+    line = sys.stdin.readline()
+    if line:
+        line = line.rstrip()
+        if line:
+            j.logger.log(line, level=options.level, category=options.category)
+    else:
+        break
+
+j.application.stop(0)

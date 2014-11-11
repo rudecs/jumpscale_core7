@@ -1,0 +1,5 @@
+
+h2. infotable
+
+{{form_infomgr_infotable}}
+

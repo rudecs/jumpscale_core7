@@ -1,0 +1,5 @@
+processmanager.osis.addr=127.0.0.1
+processmanager.osis.port=5544
+processmanager.upstart=0
+
+

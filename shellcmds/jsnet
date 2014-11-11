@@ -1,0 +1,126 @@
+#!/usr/bin/env jspython
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+
+import sys, time
+
+j.application.start("jsnet")
+
+parser = cmdutils.ArgumentParser()
+parser.add_argument("action", choices=['removebridges', 'init', 'initbond', 'initdhcp', 'applyconfig', 'addvxlans'],
+                    help='Command to perform')
+
+parser.add_argument("-i", '--iface', help='ifacename e.g. eth0')
+parser.add_argument("-I", '--ifaces', help='Interfaces for bond, csv: eg. eth1,eth2')
+parser.add_argument("-a", '--ipaddr', help='ipaddr like 192.168.1.3/24')
+parser.add_argument("-g", '--gw', help='gateway like 192.168.1.1', default="")
+parser.add_argument("-b", '--backplanename', help='backplanename e.g. Public')
+parser.add_argument("-B", '--bondname', help='bondname e.g. Bond-vlbr')
+parser.add_argument("-e", '--ifaceexcl', help='ifacename to not use in applyconfig (to not lock you out)')
+parser.add_argument("-n", '--networkids', help='range of networkids e.g 20-100')
+parser.add_argument("-M", '--mtu', help='set MTU to something else: Note default 2000, if breaks, set to 1500')
+parser.add_argument("-R", '--initNetworkInterfaces', help='Start with a frrresh /etc/network/interfaces')
+
+
+
+# parser.add_argument("-d", '--desktop', action='store_true', help='opendesktop')
+# parser.add_argument('--passwd', help='password for desktop')
+
+# parser.add_argument('--force',required=False, action='store_true',help='dont ask yes, do immediate')
+# parser.add_argument('--debug',required=False, action='store_true',help='will stop on errors and show all relevant info')
+
+import JumpScale.lib.ovsnetconfig
+
+nc = j.system.ovsnetconfig
+
+opts = parser.parse_args()
+
+if opts.mtu is not None:
+    nc.PHYSMTU = opts.mtu
+
+
+############RECONFIGURE
+if opts.action == 'init':
+    if opts.initNetworkInterfaces is 'True':
+        nc.initNetworkInterfaces()
+
+if opts.action == 'removebridges':
+    nc.removeOldConfig()
+
+if opts.action == 'init':
+    if opts.ipaddr == None:
+        raise RuntimeError("ipaddr needs to be specified")
+    if opts.iface == None:
+        raise RuntimeError * ("interface needs to be specified e.g. eth0")
+    if opts.backplanename == None:
+        raise RuntimeError("backplanename needs to be specified")
+    if opts.gw == "":
+        nc.setBackplane(interfacename=opts.iface, backplanename=opts.backplanename, ipaddr=opts.ipaddr)
+    else:
+        nc.setBackplane(interfacename=opts.iface, backplanename=opts.backplanename, ipaddr=opts.ipaddr, gw=opts.gw)
+    opts.action = 'applyconfig'
+
+if opts.action == 'initbond':
+    if opts.ipaddr == None:
+        raise RuntimeError("ipaddr needs to be specified")
+    if opts.ifaces == None:
+        raise RuntimeError("interfaces need to be specified e.g. \"eth0,eth1\"")
+    if opts.backplanename == None:
+        raise RuntimeError("backplanename needs to be specified")
+    if opts.bondname is None:
+        # set to reasonable default
+        bondname = "bond-%s" % opts.backplanename
+    else:
+        bondname = opts.bondname
+
+    if "," in opts.ifaces:
+        ifaces = opts.ifaces.split(',')
+    else:
+        # assuming space (needed to be quoted then), otherwise one iface
+        ifaces = opts.ifaces.split()
+
+    if opts.gw == "":
+        nc.setBackplaneWithBond(bondname, ifaces, backplanename=opts.backplanename, ipaddr=opts.ipaddr)
+    else:
+        nc.setBackplaneWithBond(bondname, ifaces, backplanename=opts.backplanename, ipaddr=opts.ipaddr, gw=opts.gw)
+    # opts.action = 'applyconfig'
+
+if opts.action == 'initdhcp':
+    if opts.iface == None:
+        raise RuntimeError("interface needs to be specified e.g. eth0")
+    if opts.backplanename == None:
+        raise RuntimeError("backplanename needs to be specified")
+    nc.setBackplaneDhcp(interfacename=opts.iface, backplanename=opts.backplanename)
+    opts.action = 'applyconfig'
+
+if opts.action == 'removebridges':
+    nc.removeOldConfig()
+
+if opts.action == 'applyconfig':
+    if opts.ifaceexcl == None:
+        nc.applyconfig()
+    else:
+        nc.applyconfig(interfacenameToExclude=opts.ifaceexcl)
+
+if opts.action == 'addvxlans':
+    if opts.backplanename == None:
+        raise RuntimeError("backplanename needs to be specified")
+    if opts.networkids == None:
+        raise RuntimeError("Networkids need to be specified")
+    import libvirt
+
+    conn = libvirt.open()
+    start, stop = opts.networkids.split('-')
+    backend = opts.backplanename
+    for i in range(int(start), int(stop) + 1):
+        vxnet = nc.ensureVXNet(i, backend)
+        xml = '''  <network>
+        <name>space_%(networkid)s</name>
+        <forward mode="bridge"/>
+        <bridge name='space_%(networkid)s'/>
+         <virtualport type='openvswitch'/>
+     </network>''' % {'networkid': vxnet.netid.tostring()}
+        private = conn.networkDefineXML(xml)
+        private.create()
+        private.setAutostart(True)
+j.application.stop()

@@ -1,0 +1,32 @@
+#! /bin/bash
+
+_ORIG_PATH="$PATH"
+_ORIG_PPATH="$PYTHONPATH"
+_ORIG_PS1="$PS1"
+
+deactivate_jsbox() {
+    unset JSBASE
+    export PATH=$_ORIG_PATH
+    unset _ORIG_PATH
+    export PYTHONPATH=$_ORIG_PPATH
+    unset _ORIG_PPATH
+    export PS1="$_ORIG_PS1"
+    unset _ORIG_PS1
+    if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
+        hash -r 2>/dev/null
+    fi
+    unset -f deactivate_jsbox
+}
+
+export JSBASE=/opt/jsbox2
+export PATH=$JSBASE/tools:$JSBASE/bin:$PATH
+export PS1="(JSBOX)$PS1"
+export PYTHONPATH=$JSBASE/lib:$JSBASE/python.zip:$JSBASE/libjs
+export LD_LIBRARY_PATH=$JSBASE/bin
+
+# This should detect bash and zsh, which have a hash command that must
+# be called to get it to forget past commands.  Without forgetting
+# past commands the $PATH changes we made may not be respected
+if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
+    hash -r 2>/dev/null
+fi

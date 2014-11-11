@@ -1,0 +1,18 @@
+@nodefault
+
+{{title:AccessDenied}}
+
+#{{projectname:TestSpace}}
+
+@block
+@row
+
+@col 12
+
+h2. Access Denied Please Login.
+
+{{login}}
+
+@divend
+@divend
+

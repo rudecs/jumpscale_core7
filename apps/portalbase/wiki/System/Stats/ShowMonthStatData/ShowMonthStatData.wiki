@@ -1,0 +1,3 @@
+h2. Stats Data For $$key
+
+{{statsdata: id:$$key}}

@@ -1,0 +1,5 @@
+
+h2. history
+
+{{form_infomgr_history}}
+

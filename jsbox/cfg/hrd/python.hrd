@@ -1,0 +1,8 @@
+
+#can always make this dynamic depending platform
+
+python.paths.local.sitepackages=
+python.paths.local.distpackages=
+python.paths.shared=
+python.paths.distpackages=
+

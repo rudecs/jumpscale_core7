@@ -1,0 +1,192 @@
+#!/usr/bin/env jspython
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+
+import sys,time
+
+j.application.start("jsuser")
+
+parser = cmdutils.ArgumentParser()
+parser.add_argument("action", choices=['add','set','delete','list','auth','addgroup','delgroup','passwd'], help='Command to perform')
+
+parser.add_argument("-d",'--data', help='add user as username:passwd:group1,group2:email1,email2:domain')
+parser.add_argument('--hrd', help='give hrd as input for new user')
+
+group = parser.add_argument_group(title="Authentication")
+group.add_argument("-ul",'--userlogin', help='username to do check,edit')
+group.add_argument("-up",'--userpasswd', help='passwd for user to check,edit')
+
+group = parser.add_argument_group(title="List")
+group.add_argument("-ud",'--domain', help='domain for user to list')
+
+group = parser.add_argument_group(title="GroupManipulation")
+group.add_argument("-gu",'--groupuser', help='user')
+group.add_argument("-gg",'--groupgroup', help='group to add or remove')
+
+
+#parser.add_argument('--force',required=False, action='store_true',help='dont ask yes, do immediate')
+#parser.add_argument('--debug',required=False, action='store_true',help='will stop on errors and show all relevant info')
+
+opts=cmdutils.processLogin(parser)
+
+import JumpScale.grid.osis
+
+osis=j.core.osis.getClientByInstance('main')
+userclient=j.core.osis.getClientForCategory(osis,"system","user")
+groupclient=j.core.osis.getClientForCategory(osis,"system","group")
+
+xmpp=[]
+mobile=[]
+description=""
+authkeys=[]
+
+def getPasswd(password):
+    if len(password) != 32:
+        password = j.tools.hash.md5_string(password)
+    return password
+
+def getUserGUID(username):
+    results = userclient.simpleSearch({'id': username}, withguid=True)
+    if results:
+        return results[0]['guid']
+    print "Could not find user with name %s" % username
+    j.application.stop(1)
+
+############ADD
+if opts.action =='auth':
+    if opts.userlogin==None:
+        opts.userlogin=j.console.askString("user to check")
+    if opts.userpasswd==None:
+        opts.userpasswd=j.console.askString("passwd for user to check")
+
+    result=userclient.authenticate(name=opts.userlogin,passwd=opts.userpasswd)
+    for key,val in result.iteritems():
+        print "%-20s %s"%(key,val)
+
+if opts.action =='passwd':
+    if opts.userlogin==None:
+        opts.userlogin=j.console.askString("user to set passwd for")
+    if opts.userpasswd==None:
+        opts.userpasswd=j.console.askPassword("passwd")
+
+    userguid = getUserGUID(opts.userlogin)
+    user=userclient.get(userguid)
+    user.passwd=getPasswd(opts.userpasswd)
+    userclient.set(user)
+
+if opts.action =='delete':
+    if opts.userlogin==None:
+        opts.userlogin=j.console.askString("user to delete")
+    userguid = getUserGUID(opts.userlogin)
+    user=userclient.get(userguid)
+    userclient.delete(user.guid)
+
+if opts.action =='add' or opts.action =='set':
+    if opts.data<>None:
+        splitted=opts.data.split(":")
+        if len(splitted)<>5:
+            raise RuntimeError("error, format for param data needs to be: username:passwd:group1,group2:email1,email2:domain")
+        name,passwd,groups,emails,domain=splitted
+        groups=groups.split(",")
+        emails=emails.split(",")
+    elif opts.hrd<>None:
+        hrd=j.core.hrd.getHRD(content=opts.hrd.replace("#","\n"))
+        if hrd.exists("user.name"):
+            name=hrd.get("user.name")
+        if hrd.exists("user.domain"):
+            domain=hrd.get("user.domain")
+        if hrd.exists("user.mobile"):
+            mobile=hrd.getList("user.mobile")
+        if hrd.exists("user.emails"):
+            emails=hrd.getList("user.emails")
+        if hrd.exists("user.groups"):
+            groups=hrd.getList("user.groups")
+        if hrd.exists("user.roles"):
+            roles=hrd.getList("user.roles")
+        if hrd.exists("user.xmpp"):
+            xmpp=hrd.getList("user.xmpp")
+        if hrd.exists("user.passwd"):
+            passwd=hrd.get("user.passwd")
+        if hrd.exists("user.mobile"):
+            mobile=hrd.getList("user.mobile")
+        if hrd.exists("user.description"):
+            description=hrd.getList("user.description")
+        if hrd.exists("user.authkeys"):
+            authkeys=hrd.getList("user.authkeys")        
+    else:
+        name = opts.userlogin or j.console.askString("name")
+        passwd = opts.userpasswd or j.console.askPassword("passwd")
+        gid=j.console.askInteger("gid",defaultValue=j.application.whoAmI.gid)
+        domain=opts.domain or j.console.askString("domain e.g. incubaid.com")
+        
+        if j.console.askYesNo("do you want to define new groups."):
+            groups=j.console.askString("comma separated list of groups").split(",")
+        else:
+            groups=[item["id"] for item in groupclient.simpleSearch({"gid":gid})]
+            groups=j.console.askChoiceMultiple(groups,"select groups",True)        
+
+        emails=j.console.askString("comma separated list of emails")
+
+
+    if opts.action =='add' and userclient.exists("%s_%s"%(j.application.whoAmI.gid,name)):
+        j.errorconditionhandler.raiseOperationalCritical(message='user already exists', category="jsuser.add.exists")
+
+    user=userclient.new()
+    user.id=name
+    user.groups=groups
+    user.emails=emails
+    user.domain=domain
+    user.passwd=getPasswd(passwd)
+    user.mobile=mobile
+    user.xmpp=xmpp
+    user.description=description
+    user.authkeys=authkeys
+
+    guid,a,b=userclient.set(user)
+
+    user=userclient.get(guid)
+
+    print user
+
+if opts.action =='addgroup' or opts.action =='delgroup':
+    if not opts.groupuser or not opts.groupgroup:
+        print "To manipulate a usergroup you need to provide -gu and -gg options"
+        j.application.stop(1)
+    userguid = getUserGUID(opts.groupuser)
+    if not userguid:
+        j.errorconditionhandler.raiseOperationalCritical(message='cannot find user:%s'%opts.user, category="jsuser.add.exists")
+    user=userclient.get(userguid)
+
+    if opts.action =='delgroup':
+        print "del group:%s from %s"%(opts.groupgroup,opts.groupuser)
+
+        if opts.groupgroup in user.groups:
+            user.groups.pop(user.groups.index(opts.groupgroup))
+
+    if opts.action =='addgroup':
+        print "add group:%s from %s"%(opts.groupgroup,opts.groupuser)
+        if not opts.groupgroup in user.groups:
+            user.groups.append(opts.groupgroup)
+
+    guid,a,b=userclient.set(user)
+
+    user=userclient.get(guid)
+
+    print user
+
+
+if opts.action =='list':
+    out=""
+    print "\n%-20s %-25s %s"%("name","domain","groups")
+    print "="*80,
+    for item in userclient.simpleSearch({"domain":opts.domain}):
+        out+="%-20s %-25s %s\n"%(item["id"],item["domain"],",".join(item["groups"]))
+    out=out.split("\n")
+    out.sort()
+    out="\n".join(out)
+    print out
+    print
+            
+
+
+j.application.stop()

@@ -1,0 +1,28 @@
+
+{{title:JSPortal}}
+
+{{find}}
+
+{{menu:
+$$$spaces
+Help:/Help
+}}
+
+{{menuadmin}}
+{{menuspaces marker:$$$spaces name:System class:brand}}
+
+
+@block
+@row
+
+@col 2
+{{navigation}}
+@divend
+
+@col 10
+{{breadcrumbs}}
+{content}
+
+@divend
+@divend
+

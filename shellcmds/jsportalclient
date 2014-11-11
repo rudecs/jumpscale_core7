@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+from JumpScale import j
+from IPython import embed
+import JumpScale.portal
+from JumpScale.baselib.cmdutils import ArgumentParser
+
+
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument("-s", "--secret", default='1234')
+    parser.add_argument("-u", "--username")
+    parser.add_argument("-p", "--password")
+    parser.add_argument("-i", "--host", default='127.0.0.1')
+    parser.add_argument("--port", type=int, default=82)
+    parser.add_argument("-n", "--portclientinstance", default='main')
+    opts = parser.parse_args()
+
+    if opts.username:
+        import requests
+        url = "http://%s:%s" % (opts.host, opts.port)
+        resp = requests.post(url, {'user_login_': opts.username, 'passwd': opts.password})
+        newsecret = resp.cookies.get('beaker.session.id')
+        print "Next time you can use %s as secret" % newsecret
+        cl = j.core.portal.getClient(opts.host, opts.port, newsecret)
+    else:
+        cl = j.core.portal.getClientByInstance(opts.portclientinstance)
+        portalcfgpath = j.system.fs.joinPaths(j.dirs.baseDir, 'apps', 'cloudbroker', 'cfg', 'portal')
+    j.apps = cl.actors
+
+    cl.getActor('system', 'contentmanager')
+    for actor in cl.actors.system.contentmanager.getActors():
+        space, actor = actor.split('__')
+        if space != 'system':
+            print '\rLoading', space, actor,
+            try:
+                cl.getActor(space,actor)
+            except:
+                print "\nFailed to load", space, actor
+    print ''
+    embed()
+
