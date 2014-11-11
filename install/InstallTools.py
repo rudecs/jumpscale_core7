@@ -958,8 +958,13 @@ class InstallTools():
         for item in ["InstallTools","ExtraTools"]:
             src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
             dest="%s/lib/%s.py"%(base,item)
-            self.symlink(src, dest)        
+            self.symlink(src, dest)  
 
+        from JumpScale import j
+
+        #make sure all configured paths are created
+        for item in j.application.config.getListFromPrefix("system.paths"):
+            self.createDir(item)
 
     def loadScript(self,path):
         print "load jumpscript: %s"%path
