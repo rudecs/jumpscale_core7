@@ -1,0 +1,1 @@
+j.application.shellconfig.interactive -> j.application.interactive
