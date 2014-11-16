@@ -975,7 +975,6 @@ class InstallTools():
             self.createDir(item)
 
         sys.path.insert(0,"/opt/jumpscale7/lib")
-        sys.path.insert(0,"/opt/jumpscale7/bin")
 
     def loadScript(self,path):
         print "load jumpscript: %s"%path

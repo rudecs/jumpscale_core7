@@ -12,6 +12,13 @@ exec(handle.read())
 
 do.installJS(base="/opt/jumpscale7",clean=True)
 
+sys.path.insert(0,"/opt/jumpscale7/lib")
+
+from IPython import embed
+print "DEBUG NOW ooo"
+embed()
+
+
 from JumpScale import j
 
 #j.system....
