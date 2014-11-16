@@ -67,7 +67,7 @@ class InstallTools():
     def joinPaths(self,*args):
         return os.path.join(*args)
 
-    def copyTree(self,source,dest,deletefirst=True):
+    def copyTree(self,source,dest,deletefirst=False):
         if deletefirst:
             self.delete(dest)
         if self.debug:
@@ -948,19 +948,20 @@ class InstallTools():
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         print "install js"
-        if insystem:
-            dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        if insystem or not self.exists(dest):            
             self.symlink(src, dest)
         dest="%s/lib/JumpScale"%base
         self.symlink(src, dest)
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
-        if insystem:
+        desttest="/usr/local/bin/js"
+        if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
             self.symlinkFilesInDir(src, dest)
         
         dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
-        
+
         self.copyTree("/opt/code/github/jumpscale/jumpscale_core7/jsbox/cfg/hrd/","%s/hrd/"%base)
 
         for item in ["InstallTools","ExtraTools"]:
