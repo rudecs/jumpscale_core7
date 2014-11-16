@@ -933,27 +933,34 @@ class InstallTools():
 
 ############# package installation
 
-    def installJS(self,base="/opt/jumpscale7",clean=True):
+    def installJS(self,base="/opt/jumpscale7",clean=True,insystem=False):
         if clean:
             self.cleanSystem()
+
+        self.debug=True
+
+        self.pullGitRepo("http://git.aydo.com/binary/base",depth=1)        
+        # self.createDir(base)        
+        self.copyTree("/opt/code/git/binary/base/root/",base)
+
         self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         print "install js"
-        dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        if insystem:
+            dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        else:
+            dest="%s/lib/JumpScale"%base
         self.symlink(src, dest)
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
-        dest="/usr/local/bin"        
+        if insystem:
+            dest="/usr/local/bin"
+        else:
+            dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
 
-        self.debug=True
-        self.createDir(base)        
-        self.copyTree("/opt/code/git/binary/base/root/",base)
+
         self.copyTree("/opt/code/github/jumpscale/jumpscale_core7/jsbox/cfg/hrd/","%s/hrd/"%base)
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
-        src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
-        dest="%s/lib/JumpScale"%base
-        self.symlink(src, dest)
 
         for item in ["InstallTools","ExtraTools"]:
             src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
@@ -1036,6 +1043,23 @@ apt-get install mc python-git git ssh python2.7 python-requests python-apt opens
 cd /tmp;wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py
 cd /tmp;python get-pip.py
 apt-get install byobu tmux libmhash2 libpython-all-dev python-redis python-hiredis -y
+        """
+        self.executeCmds(CMDS)
+
+        if js:
+            self.installJS(clean=False)
+        print "done"
+
+    def prepareUbuntu14(self,js=False):
+        self.cleanSystem()
+        print "prepare ubuntu for development"
+
+        CMDS="""
+apt-get update
+apt-get autoremove
+apt-get -f install -y
+apt-get upgrade -y
+apt-get install mc git ssh python2.7 python-requests  -y
         """
         self.executeCmds(CMDS)
 
