@@ -10,14 +10,7 @@ exec(handle.read())
 
 #there are many more functions available in jumpscale
 
-do.installJS(base="/opt/jumpscale7",clean=True)
-
-sys.path.insert(0,"/opt/jumpscale7/lib")
-
-from IPython import embed
-print "DEBUG NOW ooo"
-embed()
-
+do.installJS(base="/opt/jumpscale7",clean=False)
 
 from JumpScale import j
 

@@ -35,6 +35,7 @@ class Dirs(object):
         self.tmpDir = j.application.config.get("system.paths.tmp")
         self.cfgdir = "%s/%s"%(self.baseDir,"cfg")
         self.libDir = j.application.config.get("system.paths.lib")
+        self.jsLibDir = "%s/JumpScale/"%j.application.config.get("system.paths.lib")
         self.logDir = j.application.config.get("system.paths.log")
         self.pidDir = j.application.config.get("system.paths.pid")
         self.codeDir = j.application.config.get("system.paths.code")
