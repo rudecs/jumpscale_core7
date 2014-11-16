@@ -1105,5 +1105,7 @@ apt-get install mc git ssh python2.7 python-requests  -y
         return self.extra.getWalker(self)
 
         
-
+print "AAAAAAAAAAAAAAAAaa"
 do=InstallTools()
+
+
