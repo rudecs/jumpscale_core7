@@ -67,12 +67,70 @@ class InstallTools():
     def joinPaths(self,*args):
         return os.path.join(*args)
 
-    def copyTree(self,source,dest,deletefirst=False):
-        if deletefirst:
-            self.delete(dest)
+    # def copyTree(self,source,dest,deletefirst=False):
+    #     if deletefirst:
+    #         self.delete(dest)
+    #     if self.debug:
+    #         print("copy %s %s" % (source,dest))
+    #     from IPython import embed
+    #     print "DEBUG NOW ooo"
+    #     embed()
+        
+    #     shutil.copytree(source,dest)
+
+    def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True):
         if self.debug:
             print("copy %s %s" % (source,dest))
-        shutil.copytree(source,dest)
+        old_debug=self.debug
+        self.debug=False
+        self._copyTree(source, dest, keepsymlinks, deletefirst, overwriteFiles)    
+        self.debug=  old_debug
+
+    def _copyTree(self, src, dst, keepsymlinks = False, deletefirst = False, overwriteFiles=True):
+        """Recursively copy an entire directory tree rooted at src.
+        The dst directory may already exist; if not,
+        it will be created as well as missing parent directories
+        @param src: string (source of directory tree to be copied)
+        @param dst: string (path directory to be copied to...should not already exist)
+        @param keepsymlinks: bool (True keeps symlinks instead of copying the content of the file)
+        @param deletefirst: bool (Set to True if you want to erase destination first, be carefull, this can erase directories)
+        @param overwriteFiles: if True will overwrite files, otherwise will not overwrite when destination exists
+        """
+
+        self.log('Copy directory tree from %s to %s'% (src, dst),6)
+        if ((src is None) or (dst is None)):
+            raise TypeError('Not enough parameters passed in system.fs.copyTree to copy directory from %s to %s '% (src, dst))
+        if self.isDir(src):
+            names = os.listdir(src)
+ 
+            if not self.exists(dst):
+                self.createDir(dst)
+
+            errors = []
+            for name in names:
+                #is only for the name
+                name2=name
+
+                srcname = self.joinPaths(src, name)
+                dstname = self.joinPaths(dst, name2)
+                if deletefirst and self.exists( dstname ):
+                    if self.isDir( dstname , False ) :
+                        self.removeDirTree( dstname )
+                    if self.isLink(dstname):
+                        self.unlink( dstname )
+
+                if keepsymlinks and self.isLink(srcname):
+                    linkto = self.readlink(srcname)
+                    self.symlink(linkto, dstname, overwriteFiles)
+                elif self.isDir(srcname):
+                    #print "1:%s %s"%(srcname,dstname)
+                    self.copyTree(srcname, dstname, keepsymlinks, deletefirst,overwriteFiles=overwriteFiles )
+                else:
+                    #print "2:%s %s"%(srcname,dstname)
+                    self.copyFile(srcname, dstname, deletefirst=overwriteFiles)
+        else:
+            raise RuntimeError('Source path %s in system.fs.copyTree is not a directory'% src)
+
 
     def copyFile(self,source,dest,deletefirst=False):
         if deletefirst:
