@@ -10,7 +10,7 @@ exec(handle.read())
 
 #there are many more functions available in jumpscale
 
-do.installJS(self,base="/opt/jumpscale7",clean=True)
+do.installJS(base="/opt/jumpscale7",clean=True)
 
 from JumpScale import j
 
