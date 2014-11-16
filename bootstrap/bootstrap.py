@@ -10,6 +10,8 @@ exec(handle.read())
 
 #there are many more functions available in jumpscale
 
+from JumpScale import j
+
 from IPython import embed
 print "DEBUG NOW ll"
 embed()
