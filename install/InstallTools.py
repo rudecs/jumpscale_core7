@@ -934,6 +934,7 @@ class InstallTools():
 ############# package installation
 
     def installJS(self,base="/opt/jumpscale7",clean=True,insystem=False):
+        print "Install Jumpscale in %s"%base
         if clean:
             self.cleanSystem()
 
