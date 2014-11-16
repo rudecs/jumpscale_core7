@@ -1,4 +1,3 @@
-set -ex
 apt-get update
 apt-get autoremove
 apt-get -f install -y
