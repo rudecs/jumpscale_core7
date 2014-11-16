@@ -933,7 +933,7 @@ class InstallTools():
 
 ############# package installation
 
-    def installJS(self,base="/opt/jumpscale7",clean=True,insystem=False):
+    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False):
         print "Install Jumpscale in %s"%base
         if clean:
             self.cleanSystem()
@@ -950,17 +950,17 @@ class InstallTools():
         print "install js"
         if insystem:
             dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
-        else:
-            dest="%s/lib/JumpScale"%base
+            self.symlink(src, dest)
+        dest="%s/lib/JumpScale"%base
         self.symlink(src, dest)
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
         if insystem:
             dest="/usr/local/bin"
-        else:
-            dest="%s/bin"%base
+            self.symlinkFilesInDir(src, dest)
+        
+        dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
-
-
+        
         self.copyTree("/opt/code/github/jumpscale/jumpscale_core7/jsbox/cfg/hrd/","%s/hrd/"%base)
 
         for item in ["InstallTools","ExtraTools"]:
@@ -1107,8 +1107,6 @@ apt-get install mc git ssh python2.7 python-requests  -y
         self._initExtra()
         return self.extra.getWalker(self)
 
-        
-print "AAAAAAAAAAAAAAAAaa"
 do=InstallTools()
 
 
