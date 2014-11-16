@@ -1,7 +1,7 @@
 #BOOTSTRAP CODE
 from urllib import urlopen
 import random
-handle = urlopen("https://raw.githubusercontent.com/Jumpscale/jumpscale_core/master/install/InstallTools.py?%s"%random.randint(1, 10000000)) #this is to protect against caching proxy servers
+handle = urlopen("https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/InstallTools.py?%s"%random.randint(1, 10000000)) #this is to protect against caching proxy servers
 exec(handle.read())
 
 
