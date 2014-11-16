@@ -1,9 +1,23 @@
+Install of jumpscale in sandbox
+===============================
+
 use these install scripts to make your live easy
 
-example install of jumpscript
 ```
-apt-get install curl
-curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/web/install_base.py | python
+#if ubuntu is in recent state & apt get update was done recently
+curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/bootstrap/bootstrap.sh | bash
+
+#or to also update/upgrade ubuntu first
+curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/bootstrap/bootstrap_updateubuntu.sh | bash
 ```
 
-this will do all required to install jumpscale 7 on ubuntu 14.04
+this will do all required to install jumpscale 7 on ubuntu 14.04 in /opt/jumpscale7
+
+all will be in sandbox, system will not be changed
+
+
+Install of jumpscale in system
+==============================
+
+@TODO complete (see web/install_develenv.py)
+
