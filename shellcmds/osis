@@ -28,7 +28,7 @@ if opts.action =='deleteall':
     es = j.clients.elasticsearch.get()
 
     if opts.force==None:
-        if j.console.askString("Are you sure to delete full osis & elasticsearch indexes, type YES")<>"YES":
+        if j.console.askString("Are you sure to delete full osis & elasticsearch indexes, type YES") != "YES":
             print "did not see yes, will not continue"
             j.application.stop()
 

@@ -224,9 +224,9 @@ class ErrorConditionObject():
         #     return stack
         # for x in traceback.format_stack():
         #     ignore=False            
-        #     if x.find("IPython")<>-1 or x.find("MessageHandler")<>-1 \
-        #       or x.find("EventHandler")<>-1 or x.find("ErrorconditionObject")<>-1 \
-        #       or x.find("traceback.format")<>-1 or x.find("ipython console")<>-1:
+        #     if x.find("IPython") != -1 or x.find("MessageHandler") != -1 \
+        #       or x.find("EventHandler") != -1 or x.find("ErrorconditionObject") != -1 \
+        #       or x.find("traceback.format") != -1 or x.find("ipython console") != -1:
         #        ignore=True
         #     stack = "%s"%(stack+x if not ignore else stack)
         #     if len(stack)>50:

@@ -67,7 +67,7 @@ class Tmux:
             sudocmd="su -c \"%s\" %s"%(cmd,user)
             cmd2="tmux send-keys -t '%s' '%s' ENTER" % (pane,sudocmd)
         else:
-            # if cmd.find("'")<>-1:
+            # if cmd.find("'") != -1:
             #     cmd=cmd.replace("'","\\\'")  
             if cmd.find("$")!=-1:
                 cmd=cmd.replace("$","\\$")                              

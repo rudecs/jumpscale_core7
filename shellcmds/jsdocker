@@ -31,7 +31,7 @@ opts = parser.parse_args()
 
 l=j.tools.docker
 
-if opts.prefix<>None:
+if opts.prefix != None:
     l.prefix=opts.prefix
 
 ############PS
@@ -114,7 +114,7 @@ if opts.action =='importR':
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
     print "import %s to %s"%(opts.bname,opts.name)
-    if opts.base<>None:
+    if opts.base != None:
         l.importRsync(opts.bname,opts.name,basename=opts.base)
     else:
         l.importRsync(opts.bname,opts.name,key=opts.key)

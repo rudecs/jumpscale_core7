@@ -43,7 +43,7 @@ def main(j, args, params, tags, tasklet):
     #names=[j.system.fs.getBaseName(item).replace(".wiki","") for item in j.system.fs.listFilesInDir(j.system.fs.getDirName(doc.path),False,filter="*.wiki")]
     # names=j.system.fs.listDirsInDir(j.system.fs.getDirName(doc.path),False)
     # for name in names:
-        # if name.lower()<>doc.name:
+        # if name.lower() != doc.name:
             # if name.find("wiki")==0:
                 # name=name[5:]
             # if bullets:

@@ -75,7 +75,7 @@ class GridFactory():
     #     """
     #     @param broker, if given then another connection will be made to the broker
     #     """
-    #     if broker <> None:
+    #     if broker != None:
     #         self.brokerClient = broker.daemon.cmdsInterfaces['broker']
     #         return True
 

@@ -39,7 +39,7 @@ if opts.accounts==None and opts.repos==None:
         opts.accounts=j.system.fs.getBaseName(j.system.fs.getParent(j.system.fs.getcwd()))
 
 
-if opts.branch<>None and opts.action in ['status']: 
+if opts.branch != None and opts.action in ['status']: 
     raise RuntimeError("Cannot specify branch when asking status")
 
 def getRepos():
@@ -47,7 +47,7 @@ def getRepos():
 
     if opts.accounts=="*":
         accounts=j.system.fs.listDirsInDir("/opt/code", recursive=False, dirNameOnly=True, findDirectorySymlinks=True)
-    elif opts.accounts<>None:
+    elif opts.accounts != None:
         accounts=[item.strip() for item in opts.accounts.split(",")]
     else:
         accounts=j.system.fs.listDirsInDir("/opt/code", recursive=False, dirNameOnly=True, findDirectorySymlinks=True)
@@ -67,7 +67,7 @@ def getRepos():
 
             for reponame in reponames:
 
-                if reponame.find("__")<>-1:
+                if reponame.find("__") != -1:
                     branch,reponame=reponame.split("__",1)
 
                     repodir="%s/%s__%s"%(accountdir,branch,reponame)
@@ -107,8 +107,8 @@ for bitbucket,account,reponame,branch,client,path in repos:
         lrev,lid,ttype,branch,user,msg,ddate=client.client.tip()
         branch=client.getbranchname()
 
-        if opts.branch<>None:
-            if branch<>opts.branch:
+        if opts.branch != None:
+            if branch != opts.branch:
                 print "set branch:%s"%opts.branch
                 cmd="cd %s;hg branch %s"%(path,opts.branch)
                 j.system.process.execute(cmd,dieOnNonZeroExitCode=False, outputToStdout=True, useShell=True, ignoreErrorOutput=False)                
@@ -181,7 +181,7 @@ for bitbucket,account,reponame,branch,client,path in repos:
 
         if opts.action =='push':
             print "PUSH ",
-            if opts.branch<>None:
+            if opts.branch != None:
                 client.push(branch=[opts.branch],newbranch=True)
             else:
                 client.push(branch=None,newbranch=False)

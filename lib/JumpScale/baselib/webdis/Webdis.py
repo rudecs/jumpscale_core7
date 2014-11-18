@@ -54,15 +54,15 @@ class Webdis(object):
         for i in range(self.timeout*2):
             try:
                 # headers = {'content-type': 'application/json'}
-                # if url<>"":
+                # if url != "":
                 #     data2="%s/%s"%(cmd,url)
                 # else:
                 #     data2="%s"%cmd
-                # if data<>None:
+                # if data != None:
                 #     data2="%s/%s"%(data2,data)
                 # print "data:'%s'"%data2
                 headers={}
-                # if data<>None:
+                # if data != None:
                 #     headers = {'content-type': 'binary/octet-stream'}
                 if url!="":
                     url2='http://%s:%s/%s/%s.png'%(self.addr,self.port,cmd,url)
@@ -74,7 +74,7 @@ class Webdis(object):
                 else:
                     # data=msgpack.dumps(data)                    
                     r=requests.put(url2, data=data, headers=headers)
-                # if data<>None:
+                # if data != None:
                 #     print len(data)
                 # r=requests.get('http://%s:%s/%s'%(self.addr,self.port,data2),headers=headers)
             except Exception as e:

@@ -25,7 +25,7 @@ opts = parser.parse_args()
 
 l=j.system.platform.lxc
 
-if opts.prefix<>None:
+if opts.prefix != None:
     l.prefix=opts.prefix
 
 ############PS
@@ -51,7 +51,7 @@ if opts.action =='new':
     if opts.name==None:
         raise RuntimeError("need to specify name")
     l.create(name=opts.name,stdout=True,base=opts.base,start=False)
-    if opts.pubip<>"":
+    if opts.pubip != "":
         bridgename = j.application.config.get('lxc.pub.interface')        
         j.system.platform.lxc.networkSet(opts.name, netname="pub0",bridge=bridgename,pubips=["%s"%opts.pubip],gateway=opts.gw) 
     if opts.start:
@@ -93,7 +93,7 @@ if opts.action =='importR':
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
     print "import %s to %s"%(opts.bname,opts.name)
-    if opts.base<>None:
+    if opts.base != None:
         l.importRsync(opts.bname,opts.name,basename=opts.base)
     else:
         l.importRsync(opts.bname,opts.name,key=opts.key)

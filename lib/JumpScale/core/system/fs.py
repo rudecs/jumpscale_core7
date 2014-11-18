@@ -843,7 +843,7 @@ class SystemFS:
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
             depth=None
-        # if depth<>None:
+        # if depth != None:
         #     depth+=1
         filesreturn,depth=self._listAllInDir(path, recursive, filter, minmtime, maxmtime,depth,type="f", case_sensitivity=case_sensitivity,exclude=exclude,followSymlinks=followSymlinks,listSymlinks=listSymlinks)
         return filesreturn
@@ -869,7 +869,7 @@ class SystemFS:
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
             depth=None
-        # if depth<>None:
+        # if depth != None:
         #     depth+=1
         filesreturn,depth=self._listAllInDir(path, recursive, filter, minmtime, maxmtime,depth,type=type,followSymlinks=followSymlinks,listSymlinks=listSymlinks)
         return filesreturn
@@ -1353,7 +1353,7 @@ class SystemFS:
             fp = open(filename,"ab")
         self.log('Writing contents in file %s'%filename,9)
         try:
-            #if filename.find("avahi")<>-1:
+            #if filename.find("avahi") != -1:
             #    ipshell()
             fp.write(bytes(contents, 'UTF-8'))  #@todo P1 will this also raise an error and not be catched by the finally
         finally:

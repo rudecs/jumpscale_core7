@@ -37,7 +37,7 @@ if opts.accounts==None and opts.repos==None:
         opts.accounts=j.system.fs.getBaseName(j.system.fs.getParent(j.system.fs.getcwd()))
 
 
-if opts.branch<>None and opts.action in ['status']: 
+if opts.branch != None and opts.action in ['status']: 
     raise RuntimeError("Cannot specify branch when asking status")
 
 
@@ -66,7 +66,7 @@ def getRepos():
         reponame=splitted[-1]
         provider=splitted[2]
 
-        if reponame.find("__")<>-1:
+        if reponame.find("__") != -1:
             branch,reponame=reponame.split("__",1)
         else:
             branch="master"
@@ -104,8 +104,8 @@ for provider,account,reponame,branch,client,path in repos:
         # lrev,lid,ttype,branch,user,msg,ddate=client.client.tip()
         branch=client.branchName
 
-        if opts.branch<>None:
-            if branch<>opts.branch:
+        if opts.branch != None:
+            if branch != opts.branch:
                 print "set branch:%s"%opts.branch
                 from IPython import embed
                 print "DEBUG NOW not suported yet"

@@ -61,7 +61,7 @@ class Process(OsisBaseObject):
         self.gid = int(self.gid)
         self.id = int(self.id)
         
-        # if self.sname<>"":
+        # if self.sname != "":
         #     key="%s_%s"%(self.jpdomain,self.sname)
         # else:
         #     key=self.pname

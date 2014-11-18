@@ -71,7 +71,7 @@ if opts.action =='reinit':
     jp=j.packages.findNewest(name="osis")
     jp.start()
     
-    if opts.force<>None:
+    if opts.force != None:
         j.system.process.executeWithoutPipe("osis deleteall")
     else:
         j.system.process.executeWithoutPipe("osis deleteall --force=1")

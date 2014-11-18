@@ -470,7 +470,7 @@ class InstallTools():
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
             depth=None
-        # if depth<>None:
+        # if depth != None:
         #     depth+=1
         filesreturn,depth=self._listAllInDir(path, recursive, filter, minmtime, maxmtime,depth,type="f", case_sensitivity=case_sensitivity,exclude=exclude,followSymlinks=followSymlinks,listSymlinks=listSymlinks)
         return filesreturn
@@ -496,7 +496,7 @@ class InstallTools():
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
             depth=None
-        # if depth<>None:
+        # if depth != None:
         #     depth+=1
         filesreturn,depth=self._listAllInDir(path, recursive, filter, minmtime, maxmtime,depth,type=type,followSymlinks=followSymlinks,listSymlinks=listSymlinks)
         return filesreturn
@@ -677,7 +677,7 @@ class InstallTools():
     #     if stdout.strip()=="":
     #         stdout=stderr
 
-    #     if proc.returncode<>0:
+    #     if proc.returncode != 0:
     #         raise RuntimeError("Cannot execute cmd:%s, error was %s"%(command,stderr))
 
     #     return stdout

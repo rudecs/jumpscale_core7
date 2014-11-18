@@ -75,7 +75,7 @@ class BlobStorClient:
 
     # def _getJob(self,cmd,args={},key=""):
     #     jobguid=j.base.idgenerator.generateGUID()     
-    #     if key<>"":
+    #     if key != "":
     #         args["key"]=key
     #     job=[int(time.time()),jobguid,cmd,args] 
     #     return (jobguid,ujson.dumps(job))
@@ -85,7 +85,7 @@ class BlobStorClient:
     #     if data=="":
     #         self.queueCMD(cmd="RPUSH", key="blobserver:cmdqueue:0", data=jobguid)
     #         self.queueCMD(cmd="HSET", key="blobserver:cmds",subkey=jobguid, data=job)
-    #     elif data<>"":
+    #     elif data != "":
     #         self.queueCMD(cmd="RPUSH", key="blobserver:cmdqueue:0", data=jobguid)
     #         self.queueCMD(cmd="HSET", key="blobserver:cmds",subkey=jobguid, data=job)
     #         self.queueCMD(cmd="HSET", key="blobserver:blob", subkey=key,data=data)

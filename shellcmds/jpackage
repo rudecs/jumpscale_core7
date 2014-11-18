@@ -81,10 +81,10 @@ group.add_argument('--blobserver', required=False,  help='only upload to specifi
 args = parser.parse_args()
 
 hrddata={}
-if args.data<>None:    
-    if args.data.find("#")<>-1:        
+if args.data != None:    
+    if args.data.find("#") != -1:        
         for line in args.data.split("#"):
-            if line.find("=")<>-1:
+            if line.find("=") != -1:
                 var,data=line.split("=",1)
                 hrddata[var.strip()]=data.strip()
     else:
@@ -150,10 +150,10 @@ elif args.action == 'debug':
 elif args.action == 'download':
     packages = cmdutils.getJPackage(args)
 
-    if args.instance<>None and len(packages)>1:
+    if args.instance != None and len(packages)>1:
         j.events.inputerror_critical("Cannot find more jpackages if instance is given (for configure).")
 
-    if args.instance<>None:
+    if args.instance != None:
         packages[0].instance=args.instance
 
     for package in packages:
@@ -164,7 +164,7 @@ elif args.action == 'download':
 elif args.action == 'showdeps':
     packages = cmdutils.getJPackage(args)
 
-    if args.instance<>None and len(packages)>1:
+    if args.instance != None and len(packages)>1:
         j.events.inputerror_critical("Cannot find more jpackages if instance is given (for configure).")
 
     for package in packages:
@@ -180,10 +180,10 @@ elif args.action == 'export':
 elif args.action == 'configure':
     packages = cmdutils.getJPackage(args,installed=True)
 
-    if args.instance<>None and len(packages)>1:
+    if args.instance != None and len(packages)>1:
         j.events.inputerror_critical("Cannot find more jpackages if instance is given (for configure).")
 
-    if args.instance<>None:
+    if args.instance != None:
         packages[0].instance=args.instance
         instance=args.instance
     else:
@@ -200,10 +200,10 @@ elif args.action == 'install':
     if args.instance==None:
         args.instance=0      
         
-    if args.instance<>0 and len(packages)>1:        
+    if args.instance != 0 and len(packages)>1:        
         j.events.inputerror_critical("Cannot find more jpackages if instance is given.")
 
-    if args.instance<>None:
+    if args.instance != None:
         packages[0].instance=args.instance
 
     for package in packages:
@@ -230,10 +230,10 @@ elif args.action == 'update':
             cmd="jssync download -c base,libs -nd"
             j.system.process.executeWithoutPipe(cmd)
 
-    if args.instance<>0 and len(packages)>1:
+    if args.instance != 0 and len(packages)>1:
         j.events.inputerror_critical("Cannot find more jpackages if instance is given.")
 
-    if args.instance<>None:
+    if args.instance != None:
         packages[0].instance=args.instance
 
     for package in packages:
@@ -326,7 +326,7 @@ elif args.action == 'mdupdate':
         cmd="jssync download -c jpackages -d"
         j.system.process.executeWithoutPipe(cmd)
     else:
-        if args.domain<>None:
+        if args.domain != None:
             j.packages.updateMetaData(force=args.force,domain=args.domain)
         else:        
             j.packages.updateMetaData(force=args.force)
@@ -433,7 +433,7 @@ elif args.action == 'list':
             print form % {'name': package.name, 'domain': package.domain, 'version': package.version, \
             'debug': debug, 'buildnr': package.buildNr,'debugInJpackage':debugINJP}
     if not args.installed:
-        if args.domain<>False:
+        if args.domain != False:
             domains=[args.domain]
         else:
             domains=j.console.askChoiceMultiple(j.packages.getDomainNames(),"choose jpackages to list for")

@@ -28,7 +28,7 @@ class BackupClient:
         self.mdpath="/opt/backup/MD/%s"%self.backupname
         if not j.system.fs.exists(path=self.mdpath):  
             # #init repo
-            # if self.gitlab.passwd<>"":              
+            # if self.gitlab.passwd != "":              
             #     if not self.gitlab.existsProject(namespace=self.gitlab.loginName, name=self.key):
             #         self.gitlab.createproject(self.key, description='backup set', \
             #         issues_enabled=0, wall_enabled=0, merge_requests_enabled=0, wiki_enabled=0, snippets_enabled=0, public=0)#, group=accountname)   
@@ -57,7 +57,7 @@ class BackupClient:
        
 
         
-        # if self.gitlab<>None:
+        # if self.gitlab != None:
         #     self.gitclient = self.gitlab.getGitClient(self.gitlab.loginName, self.key, clean=False,path=self.mdpath)
         # else:
         #     self.gitclient=None
