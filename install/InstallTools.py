@@ -3,7 +3,7 @@ try:
     # from urllib3.request import urlopen
     from urllib.request import urlopen
 except ImportError:
-    from urllib import urlopen
+    from urllib.request import urlopen
 import gzip
 import os
 import tarfile
@@ -412,7 +412,7 @@ class InstallTools():
         if path is None:
             raise TypeError('Path is not passed in system.fs.listDir')
         if(self.exists(path)):
-            if(self.isDir(path)) or (followSymlinks and self.checkDirOrLink(path)):
+            if(self.isDir(path)) or (followSymlinks and self.checkDirOrLinkToDir(path)):
                 names = os.listdir(path)
                 return names
             else:

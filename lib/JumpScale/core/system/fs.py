@@ -1355,7 +1355,7 @@ class SystemFS:
         try:
             #if filename.find("avahi")<>-1:
             #    ipshell()
-            fp.write(contents)  #@todo P1 will this also raise an error and not be catched by the finally
+            fp.write(bytes(contents, 'UTF-8'))  #@todo P1 will this also raise an error and not be catched by the finally
         finally:
             fp.close()
 
