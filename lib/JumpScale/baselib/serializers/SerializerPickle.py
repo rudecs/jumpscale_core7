@@ -1,9 +1,9 @@
 
-import cPickle
+import pickle
 
 
 class SerializerPickle(object):
     def dumps(self,obj):
-        return  cPickle.dumps(obj)
+        return  pickle.dumps(obj)
     def loads(self,s):
-        return cPickle.loads(s)
+        return pickle.loads(s)

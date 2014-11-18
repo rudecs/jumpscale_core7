@@ -17,7 +17,7 @@ import time
 
 redis=j.clients.redis.getRedisClient("127.0.0.1", 9999)
 
-from Node import Node
+from .Node import Node
 
 class AdminFactory:
     def get(self,path,args,failWhenNotExist=False):
@@ -36,7 +36,7 @@ class Admin():
         self.redis = j.clients.redis.getRedisClient("127.0.0.1", 9999)
 
         # self.nodes={}
-        if self.args.__dict__.has_key("reset") and self.args.reset:
+        if "reset" in self.args.__dict__ and self.args.reset:
             self.deleteScriptRunInfo()
 
         start=path
@@ -64,7 +64,7 @@ class Admin():
         self.hrd.applyOnDir(self.tmpdir)
 
         from IPython import embed
-        print "DEBUG NOW ooo"
+        print("DEBUG NOW ooo")
         embed()
         
 
@@ -79,20 +79,20 @@ class Admin():
         # last.newhexsha
 
         for node in self.getNodes():
-            print node
+            print(node)
             data=self.hrd.getDictFromPrefix(node)
             #remove empty records in services installed
-            data["servicesinstalled"]=[item for item in data["servicesinstalled"] if item.strip()<>""]
+            data["servicesinstalled"]=[item for item in data["servicesinstalled"] if item.strip()!=""]
             for toinstall in data["servicestoinstall"]:
                 actor,name=toinstall.strip().split("/")
                 try:
                     res=j.core.jumpscripts.execute( organization="jumpscale", actor=actor, action=name, args=data)
-                except Exception,e:
+                except Exception as e:
                     from IPython import embed
-                    print "DEBUG NOW exception"
+                    print("DEBUG NOW exception")
                     embed()
                 from IPython import embed
-                print "DEBUG NOW done"
+                print("DEBUG NOW done")
                 embed()
                 
 
@@ -133,7 +133,7 @@ class Admin():
 
 
         from IPython import embed
-        print "DEBUG NOW ooo"
+        print("DEBUG NOW ooo")
         embed()
         
 
@@ -167,7 +167,7 @@ class Admin():
             node=JNode()
             try:
                 node.__dict__.update(json.loads(data))
-            except Exception,e:
+            except Exception as e:
                 raise RuntimeError("could not decode node: '%s/%s'"%(gridname,name))
                 # node=JNode()
                 # self.setNode(node)
@@ -181,7 +181,7 @@ class Admin():
 
     def setNode(self,node):
         node2=copy.copy(node.__dict__)
-        for key in node2.keys():
+        for key in list(node2.keys()):
             if key[0]=="_":
                 node2.pop(key)
         node2.pop("cuapi")
@@ -190,7 +190,7 @@ class Admin():
         
         self.redis.hset("admin:nodes","%s:%s"%(node.gridname,node.name),json.dumps(node2))
         sr=node.currentScriptRun
-        if sr<>None:
+        if sr!=None:
             self.redis.hset("admin:scriptruns","%s:%s:%s"%(node.gridname,node.name,sr.runid),json.dumps(sr.__dict__))
 
     def executeForNode(self,node,jsname,once=True,sshtest=True,**kwargs):
@@ -209,8 +209,8 @@ class Admin():
         # if self.args.force:
         #     do=True
         if do:
-            print "* tcp check ssh"
-            if not j.admin.js.has_key(jsname):
+            print("* tcp check ssh")
+            if jsname not in j.admin.js:
                 self.raiseError("executejs","cannot find js:%s"%jsname)
 
             if sshtest and not j.system.net.waitConnectionTest(node.ip,22, self.args.timeout):
@@ -220,17 +220,17 @@ class Admin():
                 sr.result=j.admin.js[jsname](node=node,**kwargs)
                 node.actionsDone[jsname]=now
                 node.lastcheck=now
-            except BaseException,e:
+            except BaseException as e:
                 msg="error in execution of %s.Stack:\n%s\nError:\n%s\n"%(jsname,j.errorconditionhandler.parsePythonErrorObject(e),e)
                 sr.state="ERROR"
                 sr.error+=msg
-                print 
-                print msg
-                if node.actionsDone.has_key(jsname):
+                print() 
+                print(msg)
+                if jsname in node.actionsDone:
                     node.actionsDone.pop(jsname)
             self.setNode(node)
         else:
-            print("No need to execute %s on %s/%s"%(jsname,node.gridname,node.name))
+            print(("No need to execute %s on %s/%s"%(jsname,node.gridname,node.name)))
         return node
 
     def execute(self,jsname,once=True,reset=False,**kwargs):
@@ -243,28 +243,28 @@ class Admin():
 
     def sshfs(self,gridname,name):
         node=self.getNode(gridname,name)
-        if name<>"admin":
+        if name!="admin":
             path="/mnt/%s_%s_jsbox"%(node.gridname,node.name)
             j.system.fs.createDir(path)
             cmd="sshfs %s:/opt/jsbox /mnt/%s_%s_jsbox"%(node.ip,node.gridname,node.name)
-            print cmd
+            print(cmd)
             j.system.process.executeWithoutPipe(cmd)
 
             path="/mnt/%s_%s_jsboxdata"%(node.gridname,node.name)
             j.system.fs.createDir(path)
-            print cmd
+            print(cmd)
             cmd="sshfs %s:/opt/jsbox_data /mnt/%s_%s_jsboxdata"%(node.ip,node.gridname,node.name)
             j.system.process.executeWithoutPipe(cmd)
         else:
             path="/mnt/%s_%s_code"%(node.gridname,node.name)
             j.system.fs.createDir(path)
             cmd="sshfs %s:/opt/code /mnt/%s_%s_code"%(node.ip,node.gridname,node.name)
-            print cmd
+            print(cmd)
             j.system.process.executeWithoutPipe(cmd)
             path="/mnt/%s_%s_jumpscale"%(node.gridname,node.name)
             j.system.fs.createDir(path)
             cmd="sshfs %s:/opt/jumpscale /mnt/%s_%s_jumpscale"%(node.ip,node.gridname,node.name)
-            print cmd
+            print(cmd)
             j.system.process.executeWithoutPipe(cmd)
 
     def sshfsumount(self,gridname="",name=""):
@@ -273,14 +273,14 @@ class Admin():
 
         def getMntPath(mntpath):
             for line in mount.split("\n"):
-                if line.find("sshfs")<>-1 and line.find(mntpath+" ")<>-1:
+                if line.find("sshfs")!=-1 and line.find(mntpath+" ")!=-1:
                     return line.split(" ")[0]
             return None
 
         def getMntPaths():
             res=[]
             for line in mount.split("\n"):
-                if line.find("sshfs")<>-1:
+                if line.find("sshfs")!=-1:
                     line=line.replace("  "," ")
                     line=line.replace("  "," ")                    
                     res.append(line.split(" ")[2])
@@ -295,14 +295,14 @@ class Admin():
             cmd="umount %s"%(mntpath2)
             rc,out=j.system.process.execute(cmd,False)
             if rc>0:
-                if out.find("device is busy")<>-1:
+                if out.find("device is busy")!=-1:
                     res=[]
-                    print "MOUNTPOINT %s IS BUSY WILL TRY TO FIND WHAT IS KEEPING IT BUSY"%mntpath
+                    print("MOUNTPOINT %s IS BUSY WILL TRY TO FIND WHAT IS KEEPING IT BUSY"%mntpath)
                     cmd ="lsof -bn -u 0|grep '%s'"%mntpath  #only search for root processes
-                    print cmd
+                    print(cmd)
                     rc,out=j.system.process.execute(cmd,False)
                     for line in out.split("\n"):
-                        if line.find(mntpath)<>-1 and line.lower().find("avoiding")==-1 and line.lower().find("warning")==-1:
+                        if line.find(mntpath)!=-1 and line.lower().find("avoiding")==-1 and line.lower().find("warning")==-1:
                             line=line.replace("  "," ")
                             line=line.replace("  "," ")
                             cmd=line.split(" ")[0]
@@ -310,14 +310,14 @@ class Admin():
                             key="%s (%s)"%(cmd,pid)
                             if key not in res:
                                 res.append(key)
-                    print "PROCESSES WHICH KEEP MOUNT BUSY:"
-                    print "\n".join(res)                    
+                    print("PROCESSES WHICH KEEP MOUNT BUSY:")
+                    print("\n".join(res))                    
                     return
                 raise RuntimeError("could not umount:%s\n%s"%(mntpath,out))
 
         if gridname=="" and name=="":
             for mntpath in getMntPaths():
-                print "UMOUNT:%s"%mntpath
+                print("UMOUNT:%s"%mntpath)
                 do(mntpath)
             
         else:
@@ -325,7 +325,7 @@ class Admin():
             do("/mnt/%s_%s_jsbox"%(gridname,name))
 
     def createidentity(self):
-        print "MAKE SURE YOU SELECT A GOOD PASSWD, select default destination!"
+        print("MAKE SURE YOU SELECT A GOOD PASSWD, select default destination!")
         do=j.system.process.executeWithoutPipe
         do("ssh-keygen -t dsa")
         keyloc="/root/.ssh/id_dsa.pub"
@@ -365,20 +365,20 @@ class Admin():
             line=line.strip()
             if line.find("########")==0:
                 return result
-            if line.strip()<>"" and line[0]<>"#":
+            if line.strip()!="" and line[0]!="#":
                 line2=line.replace("\t"," ")
                 splits=line2.split(" ")
                 name=splits[-1]
                 ip=splits[0]
-                if result.has_key(name):
+                if name in result:
                     continue
-                if line.find("ip6-localhost")<>-1 or line.find("ip6-loopback")<>-1:
+                if line.find("ip6-localhost")!=-1 or line.find("ip6-loopback")!=-1:
                     continue
-                if line.find("ip6-localnet")<>-1 or line.find("ip6-mcastprefix")<>-1:
+                if line.find("ip6-localnet")!=-1 or line.find("ip6-mcastprefix")!=-1:
                     continue
-                if line.find("ip6-allnodes")<>-1 or line.find("ip6-allrouters")<>-1:
+                if line.find("ip6-allnodes")!=-1 or line.find("ip6-allrouters")!=-1:
                     continue                    
-                if line.find("following lines are desirable")<>-1 or line.find("localhost")<>-1:
+                if line.find("following lines are desirable")!=-1 or line.find("localhost")!=-1:
                     continue
                 result[name]=ip
         return result
@@ -402,7 +402,7 @@ ff02::2      ip6-allrouters
 
         def alias(name):
             name=name.lower()
-            if self.gridNameAliases.has_key(name):
+            if name in self.gridNameAliases:
                 return [item.lower() for item in self.gridNameAliases[name]]
             else:
                 return []
@@ -414,7 +414,7 @@ ff02::2      ip6-allrouters
             node=JNode()
             try:
                 node.__dict__=json.loads(data)
-            except Exception,e:
+            except Exception as e:
                 raise RuntimeError("could not decode node: '%s/%s'"%(gridname,name))
             n=node.name
             n=n.lower()
@@ -422,21 +422,21 @@ ff02::2      ip6-allrouters
             g=g.lower()
             newHostnames["%s.%s"%(n,g)]=node.ip
             for g2 in alias(node.gridname):
-                if g2<>g:
+                if g2!=g:
                     newHostnames["%s.%s"%(n,g2)]=node.ip
 
-        for hostname,ipaddr in existingHostnames.iteritems():
-            if hostname.lower() not in newHostnames.keys():
+        for hostname,ipaddr in existingHostnames.items():
+            if hostname.lower() not in list(newHostnames.keys()):
                 out+="%-18s %s\n"%(ipaddr,hostname)
 
         out+="\n#############################\n\n"
 
-        hkeysNew=newHostnames.keys()
+        hkeysNew=list(newHostnames.keys())
         hkeysNew.sort()
 
         for hostname in hkeysNew:
             ipaddr=newHostnames[hostname]
-            if hostname.lower() in existingHostnames.keys():
+            if hostname.lower() in list(existingHostnames.keys()):
                 raise RuntimeError("error: found new hostname '%s' which already exists in existing hostsfile."%hostname)
             out+="%-18s %s\n"%(ipaddr,hostname)
 
@@ -491,40 +491,40 @@ ff02::2      ip6-allrouters
         for sr in self.getScriptRunInfo():
             if sr.state=="OK":
                 ok.append("%-10s %-15s"%(sr.gridname,sr.nodename))
-                if sr.result<>"":
+                if sr.result!="":
                     result+="#%-15s %-10s############################################################\n"%(sr.gridname,sr.nodename)
                     result+="%s\n\n"%sr.result
             else:
                 nok.append("%-10s %-15s"%(sr.gridname,sr.nodename))
-                for key,value in sr.__dict__.iteritems():
+                for key,value in sr.__dict__.items():
                     error+="%-15s: %s"%(key,value)
                 error+="#######################################################################\n\n"
 
 
         j.system.fs.createDir("%s/admin"%j.dirs.varDir)
 
-        if result<>"":
-            print "######################## RESULT ##################################"
-            print result
+        if result!="":
+            print("######################## RESULT ##################################")
+            print(result)
             j.system.fs.writeFile(filename="%s/admin/%s.result"%(j.dirs.varDir,sr.runid),contents=result)
 
-        if error<>"":
-            print "######################## ERROR ##################################"
-            print error
+        if error!="":
+            print("######################## ERROR ##################################")
+            print(error)
             j.system.fs.writeFile(filename="%s/admin/%s.error"%(j.dirs.varDir,sr.runid),contents=error)
 
-        if error<>"":
+        if error!="":
             exitcode = 1
         else:
             exitcode=0
 
-        print "\n######################## OK #####################################"
+        print("\n######################## OK #####################################")
         ok.sort()
-        print "\n".join(ok)
+        print("\n".join(ok))
         if len(nok)>0:
-            print "######################## ERROR ###################################"
+            print("######################## ERROR ###################################")
             nok.sort()
-            print "\n".join(nok)
+            print("\n".join(nok))
 
         return exitcode
 

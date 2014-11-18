@@ -1,6 +1,6 @@
 from JumpScale import j
 import requests, base64, phpserialize
-from settings import authenticationparams, WHMCS_API_ENDPOINT, OPERATIONS_USER_ID, MOTHERSHIP1_OPERATIONS_DEPARTMENT_ID
+from .settings import authenticationparams, WHMCS_API_ENDPOINT, OPERATIONS_USER_ID, MOTHERSHIP1_OPERATIONS_DEPARTMENT_ID
 import json
 import xml.etree.cElementTree as et
 
@@ -23,7 +23,7 @@ class whmcstickets():
         return result
 
     def create_ticket(self, subject, message, priority, clientid=OPERATIONS_USER_ID, deptid=MOTHERSHIP1_OPERATIONS_DEPARTMENT_ID):
-        print 'Creating %s' % subject
+        print('Creating %s' % subject)
         create_ticket_request_params = dict(
 
                     action = 'openticket',
@@ -46,7 +46,7 @@ class whmcstickets():
 
 
     def update_ticket(self, ticketid, subject=None, priority=None, status=None, email=None, cc=None, flag=None, userid=OPERATIONS_USER_ID, deptid=MOTHERSHIP1_OPERATIONS_DEPARTMENT_ID):
-        print 'Updating %s' % ticketid
+        print('Updating %s' % ticketid)
         ticket_request_params = dict()
 
         ticket_request_params['action'] = 'updateclient'
@@ -72,7 +72,7 @@ class whmcstickets():
         return response
 
     def close_ticket(self, ticketid):
-        print 'Closing %s' % ticketid
+        print('Closing %s' % ticketid)
         ticket_request_params = dict(
 
                     action = 'updateclient',
@@ -92,7 +92,7 @@ class whmcstickets():
 
 
     def get_ticket(self, ticketid):
-        print 'Getting %s' % ticketid
+        print('Getting %s' % ticketid)
         ticket_request_params = dict(
 
                     action = 'getticket',
@@ -105,7 +105,7 @@ class whmcstickets():
         return ticket
 
     def add_note(self, ticketid, message):
-        print "Adding note to ticket %s" % ticketid
+        print("Adding note to ticket %s" % ticketid)
         ticket_request_params = dict(
             action = 'addticketnote',
             ticketid = ticketid,

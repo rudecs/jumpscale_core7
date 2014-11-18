@@ -63,7 +63,7 @@ class OSISStore(object):
             authparent.load(self)
 
         self.auth=auth
-        if self.auth==None and authparent<>None:
+        if self.auth==None and authparent!=None:
             self.auth=authparent
 
     def get(self, key, session=None):
@@ -79,7 +79,7 @@ class OSISStore(object):
         return self.db.exists(self.dbprefix, key)
 
     def checkChangeLog(self):
-        if self.db<>None:
+        if self.db!=None:
             self.db.checkChangeLog()
 
     def getObject(self, ddict={}):
@@ -107,7 +107,7 @@ class OSISStore(object):
             changed=False
             new=False
         
-        if ukey<>None and self.db.exists(self.dbprefix_incr, ukey):
+        if ukey!=None and self.db.exists(self.dbprefix_incr, ukey):
             # print "ukey exists"
             new=False            
             id,guid,ckey2=self.json.loads(self.db.get(self.dbprefix_incr, ukey))
@@ -115,14 +115,14 @@ class OSISStore(object):
             ckey=str(ckey)
             ckey2=str(ckey2)
             # print "guid,ckey in db: %s:%s"%(guid,ckey2)
-            if obj.id<>id:
+            if obj.id!=id:
                 obj.id=id
             obj.getSetGuid()
-            if obj.guid<>guid:
+            if obj.guid!=guid:
                 # print "GUID changed"
                 changed=True
             ckey=obj.getContentKey()
-            if ckey2<>ckey:
+            if ckey2!=ckey:
                 # print "content changed"
                 changed=True
             if changed:
@@ -143,7 +143,7 @@ class OSISStore(object):
             ckey=obj.getContentKey()
             obj._ckey=ckey
             # print "ukey,ckey for new object: %s:%s"%(ukey,ckey)
-            if ukey<>None:
+            if ukey!=None:
                 json=self.json.dumps([obj.id,obj.guid,ckey])
                 self.db.set(self.dbprefix_incr, ukey, json)
             return (new,changed,obj)
@@ -168,12 +168,12 @@ class OSISStore(object):
                             raise RuntimeError("index not stored for key:%s in %s:%s"(key,self.namespace, self.categoryname))
             else:
                 if key==None:
-                    if value.has_key("guid"):
+                    if "guid" in value:
                         key=value["guid"]
                     else:
                         raise RuntimeError("could not find guid attr on obj for %s:%s"(self.namespace, self.categoryname))                
                 else:
-                    if not value.has_key("guid"):
+                    if "guid" not in value:
                         value["guid"]=key
                 value2=self.json.dumps(value)
                 self.db.set(self.dbprefix, key=key, value=value2)                
@@ -215,7 +215,7 @@ class OSISStore(object):
             if hasattr(obj,"getDictForIndex"):
                 data=obj.getDictForIndex()
             else:
-                if isinstance(obj, basestring):
+                if isinstance(obj, str):
                     obj = self.json.loads(obj)
                     data=copy.copy(obj)
                 else:
@@ -224,7 +224,7 @@ class OSISStore(object):
         guid=data["guid"]
 
         # data.pop("guid")  # remove guid from object before serializing to json
-        for key5 in data.keys():
+        for key5 in list(data.keys()):
             if key5[0] == "_":
                 data.pop(key5)
         try:
@@ -233,23 +233,23 @@ class OSISStore(object):
             pass       
         
         try:
-            if ttl <> 0:
+            if ttl != 0:
                 self.elasticsearch.index(index=index, id=guid, doc_type="json", doc=data, ttl=ttl, replication=replication,consistency=consistency,refresh=refresh,overwrite_existing=True)
             else:
                 self.elasticsearch.index(index=index, id=guid, doc_type="json", doc=data, replication=replication,consistency=consistency,refresh=refresh,overwrite_existing=True)
-        except Exception,e:
+        except Exception as e:
 
-            if str(e).find("Index failed")<>-1:
+            if str(e).find("Index failed")!=-1:
                 try:
                     msg="cannot index object:\n%s"%data
-                except Exception,ee:
+                except Exception as ee:
                     msg="cannot index object, cannot even print object"                
-                print e
+                print(e)
                 j.errorconditionhandler.raiseOperationalCritical(msg, category='osis.index', msgpub='', die=False, tags='', eco=None)
-            elif str(e).find("failed to parse")<>-1:
+            elif str(e).find("failed to parse")!=-1:
                 try:
                     msg="indexer cannot parse object (normally means 1 or more subtypes of doc was changed)"
-                except Exception,ee:
+                except Exception as ee:
                     msg="indexer cannot parse object, cannot even print object.\n%s"%ee
                     j.errorconditionhandler.raiseOperationalCritical(msg, category='osis.index.parse', msgpub='', die=False, tags='', eco=None)
                     return
@@ -299,7 +299,7 @@ class OSISStore(object):
         index = self.getIndexName()
         try:
             result = self.elasticsearch.delete(index, 'json', key, replication=replication,consistency=consistency,refresh=refresh)
-        except Exception,e:
+        except Exception as e:
             j.errorconditionhandler.processPythonExceptionObject(e)
             result=None
         return result
@@ -325,7 +325,7 @@ class OSISStore(object):
     def destroyindex(self):
         if len(self.categoryname) < 4:
             j.errorconditionhandler.raiseBug(message="osis categoryname needs to be at least 3 chars.", category="osis.bug")
-        indexes = self.elasticsearch.get_mapping().keys()
+        indexes = list(self.elasticsearch.get_mapping().keys())
         for i in indexes:
             if i.find(self.dbprefix) == 0:
                 self.elasticsearch.delete_index(i)

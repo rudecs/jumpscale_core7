@@ -1,5 +1,5 @@
-from LRUCache import LRUCache
-from RWCache import RWCache
+from .LRUCache import LRUCache
+from .RWCache import RWCache
 
 class LRUCacheFactory():
     def getRWCache(self,nrItemsReadCache,nrItemsWriteCache=50,maxTimeWriteCache=2000,writermethod=None):

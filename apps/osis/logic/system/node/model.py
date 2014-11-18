@@ -10,7 +10,7 @@ class Node(OsisBaseObject):
     """
 
     def __init__(self, ddict={}):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.gid = 0
@@ -57,7 +57,7 @@ class Node(OsisBaseObject):
         self.machineguid = j.application.getUniqueMachineId().replace(":", "")
         self.roles= j.application.config.get("grid.node.roles").split(",")
 
-        self.ipaddr=[item for item in j.system.net.getIpAddresses() if item <>"127.0.0.1"]        
+        self.ipaddr=[item for item in j.system.net.getIpAddresses() if item !="127.0.0.1"]        
         
         self.netaddr=j.system.net.getNetworkInfo()
         self.name = j.system.net.getHostname()

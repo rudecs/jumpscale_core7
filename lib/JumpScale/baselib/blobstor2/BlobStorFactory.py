@@ -1,9 +1,9 @@
 from JumpScale import j
 
-from BlobStorClient import *
-from BlobStorServer import *
-from BlobStorMaster import *
-from BlobStorWorker import *
+from .BlobStorClient import *
+from .BlobStorServer import *
+from .BlobStorMaster import *
+from .BlobStorWorker import *
 
 import JumpScale.baselib.credis
 
@@ -27,12 +27,12 @@ class BlobStorTransport(BSTRANSPPARENT):
         self._cmdchannel.send_multipart([msgpack.dumps([[1,"LOGIN",{"login":login,"passwd":passwd},""]]),"S",str(1),""])
         res= self._cmdchannel.recv_multipart()
         
-        if len(res)<>1:
+        if len(res)!=1:
             raise RuntimeError("error in login request")
         
         res=msgpack.loads(res[0])
 
-        if res[1]<>0:
+        if res[1]!=0:
 
             raise RuntimeError("could not create session with blobserver, result code was %s"%res[1])
 
@@ -121,7 +121,7 @@ class BlobStorFactory:
         id=0
         for key in j.application.config.getKeysFromPrefix("blobclient.blobserver"):
             # key=key.replace("gitlabclient.server.","")
-            if key.find("name")<>-1:
+            if key.find("name")!=-1:
                 if j.application.config.get(key)==name:
                     key2=key.replace("blobclient.blobserver.","")
                     id=key2.split(".")[0]
@@ -134,7 +134,7 @@ class BlobStorFactory:
         passwd=j.application.config.get("%s.passwd"%prefix)
         
         name="%s_%s"%(ipaddr,port)
-        if self._blobstorMasterCache.has_key(name):
+        if name in self._blobstorMasterCache:
             return self._blobstorMasterCache[name]        
         self._blobstorMasterCache[name]= j.servers.zdaemon.getZDaemonClient(addr=ipaddr,port=port,user=login,passwd=passwd,ssl=False,sendformat='m', returnformat='m',category="blobstormaster")
         return self._blobstorMasterCache[name]        
@@ -151,7 +151,7 @@ class BlobStorFactory:
             i=j.base.idgenerator.generateRandomInt(0,rmsize-1) #the ones with most free space are used
             bsnodeid=nsobj["routeMap"][i]            
 
-        if self._blobstorCache.has_key(bsnodeid):
+        if bsnodeid in self._blobstorCache:
             return self._blobstorCache[bsnodeid]
         ipaddrs, port,key=master.getNodeLoginDetails(bsnodeid)  
         ipaddrfound=None
@@ -171,7 +171,7 @@ class BlobStorFactory:
         if self.redis.exists(rkey):
             try:
                 result=self.redis.get(rkey)
-            except Exception,e:
+            except Exception as e:
                 #means in just this time it expired
                 pass
             result=json.loads(result)
@@ -182,7 +182,7 @@ class BlobStorFactory:
     def _setNodesDisks(self):
         rkey="blobstormaster:nodes"
         todelete=[]
-        for key,obj in self.nodes.iteritems():
+        for key,obj in self.nodes.items():
             if obj["size"]<obj["free"]:
                 obj["free"]=obj["size"]
             if obj["free"]==0:
@@ -197,7 +197,7 @@ class BlobStorFactory:
         if self.redis.exists(rkey):
             try:
                 result=self.redis.get(rkey)
-            except Exception,e:
+            except Exception as e:
                 #means in just this time it expired
                 return None
             ns=json.loads(result)
@@ -217,7 +217,7 @@ class BlobStorFactory:
 
     def getNamespace(self,domain,name):
         ns=self._getNS(domain, name)
-        if ns<>None:
+        if ns!=None:
             return ns
         else:
             ns=self.master.getNamespace(domain,name)

@@ -15,7 +15,7 @@ def main(j, args, params, tags, tasklet):
         out += 'h2. Access Overview of Space "%s"\n\n' % spaces[0]
         singlespace = True
     else:
-        spaces = j.core.portal.active.spacesloader.spaces.keys()
+        spaces = list(j.core.portal.active.spacesloader.spaces.keys())
         out += "h2. Acess Overview of Spaces\n\n"
 
     if spaces:
@@ -30,7 +30,7 @@ def main(j, args, params, tags, tasklet):
             return params
 
         memberace = {}
-        for groupname in space.model.acl.keys():
+        for groupname in list(space.model.acl.keys()):
             try:
                 group = j.core.portal.active.auth.getGroupInfo(groupname)
             except:
@@ -50,7 +50,7 @@ def main(j, args, params, tags, tasklet):
             secreturl = "/%s?authkey=%s" % (spacename, user.authkey)
             if not singlespace:
                 out += "|%s" % spacename
-            if isinstance(user.emails, basestring):
+            if isinstance(user.emails, str):
                 user.emails = [ user.emails ]
             out += "|%s|%s|%s|%s|[secretlink|%s]|\n" % (name, right, ",".join(user.emails), ",".join(user.groups), secreturl)
 

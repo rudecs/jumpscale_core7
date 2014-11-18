@@ -32,9 +32,9 @@ class JailFactory(object):
         j.system.process.execute("chmod 700 /opt/code")
         
         # j.system.process.execute("chmod 777 /opt/jumpscale")
-        # j.system.process.execute("chmod -R 777 /opt/jumpscale/bin")
-        # j.system.process.execute("chmod -R 777 /opt/jumpscale/lib")
-        # j.system.process.execute("chmod -R 777 /opt/jumpscale/libext")
+        # j.system.process.execute("chmod -R 777 /opt/jumpscale7/bin")
+        # j.system.process.execute("chmod -R 777 /opt/jumpscale7/lib")
+        # j.system.process.execute("chmod -R 777 /opt/jumpscale7/libext")
         # j.system.process.execute("chmod 777 /opt/code")
 
         j.system.process.execute("chmod 777 %s"%self.base)
@@ -144,7 +144,7 @@ class JailFactory(object):
             
             j.system.process.execute(cmd)
             j.system.process.execute("sudo -u %s -i tmux set-option -t %s status off"%(user,session))
-            if cmd<>None:
+            if cmd!=None:
                 self.send2session(user,session,"clear")  
 
 

@@ -10,7 +10,7 @@ import JumpScale.baselib.redis
 
 import JumpScale.baselib.redis
 
-from Job import Job
+from .Job import Job
 
 class JobHandler(object):
     """
@@ -29,7 +29,7 @@ class JobHandler(object):
                     lua=j.system.fs.fileGetContents(luapath)
                     self._jobToRedis=self._redis.register_script(lua)    
 
-        if self._redis<>None and self._jobToRedis<>None:
+        if self._redis!=None and self._jobToRedis!=None:
             job.getSetGuid()
             key=job.getUniqueKey()
             
@@ -62,7 +62,7 @@ class JobHandler(object):
             job=self.getJob(job.id)
 
         job=Job(ddict=job)
-        if job.state<>"OK":
+        if job.state!="OK":
             eco=j.errorconditionhandler.getErrorConditionObject(ddict=job.result)
             # eco.process()
             raise RuntimeError("Could not execute job, error:\n%s"%str(eco))  #@todo is printing too much
@@ -76,7 +76,7 @@ class JobHandler(object):
         if not qname or qname.strip()=="":
             qname="default"
 
-        if not self.queue.has_key(qname):
+        if qname not in self.queue:
             raise RuntimeError("Could not find queue to execute job:%s ((ops:workers.schedulework L:1))"%job)
 
         queue=self.queue[qname]
@@ -91,7 +91,7 @@ class JobHandler(object):
         self._scheduleJob(jobobj)
 
     def getJobLine(self,job=None,jobid=None):
-        if jobid<>None:
+        if jobid!=None:
             job=self.getJob(jobid)
         start=j.base.time.epoch2HRDateTime(job['timeStart'])
         if job['timeStop']==0:
@@ -144,17 +144,17 @@ class JobHandler(object):
             jobsjson = self._redis.hgetall('queues:workers:work:%s' % q)
             if jobsjson:
                 jobs.update(json.loads(jobsjson))
-                for k, job in jobs.iteritems():
+                for k, job in jobs.items():
                     if job['timeStart'] >= epochago:
                         jobs.pop(k)
 
                 if not failed:
-                    for k, job in jobs.iteritems():
+                    for k, job in jobs.items():
                         if job['state'] in ('ERROR', 'TIMEOUT'):
                             jobs.pop(k)
 
                 if jobs:
-                    self._redis.hdel('queues:workers:work:%s' % q, jobs.keys())
+                    self._redis.hdel('queues:workers:work:%s' % q, list(jobs.keys()))
 
     def deleteJob(self, jobid):
         job = self.getJob(jobid)

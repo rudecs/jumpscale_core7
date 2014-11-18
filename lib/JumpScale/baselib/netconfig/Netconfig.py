@@ -2,7 +2,7 @@ from JumpScale import j
 import netaddr
 try:
     import JumpScale.lib.ovsnetconfig
-except Exception,e:
+except Exception as e:
     pass
 
 class Netconfig:
@@ -29,7 +29,7 @@ class Netconfig:
         for nic in j.system.net.getNics():
             if nic not in excludes:
                 cmd="ifdown %s --force"%nic
-                print "shutdown:%s"%nic
+                print("shutdown:%s"%nic)
                 j.system.process.execute(cmd)
         
     def _getInterfacePath(self):
@@ -77,8 +77,8 @@ iface eth0 inet manual
         ed.setSection(dev,C)
         if start and dhcp==False:
             cmd="ifup %s"%dev
-            print "up:%s"%dev
-            print cmd
+            print("up:%s"%dev)
+            print(cmd)
             j.system.process.execute(cmd)     
 
     def remove(self,dev):
@@ -115,7 +115,7 @@ iface $int inet static
        netmask $mask
        network $net
 """
-        if gw<>None:
+        if gw!=None:
             C+="       gateway %s"%gw
 
         args={}
@@ -134,7 +134,7 @@ iface $int inet static
        bridge_fd 0
        bridge_maxwait 0
 """
-        if ipaddr<>None:
+        if ipaddr!=None:
             C+="""
        address $ip
        netmask $mask
@@ -143,12 +143,12 @@ iface $int inet static
         else:
             C=C.replace("static","manual")
             
-        if bridgedev<>None:
+        if bridgedev!=None:
             C+="       bridge_ports $bridgedev"
         else:
             C+="       bridge_ports none"
 
-        if gw<>None:
+        if gw!=None:
             C+="       gateway %s"%gw
 
 #         future="""
@@ -161,7 +161,7 @@ iface $int inet static
         args={}
         args["dev"]=dev
         args["ipaddr"]=ipaddr
-        if bridgedev<>None:
+        if bridgedev!=None:
             args["bridgedev"]=bridgedev        
         self._applyNetconfig(dev,C,args,start=start)        
 
@@ -203,9 +203,9 @@ iface $int:$aliasnr inet static
 
         C=template
         dev=args["dev"]
-        if args.has_key("ipaddr"):
+        if "ipaddr" in args:
             ipaddr=args["ipaddr"]
-            if ipaddr<>None:
+            if ipaddr!=None:
                 ip = netaddr.IPNetwork(ipaddr)
                 C=C.replace("$ip",str(ip.ip))
                 C=C.replace("$mask",str(ip.netmask))
@@ -213,16 +213,16 @@ iface $int:$aliasnr inet static
 
         C=C.replace("$int",dev)
         
-        if args.has_key("gw"):
+        if "gw" in args:
             C=C.replace("$gw","gateway %s"%args["gw"])
-        if args.has_key("bridgedev"):
+        if "bridgedev" in args:
             C=C.replace("$bridgedev",args["bridgedev"])
         path=self._getInterfacePath()
         ed=j.codetools.getTextFileEditor(path)
         ed.setSection(devToApplyTo,C)
 
         if start:
-            print "up:%s"%devToApplyTo
+            print("up:%s"%devToApplyTo)
             cmd="ifdown %s"%devToApplyTo
             j.system.process.execute(cmd) 
             cmd="ifup %s"%devToApplyTo

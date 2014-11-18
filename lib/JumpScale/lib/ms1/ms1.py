@@ -90,10 +90,10 @@ class MS1(object):
         return auth_key
 
     def sendUserMessage(self,msg,level=2,html=False,args={}):
-        if self.action<>None:
+        if self.action!=None:
             self.action.sendUserMessage(msg,html=html)
         else:
-            print msg
+            print(msg)
 
     def getApiConnection(self, space_secret,**args):
         cs=self.getCloudspaceObj(space_secret)
@@ -101,7 +101,7 @@ class MS1(object):
         host = 'www.mothership1.com' if cs["location"] == 'ca1' else '%s.mothership1.com' % cs["location"]
         try:
             api=j.core.portal.getClient(host, 443, space_secret)
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError("E:Could not login to MS1 API.")
 
         # system = api.getActor("system", "contentmanager")
@@ -203,9 +203,9 @@ class MS1(object):
         memsizes[4]=4096
         memsizes[8]=8192
         memsizes[16]=16384
-        if not memsizes.has_key(memsize):
+        if memsize not in memsizes:
             raise RuntimeError("E: supported memory sizes are 0.5,1,2,4,8,16 (is in GB), you specified:%s"%memsize)
-        if not ssdsizes.has_key(ssdsize):
+        if ssdsize not in ssdsizes:
             raise RuntimeError("E: supported ssd sizes are 10,20,30,40,100  (is in GB), you specified:%s"%memsize)
 
         # get actors
@@ -228,7 +228,7 @@ class MS1(object):
 
         images=self.listImages(spacesecret)
 
-        if not imagename in images.keys():
+        if not imagename in list(images.keys()):
             j.events.inputerror_critical("Imagename '%s' not in available images: '%s'"%(imagename,images))
 
         templateid=images[imagename][0]
@@ -237,8 +237,8 @@ class MS1(object):
         try:
             machine_id = machines_actor.create(cloudspaceId=cloudspace_id, name=name, description=description, \
                 sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2))
-        except Exception,e:
-            if str(e).find("Selected name already exists")<>-1:
+        except Exception as e:
+            if str(e).find("Selected name already exists")!=-1:
                j.events.inputerror_critical("Could not create machine it does already exist.","ms1.createmachine.exists")
             raise RuntimeError("E:Could not create machine, unknown error.")
         
@@ -293,7 +293,7 @@ class MS1(object):
             for imagetype in imagetypes:
                 found=True
                 # print "imagetype:%s"%imagetype
-                for check in [item.strip().lower() for item in imagetype.split(".") if item.strip()<>""]:                    
+                for check in [item.strip().lower() for item in imagetype.split(".") if item.strip()!=""]:                    
                     if namelower.find(check)==-1:
                         found=False
                     # print "check:%s %s %s"%(check,namelower,found)
@@ -327,16 +327,16 @@ class MS1(object):
         self.sendUserMessage("delete machine: %s"%(name))
         try:        
             api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
-        except Exception,e:
-            if str(e).find("Could not find machine")<>-1:
+        except Exception as e:
+            if str(e).find("Could not find machine")!=-1:
                 return "NOTEXIST"
-            if str(e).find("Space secret does not exist")<>-1:
+            if str(e).find("Space secret does not exist")!=-1:
                 return "E:SPACE SECRET IS NOT CORRECT"
             raise RuntimeError(e)
         try:
             machines_actor.delete(machine_id)
-        except Exception,e:
-            print e
+        except Exception as e:
+            print(e)
             raise RuntimeError("E:could not delete machine %s"%name)
         return "OK"
 
@@ -344,7 +344,7 @@ class MS1(object):
         api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
         try:
             machines_actor.start(machine_id)
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError("E:could not start machine.")
         return "OK"
 
@@ -352,7 +352,7 @@ class MS1(object):
         api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
         try:
             machines_actor.stop(machine_id)
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError("E:could not stop machine.")
         return "OK"
 
@@ -360,7 +360,7 @@ class MS1(object):
         api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
         try:
             machines_actor.snapshot(machine_id,snapshotname)
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError("E:could not stop machine.")
         return "OK"
 
@@ -401,7 +401,7 @@ class MS1(object):
 
         for item in portforwarding_actor.list(cloudspace_id):
             if int(item["publicPort"])==int(pubipport) and item['publicIp']==pubip:
-                print "delete portforward: %s "%item["id"]
+                print("delete portforward: %s "%item["id"])
                 portforwarding_actor.delete(cloudspace_id,item["id"])
 
         return "OK"        
@@ -430,7 +430,7 @@ class MS1(object):
                     udpports[int(item['publicPort'])]=True
 
         for i in range(mmin,mmax):
-            if not tcpports.has_key(i) and not udpports.has_key(i):
+            if i not in tcpports and i not in udpports:
                 break
 
         if i>mmax-1:
@@ -472,9 +472,9 @@ class MS1(object):
         api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
         
         mkey="%s_%s"%(cloudspace_id,machine_id)
-        print "check ssh connection:%s"%mkey
+        print("check ssh connection:%s"%mkey)
         if self.redis_cl.hexists("ms1_iaas:machine:sshpub",mkey):
-            print "in cache"
+            print("in cache")
             pub_ipaddr,pub_port=self.redis_cl.hget("ms1_iaas:machine:sshpub",mkey).split(",")
             ssh_connection = j.remote.cuisine.api
             ssh_connection.fabric.api.env['connection_attempts'] = 5
@@ -483,9 +483,9 @@ class MS1(object):
                 try:
                     ssh_connection.connect('%s:%s' % (pub_ipaddr, pub_port), "root")
                     return ssh_connection
-                except Exception,e:
+                except Exception as e:
                     from IPython import embed
-                    print "DEBUG NOW _getSSHConnection error"
+                    print("DEBUG NOW _getSSHConnection error")
                     embed()
 
         cloudspaces_actor = api.getActor('cloudapi', 'cloudspaces')
@@ -495,7 +495,7 @@ class MS1(object):
             return 'Machine %s does not belong to cloudspace whose secret is given' % name
 
 
-        print "RECREATE SSH CONNECTION"                
+        print("RECREATE SSH CONNECTION")                
         portforwarding_actor = api.getActor('cloudapi', 'portforwarding')
         items=portforwarding_actor.list(cloudspace_id)
 
@@ -510,7 +510,7 @@ class MS1(object):
                 self.sendUserMessage("Delete existing PFW rule:%s %s"%(item['localIp'],22),args=args)
                 try:
                     portforwarding_actor.delete(cloudspace_id,item["id"])
-                except Exception,e:
+                except Exception as e:
                     self.sendUserMessage("Warning: could not delete.",args=args)
         
         tempportdict=self.getFreeIpPort(spacesecret,mmin=1500,mmax=1999,**args)
@@ -519,7 +519,7 @@ class MS1(object):
         counter=1
         localIP=machine["interfaces"][0]["ipAddress"]
         while localIP=="" or localIP.lower()=="undefined":
-            print "NO IP YET"
+            print("NO IP YET")
             machine = machines_actor.get(machine_id)
             counter+=1
             time.sleep(0.5)
@@ -567,7 +567,7 @@ class MS1(object):
 
         ssh_connection=self._getSSHConnection(spacesecret,name,**args)
 
-        if args.has_key("lines"):
+        if "lines" in args:
             script=args["lines"]
             out=""
             for line in script.split("\n"):
@@ -577,21 +577,21 @@ class MS1(object):
                 if line[0]=="#":
                     continue
                 out+="%s\n"%line
-                print line
+                print(line)
                 
                 result= ssh_connection.run(line+"\n")
                 out+="%s\n"%result
-                print result
+                print(result)
 
-        elif args.has_key("script"):
+        elif "script" in args:
             script=args["script"]
             script="set +ex\n%s"%script
-            print "SSHPREPARE:"
-            print script
+            print("SSHPREPARE:")
+            print(script)
             ssh_connection.file_write("/tmp/do.sh",script)
             ssh_connection.fabric.context_managers.show("output")
 
-            from cStringIO import StringIO
+            from io import StringIO
             import sys
             
             sys.stdout=self.stdout
@@ -599,13 +599,13 @@ class MS1(object):
             # ssh_connection.run("sh /tmp/do.sh", pty=False, combine_stderr=True,stdout=fh)
             try:
                 out=ssh_connection.run("sh /tmp/do.sh",combine_stderr=True)
-            except BaseException,e:
+            except BaseException as e:
                 sys.stdout=self.stdout.prevout
-                if self.stdout.lastlines.strip()<>"":                    
+                if self.stdout.lastlines.strip()!="":                    
                     msg="Could not execute sshscript:\n%s\nError:%s\n"%(script,self.stdout.lastlines)
                     self.action.raiseError(msg)
                     self.stdout.lastlines=""
-                print e
+                print(e)
                 raise RuntimeError("E:Could not execute sshscript, errors.")
             sys.stdout=self.stdout.prevout
                 

@@ -5,7 +5,7 @@ import linecache
 import inspect
 import JumpScale.baselib.redis
 import multiprocessing
-from Jumpscript import Jumpscript
+from .Jumpscript import Jumpscript
 
 class JumpscriptFactory:
 
@@ -31,7 +31,7 @@ class JumpscriptFactory:
 
     def execute(self,organization,actor,action,args):
         key="%s__%s"%(organization,actor)
-        if not self.jumpscripts.has_key(key):
+        if key not in self.jumpscripts:
             j.events.inputerror_critical("Cannot find jumpscript:'%s/%s'"%(organization,actor))
         js= self.jumpscripts[key]
         js.execute(action, **args)

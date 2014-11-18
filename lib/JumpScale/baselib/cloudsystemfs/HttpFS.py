@@ -1,6 +1,6 @@
 from JumpScale import j
-import urllib2
-import httplib
+import urllib.request, urllib.error, urllib.parse
+import http.client
 
 CHUNKSIZE=8192
 
@@ -54,8 +54,8 @@ class HttpFS(object):
         # construct url again
         connect_url = 'http://%s%s' % (self.server,self.path)
         try:
-            self.http_socket = urllib2.urlopen(connect_url)
-        except (urllib2.HTTPError, httplib.HTTPException), error:
+            self.http_socket = urllib.request.urlopen(connect_url)
+        except (urllib.error.HTTPError, http.client.HTTPException) as error:
             if suppressErrors:
                 return False
             raise error
@@ -68,7 +68,7 @@ class HttpFS(object):
         """
         try:
             self._connect(suppressErrors=False)
-        except urllib2.HTTPError, error:
+        except urllib.error.HTTPError as error:
             if error.code == 404:
                 return False
             else:

@@ -40,18 +40,18 @@ from JumpScale.core.baseclasses.ManagementApplication import CMDBLockMixin
 import time
 import re
 
-from Device import Device
-from Nic import Nic
-from Disk import Disk
-from Partition import Partition
-from PartitionRaid import PartitionRaid
-import ZFS
-import ZPool
-import ISCSIInitiator
-import ISCSITarget
-import ZPoolMirror
-import ZPoolDisk
-import DeviceHypervisor
+from .Device import Device
+from .Nic import Nic
+from .Disk import Disk
+from .Partition import Partition
+from .PartitionRaid import PartitionRaid
+from . import ZFS
+from . import ZPool
+from . import ISCSIInitiator
+from . import ISCSITarget
+from . import ZPoolMirror
+from . import ZPoolDisk
+from . import DeviceHypervisor
 
 
 class InventoryManager(ManagementConfiguration, CMDBLockMixin):
@@ -104,7 +104,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
         """
         If a scan is already done, just pretty prints the resources, otherwise print empty section headers and log an error
         """
-        print self.cmdb
+        print(self.cmdb)
 
     def getDisks(self):
         """
@@ -115,11 +115,11 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
         """
         disks = j.cloud.cmdtools.inventoryScan.getDisks()
         currentAvailableDisks = list()
-        for name, value in disks.iteritems():
+        for name, value in disks.items():
             size = int(float(value['size']) * 1024) if value['unit'] == 'GB' else int(float(value['size']))
             partitions = value['partitions']
             currentAvailableDisks.append(name)
-            if name in self.cmdb.disks.keys():
+            if name in list(self.cmdb.disks.keys()):
                 self.cmdb.disks[name].name = name
                 self.cmdb.disks[name].size = size
             else:
@@ -146,7 +146,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
                                                        part['spareDevices'], part['backendsize'])
                     disk.partitions.append(partition)
 
-        for disk in self.cmdb.disks.keys():
+        for disk in list(self.cmdb.disks.keys()):
             if disk not in currentAvailableDisks:
                 del self.cmdb.disks[disk]
         self.cmdb.dirtyProperties.add('disks')
@@ -164,7 +164,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
         # append added NICs to cmdb object
         for interface, mAC, nICType in nICs:
             currentAvailableNICs.append(interface)
-            if interface in self.cmdb.nics.keys():
+            if interface in list(self.cmdb.nics.keys()):
                 self.cmdb.nics[interface].name = interface
                 self.cmdb.nics[interface].macAddress = mAC
                 self.cmdb.nics[interface].nicType = nICType
@@ -175,7 +175,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
                 nIC.nicType = nICType
                 self.cmdb.nics[interface] = nIC
         # remove removed Nics from cmdb object
-        for nIC in self.cmdb.nics.keys():
+        for nIC in list(self.cmdb.nics.keys()):
             if nIC not in currentAvailableNICs:
                 del self.cmdb.nics[nIC]
         self.cmdb.dirtyProperties.add('nics')
@@ -215,7 +215,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
             j.logger.log(ex.message, 3)
             # do not interrupt the call flow, simply log the exception as it can be Operation Not Supported on this platform
         else:
-            for key in result.keys():
+            for key in list(result.keys()):
                 zfs = ZFS.ZFS()
                 data = result[key]
                 zfs.name = key
@@ -237,7 +237,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
         except RuntimeError as ex:
             j.logger.log(ex.message, 3)
         else:
-            for key in result.keys():
+            for key in list(result.keys()):
                 zPool = ZPool.ZPool()
                 data = result[key]
                 zPool.name = key
@@ -353,7 +353,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
         Retrieves interface address, subnetMask, and defaultRoute for each interface
         """
 
-        for interface in self.cmdb.nics.keys():
+        for interface in list(self.cmdb.nics.keys()):
             try:
                 data = j.cloud.cmdtools.inventoryScan.getIPAddress(interface)
             except RuntimeError as ex:

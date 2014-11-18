@@ -1,4 +1,4 @@
-from store import KeyValueStoreBase
+from .store import KeyValueStoreBase
 from JumpScale import j
 
 import pymongo
@@ -10,7 +10,7 @@ import ujson as json
 import time
 
 def chunks(l, n):
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i+n]
 
 class MongoDBKeyValueStore(KeyValueStoreBase):
@@ -36,7 +36,7 @@ class MongoDBKeyValueStore(KeyValueStoreBase):
         @param expire is in seconds when value will expire
         """
         if j.basetype.dictionary.check(value):
-            if value.has_key("guid"):
+            if "guid" in value:
                 guid=value.pop("guid")
                 value["_id"]=guid
             # value = json.dumps(value)
@@ -72,7 +72,7 @@ class MongoDBKeyValueStore(KeyValueStoreBase):
         return keys
 
     def listCategories(self):
-        return self.categories.keys()
+        return list(self.categories.keys())
 
     def _getCategoryKey(self, category, key):
         return '%s:%s' % (category, key)

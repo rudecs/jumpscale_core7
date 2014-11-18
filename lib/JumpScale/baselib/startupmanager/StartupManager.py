@@ -18,7 +18,7 @@ class ProcessDefEmpty:
         self.pids=[]
         self.parentpid=0
         self.procname=name
-        if name.find(":")<>-1:
+        if name.find(":")!=-1:
             domain,name=name.split(":")
         else:
             domain=""
@@ -91,13 +91,13 @@ class ProcessDef:
         self.env["JSPROCNAME"]=self.procname #set env variable so app can start using right name
 
         if j.application.sandbox:
-            if not self.env.has_key("LD_LIBRARY_PATH"):
+            if "LD_LIBRARY_PATH" not in self.env:
                 self.env["LD_LIBRARY_PATH"]="%s/bin"%j.dirs.baseDir
-            if not self.env.has_key("JSBASE"):
+            if "JSBASE" not in self.env:
                 self.env["JSBASE"]="%s"%j.dirs.baseDir
-            if not self.env.has_key("PYTHONPATH"):
+            if "PYTHONPATH" not in self.env:
                 self.env["PYTHONPATH"]="%s/lib:%s/python.zip:%s/libjs"%(j.dirs.baseDir,j.dirs.baseDir,j.dirs.baseDir)
-            if not self.env.has_key("PATH"):
+            if "PATH" not in self.env:
                 self.env["PATH"]="%s/tools:%s/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"%(j.dirs.baseDir,j.dirs.baseDir)
 
 
@@ -127,7 +127,7 @@ class ProcessDef:
 
         self.workingdir=self._replaceSysVars(hrd.get("process.workingdir"))
         ports=hrd.getList("process.ports")
-        ports = [port for port in ports if str(port).strip()<>""]
+        ports = [port for port in ports if str(port).strip()!=""]
         self.ports=list(set(ports))
 
         self.jpackage_domain=hrd.get("process.jpackage.domain")
@@ -188,7 +188,7 @@ class ProcessDef:
         return "g%s.n%s.%s"%(j.application.whoAmI.gid,j.application.whoAmI.nid,self.name)
 
     def log(self,msg):
-        print "%s: %s"%(self._nameLong,msg)
+        print("%s: %s"%(self._nameLong,msg))
 
     def registerToRedis(self):
         if j.application.redis==None and self.name=="redis_system":
@@ -221,10 +221,10 @@ class ProcessDef:
             self.log("no need to start, already started.")
             return
 
-        if self.jpackage_domain<>"":
+        if self.jpackage_domain!="":
             try:
                 jp=j.packages.find(self.jpackage_domain,self.jpackage_name)[0]
-            except Exception,e:
+            except Exception as e:
                 self.raiseError("COULD NOT FIND JPACKAGE")
 
         self.log("process dependency CHECK")
@@ -250,7 +250,7 @@ class ProcessDef:
 
             for i in range(1, self.numprocesses+1):
                 name="%s_%s"%(self.name,i)
-                for tmuxkey,tmuxname in j.system.platform.screen.getWindows(self.domain).iteritems():
+                for tmuxkey,tmuxname in j.system.platform.screen.getWindows(self.domain).items():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(self.domain,name)
                 tcmd = cmd.replace("$numprocess", str(i))
@@ -276,7 +276,7 @@ class ProcessDef:
 
             msg=""
 
-            if self.ports<>[]:
+            if self.ports!=[]:
                 ports=",".join(self.ports)
                 if self.portCheck(wait=False)==False:
                     msg="Could not start, could not connect to ports %s."%(ports)
@@ -286,13 +286,13 @@ class ProcessDef:
                 if len(pids) != self.numprocesses:
                     msg="Could not start, did not find enough running instances, needed %s, found %s"%(self.numprocesses,len(pids))
 
-            if msg=="" and pids<>[]:
+            if msg=="" and pids!=[]:
                 for pid in pids:
                     test=j.system.process.isPidAlive(pid)
                     if test==False:
                         msg="Could not start, pid:%s was not alive."%pid
             
-            if log<>"":                
+            if log!="":                
                 msg="%s\nlog:\n%s\n"%(msg,log)
 
             self.raiseError(msg)
@@ -316,7 +316,7 @@ class ProcessDef:
         if j.system.fs.exists(self.logfile):
             j.system.process.executeWithoutPipe("%s %s" % (command, self.logfile))
         else:
-            print "No logs found for %s" % self
+            print("No logs found for %s" % self)
 
     def getProcessObjects(self):
         pids=self.getPids(ifNoPidFail=False,wait=False)
@@ -342,10 +342,10 @@ class ProcessDef:
         pids=[]
         for line in out.splitlines():
             line=line.strip()
-            if line.strip()=="" or line.find("grep")<>-1:
+            if line.strip()=="" or line.find("grep")!=-1:
                 continue
             pid=line.split(" ")[0]
-            if pid.strip()<>"":
+            if pid.strip()!="":
                 pid=int(pid)
                 pids.append(pid)
         self.pids=pids
@@ -365,7 +365,7 @@ class ProcessDef:
         if self.isJSapp:
             if not j.system.net.tcpPortConnectionTest("localhost",9999):
                 return []
-            while len(pids) <> self.numprocesses and now<timeout:
+            while len(pids) != self.numprocesses and now<timeout:
 
                 pids = self._getPidsFromRedis()
                 if len(pids) == self.numprocesses or wait==False:
@@ -375,7 +375,7 @@ class ProcessDef:
                 now=time.time()
         else:
             #look at system str
-            while  len(pids) <> self.numprocesses and now<timeout:
+            while  len(pids) != self.numprocesses and now<timeout:
                 pids = self._getPidFromPS()
                 if len(pids) == self.numprocesses or wait==False:
                     self.pids=pids
@@ -390,7 +390,7 @@ class ProcessDef:
     def _portCheck(self):
         for port in self.ports:
             if port:
-                if isinstance(port, basestring) and not port.strip():
+                if isinstance(port, str) and not port.strip():
                     continue
                 port = int(port)
                 if not j.system.net.checkListenPort(port):
@@ -410,7 +410,7 @@ class ProcessDef:
 
     def isRunning(self,wait=False):
 
-        if self.ports<>[]:
+        if self.ports!=[]:
             res= self.portCheck(wait=wait)
             return res
 
@@ -428,7 +428,7 @@ class ProcessDef:
 
     def stop(self):
         if self.name=="redis_system":
-            print "will not shut down application redis (port 9999)"
+            print("will not shut down application redis (port 9999)")
             return
 
         if self.upstart:
@@ -441,9 +441,9 @@ class ProcessDef:
         pids=self.getPids(ifNoPidFail=False,wait=False)
 
         for pid in pids:
-            if pid<>0 and j.system.process.isPidAlive(pid):
+            if pid!=0 and j.system.process.isPidAlive(pid):
                 if self.stopcmd=="":
-                    print "kill:%s"%pid
+                    print("kill:%s"%pid)
                     j.system.process.kill(pid, signal.SIGTERM)
                 else:
                     j.system.process.execute(self.stopcmd)
@@ -463,7 +463,7 @@ class ProcessDef:
                 self.raiseError("port cannot be none")
             j.system.process.killProcessByPort(port)
 
-        if self.ports<>[]:
+        if self.ports!=[]:
             timeout=time.time()+self.timeout
             isrunning=False            
             while time.time()<timeout:
@@ -474,7 +474,7 @@ class ProcessDef:
             if isrunning:
                 self.raiseError("Cannot stop processes on ports:%s, tried portkill"%self.ports)
 
-        for i in xrange(1, self.numprocesses+1):
+        for i in range(1, self.numprocesses+1):
             name = "%s_%s" % (self.name, i)
             j.system.platform.screen.killWindow(self.domain, name)
 
@@ -601,7 +601,7 @@ class StartupManager:
         workingdir='',jpackage=None,domain="",ports=[],autostart=True, reload_signal=0,user="root", stopcmd=None, pid=0,\
          active=False,check=True,timeoutcheck=10,isJSapp=1,upstart=False,processfilterstr="",stats=False,log=True):
         envstr=""
-        for key in env.keys():
+        for key in list(env.keys()):
             envstr+="%s:%s,"%(key,env[key])
         envstr=envstr.rstrip(",")
 
@@ -755,7 +755,7 @@ exec $cmd >>/var/log/$name.log 2>&1
                 return False
             return True
 
-        processes = filter(processFilter, self.processdefs.values())
+        processes = list(filter(processFilter, list(self.processdefs.values())))
 
         if not processes and (domain or name ):
             raise ProcessNotFoundException("Could not find process with domain:%s and name:%s" % (domain, name))
@@ -764,7 +764,7 @@ exec $cmd >>/var/log/$name.log 2>&1
 
             names=[item.procname for item in processes]
 
-            for sname,spids in j.system.process.appsGet().iteritems():
+            for sname,spids in j.system.process.appsGet().items():
                 if sname not in names:
                     processes.append(ProcessDefEmpty(sname))
 
@@ -779,7 +779,7 @@ exec $cmd >>/var/log/$name.log 2>&1
 
     def getDomains(self):
         result=[]
-        for pd in self.processdefs.itervalues():
+        for pd in self.processdefs.values():
             if pd.domain not in result:
                 result.append(pd.domain)
         return result
@@ -790,7 +790,7 @@ exec $cmd >>/var/log/$name.log 2>&1
 
     def stopJPackage(self,jpackage):        
         for pd in self.getProcessDefs4JPackage(jpackage):
-            print "stop:%s"%pd
+            print("stop:%s"%pd)
             pd.stop()
 
     def existsJPackage(self,jpackage):
@@ -816,7 +816,7 @@ exec $cmd >>/var/log/$name.log 2>&1
     def startAll(self):
         l=self.getProcessDefs()
         for item in l:
-            print "will start: %s %s"%(item.priority,item.name)
+            print("will start: %s %s"%(item.priority,item.name))
         
         for pd in self.getProcessDefs():
             # pd.start()
@@ -824,13 +824,13 @@ exec $cmd >>/var/log/$name.log 2>&1
             
             try:
                 pd.start()
-            except Exception,e:                
+            except Exception as e:                
                 errors.append("could not start: %s."%pd)
                 j.errorconditionhandler.processPythonExceptionObject(e)
 
         if len(errors)>0:
-            print "COULD NOT START:"
-            print "\n".join(errors)
+            print("COULD NOT START:")
+            print("\n".join(errors))
 
     def restartAll(self):
         for pd in self.getProcessDefs():

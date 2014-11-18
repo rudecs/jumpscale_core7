@@ -2,7 +2,7 @@ import string
 #import sys
 #import inspect
 #import operator
-from Transaction import Transaction
+from .Transaction import Transaction
 from JumpScale import j
 
 class TransactionController(object):

@@ -25,11 +25,11 @@ if __name__ == '__main__':
 
         obj = client.get(key)
 
-        print obj
+        print(obj)
 
         return obj
 
-    print client.listNamespaces()
+    print(client.listNamespaces())
 
     def test1():
         user=j.core.osis.getClientForCategory(client,"system","user")
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         obj.id="jan"
         obj.description="test"
         guid,new,changed=user.set(obj)
-        print user.get(guid)
+        print(user.get(guid))
 
     test1()
 

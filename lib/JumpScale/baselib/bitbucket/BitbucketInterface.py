@@ -9,18 +9,18 @@ class Account():
         
     def getRepo(self,reponame=""):
         if reponame=="":
-            reponames= self.mercurialClients.keys()
+            reponames= list(self.mercurialClients.keys())
             reponame=j.console.askChoice(reponames,"Choose Repo",True)     
-        if self.mercurialClients.has_key(reponame):
+        if reponame in self.mercurialClients:
             return self.mercurialClients[reponame]
         else:
             raise RuntimeError("Could not find repo with name %s from account %s" % (reponame,self.name))
 
     def _repoSelect(self,reponames=[],allRepos=False):
         if allRepos:
-            reponames= self.mercurialClients.keys()
+            reponames= list(self.mercurialClients.keys())
         if reponames==[]:
-            reponamesAll= self.mercurialClients.keys()
+            reponamesAll= list(self.mercurialClients.keys())
             reponames=j.console.askChoiceMultiple(reponamesAll,"Choose Repos",True)     
         return reponames
 
@@ -88,7 +88,7 @@ class BitbucketInterface():
                 accountname=accounts[0]
             else:
                 accountname=j.console.askChoice(o.clients.bitbucket.config.list(),"Choose Bitbucket Account",True)
-        if not self.__dict__.has_key(accountname):
+        if accountname not in self.__dict__:
             return self._populate1account(accountname)
         else:
             return  self.__dict__[accountname]
@@ -109,7 +109,7 @@ class BitbucketInterface():
         return  self.__dict__[account]
         
     def init(self):
-        print "INIT BITBUCKET"
+        print("INIT BITBUCKET")
         if self._init==False:
             accounts=o.clients.bitbucket.config.list()
             for account in accounts:

@@ -42,15 +42,15 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
 
     packages=[]
 
-    if args.installed==None and installed<>None:
+    if args.installed==None and installed!=None:
         args.installed=installed
 
     if args.name==None:
         args.name=""
 
-    if args.name.strip()<>"":
+    if args.name.strip()!="":
         for pname in args.name.split(","):
-            if pname.strip()<>"":
+            if pname.strip()!="":
                 packages += j.packages.find(name=pname, domain=args.domain, version=args.version,installed=args.installed,instance=args.instance,expandInstances=expandInstances,interactive=False)
     else:
         packages += j.packages.find(name=None, domain=args.domain, version=args.version,installed=args.installed,instance=args.instance,expandInstances=expandInstances,interactive=True)
@@ -78,15 +78,15 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
 
     if len(packages) == 0:
         if args.installed==True:
-            print "Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s' which is installed." % (args.name, args.domain, args.version,args.instance)
+            print("Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s' which is installed." % (args.name, args.domain, args.version,args.instance))
         else:
-            print "Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s'" % (args.name, args.domain, args.version,args.instance)
+            print("Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s'" % (args.name, args.domain, args.version,args.instance))
         j.application.stop(1)
-    elif len(packages) > 1 and args.name.find("*")<>-1:
+    elif len(packages) > 1 and args.name.find("*")!=-1:
         pass #no need to ask interactive
     elif len(packages) > 1:
         if not j.application.interactive:
-            print "Found multiple packages %s" % (packages)
+            print("Found multiple packages %s" % (packages))
             j.application.stop(1)
         else:
             packages = j.console.askChoiceMultiple(packages, "Multiple packages found. Select:")

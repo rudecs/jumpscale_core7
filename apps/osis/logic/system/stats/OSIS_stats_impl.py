@@ -12,12 +12,12 @@ class mainclass(OSISStore):
     def set(self, key, value, waitIndex=False, session=None):
         stats = value
         series = list()
-        for key, stats in value.iteritems():
+        for key, stats in value.items():
             data = {'name': key, 'points': []}
             for stat in stats:
                 if 'columns' not in data:
-                    data['columns'] = stat.keys()
-                data['points'].append(stat.values())
+                    data['columns'] = list(stat.keys())
+                data['points'].append(list(stat.values()))
             series.append(data)
         self.dbclient.write_points(series)
 

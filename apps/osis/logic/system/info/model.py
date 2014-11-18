@@ -9,7 +9,7 @@ class Info(OsisBaseObject):
     """
 
     def __init__(self, ddict={},category="",content=""):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.gid=j.application.whoAmI.gid

@@ -1,5 +1,5 @@
 
-paths.base=/opt/jumpscale/
+paths.base=/opt/jumpscale7/
 paths.bin=/usr/local/bin
 paths.python_lib=/usr/local/lib/python2.7/dist-packages/
 paths.tmp=/tmp/jumpscale7

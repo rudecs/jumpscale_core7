@@ -40,10 +40,10 @@ class BlobStorServer():
         success=False
         while success==False:
             try:
-                print "connect to blobstormaster"
+                print("connect to blobstormaster")
                 checkblobstormaster()
                 success=True
-            except Exception,e:
+            except Exception as e:
                 masterip=j.application.config.get("grid.master.ip")
                 msg="Cannot connect to blobstormaster %s, will retry in 60 sec."%(masterip)
                 j.events.opserror(msg, category='blobstorworker.startup', e=e)
@@ -79,14 +79,14 @@ blobstor.disk.size=100
     def cmd2Queue(self,qid=0,cmd="",args={},key="",data=""):
         rkeyQ="blobserver:cmdqueue:%s"%qid
         jobguid=j.base.idgenerator.generateGUID()     
-        if key<>"":
+        if key!="":
             args["key"]=key
         job=[int(time.time()),jobguid,cmd,args]        
         if data=="":
             self.blobstor.redis.redis.execute_pipeline(\
                 ("RPUSH",rkeyQ,jobguid),\
                 ("HSET","blobserver:cmds",jobguid,ujson.dumps(job)))
-        elif data<>"":
+        elif data!="":
             self.blobstor.redis.redis.execute_pipeline(\
                 ("RPUSH",rkeyQ,jobguid),\
                 ("HSET","blobserver:cmds",jobguid,ujson.dumps(job)),\
@@ -106,7 +106,7 @@ blobstor.disk.size=100
                 try:
                     cmd=splitted[2]
                     key=splitted[4]
-                except Exception,e:
+                except Exception as e:
                     raise RuntimeError("could not parse incoming cmds for redis.")
 
                 if cmd not in ("SET","GET","HSET","INCREMENT","RPUSH","LPUSH"):
@@ -139,7 +139,7 @@ blobstor.disk.size=100
                 try:
                     cmd=splitted[2]
                     key=splitted[4]
-                except Exception,e:
+                except Exception as e:
                     raise RuntimeError("could not parse incoming cmds for redis.")
 
                 if cmd not in ("SET","GET","HSET","INCREMENT","RPUSH","LPUSH"):

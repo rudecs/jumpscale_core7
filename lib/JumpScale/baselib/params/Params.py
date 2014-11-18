@@ -31,7 +31,7 @@ class ParamsFactory():
 
 class Params():
     def __init__(self, dictObject=None):
-        if dictObject<>None:
+        if dictObject!=None:
             self.__dict__ = dictObject      
 
     def merge(self, otherParams):
@@ -70,22 +70,22 @@ class Params():
         """
         params=self
         params2=params.getDict()
-        if params.has_key("paramsExtra") and params.paramsExtra<>None:
+        if "paramsExtra" in params and params.paramsExtra!=None:
             params2.update(params.paramsExtra)
-        if params.has_key("requestContext") and params.requestContext<>None:
+        if "requestContext" in params and params.requestContext!=None:
             params2.update(params.requestContext.params)
-        if params.has_key("tags") and params2["tags"]<>"":
+        if "tags" in params and params2["tags"]!="":
             params2.update(params2["tags"].getDict())
         for item in ["requestContext","tags","paramsExtra"]:
-            if params.has_key(item):
+            if item in params:
                 params2.pop(item)
 
         if len(kwargs)==0:
             return params2
 
         result={}
-        for key in kwargs.keys():
-            if params2.has_key(key):
+        for key in list(kwargs.keys()):
+            if key in params2:
                 result[key]=params2[key]
         return result
 
@@ -100,25 +100,25 @@ class Params():
         def getArgs(d):
             r={}
             reserved=["name","doc","macro","macrostr","cmdstr","page","tags"]
-            for key in d.keys():
+            for key in list(d.keys()):
                 if key in reserved:
                     r["arg_%s"%key]=d[key]
                 else:
                     r[key]=d[key]
             return r
 
-        if self.has_key("paramsExtra") and self.paramsExtra<>None:
+        if "paramsExtra" in self and self.paramsExtra!=None:
             self.setDict(getArgs(self.paramsExtra))
             # self.pop("paramsExtra")
-        if self.has_key("requestContext") and self.requestContext<>None:
+        if "requestContext" in self and self.requestContext!=None:
             self.setDict(getArgs(self.requestContext.params))
             # self.pop("requestContext")
-        if self.has_key("tags") and self.tags<>"":
+        if "tags" in self and self.tags!="":
             self.setDict(getArgs(self.tags.getDict()))
             # self.pop("tags")
 
-        for argname in kwargs.keys():
-            if not self.__dict__.has_key(argname):
+        for argname in list(kwargs.keys()):
+            if argname not in self.__dict__:
                 self.__dict__[argname]=kwargs[argname]
 
         return self
@@ -136,11 +136,11 @@ class Params():
         return tag
 
     def pop(self,key):
-        if self.has_key(key):
+        if key in self:
             self.__dict__.pop(key)
 
     def has_key(self, key):
-        return self.__dict__.has_key(key)
+        return key in self.__dict__
 
     def getDict(self):
         return self.__dict__
@@ -172,7 +172,7 @@ class Params():
 
     def __repr__(self):
         parts = ["PARAMS:"]
-        for key, value in self.__dict__.iteritems():
+        for key, value in self.__dict__.items():
             parts.append(" %s:%s" % (key, value))
         return "\n".join(parts)
 

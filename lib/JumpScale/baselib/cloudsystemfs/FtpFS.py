@@ -63,7 +63,7 @@ class FtpFS(object):
             for directory in path:
                 try:
                     self.ftp.cwd(directory)
-                except Exception,e:
+                except Exception as e:
                     self.ftp.mkd(directory)
                     self.ftp.cwd(directory)
 
@@ -80,7 +80,7 @@ class FtpFS(object):
 
             if self.is_dir:
                 return True
-        except error_perm, error:
+        except error_perm as error:
             if error.message.startswith('550'):
                 return False
             else:
@@ -90,7 +90,7 @@ class FtpFS(object):
             try:
                 self.ftp.sendcmd("MDTM %(fileName)s" % {'fileName': self.filename})
                 return True
-            except error_perm, error:
+            except error_perm as error:
                 if error.message.startswith('550'):
                     return False
                 else:
@@ -183,7 +183,7 @@ class FtpFS(object):
         self.ftp.storbinary('STOR %s' % file, open(uploadPath, 'rb'), 8192)
         size=self.ftp.size(file)
         stat=j.system.fs.statPath(uploadPath)
-        if size<>stat.st_size:
+        if size!=stat.st_size:
             self.ftp.delete(file)
             raise RuntimeError("Could not upload:%s %s, size different, have now deleted"%(file,uploadPath))
 

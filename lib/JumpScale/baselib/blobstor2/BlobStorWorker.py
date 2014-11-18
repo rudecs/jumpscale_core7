@@ -123,7 +123,7 @@ class BlobStorWorker:
     #         path="%s/%s.mtree"%(mtreepathProd,nr)
 
     def existsBatch(self,namespace,keys,repoId="",session=None):
-        if not self.mtrees.has_key(namespace):
+        if namespace not in self.mtrees:
             self.populateExistsCache(namespace)
 
         notfound=[]
@@ -131,7 +131,7 @@ class BlobStorWorker:
         for key in keys:
             exists=False
             for tree in self.mtrees[namespace]:
-                if tree.get(key)<>None:
+                if tree.get(key)!=None:
                     exists=True
                     continue
             if exists==False:
@@ -161,7 +161,7 @@ class BlobStorWorker:
             md["format"] = serialization
         else:
             md = ujson.loads(j.system.fs.fileGetContents(mdpath))
-        if not md.has_key("repos"):
+        if "repos" not in md:
             md["repos"] = {}
         md["repos"][str(repoId)] = True
         mddata = ujson.dumps(md)
@@ -193,7 +193,7 @@ class BlobStorWorker:
         return data2
 
     def getMD(self,namespace,key,session=None):
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
 
         storpath,mdpath=self._getPaths(namespace,key)
@@ -203,7 +203,7 @@ class BlobStorWorker:
     def delete(self,namespace,key,repoId="",force=False,session=None):
         if force=='':
             force=False #@todo is workaround default values dont work as properly, when not filled in always ''
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
 
         if force:
@@ -212,7 +212,7 @@ class BlobStorWorker:
             j.system.fs.remove(mdpath)
             return
 
-        if key<>"" and not self.exists(namespace,key):
+        if key!="" and not self.exists(namespace,key):
             return
 
         storpath,mdpath=self._getPaths(namespace,key)
@@ -220,9 +220,9 @@ class BlobStorWorker:
         if not j.system.fs.exists(path=mdpath):
             raise RuntimeError("did not find metadata")
         md=ujson.loads(j.system.fs.fileGetContents(mdpath))
-        if not md.has_key("repos"):
+        if "repos" not in md:
             raise RuntimeError("error in metadata on path:%s, needs to have repos as key."%mdpath)
-        if md["repos"].has_key(str(repoId)):
+        if str(repoId) in md["repos"]:
             md["repos"].pop(str(repoId))
         if md["repos"]=={}:
             j.system.fs.remove(storpath)
@@ -237,11 +237,11 @@ class BlobStorWorker:
             return j.system.fs.exists(path=storpath)
         if j.system.fs.exists(path=storpath):
             md=ujson.loads(j.system.fs.fileGetContents(mdpath))
-            return md["repos"].has_key(str(repoId))
+            return str(repoId) in md["repos"]
         return False
 
     def deleteNamespace(self, namespace, session=None):
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
         storpath=j.system.fs.joinPaths(self.STORpath,namespace)
         j.system.fs.removeDirTree(storpath)

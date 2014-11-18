@@ -23,7 +23,7 @@ def main(j, args, params, tags, tasklet):
 
         # Redirect to edit the new page
         page.addMessage("<script>window.open('/system/edit?space={0}&page={1}', '_self', '');</script>".format(page_space, page_name))
-    elif page_name==None and page_space<>None:
+    elif page_name==None and page_space!=None:
 
         page.addMessage('''
             <form class="form-horizontal" method="get" action="/system/create">

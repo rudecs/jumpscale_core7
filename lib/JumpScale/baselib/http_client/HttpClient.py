@@ -1,8 +1,8 @@
-import urllib2, urllib
+import urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error
 import base64
 import mimetypes
 import mimetools
-from urllib import urlencode
+from urllib.parse import urlencode
 try:
     import ujson as json
 except:
@@ -26,14 +26,14 @@ class Connection(object):
         pass
         
     def simpleAuth(self, url, username, password):
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
         req.add_header("Authorization", "Basic %s" % base64string)
 
         try:
-            handle = urllib2.urlopen(req)
+            handle = urllib.request.urlopen(req)
             return handle 
-        except IOError, e:
+        except IOError as e:
             j.logger.log(e)
             
             
@@ -76,9 +76,9 @@ class Connection(object):
         @return: True
         '''
         
-        _urlopener = urllib.FancyURLopener()
+        _urlopener = urllib.request.FancyURLopener()
         if customHeaders:
-            for k, v in customHeaders.items():
+            for k, v in list(customHeaders.items()):
                 _urlopener.addheader(k, v)
         _urlopener.retrieve(fileUrl, downloadPath, None, None)
         return True
@@ -86,28 +86,28 @@ class Connection(object):
     def _updateUrlParams(self, url, **kwargs):
         _scheme, _netloc, _url, _params, _query, _fragment = urllib2.urlparse.urlparse(url)
         params = urllib2.urlparse.parse_qs(_query)
-        for k, v in params.items():#parse_qs puts the values in a list which corrupts the url later on
+        for k, v in list(params.items()):#parse_qs puts the values in a list which corrupts the url later on
             params[k] = v.pop() if isinstance(v, list) else v
             
-        for k, v in kwargs.items():
+        for k, v in list(kwargs.items()):
             if v is not None: params[k] = v
-        _query = urllib.urlencode(params)
+        _query = urllib.parse.urlencode(params)
         return urllib2.urlparse.urlunparse((_scheme, _netloc, _url, _params, _query, _fragment))
     
     
     def _http_request(self, url, data=None, headers=None, method=None, **kwargs):
         url = self._updateUrlParams(url, **kwargs)
-        request = urllib2.Request(url, data=data)
+        request = urllib.request.Request(url, data=data)
         if headers:
-            for key, value in headers.iteritems():
+            for key, value in headers.items():
                 request.add_header(key, value)
         if not method:
             method = 'POST' if data else 'GET'
         request.get_method = lambda: method
         try:
-            resp = urllib2.urlopen(request)
-        except Exception,e:
-            print e
+            resp = urllib.request.urlopen(request)
+        except Exception as e:
+            print(e)
             raise Exception('Could not open http connection to url %s\nError:%s, %s'% (url,e, e.read()))
         
         #if resp.code in STATUS_AUTH_REQ: raise AuthorizationError('Not logged in or token expired')

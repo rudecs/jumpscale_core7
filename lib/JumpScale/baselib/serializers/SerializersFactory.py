@@ -26,8 +26,8 @@ class SerializersFactory():
         this method returns 
         """
         k="%s_%s"%(serializationstr,key)
-        if not self._cache.has_key(k):
-            if len(self._cache.keys())>100:
+        if k not in self._cache:
+            if len(list(self._cache.keys()))>100:
                 self._cache={}
             self._cache[k]= Serializer(serializationstr,key)
         return self._cache[k]
@@ -52,7 +52,7 @@ class SerializersFactory():
             r=bin (means is not object (r=raw))
             l=log
         """
-        if not self.types.has_key(type):
+        if type not in self.types:
             if type=="m":
                 from .SerializerMSGPack import SerializerMSGPack
                 j.db.serializers.msgpack = SerializerMSGPack()

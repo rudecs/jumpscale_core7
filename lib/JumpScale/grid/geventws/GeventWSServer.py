@@ -37,7 +37,7 @@ class GeventWSServer():
         self.schedule("timer", self._timer)
         self.schedule("timer2", self._timer2)
 
-        if obj<>None:
+        if obj!=None:
             obj.now=self.now
             obj.fiveMinuteId=self.fiveMinuteId
             obj.hourId=self.hourId
@@ -52,7 +52,7 @@ class GeventWSServer():
 
         while True:
             self.now = time.time()
-            print "timer"
+            print("timer")
             gevent.sleep(1)
 
     def _timer2(self):
@@ -65,7 +65,7 @@ class GeventWSServer():
             self.fiveMinuteId=j.base.time.get5MinuteId(self.now )
             self.hourId=j.base.time.getHourId(self.now )
             self.dayId=j.base.time.getDayId(self.now )
-            print "timer2"
+            print("timer2")
             gevent.sleep(200)            
 
     def schedule(self, name, ffunction, *args, **kwargs):
@@ -106,7 +106,7 @@ class GeventWSServer():
     #     ctx.params = self._getParamsFromEnv(environ, ctx)
 
     def start(self):
-        print "started on %s" % self.port
+        print("started on %s" % self.port)
         self.server.serve_forever()
 
     def addCMDsInterface(self, MyCommands, category="",proxy=False):

@@ -2,9 +2,10 @@
 import re
 import sys
 from JumpScale import j
-from JumpScale.core.pmtypes import IPv4Address, IPv4Range
+# from JumpScale.core.pmtypes import IPv4Address, IPv4Range
 import textwrap
 import string
+import collections
 
 IPREGEX = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
@@ -72,7 +73,7 @@ class Console:
         #else:
         #    maxLengthStatusType=0
             
-        if prefix<>"":
+        if prefix!="":
             prefix="%s: "%(prefix)
 
         if withStar:
@@ -114,16 +115,16 @@ class Console:
 
         '''
         msg=str(msg)
-        if lf and msg<>"" and msg[-1]<>"\n":
+        if lf and msg!="" and msg[-1]!="\n":
             msg+="\n"
         msg=self._cleanline(msg)
         #if j.transaction.hasRunningTransactions() and withStar==False:
         #    indent=self.indent+1
         msg=self.formatMessage(msg,indent=indent,withStar=withStar,prefix=prefix).rstrip(" ")
-        if sys.__dict__.has_key("_stdout_ori"):
+        if "_stdout_ori" in sys.__dict__:
             sys._stdout_ori.write(msg)
         else:
-            print msg,
+            print(msg)
         j.logger.inlog=False
         if log:
             j.logger.log(msg,1)
@@ -165,14 +166,14 @@ class Console:
             self.echoWithPrefix(message,prefix,withStar=True)
         
     def echoDict(self,dictionary,withStar=False,indent=None):
-        for key in dictionary.keys():
+        for key in list(dictionary.keys()):
             try:
                 self.echoWithPrefix(str(dictionary[key]),key,withStar,indent)
             except:
                 j.events.inputerror_critical("Could not convert item of dictionary %s to string" % key,"console.echodict")
 
     def transformDictToMessage(self,dictionary,withStar=False,indent=None):
-        for key in dictionary.keys():
+        for key in list(dictionary.keys()):
             try:
                 self.formatMessage(str(dictionary[key]),key,withStar,indent)
             except:
@@ -190,9 +191,9 @@ class Console:
         @returns: Response provided by the user
         @rtype: string
         """
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask a string in a non interactive mode.","console.askstring")
-        if validate and not callable(validate):
+        if validate and not isinstance(validate, collections.Callable):
             raise TypeError('The validate argument should be a callable')
         response = ""
         if not defaultparam == "" and defaultparam:
@@ -200,7 +201,7 @@ class Console:
         question += ": "
         retryCount = retry
         while retryCount != 0:
-            response = raw_input(question).rstrip()
+            response = input(question).rstrip()
             if response == "" and not defaultparam == "" and defaultparam:
                 return defaultparam
             if (not regex or re.match(regex,response)) and (not validate or validate(response)):
@@ -223,9 +224,9 @@ class Console:
         @returns: Password provided by the user
         @rtype: string
         """
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask a password in a non interactive mode.","console.askpasswd.noninteractive")
-        if validate and not callable(validate):
+        if validate and not isinstance(validate, collections.Callable):
             raise TypeError('The validate argument should be a callable')
         response = ""
         import getpass
@@ -267,9 +268,9 @@ class Console:
 
         @return: integer representing the response on the question
         """
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask an integer in a non interactive mode.")
-        if validate and not callable(validate):
+        if validate and not isinstance(validate, collections.Callable):
             raise TypeError('The validate argument should be a callable')
         if not minValue == None and not maxValue == None:
             question += " (%d-%d)" % (minValue, maxValue)
@@ -286,7 +287,7 @@ class Console:
         retryCount = retry
 
         while retryCount != 0:
-            response = raw_input(question).rstrip(chr(13))
+            response = input(question).rstrip(chr(13))
             if response == "" and not defaultValue == None:
                 return defaultValue
             if (re.match("^-?[0-9]+$",response.strip())) and (not validate or validate(response)):
@@ -308,11 +309,11 @@ class Console:
         @return: Positive or negative answer
         @rtype: bool
         '''
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask a yes/no question in a non interactive mode.","console.askyesno.notinteractive")
         
         while True:
-            result = raw_input(str(message) + " (y/n):").rstrip(chr(13))
+            result = input(str(message) + " (y/n):").rstrip(chr(13))
             if result.lower() == 'y' or result.lower() == 'yes':
                 return True
             if result.lower() == 'n' or result.lower() == 'no':
@@ -338,7 +339,7 @@ class Console:
         def clean(l):
             try:
                 return [int(i.strip()) for i in l if i.strip() != ""]
-            except ValueError, ex:
+            except ValueError as ex:
                 return list()
 
         def all_between(l, min, max):
@@ -353,7 +354,7 @@ class Console:
             return len(l) == 0 or (not all_between(l, min, max))
 
         s = self.askString(question)
-        if s.find("*")<>-1:
+        if s.find("*")!=-1:
             return ["*"]
         s=s.split(",")
 
@@ -385,8 +386,8 @@ class Console:
         if len(choicearray)>maxchoice and j.system.platformtype.isLinux():
             descr2 = "%s\nMake a selection please, start typing, we will try to do auto completion.\n     ? prints the list." % descr
             self.echo(descr2)
-            print
-            print "        ",
+            print()
+            print("        ")
             wildcard=True
             chars=""
             params=[wildcard,chars]
@@ -400,7 +401,7 @@ class Console:
                 chars="%s%s" %(chars,char)
                 result=[]
                 if isinstance(choicearray, dict):
-                    choicearray3=choicearray.values()
+                    choicearray3=list(choicearray.values())
                 else:
                     choicearray3=choicearray
 
@@ -410,7 +411,7 @@ class Console:
                     # choicearray element.
                     choice=str(rawChoice)
                     choice=choice.lower()
-                    if wildcard and choice.find(chars.lower())<>-1:
+                    if wildcard and choice.find(chars.lower())!=-1:
                         result.append(rawChoice)
                         
                     #print "%s %s %s %s" % (wildcard,choice,chars,choice.find(chars))
@@ -441,7 +442,7 @@ class Console:
                     else:
                         self.echo("\nNo results start with '%s', start over please" %
                                 chars)
-                    print "        ",
+                    print("        ")
                     wildcard=True
                     chars=""
                     params=[wildcard,chars]
@@ -469,7 +470,7 @@ class Console:
         if len(choicearray) == 1:
             self.echo("Found exactly one choice: %s"%(choicearray[0]))
             return choicearray[0]
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask a choice in an list of items in a non interactive mode.","console.askchoice.noninteractive")
         descr = descr or "\nMake a selection please: "
 
@@ -478,7 +479,7 @@ class Console:
 
         self.echo(descr)
         if isinstance(choicearray, dict):
-            keys=choicearray.keys()
+            keys=list(choicearray.keys())
             keys.sort()
             valuearray=[]
             choicearray2=[]
@@ -501,7 +502,7 @@ class Console:
         return valuearray[result-1]
 
     def askChoiceMultiple(self, choicearray, descr=None, sort=True):
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask a choice in an list of items in a non interactive mode.","console.askChoiceMultiple.notinteractive")
         if not choicearray:
             return []
@@ -544,57 +545,13 @@ class Console:
         self.echo("%s:" % question)
         self.echo("(Enter answer over multiple lines, end by typing '%s' (without the quotes) on an empty line)" % escapeString)
         lines = []
-        user_input = raw_input()
+        user_input = input()
         while user_input != escapeString:
             lines.append(user_input)
-            user_input = raw_input()
+            user_input = input()
         lines.append("") # Forces end with newline
         return '\n'.join(lines)
-    
-    def askIpaddressInRange(self, question, startip=None, endip=None, network=None, netmask=None, retry=-1):
-        """
-        Ask the user to enter a valid ipaddress
-        
-        Provide either startip and endip or network and netmask.
-        
-        @param question: The question that should be asked to the user
-        @type question: string
-        @param startip: Start ip of the available ip range to enter the ipaddress in
-        @type startip: string
-        @param endip: End ip of the available ip range to enter the ipaddress in
-        @type endip: string
-        @param network: Base IP address when using netmask-based range definition
-        @type network: string
-        @param netmask: Netmask to use in combination with C{network}
-        @type netmask: string
-        @return: Ip address
-        @rtype: string
 
-        """
-        def _askIpaddress(question, startip=None, endip=None, network=None, netmask=None):
-            if startip and endip:
-                return self.askString('%s(Range %s - %s)'%(question, startip, endip), regex=IPREGEX)
-            if network and netmask:
-                iprange = IPv4Range(netIp=network, netMask=netmask)
-                return self.askString('%s(Range %s - %s)'%(question, str(iprange.fromIp), str(iprange.toIp)), regex=IPREGEX)
-
-        if (startip or endip) and (network or netmask):
-            raise ValueError("Provide either startip and endip or networkip and netmask")
-        if (startip or endip) and not (startip and endip):
-            raise ValueError("Provide either startip and endip or networkip and netmask")
-        if (network or netmask) and not (network and netmask):
-            raise ValueError("Provide either startip and endip or network and netmask")
-        if (network and netmask) and (IPv4Address(int(IPv4Address(network)) & int(IPv4Address(netmask))) != network):
-            raise ValueError("Provided network and netmask don't match")
-
-        retryCount = retry
-        while retryCount != 0:
-            ipaddress = _askIpaddress(question, startip, endip, network, netmask)
-            iprange = IPv4Range(fromIp=startip, toIp=endip, netIp=network, netMask=netmask)
-            if ipaddress in IPv4Range(fromIp=startip, toIp=endip, netIp=network, netMask=netmask):
-                return ipaddress
-            self.echo( "The provided ipaddress not in range, please try again")
-            retryCount = retryCount - 1
             
     def showOutput(self):
         pass
@@ -607,7 +564,7 @@ class Console:
         out=""
         for line in choices:
             out+="%s\n"%line
-        print out
+        print(out)
         return out
 
     def _array2list(self,array,header=True):
@@ -620,7 +577,7 @@ class Console:
         for row in array:
             for x in range(len(row)):
                 row[x]=str(row[x])
-                if not length.has_key(x):
+                if x not in length:
                     length[x]=0
                 if length[x]<len(row[x]):
                     length[x]=len(row[x])
@@ -630,7 +587,7 @@ class Console:
             line=""
             for x in range(len(row)):
                 line+="| %s |"%pad(row[x],length[x])
-            if line.strip()<>"":
+            if line.strip()!="":
                 line=line.replace("||","|")
                 choices.append(line)
         choices.sort()

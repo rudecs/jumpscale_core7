@@ -22,7 +22,7 @@ def isValidInifileKeyName(key):
 def isValidInifileValue(value):
     # It is illegal to have semicolon in inifile value
     # TODO: more checks
-    return type(value) not in types.StringTypes or ';' not in value
+    return type(value) not in str or ';' not in value
 
 class ConfigError(Exception):
     pass
@@ -205,7 +205,7 @@ class ConfigManagementItem(object):
         errors = []
         if not isValidInifileSectionName(self.itemname):
             errors.append("Invalid item name [%s]\n" % self.itemname)
-        for k, v in self.params.iteritems():
+        for k, v in self.params.items():
             if not isValidInifileKeyName(k):
                 errors.append("Invalid key name item [%s] / key [%s]\n" % (self.itemname, k))
             if not isValidInifileValue(v):
@@ -215,7 +215,7 @@ class ConfigManagementItem(object):
         file = j.config.getInifile(self.configtype)
         if not file.checkSection(self.itemname):
             file.addSection(self.itemname)
-        for k, v in self.params.iteritems():
+        for k, v in self.params.items():
             file.setParam(self.itemname, k, v)
         file.write()
 
@@ -227,7 +227,7 @@ class ConfigManagementItem(object):
 
     def show(self):
         lines = [self.itemname]
-        for k, v in self.params.iteritems():
+        for k, v in self.params.items():
             lines.append("  - " + k.ljust(12) + " = " + str(v))
         j.gui.dialog.message("\n%s\n" % "\n".join(lines))
 
@@ -272,7 +272,7 @@ class ConfigManagementItem(object):
     
     def dialogAskChoice(self, name, message, choices, default=None):           # This is a special case: we have an additional parameter "choices"
         for choice in choices:
-            if not type(choice) in types.StringTypes:
+            if not type(choice) in str:
                 raise ValueError("All choices should be strings")
         
         self.params[name] =j.gui.dialog.askChoice(message, choices, default)
@@ -280,7 +280,7 @@ class ConfigManagementItem(object):
     
     def dialogAskChoiceMultiple(self, name, message, choices, default=None):
         for choice in choices:
-            if not type(choice) in types.StringTypes:
+            if not type(choice) in str:
                 raise ValueError("All choices should be strings")
         def partFunc(message, default):
             return j.gui.dialog.askChoiceMultiple(message, choices, default)
@@ -356,7 +356,7 @@ def generateGroupConfigManagementMethods(**kwargs):
 
     def _sortConfigList(self, config):
         if not hasattr(self, '_SORT_PARAM') or not hasattr(self, '_SORT_METHOD'):
-            return config.keys()
+            return list(config.keys())
 
         def _sort(a, b):
             itemA = config[a][self._SORT_PARAM]
@@ -368,7 +368,7 @@ def generateGroupConfigManagementMethods(**kwargs):
                 itemB = int(itemB)
             return cmp(itemA, itemB)
 
-        configKeys = config.keys()
+        configKeys = list(config.keys())
 
         reverse = (self._SORT_METHOD == self._ITEMCLASS.SortMethod.INT_DESCENDING or \
                    self._SORT_METHOD == self._ITEMCLASS.SortMethod.STRING_DESCENDING)
@@ -471,7 +471,7 @@ def generateGroupConfigManagementMethods(**kwargs):
             return   # Nothing changed.
         else:
             item = self._ITEMCLASS(self._CONFIGTYPE, itemname, load=True)
-            for (key, value) in newparams.iteritems():
+            for (key, value) in newparams.items():
                 item.params[key] = value
             item.validate()
             item.save()
@@ -498,7 +498,7 @@ class GroupConfigManagement(object):
                 return type.__new__(cls, name, bases, attrs)
 
             docstringInformation = {"description" : attrs["_DESCRIPTION"] }
-            if attrs.has_key( "_KEYS"):
+            if "_KEYS" in attrs:
                 docstringInformation['keys'] = attrs["_KEYS"]
             else:
                 docstringInformation['keys'] = ""
@@ -605,7 +605,7 @@ def generateSingleConfigManagementMethods(**kwargs):
         else:
             # Existing [main] section which we potentially modify
             item = self._ITEMCLASS(self._CONFIGTYPE, SINGLE_ITEM_SECTION_NAME, load=True)
-            for (key, value) in newparams.iteritems():
+            for (key, value) in newparams.items():
                 item.params[key] = value
             item.validate()
 

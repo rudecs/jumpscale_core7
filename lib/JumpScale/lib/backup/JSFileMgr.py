@@ -10,11 +10,11 @@ class Item():
         self.size=0
         self.mtime=0
 
-        if data<>"":
+        if data!="":
             for line in data.split("\n"):
                 if line.strip()=="" or line[0]=="#":
                     continue
-                if line.find("####")<>-1:
+                if line.find("####")!=-1:
                     state="text"
                     continue
                 if state=="start":
@@ -25,8 +25,8 @@ class Item():
 
     def __repr__(self):
         out=""
-        for key,value in self.__dict__.iteritems():
-            if key<>"text":
+        for key,value in self.__dict__.items():
+            if key!="text":
                 out+="%s:%s\n"%(key,value)
         out+="####\n"
         out+=self.text
@@ -103,7 +103,7 @@ class JSFileMgr():
 
         try:
             stat=os.lstat(path)
-        except Exception,e:
+        except Exception as e:
             if not j.system.fs.exists(path):
                 #can be link which does not exist
                 #or can be file which is deleted in mean time
@@ -133,30 +133,30 @@ class JSFileMgr():
 
         if ttype=="F":          
             sizeFromFS=int(stat.st_size)
-            if self.fullcheck or item.mtime<>str(int(stat.st_mtime)) or item.size<>str(sizeFromFS):
-                if sizeFromFS<>0:
+            if self.fullcheck or item.mtime!=str(int(stat.st_mtime)) or item.size!=str(sizeFromFS):
+                if sizeFromFS!=0:
                     newMD5=j.tools.hash.md5(path)
-                    if item.hash<>newMD5:                        
+                    if item.hash!=newMD5:                        
                         change=True
                         item.hash=newMD5
                 mdchange=True
         elif ttype=="L":
-            if not item.__dict__.has_key("dest"):
+            if "dest" not in item.__dict__:
                 mdchange=True          
-            elif linkdest<>item.dest:
+            elif linkdest!=item.dest:
                 mdchange=True
 
         if mdchange==False:
             #check metadata changed based on mode, uid, gid & mtime
             if ttype=="F":
-                if int(item.size)<>int(stat.st_size):
+                if int(item.size)!=int(stat.st_size):
                     mdchange==True
-            if int(item.mtime)<>int(stat.st_mtime) or int(item.mode)<>int(stat.st_mode) or\
-                    int(item.uid)<>int(stat.st_uid) or int(item.gid)<>int(stat.st_gid):
+            if int(item.mtime)!=int(stat.st_mtime) or int(item.mode)!=int(stat.st_mode) or\
+                    int(item.uid)!=int(stat.st_uid) or int(item.gid)!=int(stat.st_gid):
                 mdchange=True                
 
         if mdchange:
-            print "MD:%s CHANGE"%path
+            print("MD:%s CHANGE"%path)
 
             # print "MDCHANGE"
             item.mode=int(stat.st_mode)
@@ -222,7 +222,7 @@ class JSFileMgr():
 
             self.restore1file(item, destfull,link=link,sync=False)
 
-        print "done downloading files, make sure we have the last batch."
+        print("done downloading files, make sure we have the last batch.")
         self.blobstor.downloadBatch() #this will make sure we get last batch
 
         #LINKS
@@ -260,7 +260,7 @@ class JSFileMgr():
         """
         """
 
-        print "restore file: %s" % (dest)
+        print("restore file: %s" % (dest))
 
         if j.system.fs.getBaseName(src).find("__dev")==0:
             #restore device files
@@ -284,7 +284,7 @@ class JSFileMgr():
                ,sync=sync,size=itemObj.size)      
 
     def restore1dir(self,src,dest):
-        print "restore dir: %s %s" % (src, dest)
+        print("restore dir: %s %s" % (src, dest))
 
         itemObj=self.getMDObjectFromFs(src)
         j.system.fs.createDir(dest)
@@ -299,11 +299,11 @@ class JSFileMgr():
 
         key2paths={}            
         for src,md5 in batch:
-            if md5<>"":
+            if md5!="":
                 key2paths[md5]=(src,md5)
 
-        print "batch nr:%s check"%batchnr
-        exists=self.blobstor.existsBatch(keys=key2paths.keys()) 
+        print("batch nr:%s check"%batchnr)
+        exists=self.blobstor.existsBatch(keys=list(key2paths.keys())) 
 
         nr=batchnr*1000 #for print purposes, so we see which file is uploading
 
@@ -315,7 +315,7 @@ class JSFileMgr():
                 self.blobstor.uploadFile(src,key=md5,repoid=self.repoid)
 
         self.blobstor.sync() #to make sure all is send because batching is being used
-        print "uploaded batch:%s %s/%s"%(batchnr,nr,total)
+        print("uploaded batch:%s %s/%s"%(batchnr,nr,total))
 
     def backup(self,path,destination="", pathRegexIncludes={},pathRegexExcludes={"F":"*\\.pyc"},childrenRegexExcludes=[".*/dev/.*",".*/proc/.*"]):
 
@@ -327,7 +327,7 @@ class JSFileMgr():
         self._createExistsList(destination)
 
         #DEAL WITH DEV dirs
-        print "SCAN for dev dirs"
+        print("SCAN for dev dirs")
         # for ddir in j.system.fs.listDirsInDir( path=path, recursive=True, dirNameOnly=False, findDirectorySymlinks=False):
         w=j.base.fswalker.get()
         callbackMatchFunctions=w.getCallBackMatchFunctions(pathRegexIncludes={},pathRegexExcludes={},includeFolders=True,includeLinks=False)
@@ -343,7 +343,7 @@ class JSFileMgr():
         arg={}
         w.walk(path,callbackFunctions,arg=arg,callbackMatchFunctions=callbackMatchFunctions,childrenRegexExcludes=childrenRegexExcludes)
 
-        print "SCAN MD:%s"%path
+        print("SCAN MD:%s"%path)
         
         self.errors=[]
 
@@ -445,16 +445,16 @@ class JSFileMgr():
             dest=j.system.fs.joinPaths(self.MDPath,"LINKS",path0)
             j.system.fs.removeDirTree(dest)
         f.close()
-        print "SCAN DONE MD:%s"%path
+        print("SCAN DONE MD:%s"%path)
 
-        print "START UPLOAD FILES."
+        print("START UPLOAD FILES.")
         #count lines
         total=0
         f=open(destFClist, "r")
         for line in f:
             total+=1
         f.close()
-        print "count done"
+        print("count done")
         f=open(destFClist, "r")
         counter=0
         batch=[]
@@ -469,7 +469,7 @@ class JSFileMgr():
                 counter=0
                 batchnr+=1
         #final batch
-        if batch<>[]:
+        if batch!=[]:
             self.backupBatch(batch,batchnr=batchnr,total=total)
         f.close()
 
@@ -477,7 +477,7 @@ class JSFileMgr():
 
         key=self.sendMDToBlobStor()
 
-        print "BACKUP DONE."
+        print("BACKUP DONE.")
 
         return key
 
@@ -488,7 +488,7 @@ class JSFileMgr():
 
     def _createExistsList(self,dest):
         # j.system.fs.pathRemoveDirPart(dest,prefix,True)
-        print "Walk over MD, to create files which we already have found."
+        print("Walk over MD, to create files which we already have found.")
         destF=j.system.fs.joinPaths(self.storpath, "../TMP","plists",self.namespace,dest,".mdfound")
         j.system.fs.createDir(j.system.fs.getDirName(destF))
         fileF = open(destF, 'w')
@@ -528,7 +528,7 @@ class JSFileMgr():
             w.walk(wpath,callbackFunctions=callbackFunctions,arg=arg,childrenRegexExcludes=[])
 
         fileF.close()
-        print "Walk over MD, DONE"
+        print("Walk over MD, DONE")
 
 
     # def linkRecipe(self, src, dest):

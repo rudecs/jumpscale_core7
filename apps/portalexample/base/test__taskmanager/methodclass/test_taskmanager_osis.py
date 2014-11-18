@@ -589,7 +589,7 @@ class test_taskmanager_osis(j.code.classGetBase()):
             id=self.model_organization_create(organization,"")
 
         import ipdb
-        print "test to see if object gets stored, it does not get in the db"
+        print("test to see if object gets stored, it does not get in the db")
         ipdb.set_trace()
 
         

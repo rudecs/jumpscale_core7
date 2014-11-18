@@ -47,7 +47,7 @@ from JumpScale import j
         modulename = 'JumpScale.jumpscript_%s' % md5sum
         linecache.checkcache(self.path)
         self.module = imp.load_source(modulename, self.path)
-        if self.source.find("DEBUG NOW")<>-1:
+        if self.source.find("DEBUG NOW")!=-1:
             self.debug=True
 
     def getDict(self):
@@ -108,8 +108,8 @@ from JumpScale import j
     def executeInProcess(self, *args, **kwargs):
         try:
             return True, self.module.action(*args, **kwargs)
-        except Exception, e:
-            print "error in jumpscript factory: execute in process."
+        except Exception as e:
+            print("error in jumpscript factory: execute in process.")
             eco = j.errorconditionhandler.parsePythonErrorObject(e)
             eco.tb = None
             eco.errormessage='Exec error procmgr jumpscr:%s_%s on node:%s_%s %s'%(self.organization,self.name, \
@@ -119,7 +119,7 @@ from JumpScale import j
             eco.tags+=" jsorganization:%s"%self.organization
             eco.tags+=" jsname:%s"%self.name
             j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
-            print eco
+            print(eco)
             return False, eco
 
 
@@ -143,8 +143,8 @@ from JumpScale import j
             result=redisw.execJumpscript(self.id,_timeout=self.timeout,_queue=queue,_log=self.log,_sync=False)
 
         self.lastrun = time.time()
-        if result<>None:
-            print "ok:%s"%self.name
+        if result!=None:
+            print("ok:%s"%self.name)
         return result
 
 
@@ -186,7 +186,7 @@ class JumpscriptFactory:
         # assert data==scripttgz
 
     def loadFromGridMaster(self):
-        print "load processmanager code from master"
+        print("load processmanager code from master")
         webdis = self._getWebdisConnection()
 
         #delete previous scripts
@@ -207,7 +207,7 @@ class JumpscriptFactory:
 
         for tarinfo in tar:
             if tarinfo.isfile():
-                print tarinfo.name
+                print(tarinfo.name)
                 if tarinfo.name.find("processmanager/")==0:
                     # dest=tarinfo.name.replace("processmanager/","")           
                     tar.extract(tarinfo.name, j.system.fs.getParent(self.basedir))

@@ -1,9 +1,9 @@
 from JumpScale import j
-from LRUCacheFactory import LRUCacheFactory
+from .LRUCacheFactory import LRUCacheFactory
 
 class Empty():
 	pass
-if not  j.__dict__.has_key("db"):
+if "db" not in j.__dict__:
     j.db=Empty()
 
 j.db.cache=LRUCacheFactory()

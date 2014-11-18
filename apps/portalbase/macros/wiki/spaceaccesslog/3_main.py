@@ -6,7 +6,7 @@ def main(j, args, params, tags, tasklet):
     out=""
     nroflines = int(tags.get('nroflines', 0))
     logdir = j.core.portal.active.logdir
-    if 'filename' in tags.keys():
+    if 'filename' in list(tags.keys()):
         filename = tags['filename']
         logs = j.system.fs.joinPaths(logdir, filename)
     else:

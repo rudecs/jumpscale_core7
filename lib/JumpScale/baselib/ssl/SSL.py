@@ -53,7 +53,7 @@ class KeyStor():
         #Python would ask you to enter a password to use to encrypt the key file
         #For a demo script though it's easier/quicker to just use 'None' :) 
 
-        if path<>"":
+        if path!="":
             j.system.fs.createDir(path)
             p1="%s/priv.pem"%path
             p2="%s/pub.pem"%path
@@ -79,7 +79,7 @@ class KeyStor():
 
     def _getKey(self,organization,user,cat,returnAsString=False,keyoverrule=""):
         cachekey="%s_%s_%s"%(organization,user,cat)
-        if self.keys.has_key(cachekey):
+        if cachekey in self.keys:
             if returnAsString:
                 return self.keys[cachekey].as_pem()
             else:
@@ -121,18 +121,18 @@ class KeyStor():
         self.createKeyPair(org,"alice")
         self.createKeyPair(org,"bob")
         msg,signature= self.encrypt(org,"alice","bob","this is a test message.")
-        print "msg"
-        print msg
-        print "signature"
-        print signature
-        print "decrypt"
-        print self.decrypt(org,"alice","bob",msg,signature)
+        print("msg")
+        print(msg)
+        print("signature")
+        print(signature)
+        print("decrypt")
+        print(self.decrypt(org,"alice","bob",msg,signature))
 
 
     def perftest(self,nrrounds=1000,sign=True):
         j.base.timer.start()
         org="myorg.com"
-        print "\n\nstart perftest for encryption, nrrounds:%s"%nrrounds
+        print("\n\nstart perftest for encryption, nrrounds:%s"%nrrounds)
         for i in range(nrrounds):
             msg,signature= self.encrypt(org,"alice","bob","this is a test message.",sign=sign)
             self.decrypt(org,"alice","bob",msg,signature)
@@ -185,7 +185,7 @@ class KeyStor():
             message2=message
         plainText = ReadRSA.private_decrypt (message2, m2c.RSA.pkcs1_oaep_padding)
 
-        if signature<>None:
+        if signature!=None:
             if base64:
                 signature2=signature.decode("base64")
             else:

@@ -14,7 +14,7 @@ class test_complextype_user(OsisBaseObject,test_complextype_user_osismodelbase):
     def __init__(self, ddict={}):
         # OsisBaseObject.__init__(self)
         test_complextype_user_osismodelbase.__init__(self)
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
 
 

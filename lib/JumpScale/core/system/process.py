@@ -30,7 +30,7 @@ def kill(pid, sig=None):
 
             os.kill(pid, sig)
 
-        except OSError,e:
+        except OSError as e:
             raise RuntimeError("Could not kill process with id %s.\n%s" % (pid,e))
         
     elif j.system.platformtype.isWindows():
@@ -148,7 +148,7 @@ else:
                     import select
                     try:
                         rlist, wlist, xlist = select.select(read_set, write_set, [])
-                    except select.error, e:
+                    except select.error as e:
                         if e.args[0] == errno.EINTR:
                             continue
                         raise
@@ -234,7 +234,7 @@ else:
                 while read_set or write_set:
                     try:
                         rlist, wlist, xlist = select.select(read_set, write_set, [])
-                    except select.error, e:
+                    except select.error as e:
                         if e.args[0] == errno.EINTR:
                             continue
                         raise
@@ -300,7 +300,7 @@ else:
                            errread, errwrite):
             """Execute program (POSIX version)"""
 
-            if isinstance(args, types.StringTypes):
+            if isinstance(args, str):
                 args = [args]
             else:
                 args = list(args)
@@ -446,7 +446,7 @@ else:
             while True:
                 try:
                     return os.read(fd, buffersize)
-                except OSError, e:
+                except OSError as e:
                     if e.errno == errno.EINTR:
                         continue
                     else:
@@ -458,7 +458,7 @@ else:
             while True:
                 try:
                     return os.write(fd, s)
-                except OSError, e:
+                except OSError as e:
                     if e.errno == errno.EINTR:
                         continue
                     else:
@@ -469,7 +469,7 @@ else:
             while True:
                 try:
                     return os.waitpid(pid, options)
-                except OSError, e:
+                except OSError as e:
                     if e.errno == errno.EINTR:
                         continue
                     else:
@@ -480,7 +480,7 @@ else:
             while True:
                 try:
                     return obj.read()
-                except IOError, e:
+                except IOError as e:
                     if e.errno == errno.EINTR:
                         continue
                     else:
@@ -491,7 +491,7 @@ else:
             while True:
                 try:
                     return obj.write(data)
-                except IOError, e:
+                except IOError as e:
                     if e.errno == errno.EINTR:
                         continue
                     else:
@@ -621,7 +621,7 @@ def _convert_uid_gid(user, group):
                              'as root' % cname)
 
         # If the given value is not a string, assume its a *ID
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             id_ = value
         else:
             try:
@@ -832,7 +832,7 @@ def _runWithEnv(commandline, showOutput=False, captureOutput=True, maxSeconds=0,
         # jumpscale ticket 189
         def reset_signals():
             '''Reset all signals to SIG_DFL'''
-            for i in xrange(1, signal.NSIG):
+            for i in range(1, signal.NSIG):
                 if signal.getsignal(i) != signal.SIG_DFL:
                     try:
                         signal.signal(i, signal.SIG_DFL)
@@ -1172,7 +1172,7 @@ def calculateEnvironment(values, source=None):
 
     result.update(values)
 
-    result = dict((k, v) for (k, v) in result.iteritems() if v is not UNSET)
+    result = dict((k, v) for (k, v) in result.items() if v is not UNSET)
 
     return result
 
@@ -1224,7 +1224,7 @@ class SystemProcess:
 
         j.logger.log("system.process.executeAsync [%s]" % command, 6)
         if printCommandToStdout:
-            print "system.process.executeAsync [%s]" % command
+            print("system.process.executeAsync [%s]" % command)
 
         if j.system.platformtype.isWindows():
             if argsInCommand:                
@@ -1370,7 +1370,7 @@ class SystemProcess:
                 import signal
                 try:
                     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-                except Exception, ex:
+                except Exception as ex:
                     j.logger.log('failed to set child signal, error %s'%ex, 2)
                 childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, shell=True, env=os.environ)
                 (output,error) = childprocess.communicate()
@@ -1403,18 +1403,20 @@ class SystemProcess:
             else:
                 raise RuntimeError("Non supported OS for system.process.execute()")
 
-        except Exception, e:
+        except Exception as e:
             raise
 
-        if exitcode<>0 or error<>"":
+        if exitcode!=0 or error!="":
             j.logger.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)
-            if ignoreErrorOutput<>True:
+            if ignoreErrorOutput!=True:
                 output="%s\n***ERROR***\n%s\n" % (output,error)
 
         if exitcode !=0 and dieOnNonZeroExitCode:
             j.logger.log("command: [%s]\nexitcode:%s\noutput:%s\nerror:%s" % (command, exitcode, output, error), 3)
             raise RuntimeError("Error during execution! (system.process.execute())\n\nCommand: [%s]\n\nExitcode: %s\n\nProgram output:\n%s\n\nErrormessage:\n%s\n" % (command, exitcode, output, error))
 
+        output=output.replace("\\n","\n")
+        output=output.replace("\\t","    ")
         return exitcode, output
 
     def executeIndependant(self,cmd):
@@ -1422,7 +1424,7 @@ class SystemProcess:
         # Popen(['nohup', cmd+" &"], stdout=devnull, stderr=devnull)
         cmd2="nohup %s > /dev/null 2>&1 &"%cmd
         cmd2=j.dirs.replaceTxtDirVars(cmd2)
-        print cmd2
+        print(cmd2)
         j.system.process.executeWithoutPipe(cmd2)
 
     def executeScript(self, scriptName):
@@ -1431,8 +1433,10 @@ class SystemProcess:
         if scriptName is None:
             raise ValueError('Error, Script name in empty in system.process.executeScript')
         try:
-            execfile(scriptName)
-        except Exception, err:
+            script=self.fileGetContents(scriptName)
+            scriptc=compile(script, scriptName, 'exec')
+            exec(scriptc)
+        except Exception as err:
             raise RuntimeError('Failed to execute the specified script: %s, %s' % (scriptName,str(err)))
 
     def executeInSandbox(self, command, timeout=0):
@@ -1475,7 +1479,7 @@ class SystemProcess:
             out = "\n".join(map(unindent, codeLines))
             code = out
 
-        if len(j.codetools.regex.findAll("^def",code))<>1:
+        if len(j.codetools.regex.findAll("^def",code))!=1:
             server.raiseError("Cannot find 1 def method in code to execute, code submitted was \n%s" % code)
 
         code2=""
@@ -1485,10 +1489,10 @@ class SystemProcess:
             code2+="%s\n" % line
 
         #try to load the code
-        execContext = {}
+        # execContext = {}
         try:
-            exec code2 in execContext
-        except Exception,e:
+            exec(code2) in globals(), locals()
+        except Exception as e:
             raise RuntimeError("Could not import code, code submitted was \n%s" % code)
 
         main = execContext['main']
@@ -1497,7 +1501,7 @@ class SystemProcess:
         result={}
         try:
             result=main(params)
-        except Exception,e:            
+        except Exception as e:            
             raise RuntimeError("Error %s.\ncode submitted was \n%s" % (e,code))
         return result
         
@@ -1532,10 +1536,10 @@ class SystemProcess:
         # print out
         found=[]
         for line in out.split("\n"):
-            if line.find("grep")<>-1 or line.strip()=="":
+            if line.find("grep")!=-1 or line.strip()=="":
                 continue
-            if line.strip()<>"":
-                if line.find(filterstr)<>-1:
+            if line.strip()!="":
+                if line.find(filterstr)!=-1:
                     line=line.strip()
                     # print "found pidline:%s"%line
                     found.append(int(line.split(" ")[0]))   
@@ -1556,7 +1560,7 @@ class SystemProcess:
             self.execute(cmd)
             time.sleep(1)
             found=self.getPidsByFilter(filterstr)
-        if len(found)<>nrtimes:
+        if len(found)!=nrtimes:
             raise RuntimeError("could not start %s, found %s nr of instances. Needed %s."%(cmd,len(found),nrtimes))
 
     def checkstop(self,cmd,filterstr,retry=1,nrinstances=0):
@@ -1578,7 +1582,7 @@ class SystemProcess:
                 self.kill(int(item),9)
             found=self.getPidsByFilter(filterstr)
                 
-        if len(found)<>0:
+        if len(found)!=0:
             raise RuntimeError("could not stop %s, found %s nr of instances."%(cmd,len(found)))
 
 
@@ -1599,7 +1603,7 @@ class SystemProcess:
                 # print gd["cmd"]
                 if isinstance(process, int) and gd['pid'] == process:
                     pids.append(gd['pid'])
-                elif isinstance(process, (str,unicode)) and  process in gd['cmd']:
+                elif isinstance(process, str) and  process in gd['cmd']:
                     pids.append(gd['pid'])
             pids=[int(item) for item in pids]
             return pids
@@ -1704,7 +1708,7 @@ class SystemProcess:
         try:
             for i in range(len(varnames)):
                 os.environ[varnames[i]] = str(varvalues[i]).strip()
-        except Exception, e:
+        except Exception as e:
             raise RuntimeError(e)
 
     def getPidsByPort(self, port):
@@ -1823,7 +1827,7 @@ class SystemProcess:
         for line in out.split("\n"):
             if line.strip()=="":
                 continue
-            if line.find("<defunct>")<>-1:
+            if line.find("<defunct>")!=-1:
                 # print "defunct:%s"%line
                 line=line.strip()
                 pid=line.split(" ",1)[0]

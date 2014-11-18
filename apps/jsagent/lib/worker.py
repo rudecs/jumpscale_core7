@@ -64,12 +64,12 @@ class Worker(object):
     def processAction(self, action):
         self.redisw.redis.delete("workers:action:%s"%self.queuename)
         if action == "RESTART":
-            print "RESTART ASKED"
+            print("RESTART ASKED")
             restart_program()
             j.application.stop()
 
         if action=="RELOAD":
-            print "RELOAD ASKED"
+            print("RELOAD ASKED")
             self.actions={}
 
     def run(self):
@@ -77,14 +77,14 @@ class Worker(object):
         while True:
             self.redisw.redis.hset("workers:heartbeat",self.queuename,int(time.time()))
             if self.starttime + RUNTIME < time.time():
-                print "Running for %s seconds restarting" % RUNTIME
+                print("Running for %s seconds restarting" % RUNTIME)
                 restart_program()
 
             try:
                 self.log("check if work")
                 jtype, job = self.redisw._getWork(self.queuename,timeout=10)
-            except Exception,e:
-                if str(e).find("Could not find queue to execute job")<>-1:
+            except Exception as e:
+                if str(e).find("Could not find queue to execute job")!=-1:
                     #create queue
                     self.log("could not find queue")
                 else:
@@ -98,7 +98,7 @@ class Worker(object):
                 
                 j.application.jid=job.guid
                 try:
-                    if self.actions.has_key(job.jscriptid):
+                    if job.jscriptid in self.actions:
                         jscript=self.actions[job.jscriptid]
                     else:
                         self.log("JSCRIPT CACHEMISS")
@@ -113,7 +113,7 @@ class Worker(object):
                                 self.notifyWorkCompleted(job)
                                 continue
 
-                            if jscript.organization<>"" and jscript.name<>"" and jscript.id<1000000:
+                            if jscript.organization!="" and jscript.name!="" and jscript.id<1000000:
                                 #this is to make sure when there is a new version of script since we launched this original script we take the newest one
                                 jscript=self.redisw.getJumpscriptFromName(jscript.organization,jscript.name)
                                 job.jscriptid=jscript.id
@@ -124,9 +124,9 @@ class Worker(object):
 
                             self.actions[job.jscriptid]=jscript
 
-                        except Exception,e:                
+                        except Exception as e:                
                             agentid=j.application.getAgentId()
-                            if jscript<>None:
+                            if jscript!=None:
                                 msg="could not compile jscript:%s %s_%s on agent:%s.\nError:%s"%(jscript.id,jscript.organization,jscript.name,agentid,e)
                             else:
                                 msg="could not compile jscriptid:%s on agent:%s.\nError:%s"%(job.jscriptid,agentid,e)
@@ -171,7 +171,7 @@ class Worker(object):
                         for line in eco.backtrace.split("\n"):
                             found=False
                             for check in tocheck:
-                                if line.find(check)<>-1:
+                                if line.find(check)!=-1:
                                     found=True
                                     break
                             if found==False:
@@ -212,14 +212,14 @@ class Worker(object):
         else:
             try:
                 acclient = self.getClient(job)
-            except Exception,e:
+            except Exception as e:
                 j.events.opserror("could not report job in error to agentcontroller", category='workers.errorreporting', e=e)
                 return
             #jumpscripts coming from AC
-            if job.state<>"OK":
+            if job.state!="OK":
                 try:
                     acclient.notifyWorkCompleted(job.__dict__)
-                except Exception,e:
+                except Exception as e:
                     j.events.opserror("could not report job in error to agentcontroller", category='workers.errorreporting', e=e)
                     return
                 #lets keep the errors
@@ -228,7 +228,7 @@ class Worker(object):
                 if job.log or job.wait:
                     try:
                         acclient.notifyWorkCompleted(job.__dict__)
-                    except Exception,e:
+                    except Exception as e:
                         j.events.opserror("could not report job result to agentcontroller", category='workers.jobreporting', e=e)
                         return
                     # job.state=="OKR" #means ok reported
@@ -239,7 +239,7 @@ class Worker(object):
     def log(self, message, category='',level=5):
         #queue saving logs        
         # j.logger.log(message,category=category,level=level)
-        print "worker:%s:%s" % (self.queuename, message)
+        print("worker:%s:%s" % (self.queuename, message))
 
 if __name__ == '__main__':
     parser = cmdutils.ArgumentParser()

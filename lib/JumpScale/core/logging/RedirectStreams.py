@@ -20,11 +20,11 @@ class _Redirector:
         if not self.hideoutput and canWrite(self.savedstream):
             try:
                 self.savedstream.write(string)
-            except IOError, e:
+            except IOError as e:
                 j.logger.log("Could not write to stdout: %s" % e, self.loglevel, dontprint=True)
-        if j._init_final_called<>False:
+        if j._init_final_called!=False:
             if j.logger.inlog==False:
-                if self.stringBuff <> '':
+                if self.stringBuff != '':
                     j.logger.log(self.stringBuff, self.loglevel,dontprint=True)
                     self.stringBuff=''
                 j.logger.log(string, self.loglevel,dontprint=True)
@@ -56,12 +56,12 @@ def redirectStreams(hideoutput=False, loglevel=4, stdout=True, stderr=True):
     stdout=False
     stderr=False
     if stdout:
-        if not sys.__dict__.has_key("_stdout_ori"):
+        if "_stdout_ori" not in sys.__dict__:
             sys._stdout_ori = sys.stdout
         sys.stdout = _Redirector(sys.stdout, hideoutput, loglevel)
     
     if stderr:
-        if not sys.__dict__.has_key("_stdout_ori"):
+        if "_stdout_ori" not in sys.__dict__:
             sys._stderr_ori = sys.stderr
         sys.stderr = _Redirector(sys.stdout, hideoutput, loglevel)
         

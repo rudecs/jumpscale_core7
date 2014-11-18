@@ -1,4 +1,4 @@
-from store import KeyValueStoreBase
+from .store import KeyValueStoreBase
 from JumpScale import j
 import JumpScale.baselib.redis
 
@@ -6,7 +6,7 @@ import ujson as json
 import time
 
 def chunks(l, n):
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i+n]
 
 class RedisKeyValueStore(KeyValueStoreBase):
@@ -52,7 +52,7 @@ class RedisKeyValueStore(KeyValueStoreBase):
         result=[]
         if lastid>self.lastchangeId:
             try:
-                for t in xrange(self.lastchangeId+1,lastid+1):
+                for t in range(self.lastchangeId+1,lastid+1):
                     self.lastchangeId = t
                     key="changelog:data:%s"%t
                     counter=1
@@ -139,7 +139,7 @@ class RedisKeyValueStore(KeyValueStoreBase):
         return keys
 
     def listCategories(self):
-        return self.categories.keys()
+        return list(self.categories.keys())
 
     def _getCategoryKey(self, category, key):
         return '%s:%s' % (category, key)

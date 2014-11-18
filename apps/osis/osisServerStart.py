@@ -39,8 +39,8 @@ if __name__ == '__main__':
             j.events.opserror_critical("cannot start osis, db connection %s was not available, please install & configure properly, did not find active hrd."%dbname)
         return hrd
 
-    for dbname, instancename in connectionsconfig.iteritems():
-        print "connect to: %s"%dbname
+    for dbname, instancename in connectionsconfig.items():
+        print("connect to: %s"%dbname)
 
         if dbname=="elasticsearch":
             hrd = getConnectionHRD(dbname, instancename, 'jumpscale')
@@ -49,7 +49,7 @@ if __name__ == '__main__':
             port=hrd.getInt("es.client.port")
             while j.system.net.tcpPortConnectionTest(ipaddr,port)==False:
                 time.sleep(0.1)        
-                print "cannot connect to elasticsearch, will keep on trying forever, please start (%s:%s)"%(ipaddr,port)
+                print("cannot connect to elasticsearch, will keep on trying forever, please start (%s:%s)"%(ipaddr,port))
             client=j.clients.elasticsearch.get(ip=ipaddr, port=port, timeout=60)
 
         elif dbname=="mongodb":
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             passwd=hrd.get("redis.client.passwd")
             while j.system.net.tcpPortConnectionTest(ipaddr,port)==False:
                 time.sleep(0.1)
-                print "cannot connect to redis, will keep on trying forever, please start (%s:%s)"%(ipaddr,port)
+                print("cannot connect to redis, will keep on trying forever, please start (%s:%s)"%(ipaddr,port))
             client=j.clients.redis.getGeventRedisClient(ipaddr, port, fromcache=True, password=passwd)
 
         elif dbname=="influxdb":
@@ -76,7 +76,7 @@ if __name__ == '__main__':
             passwd=hrd.get("influxdb.client.passwd")
             while j.system.net.tcpPortConnectionTest(ipaddr,port)==False:
                 time.sleep(0.1)
-                print "cannot connect to influxdb, will keep on trying forever, please start (%s:%s)"%(ipaddr,port)
+                print("cannot connect to influxdb, will keep on trying forever, please start (%s:%s)"%(ipaddr,port))
 
             client=j.clients.influxdb.get(host=ipaddr, port=port,username=login, password=passwd, database="main")
             databases = [db['name'] for db in client.get_database_list()]

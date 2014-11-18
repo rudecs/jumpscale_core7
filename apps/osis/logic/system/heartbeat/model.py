@@ -7,7 +7,7 @@ class heartbeat(OsisBaseObject):
     """
     """
     def __init__(self,ddict={}):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.nid=j.application.whoAmI.nid

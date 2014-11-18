@@ -129,33 +129,33 @@ class Gitlab(object):
 
     def existsUser(self,name):
         key="%s"%(name)
-        return self.users2id.has_key(key)            
+        return key in self.users2id            
 
     def getUserId(self,name):
         key="%s"%(name)
-        if not self.users2id.has_key(key):
+        if key not in self.users2id:
             raise RuntimeError("Could not find user with name:%s"%(name))
         return int(self.users2id[key])
 
     def getProjectId(self,namespace,name):
         key="%s__%s"%(namespace,name)
-        if not self.projects2id.has_key(key):
+        if key not in self.projects2id:
             raise RuntimeError("Could not find project with owner:%s and name:%s"%(namespace,name))
         return int(self.projects2id[key])
 
     def existsProject(self,namespace,name):
         key="%s__%s"%(namespace,name)
-        return self.projects2id.has_key(key)
+        return key in self.projects2id
 
     def getGroupId(self,name):
         key=name
-        if not self.groups2id.has_key(key):
+        if key not in self.groups2id:
             raise RuntimeError("Could not find group with name:%s"%(name))
         return int(self.groups2id[key])
 
     def existsGroup(self,name):
         key=name
-        return self.groups2id.has_key(key)
+        return key in self.groups2id
 
     def getuser(self, id_):
         """
@@ -479,11 +479,11 @@ class Gitlab(object):
             return json.loads(request.content.decode("utf-8"))
         elif request.status_code == 403:
             if "Your own projects limit is 0" in request.content:
-                print(request.content)
+                print((request.content))
                 raise RuntimeError("Your own projects limit is 0")
                 # return False
         elif request.status_code == 404:
-            print(request.content)
+            print((request.content))
             raise RuntimeError("error 404:%s"%request.content)
 
         if request.status_code>0:            
@@ -1090,8 +1090,8 @@ class Gitlab(object):
         request = requests.post(self.groups_url,
                                 data={'name': name, 'path': path},
                                 headers=self.headers, verify=self.verify_ssl)
-        print request.status_code
-        print request.content
+        print(request.status_code)
+        print(request.content)
         if request.status_code == 201:
             return True
         else:

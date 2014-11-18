@@ -51,7 +51,7 @@ eg:
             for var in inputs:
                 popup.addText(var, var)
 
-        for name, value in data.iteritems():
+        for name, value in data.items():
             popup.addHiddenField(name, value)
 
         popup.write_html(page)

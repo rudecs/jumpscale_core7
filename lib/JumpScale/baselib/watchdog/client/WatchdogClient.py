@@ -30,7 +30,7 @@ class WatchdogClient:
         obj=json.dumps(wde.__dict__)
         res=self.webdis.hset(watchdog.getHSetKey(wde.gguid),"%s_%s"%(wde.nid,wde.category),obj)
         if pprint:
-            print wde
+            print(wde)
         return res
 
     def send(self,category,state,value,ecoguid="", gid=None, nid=None,pprint=False):

@@ -50,8 +50,8 @@ from JumpScale.core.Shell import *
 #import win32gui
 #from win32com.shell import shell, shellcon
 import EasyDialogs
-from EasyDialogGeneric import EasyDialogGeneric
-from EasyDialogConsole import EasyDialogConsole
+from .EasyDialogGeneric import EasyDialogGeneric
+from .EasyDialogConsole import EasyDialogConsole
 
 class EasyDialogWin32(EasyDialogGeneric):
 
@@ -118,7 +118,7 @@ class EasyDialogWin32(EasyDialogGeneric):
         if defaultValue:
             defaultValues = [value.strip() for value in defaultValue.split(',')]
             #we choose tolerant approach by just filtering out the invalid defaultValues entries, without raising an error
-            defaultValues = filter(lambda value: value in choices, defaultValues)
+            defaultValues = [value for value in defaultValues if value in choices]
 
         messageWihDefault = '%s%s'%(question, ('[%s]'%defaultValue) if defaultValue else '')
         message = "%(question)s\n\nMake a selection please: %(choices)s"
@@ -167,7 +167,7 @@ class EasyDialogWin32(EasyDialogGeneric):
         if defaultValue:
             defaultValues = [value.strip() for value in defaultValue.split(',')]
             #we choose tolerant approach by just filtering out the invalid defaultValues entries, without raising an error
-            defaultValues = filter(lambda value: value in choices, defaultValues)
+            defaultValues = [value for value in defaultValues if value in choices]
 
         messageWihDefault = '%s%s'%(question, ('[%s]'%defaultValue) if defaultValue else '')
         message = "%(question)s\n\nMake a selection please: %(choices)s"
@@ -308,8 +308,8 @@ class EasyDialogWin32(EasyDialogGeneric):
             selections = selections[:1] #ignore the rest of the values, if any
         else:
             try:
-                selections = map(int, selections) #convert to int
-            except ValueError, ex:
+                selections = list(map(int, selections)) #convert to int
+            except ValueError as ex:
                 raise ValueError('Invalid numeric values [%s]'%selections)
 
             if max(selections) > len(choices) or min(selections) <= 0:
@@ -322,4 +322,4 @@ class EasyDialogWin32(EasyDialogGeneric):
 
 if __name__=='__main__':
     #print EasyDialog().askFilePath()
-    print EasyDialogWin32().askString("something")
+    print(EasyDialogWin32().askString("something"))

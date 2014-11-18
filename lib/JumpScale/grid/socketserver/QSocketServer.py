@@ -1,6 +1,6 @@
 from JumpScale import j
 import struct
-import SocketServer
+import socketserver
 import socket
 try:
     import gevent
@@ -15,10 +15,10 @@ except:
 
 import select
 
-from QSocketServerClient import *
+from .QSocketServerClient import *
 
 
-class QSocketServerHandler(SocketServer.BaseRequestHandler):
+class QSocketServerHandler(socketserver.BaseRequestHandler):
 
     # def __init__(self):
     # SocketServer.BaseRequestHandler.__init__(self)
@@ -26,32 +26,32 @@ class QSocketServerHandler(SocketServer.BaseRequestHandler):
 
     def getsize(self, data):
         check = data[0]
-        if check <> "A":
+        if check != "A":
             raise RuntimeError("error in tcp stream, first byte needs to be 'A'")
         sizebytes = data[1:5]
         size = struct.unpack("I", sizebytes)[0]
         return data[5:], size
 
     def _readdata(self, data):
-        print "select"
+        print("select")
         try:
             ready = select.select([self.socket], [], [], self.timeout)
             self.selectcounter += 1
             if self.selectcounter > 100:
                 raise RuntimeError("recverror")
 
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             raise RuntimeError("recverror")
 
         if ready[0]:
             try:
                 data += self.socket.recv(4096)
-            except Exception, e:
-                print e
+            except Exception as e:
+                print(e)
                 raise RuntimeError("recverror")
         else:
-            print "timeout on select"
+            print("timeout on select")
         return data
 
     def readdata(self):
@@ -88,30 +88,30 @@ class QSocketServerHandler(SocketServer.BaseRequestHandler):
         while True:
             try:
                 data = self.readdata()
-            except Exception, e:
+            except Exception as e:
                 if str(e) == 'recverror':
                     self.socket.close()
                     return
                 else:
                     raise RuntimeError("Cannot read data from client, unknown error: %s" % e)
 
-            if data.find("**connect**") <> -1:
+            if data.find("**connect**") != -1:
                 try:
                     self.senddata("ok")
                     # print data
-                    print "new client connected: %s,%s" % self.client_address
+                    print("new client connected: %s,%s" % self.client_address)
 
-                except Exception, e:
-                    print "send error during connect:%s, will close socket" % e
+                except Exception as e:
+                    print("send error during connect:%s, will close socket" % e)
                     self.socket.close()
                     return
             else:
                 result = j.system.socketserver._handledata(data)
-                if result <> None:
+                if result != None:
                     try:
                         self.senddata(result)
-                    except Exception, e:
-                        print "send error:%s, will close socket" % e
+                    except Exception as e:
+                        print("send error:%s, will close socket" % e)
                         self.socket.close()
                         return
 
@@ -128,10 +128,10 @@ class QSocketServer():
         j.system.socketserver.key = key
         self.type = "server"
         j.system.socketserver._handledata = datahandler
-        self.server = SocketServer.TCPServer((self.addr, self.port), QSocketServerHandler)
+        self.server = socketserver.TCPServer((self.addr, self.port), QSocketServerHandler)
 
     def start(self):
-        print "started on %s" % self.port
+        print("started on %s" % self.port)
         self.server.serve_forever()
 
 
@@ -144,6 +144,6 @@ class QSocketServerFactory():
         return SocketServerClient(addr, port, key)
 
     def _handledata(self, data):
-        print "default data handler for socketserver, please overrule, method is handledata"
-        print "data received"
-        print data
+        print("default data handler for socketserver, please overrule, method is handledata")
+        print("data received")
+        print(data)

@@ -1,6 +1,6 @@
 from JumpScale import j
 
-from HTML2Text import *
+from .HTML2Text import *
 
 class HTMLFactory(object):
 
@@ -10,7 +10,7 @@ class HTMLFactory(object):
     def html2text(self, html):
         """
         """
-        html=unicode(html, errors='ignore')
+        html=str(html, errors='ignore')
         encoding = "utf-8"
         html = html.decode(encoding)
         h = HTML2Text()

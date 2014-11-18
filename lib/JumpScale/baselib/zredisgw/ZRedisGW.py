@@ -47,14 +47,14 @@ class ZRedisGW(GeventLoop):
     def cmd2Queue(self,qid=0,cmd="",args={},key="",data="",sync=True):
         rkeyQ="blobserver:cmdqueue:%s"%qid
         jobguid=j.base.idgenerator.generateGUID()     
-        if key<>"":
+        if key!="":
             args["key"]=key
         job=[int(time.time()),jobguid,cmd,args]        
         if data=="":
             self.blobstor.redis.redis.execute_pipeline(\
                 ("RPUSH","blobserver:cmdqueue:0",jobguid),\
                 ("HSET","blobserver:cmds",jobguid,json.dumps(job)))
-        elif data<>"":
+        elif data!="":
             self.blobstor.redis.redis.execute_pipeline(\
                 ("RPUSH",rkeyQ,jobguid),\
                 ("HSET","blobserver:cmds",jobguid,json.dumps(job)),\
@@ -83,7 +83,7 @@ class ZRedisGW(GeventLoop):
                         key=splitted[4]
                     else:
                         key=""
-                except Exception,e:                    
+                except Exception as e:                    
                     raise RuntimeError("could not parse incoming cmds for redis. Error:%s"%e)
 
                 # if cmd not in ("SET","GET","HSET","INCREMENT","RPUSH","LPUSH"):
@@ -135,7 +135,7 @@ class ZRedisGW(GeventLoop):
         self.schedule("cmdGreenlet", self.cmdGreenlet)
         # self.startClock()
         # print "start %s on port:%s"%(self.name,self.port)
-        if mainloop <> None:
+        if mainloop != None:
             mainloop()
         else:
             while True:

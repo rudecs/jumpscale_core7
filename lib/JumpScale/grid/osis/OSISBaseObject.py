@@ -1,14 +1,14 @@
 from JumpScale import j
 import JumpScale.baselib.hash
 
-from OSISBaseObjectComplexType import OSISBaseObjectComplexType
+from .OSISBaseObjectComplexType import OSISBaseObjectComplexType
 
 class OSISBaseObject(OSISBaseObjectComplexType):
 
     def __init__(self, ddict=None, **kwargs):
         if ddict:
             kwargs = ddict
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             setattr(self, key, value)
 
     def load(self, ddict):

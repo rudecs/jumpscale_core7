@@ -6,9 +6,9 @@ import JumpScale.grid.osis
 import unittest
 import new
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 class Tee(object):
     def __init__(self, *fobjs):
@@ -49,9 +49,9 @@ class TestResult(unittest.result.TestResult):
 
     def printStatus(self, test, state=None):
         if state:
-            print PRINTSTR % (state, test._testMethodName)
+            print(PRINTSTR % (state, test._testMethodName))
         else:
-            print PRINTSTR % (' ', test._testMethodName),
+            print(PRINTSTR % (' ', test._testMethodName))
         sys.stdout.flush()
 
     def addSkip(self, test, reason):
@@ -67,8 +67,8 @@ class TestResult(unittest.result.TestResult):
 
     def _checkDebug(self, test, err):
         if self._debug:
-            print self.tests[test].getvalue()
-            print j.errorconditionhandler.parsePythonErrorObject(err[1], err[0], err[2])
+            print(self.tests[test].getvalue())
+            print(j.errorconditionhandler.parsePythonErrorObject(err[1], err[0], err[2]))
             j.application.stop(1)
 
     def addError(self, test, err):
@@ -79,7 +79,7 @@ class TestResult(unittest.result.TestResult):
 
     def addSuccess(self, test):
         self._restore()
-        self.printStatus(test, u"\u2713")
+        self.printStatus(test, "\u2713")
 
     def stopTest(self, test):
         self._restore()
@@ -95,14 +95,14 @@ class Test():
         self.eco=None
 
     def execute(self,testrunname,debug=False):
-        print "\n##TEST:%s %s"%(self.db.organization,self.db.name)
+        print("\n##TEST:%s %s"%(self.db.organization,self.db.name))
         res = {'total': 0, 'error': 0, 'success': 0, 'failed': 0 }
         self.db.starttime = time.time() 
         self.db.state = 'OK'
         result = TestResult(debug)
         suite = unittest.defaultTestLoader.loadTestsFromModule(self.testmodule)
         suite.run(result)
-        for test, buffer in result.tests.iteritems():
+        for test, buffer in result.tests.items():
             res['total'] += 1
             name = test._testMethodName[5:]
             self.db.output[name]=buffer.getvalue()
@@ -124,21 +124,21 @@ class Test():
                         self.db.organization, self.db.name,name,self.db.path)
                     eco.process()
                     self.db.result[name] = eco.guid
-                print "Fail in test %s" % name
-                print self.db.output[name]
-                print eco
+                print("Fail in test %s" % name)
+                print(self.db.output[name])
+                print(eco)
             else:
                 res['success'] += 1
                 self.db.teststates[name] = 'OK'
             pass
         self.db.endtime = time.time()
-        print ''
+        print('')
         return res
 
     def __str__(self):
         out=""
-        for key,val in self.db.__dict__.iteritems():
-            if key[0]<>"_" and key not in ["source","output"]:
+        for key,val in self.db.__dict__.items():
+            if key[0]!="_" and key not in ["source","output"]:
                 out+="%-35s :  %s\n"%(key,val)
         items=out.split("\n")
         items.sort()
@@ -175,7 +175,7 @@ class TestEngine():
             testrunname=j.base.time.getLocalTimeHRForFilesystem()
 
         for path in self.paths:
-            print("scan dir: %s"%path)
+            print(("scan dir: %s"%path))
             if j.system.fs.isDir(path):
                 for item in j.system.fs.listFilesInDir(path,filter="*__test.py",recursive=True):
                     self.testFile(testrunname, item)
@@ -184,10 +184,10 @@ class TestEngine():
 
         priority={}
         for test in self.tests:
-            if not priority.has_key(test.db.priority):
+            if test.db.priority not in priority:
                 priority[test.db.priority]=[]    
             priority[test.db.priority].append(test)
-        prio=priority.keys()
+        prio=list(priority.keys())
         prio.sort()
         results = list()
         for key in prio:
@@ -200,12 +200,12 @@ class TestEngine():
         total = sum(x['total'] for x in results)
         error = sum(x['error'] for x in results)
         failed = sum(x['failed'] for x in results)
-        print "Ran %s tests" % total,
+        print("Ran %s tests" % total)
         if error:
-            print '%s Error' % error,
+            print('%s Error' % error)
         if failed:
-            print '%s Failed' % failed,
-        print ''
+            print('%s Failed' % failed)
+        print('')
 
 
     def testFile(self, testrunname, filepath):
@@ -244,7 +244,7 @@ class TestEngine():
         methods=j.codetools.regex.extractBlocks(C,["def test"])
         for method in methods:
             methodname=method.split("\n")[0][len("    def test_"):].split("(")[0]
-            methodsource="\n".join([item.strip() for item in method.split("\n")[1:] if item.strip()<>""])
+            methodsource="\n".join([item.strip() for item in method.split("\n")[1:] if item.strip()!=""])
             test.db.source[methodname]=methodsource
 
         if not self.noOsis:

@@ -27,10 +27,10 @@ class TextCharEditor():
         return len(self.chars)
         
     def existsBlock(self,blockname):
-        return self._higestblocknr.has_key(blockname)
+        return blockname in self._higestblocknr
     
     def getBlockNames(self):
-        return self._higestblocknr.keys()
+        return list(self._higestblocknr.keys())
 
     def matchBlocksPattern(self,startpattern,stoppattern,blockname):
         """        
@@ -50,7 +50,7 @@ class TextCharEditor():
             end=result2.matches[0].end
             skip=False
             for pos in range(match.start,match.start+end): #scan first time if somewhere there is already a char part of a block
-                if self.chars[pos][1]<>"":
+                if self.chars[pos][1]!="":
                     skip=True
                     #j.logger.log("Could not match the pattern because as part of result there was already another block found, posstart:%s posstop%s" % (match.start,match.start+end-1),5)
             blocknr=self._getNextBlockNr(blockname)
@@ -90,19 +90,19 @@ class TextCharEditor():
                         self.chars[charpos][2]=blocknr
                 if char==delimiterclose:
                     counter-=1
-                if counter==0 and state<>"start":
+                if counter==0 and state!="start":
                     endpos=charpos+1
                     break
                           
     def _getNextBlockNr(self,name):
-        if not self._higestblocknr.has_key(name):
+        if name not in self._higestblocknr:
             self._higestblocknr[name]=1
         else:
             self._higestblocknr[name]+=1
         return self._higestblocknr[name]
 
     def getHighestBlockNr(self,name):
-        if not self._higestblocknr.has_key(name):
+        if name not in self._higestblocknr:
             raise RuntimeError("Cound not find block with name %s" % name)
         else:
             return self._higestblocknr[name]
@@ -118,7 +118,7 @@ class TextCharEditor():
     def deleteBlocks(self,blockname):
         """        
         """
-        self.chars=[char for char in self.chars if char[1]<>blockname]
+        self.chars=[char for char in self.chars if char[1]!=blockname]
             
     def deleteBlock(self,blockname,blocknr=None):
         """
@@ -133,7 +133,7 @@ class TextCharEditor():
         """
         if self.getHighestBlockNr(blockname)>1:
             raise RuntimeError("Found more than 1 block, cannot delete blockname=%s" % blockname)        
-        self.chars=[char for char in self.chars if char[1]<>blockname ]
+        self.chars=[char for char in self.chars if char[1]!=blockname ]
         
     def getBlock(self,blockname,blocknr):
         """
@@ -153,11 +153,11 @@ class TextCharEditor():
         """
         block will be inserted at linenr, means line with linenr will be moved backwards
         """
-        if blocknr==None and blockname<>"":
+        if blocknr==None and blockname!="":
             blocknr=self._getNextBlockNr(blockname)
         if blocknr==None and blockname=="":
             blocknr=0
-        if blocknr<>None and blockname=="":
+        if blocknr!=None and blockname=="":
             raise RuntimeError("Cannot have a blockname <>\"\" with blocknr>0")
         if len(text)==0:
             raise RuntimeError("Cannot insert empty block of text.")
@@ -210,11 +210,11 @@ class TextCharEditor():
             linepositions.append(pos)
             line+=(self.chars[pos][0])
             if self.chars[pos][0]=="\n":
-                print line,
+                print(line)
                 #print blocknames
-                print string.join(["%s"%self.chars[pos][1] for pos in linepositions])
+                print(string.join(["%s"%self.chars[pos][1] for pos in linepositions]))
                 #print blocknrs
-                print string.join(["%s"%self.chars[pos][2] for pos in linepositions])
+                print(string.join(["%s"%self.chars[pos][2] for pos in linepositions]))
                 line=""
                 linepositions=[]
         

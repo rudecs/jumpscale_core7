@@ -11,7 +11,7 @@ class mainclass(parentclass):
         guid, new, changed = super(parentclass, self).set(key, value, session=session)
 
         if changed:
-            print "OBJECT CHANGED WRITE"
+            print("OBJECT CHANGED WRITE")
             u = j.core.osis.cmds._getOsisInstanceForCat("system", "user")
             for user in value['users']:
                 userkey = "%s_%s" % (value['gid'], user)

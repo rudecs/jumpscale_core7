@@ -62,7 +62,7 @@ class Services(object):
         '''
         Saves all loaded services
         '''
-        map(lambda service: service.save(), self._services.values())
+        list(map(lambda service: service.save(), list(self._services.values())))
 
 
 class ServiceLogConfig(object):
@@ -138,7 +138,7 @@ class ServiceLogConfig(object):
         '''
         Saves this service
         '''
-        map(lambda sec: sec.save(), self.sections.values())
+        list(map(lambda sec: sec.save(), list(self.sections.values())))
         self._editor.save()
 
     def listSections(self):
@@ -148,7 +148,7 @@ class ServiceLogConfig(object):
         @return: A list of the sections in this service
         @rtype:  list
         '''
-        return [section._dump() for section in self.sections.values()]
+        return [section._dump() for section in list(self.sections.values())]
 
     def listSectionKeys(self):
         '''
@@ -156,7 +156,7 @@ class ServiceLogConfig(object):
         @return: A list of the sections keys in this service
         @rtype:  list
         '''
-        return self.sections.keys()
+        return list(self.sections.keys())
 
     def _addLogConfigSection(self, logConfigSection):
         self._editor.content += '\n%s' % logConfigSection._dump()
@@ -201,13 +201,13 @@ class LogConfigSection(object):
 
     def _categorizeOptions(self, optionsList):
         def categorize(option):
-            for k, v in self._OPTION_GROUPS.iteritems():
+            for k, v in self._OPTION_GROUPS.items():
                 if option[0] in v:
                     return k
             return 'unknown'
 
-        groups = map(categorize, optionsList)
-        return dict(zip(groups, optionsList))
+        groups = list(map(categorize, optionsList))
+        return dict(list(zip(groups, optionsList)))
 
     def __init__(self, service, logPath, options=None, section=None):
         '''
@@ -231,7 +231,7 @@ class LogConfigSection(object):
             script = re.search('(postrotate|prerotate|firstaction|lastaction)([\w\W\s]*?)(endscript)', self._options)
 
         # split each option into a list of option:args then categorize options
-        self._options = self._categorizeOptions(map(lambda s: s.strip().split(' ', 1), self._options.split('\n')))
+        self._options = self._categorizeOptions([s.strip().split(' ', 1) for s in self._options.split('\n')])
 
         # add script to options dictionary
         for script in scripts:
@@ -387,7 +387,7 @@ class LogConfigSection(object):
         return '%s\n{%s}\n' % (self._sectionHeader, self._dumpOptions())
 
     def _dumpOptions(self):
-        return '\n%s\n' % '\n'.join(map(lambda x: ' '.join(x), self._options.values()))
+        return '\n%s\n' % '\n'.join([' '.join(x) for x in list(self._options.values())])
 
     def __repr__(self):
         return self.__str__()
@@ -468,13 +468,13 @@ class LogRotate(object):
                                                                        'prerotate'     : "tar czf /opt/qbase3/var/log/monitoring/monitoring_archive.tgz /opt/qbase3/var/log/monitoring/*.log",
                                                                        'sharedScript'  : True}}],}"""
         global _services
-        for key, value in configurationparams.iteritems():
+        for key, value in configurationparams.items():
             if not key in self.listServices():
                 j.logger.log("Logrotate - Initialise logrotate: Adding service: %s" % key, 1)
                 self.addService(key)
             service = _services[key]
             for info in value:
-                file = info.keys()[0]
+                file = list(info.keys())[0]
                 config = info[file]
                 if not file in service.listSections():
                     j.logger.log("Logrotate - Initialise logrotate: Adding section: %s" % file, 1)
@@ -503,7 +503,7 @@ class LogRotate(object):
                 # set rotate count
                 section.setRotationCount(config['rotate'])
                 # Set pre/post rotate script if a script needs to be set
-                keys = config.keys()
+                keys = list(config.keys())
                 if 'sharedScript' in keys:
                     j.logger.log("Logrotate - Initialise logrotate: enable shared scripts", 1)
                     section.setSharedScripts(config['sharedScript'])

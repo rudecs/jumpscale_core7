@@ -12,7 +12,7 @@ import gevent.monkey
 import zmq.green as zmq
 import time
 import tarfile
-import StringIO
+import io
 import msgpack
 import plyvel
 
@@ -27,7 +27,7 @@ class BlobStorServer(GeventLoop):
 
     def __init__(self, port=2345,path="/mnt/BLOBSTOR", nrCmdGreenlets=50):
 
-        if port<>2345:
+        if port!=2345:
             raise RuntimeError("only port 2345 supported for now.")
 
         j.application.initGrid()
@@ -60,10 +60,10 @@ class BlobStorServer(GeventLoop):
         success=False
         while success==False:
             try:
-                print "connect to blobstormaster"
+                print("connect to blobstormaster")
                 checkblobstormaster()
                 success=True
-            except Exception,e:
+            except Exception as e:
                 masterip=j.application.config.get("grid.master.ip")
                 msg="Cannot connect to blobstormaster %s, will retry in 60 sec."%(masterip)
                 j.events.opserror(msg, category='blobstorworker.startup', e=e)
@@ -149,7 +149,7 @@ blobstor.disk.size=100
                 self.nrdisks+=1
 
     def getCIDMax(self,namespace):
-        if self.cidMax.has_key(namespace):
+        if namespace in self.cidMax:
             return self.cidMax[namespace]
 
         maxcidOverDisks=0
@@ -188,7 +188,7 @@ blobstor.disk.size=100
         return j.system.fs.joinPaths(dpath,"%s.tar"%str(llcid))
 
     def getActiveWriteContainer(self,namespace="default",checkonly=False):
-        if not self.activeContainer.has_key(namespace) \
+        if namespace not in self.activeContainer \
                 or self.activeContainerSize[namespace]>self.activeContainerMaxSize \
                 or self.activeContainerNrFilesAdded[namespace]>500 \
                 or self.activeContainerModDate[namespace]<(time.time()-self.activeContainerExpiration):
@@ -204,7 +204,7 @@ blobstor.disk.size=100
             if diskidfound==None:
                 raise RuntimeError("did not find disk with enough space free")
 
-            if self.activeContainer.has_key(namespace):
+            if namespace in self.activeContainer:
                 self.activeContainer[namespace][2].close()
                 self.activeContainer.pop(namespace)
 
@@ -223,14 +223,14 @@ blobstor.disk.size=100
     def cmd2Queue(self,qid=0,cmd="",args={},key="",data="",sync=True):
         rkeyQ="blobserver:cmdqueue:%s"%qid
         jobguid=j.base.idgenerator.generateGUID()     
-        if key<>"":
+        if key!="":
             args["key"]=key
         job=[int(time.time()),jobguid,cmd,args]        
         if data=="":
             self.blobstor.redis.redis.execute_pipeline(\
                 ("RPUSH","blobserver:cmdqueue:0",jobguid),\
                 ("HSET","blobserver:cmds",jobguid,ujson.dumps(job)))
-        elif data<>"":
+        elif data!="":
             self.blobstor.redis.redis.execute_pipeline(\
                 ("RPUSH",rkeyQ,jobguid),\
                 ("HSET","blobserver:cmds",jobguid,ujson.dumps(job)),\
@@ -241,8 +241,8 @@ blobstor.disk.size=100
         return jobguid
 
     def rememberResult(self,sessionkey,jid,rcode,result,cmd,sync):
-        print "remember:%s %s %s (%s)"%(cmd,jid,rcode,sync)
-        if not self.results.has_key(sessionkey):
+        print("remember:%s %s %s (%s)"%(cmd,jid,rcode,sync))
+        if sessionkey not in self.results:
             self.results[sessionkey]={}
             self.resultsSize[sessionkey]=0
         result=msgpack.dumps((jid,rcode,result))
@@ -269,7 +269,7 @@ blobstor.disk.size=100
             for jid,cmd,args,data in cmds:
                 # print "cmd:%s %s %s"%(key,jid,cmd)
 
-                if cmd<>"LOGIN" and key=="":
+                if cmd!="LOGIN" and key=="":
                     raise RuntimeError("error, sessionkey cannot be empty.")
 
                 if cmd=="getresults":
@@ -278,7 +278,7 @@ blobstor.disk.size=100
                     self.rememberResult(key,jid,1,"",cmd,sync)
                 else:
                     #normal function
-                    if data<>"":
+                    if data!="":
                         method=getattr(self, cmd)
                         res=method(data=data,session=self.sessions[key],**args)
                     else:
@@ -309,7 +309,7 @@ blobstor.disk.size=100
             elif cmd=="getresults":
                 results=[]
                 for jid in data:
-                    if not self.results[key].has_key(jid):
+                    if jid not in self.results[key]:
                         raise RuntimeError("did not find job:%s"%jid)
                     else:
                         res=self.results[key].pop(jid)
@@ -379,7 +379,7 @@ blobstor.disk.size=100
             raise RuntimeError("key cannot be None or empty.")
         key2=b'%s__%s'%(namespace,key)
         mddata=self.db.get(key2)
-        if  mddata<>None:
+        if  mddata!=None:
             size,repos,diskid,cid,serializationold=msgpack.loads(mddata)
             if int(repoid) not in repos:
                 repos.append(repoid)
@@ -415,14 +415,14 @@ blobstor.disk.size=100
 
     def GET(self, namespace, key, repoid=0,serialization="", session=None):
 
-        if serialization<>"":
+        if serialization!="":
             raise RuntimeError("not implemented yet, will always return serialization as stored on FS for now")
 
         if key==None or key=="":
             raise RuntimeError("key cannot be None or empty.")
         key2=b'%s__%s'%(namespace,key)
         mddata=self.db.get(key2)
-        if  mddata<>None:
+        if  mddata!=None:
             size,repos,diskid,cid,serialization=msgpack.loads(mddata)
 
             # if self.activeContainerFiles.has_key(namespace)and key in self.activeContainerFiles[namespace]:
@@ -449,7 +449,7 @@ blobstor.disk.size=100
             return None
 
     def SYNC(self,namespace,session=None):
-        if self.activeContainer.has_key(namespace):
+        if namespace in self.activeContainer:
             self.activeContainer[namespace][2].close()
             self.activeContainer.pop(namespace)
             self.activeContainerNrFilesAdded[namespace]=0
@@ -466,11 +466,11 @@ blobstor.disk.size=100
     def EXISTS(self,namespace,key,repoid=0,session=None):
         if key==None or key=="":
             raise RuntimeError("key cannot be None or empty.")
-        if self.activeContainerFiles.has_key(namespace) and key in self.activeContainerFiles[namespace]:
+        if namespace in self.activeContainerFiles and key in self.activeContainerFiles[namespace]:
             return True
         key2=b'%s__%s'%(namespace,key)        
         # print "exist:%s %s"%(key,self.db.get(key2))
-        return self.db.get(key2)<>None
+        return self.db.get(key2)!=None
 
     def EXISTSBATCH (self, namespace, keys, repoid=0,session=None):
         exists=[]
@@ -483,7 +483,7 @@ blobstor.disk.size=100
         raise RuntimeError("not implemented")
         if force=='':
             force=False #@todo is workaround default datas dont work as properly, when not filled in always ''
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
 
         if force:
@@ -492,7 +492,7 @@ blobstor.disk.size=100
             j.system.fs.remove(mdpath)
             return
 
-        if key<>"" and not self.exists(namespace,key):
+        if key!="" and not self.exists(namespace,key):
             return
 
         storpath,mdpath=self._getPaths(namespace,key)
@@ -500,9 +500,9 @@ blobstor.disk.size=100
         if not j.system.fs.exists(path=mdpath):
             raise RuntimeError("did not find metadata")
         md=json.loads(j.system.fs.fileGetContents(mdpath))
-        if not md.has_key("repos"):
+        if "repos" not in md:
             raise RuntimeError("error in metadata on path:%s, needs to have repos as key."%mdpath)
-        if md["repos"].has_key(str(repoid)):
+        if str(repoid) in md["repos"]:
             md["repos"].pop(str(repoid))
         if md["repos"]=={}:
             j.system.fs.remove(storpath)
@@ -514,7 +514,7 @@ blobstor.disk.size=100
 
     def DELNS(self, namespace, session=None):
         raise RuntimeError("not implemented")
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
         storpath=j.system.fs.joinPaths(self.STORpath,namespace)
         j.system.fs.removeDirTree(storpath)
@@ -551,8 +551,8 @@ blobstor.disk.size=100
         # print "starting %s"%self.name
         self.schedule("cmdGreenlet", self.cmdGreenlet)
         # self.startClock()
-        print "blobserver started on port:%s"%(self.port)
-        if mainloop <> None:
+        print("blobserver started on port:%s"%(self.port))
+        if mainloop != None:
             mainloop()
         else:
             while True:

@@ -7,7 +7,7 @@ class HRDBase():
         @param depth means prefix level to return
         """
         result=[]
-        for knownkey in self.items.keys():
+        for knownkey in list(self.items.keys()):
             # print "prefix: %s - %s"%(knownkey,key)
             if knownkey.startswith(key):
                 if depth>0:                    
@@ -19,7 +19,7 @@ class HRDBase():
 
     def prefixexists(self,key):
         result=[]
-        for knownkey in self.items.keys():
+        for knownkey in list(self.items.keys()):
             # print "prefix: %s - %s"%(knownkey,key)
             if knownkey.startswith(key):
                 return True
@@ -36,13 +36,13 @@ class HRDBase():
             return False            
 
     def getInt(self,key,default=None):
-        if default<>None:
+        if default!=None:
             default=int(default)        
         res=self.get(key,default=default)
         return j.tools.text.getInt(res)
 
     def getStr(self,key,default=None):
-        if default<>None:
+        if default!=None:
             default=str(default)        
         res=self.get(key,default=default)
         res=j.tools.text.pythonObjToStr(res,multiline=False)
@@ -61,7 +61,7 @@ class HRDBase():
 
     def exists(self,key):
         key=key.lower()
-        return self.items.has_key(key)
+        return key in self.items
 
     def getList(self,key):
         lst=self.get(key)
@@ -105,23 +105,23 @@ class HRDBase():
         @param template is example hrd content block, which will be used to check against, 
         if params not found will be added to existing hrd 
         """      
-        from HRD import HRD
+        from .HRD import HRD
         hrdtemplate=HRD(content=template)
-        for key in hrdtemplate.items.keys():
-            if not self.items.has_key(key):
+        for key in list(hrdtemplate.items.keys()):
+            if key not in self.items:
                 hrdtemplateitem=hrdtemplate.items[key]
-                if hrddata.has_key(key):
+                if key in hrddata:
                     data=hrddata[key]
                 else:
                     data=hrdtemplateitem.data
                 self.set(hrdtemplateitem.name,data,comments=hrdtemplateitem.comments)
 
     def processall(self):
-        for key,hrditem in self.items.iteritems():
+        for key,hrditem in self.items.items():
             hrditem._process()
 
     def pop(self,key):
-        if self.has_key(key):
+        if key in self:
             self.items.pop(key)
 
     def applyOnDir(self,path,filter=None, minmtime=None, maxmtime=None, depth=None,changeFileName=True,changeContent=True,additionalArgs={}):
@@ -134,7 +134,7 @@ class HRDBase():
         for item in items:
             if changeFileName:
                 item2=self._replaceVarsInText(item,additionalArgs=additionalArgs)
-                if item2<>item:
+                if item2!=item:
                      j.system.fs.renameFile(item,item2)
                     
             if changeContent:
@@ -169,7 +169,7 @@ class HRDBase():
                 # print "look for : %s"%item
                 item2=item.strip(" ").strip("$").strip(" ").strip("(").strip(")")
 
-                if additionalArgs.has_key(item2.lower()):
+                if item2.lower() in additionalArgs:
                     newcontent=additionalArgs[item2.lower()]
                     content=content.replace(item,newcontent)
                 else:
@@ -181,9 +181,9 @@ class HRDBase():
     def __repr__(self):
         
         parts=[]
-        keys=self.items.keys()
+        keys=list(self.items.keys())
         keys.sort()
-        if self.commentblock<>"":
+        if self.commentblock!="":
             out=[self.commentblock]
         else:
             out=[""]
@@ -192,15 +192,15 @@ class HRDBase():
             keynew=key.split(".")
             
             #see how many newlines in between
-            if keylast<>[] and keynew[0]<>keylast[0]:
+            if keylast!=[] and keynew[0]!=keylast[0]:
                 out.append("")
             else:
-                if len(keynew)>1 and len(keylast)>1 and len(keylast[1])>0 and j.tools.text.isNumeric(keylast[1][-1]) and keynew[1]<>keylast[1]:
+                if len(keynew)>1 and len(keylast)>1 and len(keylast[1])>0 and j.tools.text.isNumeric(keylast[1][-1]) and keynew[1]!=keylast[1]:
                     out.append("")   
 
             hrditem=self.items[key]   
 
-            if hrditem.comments<>"":
+            if hrditem.comments!="":
                 out.append("")
                 out.append("%s" % (hrditem.comments.strip()))
             out.append("%-30s = %s" % (key, hrditem.getAsString()))

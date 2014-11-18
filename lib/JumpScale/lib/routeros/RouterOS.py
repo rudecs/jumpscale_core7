@@ -26,7 +26,7 @@ class ApiRos:
         md.update(pwd)
         md.update(chal)
         res=self.talk(["/login", "=name=" + username,"=response=00" + binascii.hexlify(md.digest())])
-        return res[0][0].find("done")<>-1        
+        return res[0][0].find("done")!=-1        
 
     def talk(self, words):
         if self.writeSentence(words) == 0: return
@@ -131,14 +131,14 @@ class ApiRos:
         n = 0;                      
         while n < len(str):         
             r = self.sk.send(str[n:])
-            if r == 0: raise RuntimeError, "connection closed by remote end"
+            if r == 0: raise RuntimeError("connection closed by remote end")
             n += r                  
 
     def readStr(self, length):      
         ret = ''                    
         while len(ret) < length:    
             s = self.sk.recv(length - len(ret))
-            if s == '': raise RuntimeError, "connection closed by remote end"
+            if s == '': raise RuntimeError("connection closed by remote end")
             ret += s
         return ret
 
@@ -158,7 +158,7 @@ class RouterOS(object):
         self.login=login
         self.password=password
         self.ftp=None
-        if res<>True:
+        if res!=True:
             raise RuntimeError("Could not login into RouterOS: %s"%host)
         self.configpath="%s/apps/routeros/configs/default/"%j.dirs.baseDir
         j.system.fs.createDir(j.system.fs.joinPaths(j.dirs.varDir,"routeros"))
@@ -167,13 +167,13 @@ class RouterOS(object):
     def do(self,cmd,args={}):
         cmds=[]
         cmds.append(cmd)
-        for key,value in args.iteritems():
+        for key,value in args.items():
             arg="=%s=%s"%(key,value)
             cmds.append(arg)
-        if args<>{}:
+        if args!={}:
             cmds.append("")
-        print ">>> DO:"
-        print cmds
+        print(">>> DO:")
+        print(cmds)
         r=self.api.talk(cmds)
         return self._parse_result(r)
 
@@ -192,7 +192,7 @@ class RouterOS(object):
 
     def getIpaddress(self, macaddress):
         lease = self.getLease(macaddress)
-        if lease and 'address' in lease.keys():
+        if lease and 'address' in list(lease.keys()):
             return lease['address']
         return None
  
@@ -205,7 +205,7 @@ class RouterOS(object):
             if rc=="!re" or rc=="!trap":
                 #return
                 result2={}
-                for key,value in result.iteritems():
+                for key,value in result.items():
                     key=key.lstrip("=")
                     if value=="false":
                         value=False
@@ -214,7 +214,7 @@ class RouterOS(object):
                     result2[key]=value
                 if rc=="!trap":
                     msg=result2["message"]
-                    if result2.has_key("category"):
+                    if "category" in result2:
                         cat=result2["category"]
                         cat=int(cat)
                         cats={}
@@ -226,7 +226,7 @@ class RouterOS(object):
                         cats[5]="API related failure"
                         cats[6]="TTY related failure"
                         cats[7]="value generated with :return command"
-                        if cats.has_key(cat):
+                        if cat in cats:
                             msg+"\ncat:%s"%cats[cat]
                     raise RuntimeError("could not execute,error:\n%s"%(msg))
             result3.append(result2)
@@ -283,7 +283,7 @@ class RouterOS(object):
             raise RuntimeError("specify mask")
         arg={}
         arg["address"]=ipaddr
-        if comment<>"":
+        if comment!="":
             arg["comment"]=comment
         interfaces=self.interface_getnames()
         if interfacename not in interfaces:
@@ -292,7 +292,7 @@ class RouterOS(object):
         if single:
             for item in self.ipaddr_getall():
                 if item["interface"]==interfacename:
-                    print "found other addr already on interface, will remove.:%s"%item["ip"]
+                    print("found other addr already on interface, will remove.:%s"%item["ip"])
                     self.ipaddr_remove(item["ip"])
         return self.do("/ip/address/add", args=arg)
 
@@ -337,7 +337,7 @@ class RouterOS(object):
         else:
             try:
                 self.ftp.delete(path)
-            except Exception, e:
+            except Exception as e:
                 pass
 
     def mkdir(self, path):
@@ -370,15 +370,15 @@ class RouterOS(object):
             self.ftp.retrbinary('RETR %s'%path, open(dest, 'wb').write)
         else:
             try:
-                print "download '%s'"%path,
+                print("download '%s'"%path)
                 self.ftp.retrbinary('RETR %s'%path, open(dest, 'wb').write)
-                print
-            except Exception, e:
-                print "ERROR"
+                print()
+            except Exception as e:
+                print("ERROR")
                 pass
 
     def upload(self,path,dest):
-        print "upload: '%s' to '%s'"%(path,dest)
+        print("upload: '%s' to '%s'"%(path,dest))
         self._getFtp()
         if not j.system.fs.exists(path=path):
             raise RuntimeError("Cannot find %s"%path)
@@ -394,21 +394,21 @@ class RouterOS(object):
 
     def uploadExecuteScript(self,name,removeAfter=True,vars={},srcpath=""):
         if srcpath=="":
-            print "EXECUTE SCRIPT:%s"%name
+            print("EXECUTE SCRIPT:%s"%name)
             name=name+".rsc"
             src=j.system.fs.joinPaths(self.configpath,name)
         else:
             src=srcpath
 
         content=j.system.fs.fileGetContents(src)
-        for key,val in vars.iteritems():
+        for key,val in vars.items():
             content=content.replace(key,val)
         src=j.system.fs.joinPaths(j.dirs.tmpDir,j.system.fs.getTempFileName())
         j.system.fs.writeFile(src,content)
 
-        print "EXECUTE:"
-        print content
-        print "#################END##################"
+        print("EXECUTE:")
+        print(content)
+        print("#################END##################")
         
         self.upload(src,name)
         self.do("/import", args={"file-name":name})
@@ -432,7 +432,7 @@ class RouterOS(object):
 
 
     def executeScript(self,content):
-        if content[0]<>"/":
+        if content[0]!="/":
             content="/%s"%content
         name="_tmp_%s"%j.base.idgenerator.generateRandomInt(1,10000)
         src=j.system.fs.joinPaths(j.dirs.varDir,"routeros","%s.rsc"%name)
@@ -442,7 +442,7 @@ class RouterOS(object):
 
     def uploadFilesFromDir(self,path,dest=""):       
         for item in j.system.fs.listFilesInDir(j.system.fs.joinPaths(self.configpath,path),False):
-            if dest<>"":
+            if dest!="":
                 dest2=j.system.fs.joinPaths(dest,j.system.fs.getBaseName(item))
             else:
                 dest2=j.system.fs.getBaseName(item)
@@ -488,7 +488,7 @@ class RouterOS(object):
     def listPortForwardRules(self, tags=None):
         forwards = self.do('/ip/firewall/nat/getall')
         if tags is not None:
-            forwards = [fw for fw in forwards if 'comment' in fw.keys() and fw['comment'] == tags]
+            forwards = [fw for fw in forwards if 'comment' in list(fw.keys()) and fw['comment'] == tags]
         return forwards
 
     def ping(self,addr):

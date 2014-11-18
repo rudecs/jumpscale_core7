@@ -1,4 +1,6 @@
+
 try:
+    # from urllib3.request import urlopen
     from urllib.request import urlopen
 except ImportError:
     from urllib import urlopen
@@ -19,20 +21,21 @@ class InstallTools():
     def __init__(self,debug=True):
         if platform.system().lower()=="windows":
             self.TYPE="WIN"
-            self.BASE="%s/"%os.environ["JBASE"].replace("\\","/")
+            self.BASE="%s/"%os.environ["JSBASE"].replace("\\","/")
             while self.BASE[-1]=="/":
                 self.BASE=self.BASE[:-1]
             self.BASE+="/"
             self.TMP=tempfile.gettempdir().replace("\\","/")
         else:
             self.TYPE="LINUX"
-            self.BASE="/opt/jumpscale7"
+            if "JSBASE" in os.environ:
+                self.BASE=os.environ["JSBASE"]
             self.TMP="/tmp"
         self.debug=False
         self.createDir("%s/jumpscaleinstall"%(self.TMP))
         self.debug=debug
         self._extratools=False
-        
+
     def log(self,msg):
         print(msg)
 
@@ -52,7 +55,7 @@ class InstallTools():
 
     def delete(self,path):
         if self.debug:
-            print("delete: %s" % path)
+            print(("delete: %s" % path))
         if os.path.exists(path) or os.path.islink(path):
             if os.path.isdir(path):
                 #print "delete dir %s" % path           
@@ -78,15 +81,15 @@ class InstallTools():
         
     #     shutil.copytree(source,dest)
 
-    def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True):
+    def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info","__pycache__",".dist-info"],ignorefiles=[".egg-info"]):
         if self.debug:
             print("copy %s %s" % (source,dest))
         old_debug=self.debug
         self.debug=False
-        self._copyTree(source, dest, keepsymlinks, deletefirst, overwriteFiles)    
+        self._copyTree(source, dest, keepsymlinks, deletefirst, overwriteFiles,ignoredir=ignoredir,ignorefiles=ignorefiles)    
         self.debug=  old_debug
 
-    def _copyTree(self, src, dst, keepsymlinks = False, deletefirst = False, overwriteFiles=True):
+    def _copyTree(self, src, dst, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info","__pycache__"],ignorefiles=[".egg-info"]):
         """Recursively copy an entire directory tree rooted at src.
         The dst directory may already exist; if not,
         it will be created as well as missing parent directories
@@ -101,6 +104,10 @@ class InstallTools():
         if ((src is None) or (dst is None)):
             raise TypeError('Not enough parameters passed in system.fs.copyTree to copy directory from %s to %s '% (src, dst))
         if self.isDir(src):
+            if ignoredir!=[]:
+                for item in ignoredir:
+                    if src.find(item)!=-1:
+                        return
             names = os.listdir(src)
  
             if not self.exists(dst):
@@ -121,12 +128,24 @@ class InstallTools():
 
                 if keepsymlinks and self.isLink(srcname):
                     linkto = self.readlink(srcname)
-                    self.symlink(linkto, dstname, overwriteFiles)
+                    # self.symlink(linkto, dstname)#, overwriteFiles)
+                    try:
+                        os.symlink(linkto,dstname)
+                    except:
+                        pass
+                        #@todo very ugly change
                 elif self.isDir(srcname):
                     #print "1:%s %s"%(srcname,dstname)
-                    self.copyTree(srcname, dstname, keepsymlinks, deletefirst,overwriteFiles=overwriteFiles )
+                    self.copyTree(srcname, dstname, keepsymlinks, deletefirst,overwriteFiles=overwriteFiles ,ignoredir=ignoredir)
                 else:
                     #print "2:%s %s"%(srcname,dstname)
+                    extt=self.getFileExtension(srcname)
+                    if extt=="pyc" or extt=="egg-info":
+                        continue
+                    if ignorefiles!=[]:
+                        for item in ignorefiles:
+                            if srcname.find(item)!=-1:
+                                continue
                     self.copyFile(srcname, dstname, deletefirst=overwriteFiles)
         else:
             raise RuntimeError('Source path %s in system.fs.copyTree is not a directory'% src)
@@ -141,7 +160,7 @@ class InstallTools():
 
     def createDir(self,path):
         if self.debug:
-            print("createDir: %s" % path)
+            print(("createDir: %s" % path))
         if not os.path.exists(path) and not os.path.islink(path):
             os.makedirs(path)
 
@@ -216,19 +235,19 @@ class InstallTools():
             cmd="junction %s" % path
             try:
                 result=self.execute(cmd)
-            except Exception,e:
+            except Exception as e:
                 raise RuntimeError("Could not execute junction cmd, is junction installed? Cmd was %s."%cmd)
-            if result[0]<>0:
+            if result[0]!=0:
                 raise RuntimeError("Could not execute junction cmd, is junction installed? Cmd was %s."%cmd)
-            if result[1].lower().find("substitute name")<>-1:
+            if result[1].lower().find("substitute name")!=-1:
                 return True
             else:
                 return False
             
         if(os.path.islink(path)):
-            self.log('path %s is a link'%path,8)
+            # self.log('path %s is a link'%path,8)
             return True
-        self.log('path %s is not a link'%path,8)
+        # self.log('path %s is not a link'%path,8)
         return False            
       
     def list(self,path):
@@ -256,7 +275,7 @@ class InstallTools():
                 link=link.split("(")[0].strip()
                 if self.exists(link):
                     name=os.path.basename(link)
-                    if not deps.has_key(name):
+                    if name not in deps:
                         print(link)
                         deps[name]=link
                         deps=self.findDependencies(link)
@@ -265,7 +284,7 @@ class InstallTools():
     def copyDependencies(self,path,dest):
         self.installtools.createDir(dest)
         deps=self.findDependencies(path)
-        for name in deps.keys():
+        for name in list(deps.keys()):
             path=deps[name]
             self.installtools.copydeletefirst(path,"%s/%s"%(dest,name))
 
@@ -274,7 +293,7 @@ class InstallTools():
         dest is where the link will be created pointing to src
         """
         if self.debug:
-            print("symlink: src:%s dest(islink):%s" % (src,dest))        
+            print(("symlink: src:%s dest(islink):%s" % (src,dest)))        
         if self.TYPE=="WIN":
             self.removesymlink(dest)
             self.delete(dest)
@@ -295,7 +314,7 @@ class InstallTools():
         for item in self.listFilesInDir(src, recursive=False,followSymlinks=True,listSymlinks=True):
             dest2="%s/%s"%(dest,self.getBaseName(item))
             dest2=dest2.replace("//","/")
-            print "%s:%s"%(item,dest2)
+            print(("%s:%s"%(item,dest2)))
             self.symlink(item,dest2)
 
 
@@ -315,7 +334,7 @@ class InstallTools():
             raise TypeError('Path is not passed in system.fs.getDirName')
         try:
             return os.path.basename(path.rstrip(os.path.sep))
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError('Failed to get base name of the given path: %s, Error: %s'% (path,str(e)))
 
     def checkDirOrLinkToDir(self,fullpath):
@@ -350,7 +369,7 @@ class InstallTools():
         if lastOnly:
             dname=dname.split(os.sep)[-1]
             return dname
-        if levelsUp<>None:
+        if levelsUp!=None:
             parts=dname.split(os.sep)
             if len(parts)-levelsUp>0:
                 return parts[len(parts)-levelsUp-1]
@@ -370,7 +389,7 @@ class InstallTools():
         if self.isUnix():
             try:
                 return os.readlink(path)
-            except Exception, e:
+            except Exception as e:
                 raise RuntimeError('Failed to read link with path: %s \nERROR: %s'%(path, str(e)))
         elif self.isWindows():
             raise RuntimeError('Cannot readLink on windows')
@@ -446,7 +465,7 @@ class InstallTools():
         @Param exclude: list of std filters if matches then exclude
         @rtype: list
         """
-        if depth<>None:
+        if depth!=None:
             depth=int(depth)
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
@@ -472,7 +491,7 @@ class InstallTools():
         @param type is string with f & d inside (f for when to find files, d for when to find dirs)
         @rtype: list
         """
-        if depth<>None:
+        if depth!=None:
             depth=int(depth)
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
@@ -521,7 +540,7 @@ class InstallTools():
                     else:
                         includeFile = True
                 if includeFile:
-                    if exclude<>[]:
+                    if exclude!=[]:
                         for excludeItem in exclude:
                             if matcher(direntry, excludeItem):
                                 includeFile=False
@@ -532,11 +551,11 @@ class InstallTools():
                     if not(listSymlinks==False and self.isLink(fullpath)):
                         filesreturn.append(fullpath)
                 if recursive:
-                    if depth<>None and depth<>0:
+                    if depth!=None and depth!=0:
                         depth=depth-1
-                    if depth==None or depth<>0:
+                    if depth==None or depth!=0:
                         exclmatch=False
-                        if exclude<>[]:
+                        if exclude!=[]:
                             for excludeItem in exclude:
                                 if matcher(fullpath, excludeItem):
                                     exclmatch=True
@@ -585,14 +604,14 @@ class InstallTools():
                 path = os.path.join(root, ddir)
                 try:
                     os.chown(path, uid, gid)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)                
             for file in files:
                 path = os.path.join(root, file)
                 try:
                     os.chown(path, uid, gid)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
 
@@ -606,7 +625,7 @@ class InstallTools():
                 path = os.path.join(root, ddir)
                 try:
                     os.chmod(path,permissions)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
                     
@@ -614,7 +633,7 @@ class InstallTools():
                 path = os.path.join(root, file)
                 try:
                     os.chmod(path,permissions)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
 
@@ -623,7 +642,7 @@ class InstallTools():
 
     def download(self,url,to):
         os.chdir(self.TMP)
-        print('Downloading %s ' % (url))
+        print(('Downloading %s ' % (url)))
         handle = urlopen(url)
         with open(to, 'wb') as out:
             while True:
@@ -664,8 +683,7 @@ class InstallTools():
     #     return stdout
 
     def log(self,msg,level=0):
-        # print(msg)
-        pass
+        print(msg)
 
     def isUnix(self):
         if sys.platform.lower().find("linux")!=-1:
@@ -790,7 +808,7 @@ class InstallTools():
                 raise RuntimeError("Non supported OS for self.execute()")
 
         except Exception as e:
-            print "ERROR IN EXECUTION, SHOULD NOT GET HERE."
+            print("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
             raise
 
         if exitcode!=0 or error!="":
@@ -802,6 +820,8 @@ class InstallTools():
             self.log("command: [%s]\nexitcode:%s\noutput:%s\nerror:%s" % (command, exitcode, output, error), 3)
             raise RuntimeError("Error during execution! (system.process.execute())\n\nCommand: [%s]\n\nExitcode: %s\n\nProgram output:\n%s\n\nErrormessage:\n%s\n" % (command, exitcode, output, error))
 
+        output=output.replace("\\n","\n")
+        output=output.replace("\\t","    ")
         return output        
 
     def executeInteractive(self,command):
@@ -809,7 +829,7 @@ class InstallTools():
         return exitcode
 
     def downloadExpandTarGz(self,url,destdir,deleteDestFirst=True,deleteSourceAfter=True):
-        print self.getBaseName(url)
+        print((self.getBaseName(url)))
         tmppath=self.getTmpPath(self.getBaseName(url))
         self.download(url,tmppath)
         self.expandTarGz(tmppath,destdir)
@@ -888,13 +908,13 @@ class InstallTools():
         else:
             raise RuntimeError("Url needs to start with 'https://'")
 
-        if login<>None:            
+        if login!=None:            
             url="%s%s:%s@%s"%(pre,login,passwd,url2)
 
         if dest==None:
             url3=url2.strip(" /")
             ttype,account,repo=url3.split("/",3)
-            if ttype.find(".")<>-1:
+            if ttype.find(".")!=-1:
                 ttype=ttype.split(".",1)[0]
             dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo.lower().replace(".git",""))
 
@@ -905,40 +925,40 @@ class InstallTools():
         checkdir="%s/.git"%(dest)
         if self.exists(checkdir):
             if ignorelocalchanges:
-                print "git pull, ignore changes %s -> %s"%(url,dest)
+                print(("git pull, ignore changes %s -> %s"%(url,dest)))
                 cmd="cd %s;git fetch"%dest
-                if depth<>None:
+                if depth!=None:
                     cmd+=" --depth %s"%depth    
                 self.executeInteractive(cmd)
                 self.executeInteractive("cd %s;git reset --hard origin/%s"%(dest,branch))
             else:
                 #pull
-                print "git pull %s -> %s"%(url,dest)
+                print(("git pull %s -> %s"%(url,dest)))
                 cmd="cd %s;git pull origin %s"%(dest,branch)
                 self.executeInteractive(cmd)
         else:
-            print "git clone %s -> %s"%(url,dest)
+            print(("git clone %s -> %s"%(url,dest)))
             cmd="cd %s;git clone -b %s --single-branch %s %s"%(dest,branch,url,dest)
-            if depth<>None:
+            if depth!=None:
                 cmd+=" --depth %s"%depth        
             self.executeInteractive(cmd)
 
     def getGitReposListLocal(self,ttype="",account="",name="",errorIfNone=True):
         repos={}
         for top in self.listDirsInDir("/opt/code/", recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-            if ttype<>"" and ttype<>top:
+            if ttype!="" and ttype!=top:
                 continue
             for accountfound in self.listDirsInDir("/opt/code/%s"%top, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                if account<>"" and account<>accountfound:
+                if account!="" and account!=accountfound:
                     continue                
                 accountfounddir="/opt/code/%s/%s"%(top,accountfound)
                 for reponame in self.listDirsInDir("/opt/code/%s/%s"%(top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                    if name<>"" and name<>reponame:
+                    if name!="" and name!=reponame:
                         continue                          
                     repodir="/opt/code/%s/%s/%s"%(top,accountfound,reponame)
                     if self.exists(path="%s/.git"%repodir):
                         repos[reponame]=repodir
-        if len(repos.keys())==0:
+        if len(list(repos.keys()))==0:
             raise RuntimeError("Cannot find git repo '%s':'%s':'%s'"%(ttype,account,name))
         return repos
 
@@ -949,8 +969,8 @@ class InstallTools():
         if not or more than 1 there will be error
         """
         repos=self.getGitReposListLocal(ttype,account,name)
-        for name,path in repos.iteritems():
-            print "push git repo:%s"%path
+        for name,path in list(repos.items()):
+            print(("push git repo:%s"%path))
             cmd="cd %s;git add . -A"%(path)
             self.executeInteractive(cmd)
             cmd="cd %s;git commit -m \"%s\""%(path,message)
@@ -963,8 +983,8 @@ class InstallTools():
 
     def updateGitRepos(self,ttype="",account="",name="",message=""):
         repos=self.getGitReposListLocal(ttype,account,name)
-        for name,path in repos.iteritems():
-            print "push git repo:%s"%path
+        for name,path in list(repos.items()):
+            print(("push git repo:%s"%path))
             cmd="cd %s;git add . -A"%(path)
             self.executeInteractive(cmd)
             cmd="cd %s;git commit -m \"%s\""%(path,message)
@@ -976,23 +996,23 @@ class InstallTools():
         """
         walk over all git repo's found in account & change login/passwd
         """
-        for reponame,repopath in self.getGitReposListLocal(ttype).iteritems():
+        for reponame,repopath in list(self.getGitReposListLocal(ttype).items()):
             import re
             configpath="%s/.git/config"%repopath
             text=self.readFile(configpath)
             text2=text
-            for item in re.findall(re.compile(ur'//.*@%s'%ttype), text):
+            for item in re.findall(re.compile(r'//.*@%s'%ttype), text):
                 newitem="//%s:%s@%s"%(login,passwd,ttype)
                 text2=text.replace(item,newitem)
-            if text2<>text:
-                print "changed login/passwd on %s"%configpath
+            if text2!=text:
+                print(("changed login/passwd on %s"%configpath))
                 self.writeFile(configpath,text2)            
 
 
 ############# package installation
 
     def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False):
-        print "Install Jumpscale in %s"%base
+        print(("Install Jumpscale in %s"%base))
         if clean:
             self.cleanSystem()
 
@@ -1005,7 +1025,7 @@ class InstallTools():
         self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
-        print "install js"
+        print("install js")
         dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
         if insystem or not self.exists(dest):            
             self.symlink(src, dest)
@@ -1037,7 +1057,7 @@ class InstallTools():
 
 
     def loadScript(self,path):
-        print "load jumpscript: %s"%path
+        print(("load jumpscript: %s"%path))
         source = j.system.fs.fileGetContents(path)
         out,tags=self._preprocess(source)        
         md5sum=j.tools.hash.md5_string(out)
@@ -1058,7 +1078,7 @@ class InstallTools():
         #identifies the actions & tags linked to it
         self.tags=tags
 
-        for name,val in tags.iteritems():
+        for name,val in list(tags.items()):
             self.actions[name]=eval("self.module.%s"%name)
 
     def installPackage(self,path):
@@ -1067,7 +1087,7 @@ class InstallTools():
 ############# custom install items
 
     def cleanSystem(self):
-        print "clean platform"
+        print("clean platform")
         CMDS="""
 pip uninstall JumpScale-core
 # killall tmux  #dangerous
@@ -1095,7 +1115,7 @@ rm -rf /opt/redis/
 
     def prepareUbuntu14Development(self,js=False):
         self.cleanSystem()
-        print "prepare ubuntu for development"
+        print("prepare ubuntu for development")
 
         CMDS="""
 apt-get update
@@ -1111,11 +1131,11 @@ apt-get install byobu tmux libmhash2 libpython-all-dev python-redis python-hired
 
         if js:
             self.installJS(clean=False)
-        print "done"
+        print("done")
 
     def prepareUbuntu14(self,js=False):
         self.cleanSystem()
-        print "prepare ubuntu for development"
+        print("prepare ubuntu for development")
 
         CMDS="""
 apt-get update
@@ -1128,7 +1148,7 @@ apt-get install mc git ssh python2.7 python-requests  -y
 
         if js:
             self.installJS(clean=False)
-        print "done"
+        print("done")
 
     def gitConfig(self,name,email):
         self.execute("git config --global user.email \"%s\""%email)

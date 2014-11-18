@@ -10,7 +10,7 @@ class ECO(OsisBaseObject):
 
     def __init__(self, ddict={},id=0,guid="",errormessage="",errormessagePub="",level=1,category="",tags="",transactionsinfo="",\
                     gid=0,nid=0,pid=0,aid=0,jid=0,masterjid=0,epoch=0,type=0):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.errormessage=errormessage
@@ -64,7 +64,7 @@ class ECO(OsisBaseObject):
         """
         return unique key for object, is used to define unique id
         """
-        if self.category<>"":
+        if self.category!="":
             C= "%s_%s_%s_%s_%s_%s_%s_%s"%(self.gid,self.nid,self.category,self.level,self.funcname,self.funcfilename,self.appname,self.type)
         else:
             C= "%s_%s_%s_%s_%s_%s_%s_%s"%(self.gid,self.nid,self.errormessage,self.level,self.funcname,self.funcfilename,self.appname,self.type)

@@ -53,7 +53,7 @@ class Sort(object):
 	for index, chunk in enumerate(chunks):
 	    try:
 		iterator = iter(chunk)
-		value = iterator.next()
+		value = next(iterator)
 
 	    except StopIteration:
 		try:
@@ -69,7 +69,7 @@ class Sort(object):
 	    k, index, value, iterator, chunk = heappop(values)
 	    yield value
 	    try:
-		value = iterator.next()
+		value = next(iterator)
 
 	    except StopIteration:
 		try:

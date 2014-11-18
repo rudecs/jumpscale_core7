@@ -1,4 +1,4 @@
-from GitClient import GitClient
+from .GitClient import GitClient
 from JumpScale import j
 
 

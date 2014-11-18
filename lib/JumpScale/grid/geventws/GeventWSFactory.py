@@ -35,10 +35,10 @@ class GeventWSFactory():
         key="%s_%s"%(addr,port)
         keycat="%s_%s_%s"%(addr,port,category)
         
-        if self.cachecat.has_key(keycat):
+        if keycat in self.cachecat:
             return self.cachecat[keycat]
 
-        if False and self.cache.has_key(key):
+        if False and key in self.cache:
             cl=self.cache[key]
         else:
             from .GeventWSTransport import GeventWSTransport
@@ -55,10 +55,10 @@ class GeventWSFactory():
         key="%s"%(connections)
         keycat="%s_%s"%(connections,category)
         
-        if self.cachecat.has_key(keycat):
+        if keycat in self.cachecat:
             return self.cachecat[keycat]
 
-        if False and self.cache.has_key(key):
+        if False and key in self.cache:
             cl=self.cache[key]
         else:
             from .GeventWSTransport import GeventWSHATransport

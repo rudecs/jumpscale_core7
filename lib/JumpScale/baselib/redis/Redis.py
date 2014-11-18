@@ -1,7 +1,7 @@
 from JumpScale import j
 import redis
 # from JumpScale.baselib.credis.CRedis import CRedis
-from RedisQueue import RedisQueue
+from .RedisQueue import RedisQueue
 import itertools
 
 try:
@@ -32,7 +32,7 @@ class RedisDict(dict):
     def copy(self):
         result = dict()
         allkeys = self._client.hgetalldict(self._key)
-        for key, value in allkeys.iteritems():
+        for key, value in allkeys.items():
             result[key] = json.loads(value)
         return result
 
@@ -46,7 +46,7 @@ class RedisDict(dict):
 
     def iteritems(self):
         allkeys = self._client.hgetalldict(self._key)
-        for key, value in allkeys.iteritems():
+        for key, value in allkeys.items():
             yield key, json.loads(value)
 
 class Redis(redis.Redis):
@@ -58,7 +58,7 @@ class GeventRedis(Redis):
     def hgetall(self, name):
         "Return a Python dict of the hash's name/value pairs"
         d = self.execute_command('HGETALL', name)
-        return list(itertools.chain(*zip(d.keys(), d.values())))
+        return list(itertools.chain(*list(zip(list(d.keys()), list(d.values())))))
 
 class RedisFactory:
 
@@ -85,7 +85,7 @@ class RedisFactory:
         key = "%s_%s" % (ipaddr, port)
         if not fromcache:
             return Redis(ipaddr, port, password=password)
-        if not self.redis.has_key(key):
+        if key not in self.redis:
             self.redis[key] = Redis(ipaddr, port, password=password)
         return self.redis[key]
 
@@ -102,7 +102,7 @@ class RedisFactory:
         if not fromcache:
             return RedisQueue(self.getRedisClient(ipaddr, port, fromcache=False), name, namespace=namespace)
         key = "%s_%s_%s_%s" % (ipaddr, port, name, namespace)
-        if not self.redisq.has_key(key):
+        if key not in self.redisq:
             self.redisq[key] = RedisQueue(self.getRedisClient(ipaddr, port), name, namespace=namespace)
         return self.redisq[key]
 
@@ -111,7 +111,7 @@ class RedisFactory:
         if not fromcache:
             return RedisQueue(self.getGeventRedisClient(ipaddr, port, False), name, namespace=namespace)
         key = "%s_%s_%s_%s" % (ipaddr, port, name, namespace)
-        if not self.gredisq.has_key(key):
+        if key not in self.gredisq:
             self.gredisq[key] = RedisQueue(self.getGeventRedisClient(ipaddr, port), name, namespace=namespace)
         return self.gredisq[key]
 
@@ -121,7 +121,7 @@ class RedisFactory:
             path=j.system.fs.joinPaths(j.dirs.varDir,"redis",pd.name,"db","appendonly.aof")
             if j.system.fs.exists(path):
                 stats=j.system.fs.statPath(path)
-                if stats.st_size<>0:                    
+                if stats.st_size!=0:                    
                     cmd="%s/apps/redis/redis-check-aof --fix %s"%(j.dirs.baseDir,path)
                     j.system.process.executeWithoutPipe(cmd)
             pd.start()
@@ -132,7 +132,7 @@ class RedisFactory:
                 continue #nothing to do
             pd.stop()
             path=j.system.fs.joinPaths(j.dirs.varDir,"redis",pd.name,"db")
-            print "remove:%s"%path
+            print("remove:%s"%path)
             j.system.fs.removeDirTree(path)
             j.system.fs.createDir(path)
             path=j.system.fs.joinPaths(j.dirs.varDir,"redis",pd.name,"redis.log")
@@ -770,7 +770,7 @@ aof-rewrite-incremental-fsync yes
 
         if slave:
             CONTENT="slaveof %s %s\n"%(slave[0],slave[1])
-            if slave[2]<>"":
+            if slave[2]!="":
                 CONTENT+="masterauth %s\n"%slave[2]
             C = C.replace("$slave",CONTENT)
         else:
@@ -783,7 +783,7 @@ aof-rewrite-incremental-fsync yes
         else:
             C = C.replace("$snapshot","")
         
-        if passwd<>None:
+        if passwd!=None:
             C = C.replace("$passwd", "requirepass %s"%passwd)
         else:
             C = C.replace("$passwd","")

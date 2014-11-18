@@ -23,7 +23,7 @@ class BlobstorMasterCMDS():
 
     def _load(self):
         result=self.blobstor._getNodesDisks()
-        if result<>None:
+        if result!=None:
             self.nodes,self.disks=result
         else:
             for guid in self.osis.node.list():
@@ -65,7 +65,7 @@ class BlobstorMasterCMDS():
         freetot=0
         nodes2remove=[]
         for nodeid in ns["routeMap"]:
-            if not self.nodes.has_key(nodeid):
+            if nodeid not in self.nodes:
                 #means node is no longer available (e.g. full, or down)
                 nodes2remove.append(nodeid)
             else:
@@ -84,14 +84,14 @@ class BlobstorMasterCMDS():
         if len(ns["routeMap"])>spreadnr-1:
             return ns #nothing todo spread is ok
 
-        nkeys=self.nodes.keys()
+        nkeys=list(self.nodes.keys())
         tosort=[]
         def tostr(iint):
             iint=str(iint)
             while len(iint)<8:
                 iint="0%s"%iint
             return iint
-        for key,node in self.nodes.iteritems():
+        for key,node in self.nodes.items():
             tosort.append("%s_%s"%(tostr(node["free"]),key))
         tosort.sort()
         tosort.reverse()
@@ -126,7 +126,7 @@ class BlobstorMasterCMDS():
         returns (ipaddr,port,key)
         """
         bsnid=str(bsnid)
-        if not self.nodes.has_key(bsnid):
+        if bsnid not in self.nodes:
             raise RuntimeError("Could not find node with id:%s"%bsnid)
         node=self.nodes[bsnid]
 
@@ -236,7 +236,7 @@ class BlobStorMaster:
             try:
                 checkosis()
                 success=True
-            except Exception,e:
+            except Exception as e:
                 msg="Cannot connect to osis %s, will retry in 60 sec."%(masterip)
                 j.events.opserror(msg, category='processmanager.startup', e=e)
                 time.sleep(60)

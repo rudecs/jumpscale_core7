@@ -36,9 +36,9 @@
 from JumpScale import j
 from JumpScale.core.baseclasses.CMDBObject import CMDBObject
 
-import DevicePerformance
-import DeviceOperatingSystem
-import DeviceHypervisor
+from . import DevicePerformance
+from . import DeviceOperatingSystem
+from . import DeviceHypervisor
 
 
 class Device(CMDBObject):

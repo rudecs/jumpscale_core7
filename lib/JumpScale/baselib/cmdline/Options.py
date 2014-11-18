@@ -68,7 +68,7 @@ class GenericOptionParser:
         tuples to a dictionary """
 
         optmap = {}
-        for key,value in map.items():
+        for key,value in list(map.items()):
             d = {}
             for item in value:
                 if not item: continue
@@ -106,7 +106,7 @@ class GenericOptionParser:
 
         p = self.optparse.OptionParser()
         
-        for key,value in self._optmap.items():
+        for key,value in list(self._optmap.items()):
             # Option destination is the key itself
             option = key
             # Default action is 'store'
@@ -150,7 +150,7 @@ class GenericOptionParser:
         shortopt,longopt='h',['help']
         # Create short option string and long option
         # list for getopt
-        for key, value in self._optmap.items():
+        for key, value in list(self._optmap.items()):
             sopt = value.get('short','')
             lopt = value.get('long','')
             typ = value.get('type','string')            
@@ -178,7 +178,7 @@ class GenericOptionParser:
             if opt in ('-h','--help'):
                 sys.exit(self._usage())
                 
-            for key,value in self._optmap.items():
+            for key,value in list(self._optmap.items()):
                 sopt = '-' + value.get('short','')
                 lopt = '--' + value.get('long','')
                 typ = value.get('type','string')
@@ -199,7 +199,7 @@ class GenericOptionParser:
 
         options = [('  -h, --help', 'show this help message and exit\n')]
         maxlen = 0
-        for value in self._optmap.values():
+        for value in list(self._optmap.values()):
             sopt = value.get('short','')
             lopt = value.get('long','')
             help = value.get('help','')
@@ -239,7 +239,7 @@ if __name__=="__main__":
     g=GenericOptionParser(d)
     optdict = g.parse_arguments()
  
-    for key,value in optdict.items():
+    for key,value in list(optdict.items()):
          # Use the option and the value in
          # your program
-         print "%s -> %s" %(key,value)
+         print("%s -> %s" %(key,value))

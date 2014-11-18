@@ -8,10 +8,10 @@ import time
 from datetime import datetime
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
     try:
-        from StringIO import StringIO
+        from io import StringIO
     except:
         from io import StringIO
 
@@ -76,7 +76,7 @@ class LogUtils(object):
                 @functools.wraps(func)
                 def wrappedFunc(*args, **kwargs):
                     argiter = itertools.chain(args, ["%s=%s" % (k, v) for k, v in
-                                                     kwargs.iteritems()])
+                                                     kwargs.items()])
                     descr = "%s(%s)" % (func.__name__, ", ".join(argiter))
                     j.logger.log("Calling " + descr, level)
                     try:
@@ -109,7 +109,7 @@ class LogItem(object):
 
         self.appname = j.application.appname
         self.tags = str(tags).strip().replace("\r\n", "/n").replace("\n", "/n").replace("|", "/|")
-        if jid=="" and j.application.jid<>0:
+        if jid=="" and j.application.jid!=0:
             self.jid=j.application.jid
         else:
             self.jid = str(jid)
@@ -127,7 +127,7 @@ class LogItem(object):
         use osis to define & set unique guid (sometimes also id)
         """
         self.gid = int(self.gid)
-        if self.pid<>0:
+        if self.pid!=0:
             self.guid = "%s_%s_%s"%(self.gid,self.pid,self.order)
         else:
             self.guid = "%s_%s_%s_%s"%(self.gid,self.nid,self.epoch,self.order)
@@ -174,7 +174,7 @@ class LogHandler(object):
                 self.redislogging=self.redis.register_script(lua)    
 
     def _send2Redis(self,obj):
-        if self.redis<>None and self.redislogging<>None:
+        if self.redis!=None and self.redislogging!=None:
             data=obj.toJson()
             return self.redislogging(keys=["logs.queue"],args=[data])
         else:
@@ -250,9 +250,9 @@ class LogHandler(object):
 
         if level < (self.consoleloglevel + 1):
 
-            if self.consolelogCategories<>[]:
+            if self.consolelogCategories!=[]:
                 for consolecat in self.consolelogCategories:
-                    if log.category.find(consolecat)<>-1:
+                    if log.category.find(consolecat)!=-1:
                         ccat=log.category
                         while len(ccat)<25:
                             ccat+=" "

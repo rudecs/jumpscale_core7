@@ -1,10 +1,10 @@
 import inspect
 from JumpScale import j
 
-from Appserver6GreenletScheduleBase import Appserver6GreenletScheduleBase
-from ClassBase import ClassBase, JSModelBase, JSRootModelBase
-from Appserver6GreenletBase import Appserver6GreenletBase
-from Appserver6GreenletTaskletsBase import Appserver6GreenletTaskletsBase
+from .Appserver6GreenletScheduleBase import Appserver6GreenletScheduleBase
+from .ClassBase import ClassBase, JSModelBase, JSRootModelBase
+from .Appserver6GreenletBase import Appserver6GreenletBase
+from .Appserver6GreenletTaskletsBase import Appserver6GreenletTaskletsBase
 
 import json #ujson.dumps does not support some arguments like separators, indent ...etc
 
@@ -29,8 +29,8 @@ class Code():
         print info like source code of class
         """
         filepath,linenr,sourcecode=self.classInfoGet(classs)
-        print "line:%s in path:%s" % (linenr,filepath)
-        print sourcecode
+        print("line:%s in path:%s" % (linenr,filepath))
+        print(sourcecode)
 
     def classInfoGet(self,classs):
         """
@@ -78,7 +78,7 @@ class Code():
         if hasattr(obj,"_dict2obj"):
             return obj._dict2obj(data)
         if isinstance(data, dict):
-            for key, value in data.iteritems():
+            for key, value in data.items():
                 #is for new obj functionname
                 objpropname="%s"%key
 
@@ -88,7 +88,7 @@ class Code():
                     if not isprimtype:
                         raise RuntimeError("not supported")
                     else:
-                        for valkey, valval in value.iteritems():
+                        for valkey, valval in value.items():
                             attr = getattr(obj, key)
                             attr[valkey] = valval
 
@@ -116,7 +116,7 @@ class Code():
 
     def dict2JSModelobject(self,obj,data):
         if isinstance(data, dict):
-            for key, value in data.iteritems():
+            for key, value in data.items():
                 #is for new obj functionname
                 objpropname="_P_%s"%key
 
@@ -125,11 +125,11 @@ class Code():
                     isprimtype, funcprop = isPrimAttribute(obj, key)
                     if not isprimtype:
                         method = getattr(obj, funcprop)
-                        for valkey, valval in value.iteritems():
+                        for valkey, valval in value.items():
                             newobj = method(valkey)
                             self.dict2JSModelobject(newobj,valval)
                     else:
-                        for valkey, valval in value.iteritems():
+                        for valkey, valval in value.items():
                             attr = getattr(obj, key)
                             attr[valkey] = valval
 
@@ -180,31 +180,31 @@ class Code():
         """
         result={}
         def toStr(obj,possibleList=True):
-            if isinstance(obj, (unicode,int,str,float,bool)) or obj==None:
+            if isinstance(obj, (str,int,float,bool)) or obj==None:
                 return str(obj)
             elif possibleList==True and j.basetype.list.check(obj):
                 r=""
                 for item in obj:
                     rr=toStr(obj,possibleList=False)
-                    if rr<>"":
+                    if rr!="":
                         r+="%s,"%rr
                 r=r.rstrip(",")
                 return r
             return ""
         if isinstance(obj, ClassBase):
-            for key, value in obj.__dict__.iteritems():
+            for key, value in obj.__dict__.items():
                 if key[0:3]=="_P_":
                     key=key[3:]
                 elif key[0]=="_":
                     continue
                 if j.basetype.dictionary.check(value):
-                    for key2 in value.keys():
+                    for key2 in list(value.keys()):
                         r=toStr(value[key2])
-                        if r<>"":
+                        if r!="":
                             result["%s.%s" (key,key2)]=r
                 else:
                     r=toStr(value)
-                    if r<>"":
+                    if r!="":
                         result[key]=r
         return result
         
@@ -217,7 +217,7 @@ class Code():
         def todict(obj,data,ignoreKeys):
             if isinstance(obj, dict):
                 value={}
-                for key in obj.keys():
+                for key in list(obj.keys()):
                     if key in ignoreKeys:
                         continue
                     if ignoreUnderscoreKeys and key and key[0]=="_":
@@ -229,13 +229,13 @@ class Code():
                 for item in obj:
                     value.append(todict(item,{},ignoreKeys))
                 return value
-            elif isinstance(obj, (int,basestring,float,bool,long)) or obj==None:
+            elif isinstance(obj, (int,str,float,bool)) or obj==None:
                 return obj
             elif isinstance(obj, ClassBase):
                 if hasattr(obj,"_obj2dict"):
                     return obj._obj2dict()
                 else:
-                    for key, value in obj.__dict__.iteritems():
+                    for key, value in obj.__dict__.items():
                         if key[0:3]=="_P_":
                             key=key[3:]
                         if key in ignoreKeys:
@@ -273,7 +273,7 @@ class Code():
     def pprint(self,obj):
         result=self.object2yaml(obj)
         result=result.replace("!!python/unicode","")
-        print result
+        print(result)
 
     def deIndent(self,content,level=1):
         for i in range(0,level):
@@ -298,7 +298,7 @@ class Code():
                 if line.strip()=="":
                         content2+="\n"
                 else:
-                        if line.find("    ")<>0:
+                        if line.find("    ")!=0:
                                 raise RuntimeError("identation error for %s."%content)
                         content2+="%s\n" % line[4:]
         return content2

@@ -21,7 +21,7 @@ class RsyncServer:
         self.pathsecrets="%s/secrets.cfg"%self.root
         self.pathusers="%s/users.cfg"%self.root
         if distrdir=="":
-            self.distrdir="/opt/jumpscale/apps/agentcontroller2/distrdir/"
+            self.distrdir="/opt/jumpscale7/apps/agentcontroller2/distrdir/"
         else:
             self.distrdir=distrdir
 
@@ -43,7 +43,7 @@ class RsyncServer:
         self.users.append([user,passwd])
 
     def addSecret(self,name,secret=""):
-        if self.secrets.has_key(name) and secret=="":            
+        if name in self.secrets and secret=="":            
             #generate secret
             secret=self.secrets[name]
         if secret=="":
@@ -87,11 +87,11 @@ list = no
 
 """
         users=""
-        for name,secret in self.users.iteritems():
+        for name,secret in self.users.items():
             users+="%s,"%name
         users.rstrip(",")
 
-        for name,secret in self.secrets.iteritems():
+        for name,secret in self.secrets.items():
             path="%s/root/%s"%(self.root,name)            
             j.system.fs.createDir(path)
             D2=D.replace("$secret",secret)
@@ -106,7 +106,7 @@ list = no
 
         path="/etc/rsync/users"
         out=""
-        for name,secret in self.users.iteritems():
+        for name,secret in self.users.items():
             out+="%s:%s\n"%(name,secret)
 
         j.system.fs.writeFile(filename=path,contents=out)
@@ -167,7 +167,7 @@ list = no
                     roles=[item.strip() for item in roles.split(",")]
                     for role in roles:
                         destdir=j.system.fs.joinPaths(self.rolesdir,role,category,relpath)
-                        print "link: %s->%s"%(path,destdir)
+                        print("link: %s->%s"%(path,destdir))
                         j.system.fs.symlink(path,destdir, overwriteTarget=True)
                         # j.system.fs.createDir(destdir)
                         # for item in j.system.fs.listFilesInDir(path, recursive=False, exclude=["*.pyc",".roles"], followSymlinks=False, listSymlinks=False):
@@ -178,7 +178,7 @@ list = no
                                         
 
         from IPython import embed
-        print "DEBUG NOW kkk"
+        print("DEBUG NOW kkk")
         embed()
         p        
 
@@ -203,7 +203,7 @@ class RsyncClient:
             j.events.inputerror_critical("name needs to be specified",category="rsync.sync.fromserver")
 
     def _pad(self,dest):
-        if len(dest)<>0 and dest[-1]<>"/":
+        if len(dest)!=0 and dest[-1]!="/":
             dest+="/"
         return dest
 
@@ -212,14 +212,14 @@ class RsyncClient:
         dest=self._pad(dest)
         j.system.fs.createDir(dest)
         cmd="export RSYNC_PASSWORD=%s;rsync -av %s@%s::upload/%s/%s %s %s"%(self.passwd,self.login,self.addr,self.name,src,dest,self.options)
-        print cmd
+        print(cmd)
         j.system.process.executeWithoutPipe(cmd)        
 
     def syncToServer(self,src,dest):
         src=self._pad(src)
         dest=self._pad(dest)
         cmd="export RSYNC_PASSWORD=%s;rsync -av %s %s@%s::upload/%s/%s %s"%(self.passwd,src,self.login,self.addr,self.name,dest,self.options)
-        print cmd
+        print(cmd)
         j.system.process.executeWithoutPipe(cmd)        
 
     def connect(self,addr,port):
@@ -245,5 +245,5 @@ class RsyncClientSecret(RsyncClient):
         src=self._pad(src)
         dest=self._pad(dest)        
         cmd="rsync %s::%s/%s %s %s"%(self.addr,self.secret,src,dest,self.options)
-        print cmd
+        print(cmd)
         j.system.process.executeWithoutPipe(cmd)        

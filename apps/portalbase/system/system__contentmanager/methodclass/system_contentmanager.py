@@ -21,7 +21,7 @@ class system_contentmanager(j.code.classGetBase()):
         result list(str) 
         
         """
-        return j.core.portal.active.actorsloader.actors.keys()
+        return list(j.core.portal.active.actorsloader.actors.keys())
 
     def getActorsWithPaths(self, **args):
         """
@@ -29,7 +29,7 @@ class system_contentmanager(j.code.classGetBase()):
         
         """
         actors = []
-        for actor in j.core.portal.active.actorsloader.id2object.keys():
+        for actor in list(j.core.portal.active.actorsloader.id2object.keys()):
             actor = j.core.portal.active.actorsloader.id2object[actor]
             actors.append([actor.model.id, actor.model.path])
         return actors
@@ -39,7 +39,7 @@ class system_contentmanager(j.code.classGetBase()):
         result list(str) 
         
         """
-        return j.core.portal.active.bucketsloader.buckets.keys()
+        return list(j.core.portal.active.bucketsloader.buckets.keys())
 
     def getBucketsWithPaths(self, **args):
         """
@@ -47,7 +47,7 @@ class system_contentmanager(j.code.classGetBase()):
         
         """
         buckets = []
-        for bucket in j.core.portal.active.bucketsloader.id2object.keys():
+        for bucket in list(j.core.portal.active.bucketsloader.id2object.keys()):
             bucket = j.core.portal.active.bucketsloader.id2object[bucket]
             buckets.append([bucket.model.id, bucket.model.path])
         return buckets
@@ -59,7 +59,7 @@ class system_contentmanager(j.code.classGetBase()):
         
         """
         objects = []
-        for objectname in j.core.portal.active.contentdirs.keys():
+        for objectname in list(j.core.portal.active.contentdirs.keys()):
             objectpath = j.core.portal.active.contentdirs[objectname]
             objects.append([objectname, objectpath])
         return objects
@@ -69,7 +69,7 @@ class system_contentmanager(j.code.classGetBase()):
         result list(str) 
         
         """
-        return j.core.portal.active.spacesloader.spaces.keys()
+        return list(j.core.portal.active.spacesloader.spaces.keys())
 
     def getSpacesWithPaths(self, **args):
         """
@@ -77,7 +77,7 @@ class system_contentmanager(j.code.classGetBase()):
         
         """
         spaces = []
-        for space in j.core.portal.active.spacesloader.spaces.keys():
+        for space in list(j.core.portal.active.spacesloader.spaces.keys()):
             space = j.core.portal.active.spacesloader.spaces[space]
             spaces.append([space.model.id, space.model.path])
         return spaces
@@ -106,13 +106,13 @@ class system_contentmanager(j.code.classGetBase()):
         actor = j.apps.__dict__[appname].__dict__[actorname]
         ctx = args["ctx"]
         data = actor.dbmem.cacheGet("form_%s" % key)
-        for ref in [item for item in ctx.params.keys() if item.find("ref") == 0]:
+        for ref in [item for item in list(ctx.params.keys()) if item.find("ref") == 0]:
             ref0 = int(ref.replace("ref_", ""))
             key, refS = data[1][ref0]  # @ref is how to retrieve info from the object
             model = data[0][key]
             exec("model.%s=args[\"%s\"]" % (refS, ref))
 
-        for modelkey in data[0].keys():
+        for modelkey in list(data[0].keys()):
             model = data[0][modelkey]
             exec("actor.model_%s_set(model)" % model._meta[2])
         if 'HTTP_REFERER' in ctx.env:
@@ -141,7 +141,7 @@ class system_contentmanager(j.code.classGetBase()):
 
     def reloadAll(self, id):
         def reloadApp():
-            print "RELOAD APP FOR ACTORS Delete"
+            print("RELOAD APP FOR ACTORS Delete")
             j.core.portal.active.reset()
 
         j.core.portal.active.actorsloader.id2object.pop(id)
@@ -184,7 +184,7 @@ class system_contentmanager(j.code.classGetBase()):
                 j.system.fs.createDir(path)
                 j.system.fs.createDir(j.system.fs.joinPaths(path, ".actor"))
 
-            print "scan path:%s" % path
+            print("scan path:%s" % path)
             j.core.portal.active.actorsloader.scan(path)
             result = True
         else:
@@ -283,7 +283,7 @@ class system_contentmanager(j.code.classGetBase()):
         loaders.removeLoader(id)
 
         def reloadApp():
-            print "RELOAD APP SPACE DELETE"
+            print("RELOAD APP SPACE DELETE")
             j.core.portal.active.loadSpaces(reset=True)
 
         # loader=j.core.portal.active.spacesloader.id2object
@@ -304,7 +304,7 @@ class system_contentmanager(j.code.classGetBase()):
 
         ctx=args["ctx"]
 
-        if ctx.params.has_key("payload"):
+        if "payload" in ctx.params:
 
             payload=ujson.loads(ctx.params["payload"])
 
@@ -312,7 +312,7 @@ class system_contentmanager(j.code.classGetBase()):
             name=payload["repository"]["name"]
 
             cmd="cd /opt/code/%s/%s;hg pull;hg update -C"%(owner,name)
-            print "execute %s"%cmd
+            print("execute %s"%cmd)
             j.system.process.execute(cmd)
 
 

@@ -1,5 +1,5 @@
 from JumpScale import j
-from store import KeyValueStoreBase
+from .store import KeyValueStoreBase
 
 import JumpScale.grid.tlog
 
@@ -135,7 +135,7 @@ class LevelDBKeyValueStore(KeyValueStoreBase):
         return incr
 
     def listCategories(self):
-        return self.categories.keys()
+        return list(self.categories.keys())
 
     def _stripKey(self, catKey):
         if "." not in catKey:

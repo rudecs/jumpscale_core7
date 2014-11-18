@@ -9,10 +9,10 @@ from JumpScale.core.baseclasses import BaseEnumeration
 # import urllib
 # import requests
 # from requests.auth import HTTPBasicAuth
-import gitlab
+from . import gitlab
 import os
 
-from GitlabInstance import *
+from .GitlabInstance import *
 
 # INFOCACHE = dict()
 

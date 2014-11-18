@@ -5,7 +5,7 @@ import ujson as json
 import time
 #is osisstor for elasticsearch only
 
-from OSISStore import OSISStore
+from .OSISStore import OSISStore
 
 class OSISStoreES(OSISStore):
     TTL = 0

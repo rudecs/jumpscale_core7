@@ -7,9 +7,9 @@ class EventHandler(object):
         will die
         @param e is python error object when doing except
         """        
-        if e<>None:
+        if e!=None:
             msg+="\nERROR:%s\n"%e
-        if jobid<>0:
+        if jobid!=0:
             msg+="((C:%s L:1 T:B J:%s))"%(category,jobid)
         else:
             msg+="((C:%s L:1 T:B))"%category
@@ -22,7 +22,7 @@ class EventHandler(object):
         will die
         @param e is python error object when doing except
         """        
-        if e<>None:
+        if e!=None:
             msg+="\nERROR:%s\n"%e
         msg+="((C:%s L:1 T:W))"%category
         j.errorconditionhandler.raiseWarning(msg,category=category, pythonExceptionObject=e)
@@ -42,7 +42,7 @@ class EventHandler(object):
         will make warning event is the same as opserror_warning
         @param e is python error object when doing except
         """        
-        if e<>None:
+        if e!=None:
             msg+="\nERROR:%s\n"%e
         j.errorconditionhandler.raiseOperationalWarning(msg,category=category)
 

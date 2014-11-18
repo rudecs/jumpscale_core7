@@ -3,10 +3,10 @@ import gevent
 import os
 import signal
 
-from client_management import MessageServerClient
+from .client_management import MessageServerClient
 from gevent import Greenlet
 from gevent.queue import Queue
-from gevent_zeromq import zmq
+from .gevent_zeromq import zmq
 from JumpScale import j
 
 
@@ -120,13 +120,13 @@ class MessageServer(object):
         addresses = [client.address for client in self.forwardClients]
         addressesStr = ', '.join(addresses)
 
-        print('''\
+        print(('''\
 Message server started
 listens on: %s
 stores locally: %s
 forwards to: %s
 pid: %d
-pid file: %s''' % (self._address, storeLocallyStr, addressesStr, self._pid, self._pidFile))
+pid file: %s''' % (self._address, storeLocallyStr, addressesStr, self._pid, self._pidFile)))
 
         # Wait until the log server stops (main greenlet).
         try:
@@ -143,7 +143,7 @@ pid file: %s''' % (self._address, storeLocallyStr, addressesStr, self._pid, self
 
     def _connect(self):
         if self._isConnected:
-            print('Can\'t connect to %s, already connected' % self._address)
+            print(('Can\'t connect to %s, already connected' % self._address))
             return
 
         self._context = zmq.Context(2)
@@ -153,7 +153,7 @@ pid file: %s''' % (self._address, storeLocallyStr, addressesStr, self._pid, self
 
     def _disconnect(self):
         if not self._isConnected:
-            print('Can\'t disconnect from %s, already disconnected' % self._address)
+            print(('Can\'t disconnect from %s, already disconnected' % self._address))
             return
 
         self._socket.close()
@@ -179,7 +179,7 @@ pid file: %s''' % (self._address, storeLocallyStr, addressesStr, self._pid, self
             client.send(message)
 
     def _logGreenletError(self, greenlet):
-        print(greenlet.exception)
+        print((greenlet.exception))
 
     def _timer(self):
         while True:
@@ -208,12 +208,12 @@ pid file: %s''' % (self._address, storeLocallyStr, addressesStr, self._pid, self
                     self.forwardLogMessages(forwardMessages)
                     forwardMessages = ""
 
-            if forwardMessages <> "":
+            if forwardMessages != "":
                 self._forward(message)
 
     def processErrorMessage(self, message):
         dtype, length, epoch, gid, nid, pid, data = j.core.messagehandler.unPackMessage(message)
-        print data
+        print(data)
         return
 
     def processSignalMessage(self, message):
@@ -262,7 +262,7 @@ pid file: %s''' % (self._address, storeLocallyStr, addressesStr, self._pid, self
         j.system.fs.writeFile(self._pidFile, pidStr)
 
     def raiseError(self, msg):
-        print msg
+        print(msg)
 
 if __name__ == '__main__':
     # Prevent gevent  so called zombie processes by calling gevent.shutdown

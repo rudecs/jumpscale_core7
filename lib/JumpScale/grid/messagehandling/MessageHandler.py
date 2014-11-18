@@ -2,14 +2,14 @@
 import sys
 
 from JumpScale import j
-from LogHandlerDB import LogHandlerDB
+from .LogHandlerDB import LogHandlerDB
 
 import sys
 import simplejson
 # import zmq
 import struct
 import zlib
-import cPickle
+import pickle
 
 
 # MESSAGETYPES
@@ -32,7 +32,7 @@ class MessageHandler:
         self._silentRetry = False
         self.queue = False  # when true will queue to local FS
         self.loghandlerdb = LogHandlerDB()
-        if len(j.application.whoAmIBytestr) <> 6:
+        if len(j.application.whoAmIBytestr) != 6:
             raise RuntimeError("Cannot start messagehandler, the whoAmiBytestr on j.application should be 6 bytes")
 
     def data2Message(self, ttype, data):
@@ -80,7 +80,7 @@ class MessageHandler:
         data2["data"] = data
         data2["sync"] = sync
         if serializertype == 11:
-            return self.data2Message(11, cPickle.dumps(data2))
+            return self.data2Message(11, pickle.dumps(data2))
         else:
             raise NotImplementedError()
 
@@ -103,21 +103,21 @@ class MessageHandler:
 
     def redirectStdOutStdErrorToLogger(self, yesno):
         if yesno:
-            print "REDIRECT STD & STERR to LOGGER"
+            print("REDIRECT STD & STERR to LOGGER")
             from JumpScale.core.logging.RedirectStreams import redirectStreams
             redirectStreams(hideoutput=False)
         else:
             # print "stdout to stderror are not redirected"
-            if sys.__dict__.has_key("_stdout_ori"):
+            if "_stdout_ori" in sys.__dict__:
                 sys.stdout = sys._stdout_ori
             # else:
             #    print "WARNING could not find original stdout"
-            if sys.__dict__.has_key("_stderr_ori"):
+            if "_stderr_ori" in sys.__dict__:
                 sys.stderr = sys._stderr_ori
             else:
                 sys.stderr = sys.stdout
             #   print "WARNING could not find original stderror"
-            print "restored redirection"
+            print("restored redirection")
 
     def connect2localLogserver(self, reconnect=False):
 
@@ -163,13 +163,13 @@ class MessageHandler:
         """
 
         result = []
-        while content <> "":
+        while content != "":
             length = struct.unpack("I", content[0:4])[0]
             dtype = struct.unpack("B", content[20])[0]
             epoch, gid, nid, pid = struct.unpack("IIII", content[4:20])
             crc = struct.unpack("i", content[21:25])[0]
             data = content[25:length]
-            if zlib.crc32(data) <> crc:
+            if zlib.crc32(data) != crc:
                 raise RuntimeError("Could not decode data from message, crc was not valid, data:\n%s" % data)
             content = content[length:]
             result.append([dtype, length, epoch, gid, nid, pid, data])
@@ -217,10 +217,10 @@ class MessageHandler:
                 for item in j.system.fs.listFilesInDir(path):
                     contentOut = ""
                     content = j.system.fs.fileGetContents(path)
-                    while content <> "":
+                    while content != "":
                         length = struct.unpack("I", content[0:4])[0]
                         dtype = struct.unpack("B", content[21])[0]
-                        if messageType == 0 or (messageType <> 0 and messageType == dtype):
+                        if messageType == 0 or (messageType != 0 and messageType == dtype):
                             result = method(content[0:length])
                             if removeWhenDone and result:
                                 content = content[length:]
@@ -252,7 +252,7 @@ class MessageHandler:
                 return False
             if self._client == None and queue and self.queue:
                 self.queueMessage(message)
-        if self._client <> None:
+        if self._client != None:
             retries_left = retries
             while retries_left:
                 self._client.send(message)
@@ -312,9 +312,9 @@ class MessageHandler:
                 # send to logserver
                 self.sendMessage(self.data2Message(1, "%s,%s,%s" % (level, category, message)), 1, True)
 
-        except Exception, e:
-            print "HAVE SERIOUS BUG IN LOGGER 4 MESSAGEHANDLER 6\n"
-            print e
+        except Exception as e:
+            print("HAVE SERIOUS BUG IN LOGGER 4 MESSAGEHANDLER 6\n")
+            print(e)
             import pdb
             pdb.Pdb().set_trace(None)
             # pdb.pm()

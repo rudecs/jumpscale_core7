@@ -19,7 +19,7 @@ class Job(OsisBaseObject):
     """
 
     def __init__(self, ddict={}):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.guid=0  #WE WILL NO LONGER USE ID's
@@ -59,7 +59,7 @@ class Job(OsisBaseObject):
         self.argsKeywords = args.keywords
         source=inspect.getsource(action)
         splitted=source.split("\n")
-        splitted[0]=splitted[0].replace(action.func_name,"action")
+        splitted[0]=splitted[0].replace(action.__name__,"action")
         self.source="\n".join(splitted)
             
     # def getSetGuid(self):

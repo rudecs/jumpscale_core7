@@ -6,8 +6,8 @@ except:
 from JumpScale import j
 from JumpScale.core.baseclasses import BaseEnumeration
 
-from BitbucketConfigManagement import *
-import urllib
+from .BitbucketConfigManagement import *
+import urllib.request, urllib.parse, urllib.error
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -53,7 +53,7 @@ class Bitbucket:
         """
         All params need to be filled in, when 1 not filled in will ask all of them
         """
-        if account<>"" and login<>"" and passwd<>"":
+        if account!="" and login!="" and passwd!="":
             try:
                 self.config.remove(account)
             except:
@@ -80,7 +80,7 @@ class Bitbucket:
 
     def getBitbucketRepoClient(self, accountName, repoName, branch='default'):
         url, accountLogin, accountPasswd = self._getRepoInfo(accountName, repoName, branch)
-        if self.connections.has_key(repoName):
+        if repoName in self.connections:
             return self.connections[repoName]
         self.connections[repoName] = BitbucketConnection(accountName,url,login=accountLogin,passwd=accountPasswd)
         return self.connections[repoName]
@@ -96,14 +96,14 @@ class Bitbucket:
         login = config["login"]
         passwd = config["passwd"]
 
-        if login.find("@login")<>-1:
+        if login.find("@login")!=-1:
             if j.application.interactive:
                 login=j.gui.dialog.askString("  \nLogin for bitbucket account %s" % accountName)
             else:
                 login = ""
             self.config.configure(accountName,{'login': login})
         
-        if passwd.find("@passwd")<>-1:
+        if passwd.find("@passwd")!=-1:
             if j.application.interactive:
                 passwd = j.gui.dialog.askPassword("  \nPassword for bitbucket account %s" % accountName, confirm=False)
             else:
@@ -146,7 +146,7 @@ class BitbucketConnection(object):
         r=requests.get(url, auth=HTTPBasicAuth(self.login, self.passwd))
         try:
             data=r.json()
-        except Exception,e:
+        except Exception as e:
             msg="Could not connect to:%s, reason:%s, login was:'%s'"%(url,r.reason,self.login)
             raise RuntimeError(msg)
         return data
@@ -176,7 +176,7 @@ class BitbucketConnection(object):
             resultcode,content,object= self._execCurl(cmd)
             if resultcode>0:
                 from JumpScale.core.Shell import ipshell
-                print "DEBUG NOW delete bitbucket"
+                print("DEBUG NOW delete bitbucket")
                 ipshell()
                 return object
         return object
@@ -199,7 +199,7 @@ class BitbucketConnection(object):
                     raise RuntimeError("Cannot find repo for accountName %s" % self.accountName)
                 else:
                     return ""
-            if repoName.find("__")<>-1:
+            if repoName.find("__")!=-1:
                 repoName,branch=repoName.split("__",1)
 
         path=self.getCodeFolder(repoName,branch)
@@ -213,7 +213,7 @@ class BitbucketConnection(object):
     def getRepoNamesLocal(self,checkIgnore=True,checkactive=True,branch=None):
         if j.system.fs.exists(self.accountPathLocal):
             items=j.system.fs.listDirsInDir(self.accountPathLocal,False,True)
-            if branch<>None:
+            if branch!=None:
                 items=[item for item in items if item.find(branch)==0]
             return items
         else:
@@ -237,18 +237,18 @@ class BitbucketConnection(object):
         will use bbitbucket api to retrieven all repo information
         @param reload means reload from bitbucket
         """
-        if self.bitbucket_client.accountsRemoteRepoNames.has_key(self.accountName) and reload==False:
+        if self.accountName in self.bitbucket_client.accountsRemoteRepoNames and reload==False:
             repoNames= self.bitbucket_client.accountsRemoteRepoNames[self.accountName]
         else:
             repos=self._getBitbucketRepoInfo()
             repoNames=[str(repo["slug"]) for repo in repos["repositories"]]
             self.bitbucket_client.accountsRemoteRepoNames[self.accountName]=repoNames
-        if partOfRepoName<>"":
+        if partOfRepoName!="":
             partOfRepoName=partOfRepoName.replace("*","").replace("?","").lower()
             repoNames2=[]
             for name in repoNames:
                 name2=name.lower()
-                if name2.find(partOfRepoName)<>-1:
+                if name2.find(partOfRepoName)!=-1:
                     repoNames2.append(name)
                 #print name2 + " " + partOfRepoName + " " + str(name2.find(partOfRepoName))
             repoNames=repoNames2
@@ -261,7 +261,7 @@ class BitbucketConnection(object):
         """
 
         rkey="%s_%s"%(repoName,branch)
-        if self.mercurialclients.has_key(rkey):
+        if rkey in self.mercurialclients:
             return self.mercurialclients[rkey]
         if repoName=="":
             repoName=self.findRepoFromBitbucket(repoName)
@@ -270,7 +270,7 @@ class BitbucketConnection(object):
             raise RuntimeError("reponame cannot be empty")
 
         url = self.url
-        if url[-1]<>"/":
+        if url[-1]!="/":
             url=url+"/"
 
         url += "%s/"%repoName

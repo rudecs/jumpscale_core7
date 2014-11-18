@@ -24,10 +24,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @id.setter
     def id(self, value):
         if not isinstance(value, int) and value is not None:
-            if isinstance(value, basestring) and j.basetype.integer.checkString(value):
+            if isinstance(value, str) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property id input error, needs to be int, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property id input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_id=value
@@ -43,10 +43,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @name.setter
     def name(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property name input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property name input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_name=value
@@ -62,10 +62,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @description.setter
     def description(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property description input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property description input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_description=value
@@ -81,10 +81,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @priority.setter
     def priority(self, value):
         if not isinstance(value, int) and value is not None:
-            if isinstance(value, basestring) and j.basetype.integer.checkString(value):
+            if isinstance(value, str) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property priority input error, needs to be int, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property priority input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_priority=value
@@ -100,10 +100,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @project.setter
     def project(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property project input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property project input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_project=value
@@ -119,10 +119,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @type.setter
     def type(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property type input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property type input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_type=value
@@ -138,10 +138,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @urgency.setter
     def urgency(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property urgency input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property urgency input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_urgency=value
@@ -157,10 +157,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @taskowner.setter
     def taskowner(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property taskowner input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property taskowner input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_taskowner=value
@@ -176,10 +176,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @members.setter
     def members(self, value):
         if not isinstance(value, list) and value is not None:
-            if isinstance(value, basestring) and j.basetype.list.checkString(value):
+            if isinstance(value, str) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property members input error, needs to be list, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property members input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_members=value
@@ -195,10 +195,10 @@ class JSModel_osismodel_test_complextype_task(j.code.classGetJSModelBase()):
     @guid.setter
     def guid(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property guid input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
+                msg="property guid input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: task, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_guid=value
@@ -231,10 +231,10 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
     @id.setter
     def id(self, value):
         if not isinstance(value, int) and value is not None:
-            if isinstance(value, basestring) and j.basetype.integer.checkString(value):
+            if isinstance(value, str) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property id input error, needs to be int, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
+                msg="property id input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_id=value
@@ -250,10 +250,10 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
     @name.setter
     def name(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property name input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
+                msg="property name input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_name=value
@@ -269,10 +269,10 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
     @descr.setter
     def descr(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property descr input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
+                msg="property descr input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_descr=value
@@ -288,10 +288,10 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
     @organizations.setter
     def organizations(self, value):
         if not isinstance(value, list) and value is not None:
-            if isinstance(value, basestring) and j.basetype.list.checkString(value):
+            if isinstance(value, str) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property organizations input error, needs to be list, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
+                msg="property organizations input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_organizations=value
@@ -307,10 +307,10 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
     @tasks.setter
     def tasks(self, value):
         if not isinstance(value, list) and value is not None:
-            if isinstance(value, basestring) and j.basetype.list.checkString(value):
+            if isinstance(value, str) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property tasks input error, needs to be list, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
+                msg="property tasks input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_tasks=value
@@ -326,10 +326,10 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
     @guid.setter
     def guid(self, value):
         if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+            if isinstance(value, str) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property guid input error, needs to be str, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
+                msg="property guid input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_guid=value
@@ -345,10 +345,10 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
     @_meta.setter
     def _meta(self, value):
         if not isinstance(value, list) and value is not None:
-            if isinstance(value, basestring) and j.basetype.list.checkString(value):
+            if isinstance(value, str) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
+                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/test_complextype/model.spec, name model: project, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P__meta=value
@@ -365,6 +365,6 @@ class test_complextype_project_osismodelbase(j.code.classGetJSRootModelBase()):
         else:
             value2=value
         self._P_tasks.append(value2)
-        if self._P_tasks[-1].__dict__.has_key("_P_id"):
+        if "_P_id" in self._P_tasks[-1].__dict__:
             self._P_tasks[-1].id=len(self._P_tasks)
         return self._P_tasks[-1]

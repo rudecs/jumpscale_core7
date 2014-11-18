@@ -224,14 +224,14 @@ class UDEVParser(object):
             pass
         if pred[0] == ' ':
             pred = pred[1:]
-        for _id in self.IDS.keys():
+        for _id in list(self.IDS.keys()):
             if pred[:len(_id)] == _id:
                 ident = self.IDS[_id]()
 
         if ident and pred[len(str(ident))] == 'S':
             ident = self.IDS['%sS' % ident]()
         if not ident:
-            for _id in self.IDSArgs.keys():
+            for _id in list(self.IDSArgs.keys()):
                 if pred[:len(_id)] == _id:
                     _idval = pred[pred.find(_id) + len(_id) + 1:pred.find('}')]
                     ident = self.IDSArgs[_id](_idval)
@@ -239,7 +239,7 @@ class UDEVParser(object):
             raise ValueError('Bad id in predicate %s' % pred)
         pred = pred.replace(str(ident), '')
 
-        for _comp in self.COMP.keys():
+        for _comp in list(self.COMP.keys()):
             if pred[:len(_comp)] == _comp:
                 com = self.COMP[_comp]()
             if com and _comp == '=' and pred[:len(_comp) + 1] == '==':
@@ -249,7 +249,7 @@ class UDEVParser(object):
 
         pred = pred.replace(str(com), '').replace('"', '')
 
-        for attrS in self.IDVars.keys():
+        for attrS in list(self.IDVars.keys()):
 
             if pred.startswith(attrS):
                 _val = pred.replace(attrS, '')[1:-1].replace('}', '').strip()  # remove trailing whitespace

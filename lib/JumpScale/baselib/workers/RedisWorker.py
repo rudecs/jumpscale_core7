@@ -25,7 +25,7 @@ class Job(OsisBaseObject):
 
     def __init__(self, ddict={},args={}, timeout=60, sessionid=None, jscriptid=None,cmd="",category="",log=True, queue=None, wait=False):
         self.errorreport = False
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.id=0
@@ -65,7 +65,7 @@ class Job(OsisBaseObject):
         self.argsKeywords = args.keywords
         source=inspect.getsource(action)
         splitted=source.split("\n")
-        splitted[0]=splitted[0].replace(action.func_name,"action")
+        splitted[0]=splitted[0].replace(action.__name__,"action")
         self.source="\n".join(splitted)
             
     def getSetGuid(self):
@@ -201,7 +201,7 @@ class RedisWorkerFactory(object):
             js.id=self.redis.incr("workers:jumpscriptlastid")
             jumpscript_data=json.dumps(js.__dict__)
             self.redis.hset("workers:jumpscripts:id",js.id, jumpscript_data)
-            if js.organization<>"" and js.name<>"":
+            if js.organization!="" and js.name!="":
                 self.redis.hset("workers:jumpscripts:name","%s__%s"%(js.organization,js.name), jumpscript_data)            
             self.redis.hset("workers:jumpscripthashes",key,js.id)
 
@@ -227,7 +227,7 @@ class RedisWorkerFactory(object):
                     self.redis.hdel("workers:inqueuetest",jumpscript.getKey())
                     self.checkQueue()                
                     return False
-                print "%s is already scheduled"%jumpscript.name
+                print("%s is already scheduled"%jumpscript.name)
                 return True                
         return False
 
@@ -257,7 +257,7 @@ class RedisWorkerFactory(object):
         return job   
 
     def execJobAsync(self,job):
-        print "execJobAsync:%s"%job["id"]
+        print("execJobAsync:%s"%job["id"])
         job=Job(ddict=job)
         self._scheduleJob(job)
         return job
@@ -269,18 +269,18 @@ class RedisWorkerFactory(object):
             qname="queues:workers:work:%s"%name
             for i in range (db.llen(qname)):
                 jobbin=db.lindex(qname,i)
-                print jobbin
+                print(jobbin)
         #@todo needs to be implement, need to check there are no double recurring jobs, need to check jumpscripts exist, need to check jobs are also in redis, ...
 
 
     def _getWork(self,qname,timeout=0):
-        if not self.queue.has_key(qname):
+        if qname not in self.queue:
             raise RuntimeError("Could not find queue to execute job:%s ((ops:workers.schedulework L:1))"%qname)
 
         queue=self.queue[qname]
         actionqueue = "workers:action:%s" % qname
 
-        if timeout<>0:
+        if timeout!=0:
             result = self.redis.blpop([queue.key, actionqueue], timeout=timeout)
         else:
             result = self.redis.blpop([queue.key, actionqueue])
@@ -305,7 +305,7 @@ class RedisWorkerFactory(object):
             job=self.getJob(job.id)
 
         job=Job(ddict=job)
-        if job.state<>"OK":
+        if job.state!="OK":
             eco=j.errorconditionhandler.getErrorConditionObject(ddict=job.result)
             # eco.process()
             raise RuntimeError("Could not execute job, error:\n%s"%str(eco))  #@todo is printing too much
@@ -319,7 +319,7 @@ class RedisWorkerFactory(object):
         if not qname or qname.strip()=="":
             qname="default"
 
-        if not self.queue.has_key(qname):
+        if qname not in self.queue:
             raise RuntimeError("Could not find queue to execute job:%s ((ops:workers.schedulework L:1))"%job)
 
         queue=self.queue[qname]
@@ -334,7 +334,7 @@ class RedisWorkerFactory(object):
         self._scheduleJob(jobobj)
 
     def getJobLine(self,job=None,jobid=None):
-        if jobid<>None:
+        if jobid!=None:
             job=self.getJob(jobid)
         start=j.base.time.epoch2HRDateTime(job['timeStart'])
         if job['timeStop']==0:
@@ -387,17 +387,17 @@ class RedisWorkerFactory(object):
             jobsjson = self.redis.hgetall('queues:workers:work:%s' % q)
             if jobsjson:
                 jobs.update(json.loads(jobsjson))
-                for k, job in jobs.iteritems():
+                for k, job in jobs.items():
                     if job['timeStart'] >= epochago:
                         jobs.pop(k)
 
                 if not failed:
-                    for k, job in jobs.iteritems():
+                    for k, job in jobs.items():
                         if job['state'] in ('ERROR', 'TIMEOUT'):
                             jobs.pop(k)
 
                 if jobs:
-                    self.redis.hdel('queues:workers:work:%s' % q, jobs.keys())
+                    self.redis.hdel('queues:workers:work:%s' % q, list(jobs.keys()))
 
     def deleteJob(self, jobid):
         job = self.getJob(jobid)

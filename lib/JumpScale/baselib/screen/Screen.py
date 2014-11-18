@@ -32,7 +32,7 @@ class Screen:
     def executeInScreen(self,sessionname,screenname,cmd,wait=0):
 
         from IPython import embed
-        print "DEBUG NOW ooo"
+        print("DEBUG NOW ooo")
         embed()
         
         ppath=j.system.fs.getTmpFilePath()
@@ -58,13 +58,13 @@ check_errs $?
 rm -f %s
     """ %(ppath,cmd,ppathscript)
         j.system.fs.writeFile(ppathscript,script)
-        if wait<>0:
+        if wait!=0:
             cmd2="%s -S %s -p %s -X stuff '%s;echo $?>%s\n'" % (self.screencmd,sessionname,screenname,cmd,ppath)
             
         else:
             cmd2="%s -S %s -p %s -X stuff '%s\n'" % (self.screencmd,sessionname,screenname,cmd)
 
-        print cmd2
+        print(cmd2)
 
         j.system.process.execute(cmd2)  
         time.sleep(wait)
@@ -89,16 +89,16 @@ rm -f %s
         state="start"
         result2=[]
         for line in result.split("\n"):
-            if line.find("/var/run/screen")<>-1:
+            if line.find("/var/run/screen")!=-1:
                 state="end"
             if state=="list":                
         #print "line:%s"%line
-                if line.strip()<>"" and line<>None:
+                if line.strip()!="" and line!=None:
                     line=line.split("(")[0].strip()
                     splitted=line.split(".")
             #print splitted
                     result2.append([splitted[0],".".join(splitted[1:])])
-            if line.find("are screens")<>-1 or line.find("a screen")<>-1:
+            if line.find("are screens")!=-1 or line.find("a screen")!=-1:
                 state="list"
         
         return result2
@@ -106,7 +106,7 @@ rm -f %s
     def listSessions(self):
         sessions=self.getSessions()
         for pid,name in sessions:
-            print "%s %s" % (pid,name)
+            print("%s %s" % (pid,name))
 
     def _do(self, session, cmd, window=None):
         scrcmd = [self.screencmd, '-S', session]
@@ -144,15 +144,15 @@ rm -f %s
         return result
 
     def createWindow(self, session, name):
-        if session not in dict(self.getSessions()).values():
+        if session not in list(dict(self.getSessions()).values()):
             return self.createSession(session, [name])
         windows = self.listWindows(session)
-        if name not in windows.values():
+        if name not in list(windows.values()):
             self._do(session, ['screen', '-t', name] )
 
     def windowExists(self, session, name):
-        if session in dict(self.getSessions()).values():
-            if name in self.listWindows(session).values():
+        if session in list(dict(self.getSessions()).values()):
+            if name in list(self.listWindows(session).values()):
                 return True
         return False
 

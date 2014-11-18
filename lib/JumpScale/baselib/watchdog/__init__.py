@@ -2,7 +2,7 @@ from JumpScale import j
 
 class WatchdogEvent:
     def __init__(self,gid=0,nid=0,category="",state="",value=0,ecoguid="",gguid="",ddict={}):
-        if ddict<>{}:
+        if ddict!={}:
             self.__dict__=ddict
         else:
             self.gguid=gguid

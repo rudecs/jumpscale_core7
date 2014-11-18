@@ -72,18 +72,18 @@ class ZDaemonTransport(Transport):
         #     print "IPC channel opened to client daemon"
         # else:
         self._cmdchannel.connect("tcp://%s:%s" % (self._addr, self._port))
-        print "TCP channel open to %s:%s with id:%s" % (self._addr, self._port,self._id)
+        print("TCP channel open to %s:%s with id:%s" % (self._addr, self._port,self._id))
 
         self._poll = self.zmq.Poller()
         self._poll.register(self._cmdchannel, self.zmq.POLLIN)
-        print "TCP channel OK"
+        print("TCP channel OK")
 
     def close(self):
         try:
             self._cmdchannel.setsockopt(self.zmq.LINGER, 0)
             self._cmdchannel.close()
         except:
-            print "error in close for cmdchannel"
+            print("error in close for cmdchannel")
             pass
 
         try:

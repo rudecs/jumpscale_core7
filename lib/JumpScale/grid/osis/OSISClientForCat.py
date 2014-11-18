@@ -42,7 +42,7 @@ class OSISClientForCat():
                         j.system.fs.writeFile(filename=path,contents=content)
                     try:
                         module = imp.load_source('osis_model_%s_%s' % (self.namespace, self.cat), path)
-                    except Exception, e:
+                    except Exception as e:
                         raise RuntimeError("Could not import osis: %s_%s error:%s"%(self.namespace,self.cat,e))
                     OBJECTCLASSES[key] = getModelClass(module)
                 else:
@@ -93,14 +93,14 @@ class OSISClientForCat():
 
     def get(self, key):        
         value = self.client.get(namespace=self.namespace, categoryname=self.cat, key=key)
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             try:
                 value=json.loads(value)
             except:
                 pass # might be normal string/data aswell
         if isinstance(value, dict):
             klass=self._getModelClass()
-            if klass<>None:
+            if klass!=None:
                 obj=klass(ddict=value)
                 # obj.load(value)
                 return obj
@@ -152,7 +152,7 @@ class OSISClientForCat():
         else:
             query = {'query': {'bool': {'must': list()}}}
         myranges = {}
-        for k, v in params.iteritems():
+        for k, v in params.items():
             if isinstance(v, dict):
                 if not v['value']:
                     continue
@@ -160,18 +160,18 @@ class OSISClientForCat():
                     myranges = {v['name']: dict()}
                 myranges[v['name']] = {v['eq']: v['value']}
             elif v:
-                if isinstance(v, basestring):
+                if isinstance(v, str):
                     # v = v.lower()
                     pass
                 term = {'term': {k: v}}
                 query['query']['bool']['must'].append(term)
-        for key, value in myranges.iteritems():
+        for key, value in myranges.items():
             query['query']['bool']['must'].append({'range': {key: value}})
         if partials:
             query['query']['bool']['must'].append({'wildcard': partials})
         boolq = query.get('query', {}).get('bool', {})
         def isEmpty(inputquery):
-            for key, value in inputquery.iteritems():
+            for key, value in inputquery.items():
                 if value:
                     return False
             return True
@@ -179,7 +179,7 @@ class OSISClientForCat():
         if isEmpty(boolq):
             query = nativequery or dict()
         if sort:
-            query['sort'] = [ {x:v} for x,v in sort.iteritems() ]
+            query['sort'] = [ {x:v} for x,v in sort.items() ]
 
         response = self.search(query, start, size)
 

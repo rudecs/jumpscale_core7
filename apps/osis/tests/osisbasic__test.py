@@ -49,43 +49,43 @@ class TEST(unittest.TestCase):
         key,new,changed=self.osisclient.set(obj)
         key2,new,changed=self.osisclient.set(obj)
 
-        print "2x save should have same key"
+        print("2x save should have same key")
         assert key==key2
 
-        print "check 2nd save new & changed are not new or changed"
+        print("check 2nd save new & changed are not new or changed")
         assert new==False
         assert changed==False
 
-        print "test content key does not get modified when set"
+        print("test content key does not get modified when set")
         assert ckeyOriginal==obj.getContentKey()
 
-        print "retrieve obj from db"
+        print("retrieve obj from db")
         obj2=self.osisclient.get(key)
-        print "test content key needs to remain same after fetching object"
+        print("test content key needs to remain same after fetching object")
 
         assert ckeyOriginal==obj2.getContentKey()
 
         obj.description="a descr"
-        print "obj needs to be different"
-        assert ckeyOriginal<>obj.getContentKey()
+        print("obj needs to be different")
+        assert ckeyOriginal!=obj.getContentKey()
         key3,new,changed=self.osisclient.set(obj)
-        print "check 3nd save new & changed are False,True for modified obj"
+        print("check 3nd save new & changed are False,True for modified obj")
         assert new==False
         assert changed==True
-        print "key should be same"
+        print("key should be same")
         assert key==key3
 
         obj3=self.osisclient.get(key3)
-        print "guid should be same even after content change"
+        print("guid should be same even after content change")
         assert obj3.guid==key
         
-        print "verify id structure"
+        print("verify id structure")
         testresult = self.verify_id(key)
         assert testresult==True
 
 
     def test_set_and_self(self):
-        numbers = range(10)
+        numbers = list(range(10))
         items = self.client.list("system", "fake4test")
         startnr = len(items)
         for i in numbers:

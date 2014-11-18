@@ -2,10 +2,10 @@ CODEC='utf-8'
 import time
 from JumpScale import j
 import re
-matchquote = re.compile(ur'\'[^\']*\'')
-re_nondigit= re.compile(ur'\D')
-re_float = re.compile(ur'[0-9]*\.[0-9]+')
-re_digit = re.compile(ur'[0-9]*')
+matchquote = re.compile(r'\'[^\']*\'')
+re_nondigit= re.compile(r'\D')
+re_float = re.compile(r'[0-9]*\.[0-9]+')
+re_digit = re.compile(r'[0-9]*')
 
 
 class Text:
@@ -13,7 +13,7 @@ class Text:
     def toStr(value, codec=CODEC):
         if isinstance(value, str):
             return value
-        elif isinstance(value, unicode):
+        elif isinstance(value, str):
             return value.encode(codec)
         else:
             return str(value)
@@ -35,10 +35,10 @@ class Text:
     def toUnicode(value, codec=CODEC):
         if isinstance(value, str):
             return value.decode(codec)
-        elif isinstance(value, unicode):
+        elif isinstance(value, str):
             return value
         else:
-            return unicode(value)
+            return str(value)
 
     @staticmethod
     def prefix(prefix,txt):
@@ -213,8 +213,8 @@ class Text:
                 result=j.console.askInteger(question=descr,  defaultValue=default, minValue=minValue, maxValue=maxValue, retry=retry)
 
             elif ttype=="bool":
-                if descr<>"":
-                    print descr
+                if descr!="":
+                    print(descr)
                 result=j.console.askYesNo()
                 if result:
                     result=1
@@ -269,12 +269,12 @@ class Text:
         if string2.lower()=="false":
             return "b",False
         #check int
-        if re_nondigit.search(string2)==None and string2<>"":
+        if re_nondigit.search(string2)==None and string2!="":
             # print "int:'%s'"%string2
             return "i",int(string2)
         #check float
         match=re_float.search(string2)
-        if match<>None and match.start()==0 and match.end()==len(string2):
+        if match!=None and match.start()==0 and match.end()==len(string2):
             return "f",float(string2)
 
         return "s",Text.machinetext2str(string)
@@ -305,29 +305,29 @@ class Text:
             elif j.basetype.dictionary.check(string):
                 ttypes=[]
                 result={}
-                for key,item in string.iteritems():
+                for key,item in string.items():
                     ttype,val=Text._str2var(item)
                     if ttype not in ttypes:
                         ttypes.append(ttype)
                 if "s" in ttypes:                        
-                    for key,item in string.iteritems():
+                    for key,item in string.items():
                         result[key]=str(Text.machinetext2hrd(item)) 
                 elif "f" in ttypes and "b" not in ttypes:
-                    for key,item in string.iteritems():
+                    for key,item in string.items():
                         result[key]=Text.getFloat(item)
                 elif "i" in ttypes and "b" not in ttypes:
-                    for key,item in string.iteritems():
+                    for key,item in string.items():
                         result[key]=Text.getInt(item)
                 elif "b" == ttypes:
-                    for key,item in string.iteritems():
+                    for key,item in string.items():
                         result[key]=Text.getBool(item)
                 else:
-                    for key,item in string.iteritems():
+                    for key,item in string.items():
                         result[key]=str(Text.machinetext2hrd(item)) 
             else:
                 ttype,result=Text._str2var(string)
             return result
-        except Exception,e:
+        except Exception as e:
             j.events.inputerror_critical("Could not convert '%s' to basetype, error was %s"%(string,e),"text.str2var")
 
             
@@ -341,7 +341,7 @@ class Text:
             item=itemfull.strip("{{").strip("}}")
             try:
                 result=eval(item)
-            except Exception,e:
+            except Exception as e:
                 raise RuntimeError("Could not execute code in j.tools.text,%s\n%s,Error was:%s"%(item,code,e))
             result=Text.pythonObjToStr(result,multiline=False).strip()
             code=code.replace(itemfull,result)
@@ -381,7 +381,7 @@ class Text:
                 text=0
             return text
         elif j.basetype.string.check(text):
-            if text.find("\n")<>-1 and multiline:
+            if text.find("\n")!=-1 and multiline:
                 text="\n%s"%Text.prefix("    ",text.strip())
             return text
         elif j.basetype.integer.check(text) or j.basetype.float.check(text):
@@ -400,7 +400,7 @@ class Text:
 
         elif j.basetype.dictionary.check(text):
             resout=""
-            keys=text.keys()
+            keys=list(text.keys())
             keys.sort()
             for key in keys:
                 val=text[key]
@@ -422,11 +422,11 @@ class Text:
         """
         'something ' removes ''
         all spaces & commas & : inside ' '  are converted
-         SPACE -> \S
-         " -> \Q
-         , -> \K
-         : -> \D
-         \n -> \N
+         SPACE -> \\S
+         " -> \\Q
+         , -> \\K
+         : -> \\D
+         \\n -> \\N
         """
         for item in re.findall(matchquote, value):
             item2=item.replace(",","\\K")
@@ -449,11 +449,11 @@ class Text:
     def machinetext2hrd(value,quote=False):
         """
         do reverse of:
-             SPACE -> \S
-             " -> \Q
-             , -> \K
-             : -> \D
-             \n -> \N
+             SPACE -> \\S
+             " -> \\Q
+             , -> \\K
+             : -> \\D
+             \\n -> \\N
         """
         value2=value.replace("\\K",",")
         value2=value2.replace("\\Q","\"")
@@ -463,10 +463,10 @@ class Text:
         value2=value2.replace("\\n","\n")
         if quote:
             change=False
-            if value<>value2:
+            if value!=value2:
                 change=True
             if change==False:
-                if value.find("'")<>-1 or value.find("\n")<>-1 or value.find(":")<>-1 or value.find(",")<>-1 or value.find(" ")<>-1:
+                if value.find("'")!=-1 or value.find("\n")!=-1 or value.find(":")!=-1 or value.find(",")!=-1 or value.find(" ")!=-1:
                     change=True
 
             if change:
@@ -480,11 +480,11 @@ class Text:
     def machinetext2str(value):
         """
         do reverse of:
-             SPACE -> \S
-             " -> \Q
-             , -> \K
-             : -> \D
-             \n -> \N
+             SPACE -> \\S
+             " -> \\Q
+             , -> \\K
+             : -> \\D
+             \n -> \\N
         """
         value=value.replace("\\K",",")
         value=value.replace("\\Q","\"")
@@ -561,7 +561,7 @@ class Text:
         text=Text.dealWithQuote(text)        
         text=text.split(",")
         text=[item.strip() for item in text]
-        if ttype<>None:
+        if ttype!=None:
             ttype=ttype.lower()
             if ttype=="int":
                 text=[Text.getInt(item) for item in text]
@@ -588,7 +588,7 @@ class Text:
         text=Text.dealWithQuote(text)
         res2={}
         for item in text.split(","):
-            if item.strip()<>"":
+            if item.strip()!="":
                 key,val=item.split(":",1)
                 val=val.replace("\k",",")
                 key=key.strip()

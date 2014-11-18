@@ -7,6 +7,7 @@ import time
 from abc import ABCMeta, abstractmethod
 from JumpScale import j
 from JumpScale.core.baseclasses import BaseEnumeration
+import collections
 
 
 class KeyValueStoreType(BaseEnumeration):
@@ -23,10 +24,8 @@ class KeyValueStoreType(BaseEnumeration):
         cls.finishItemRegistration()
 
 
-class KeyValueStoreBase(object):
+class KeyValueStoreBase(object, metaclass=ABCMeta):
     '''KeyValueStoreBase defines a store interface.'''
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, serializers=[]):
         #self.id = j.application.getUniqueMachineId()
@@ -38,13 +37,13 @@ class KeyValueStoreBase(object):
         Copies the doc strings (when available) from the base implementation
         '''
 
-        attrs = cls.__dict__.iteritems()
+        attrs = iter(cls.__dict__.items())
 
         for attrName, attr in attrs:
             if not attr.__doc__ and\
                hasattr(KeyValueStoreBase, attrName) and\
                not attrName.startswith('_')\
-            and callable(attr):
+            and isinstance(attr, collections.Callable):
 
                 baseAttr = getattr(KeyValueStoreBase, attrName)
                 attr.__doc__ = baseAttr.__doc__
@@ -332,7 +331,7 @@ class KeyValueStoreBase(object):
         """
         return current time (when in appserver will require less time then calling native jumpscale function)
         """
-        if j.core.appserver6.runningAppserver<> None:
+        if j.core.appserver6.runningAppserver!= None:
             return j.core.appserver6.runningAppserver.time
         else:
             return j.base.time.getTimeEpoch()
@@ -365,7 +364,7 @@ class KeyValueStoreBase(object):
         if not self.exists("subscribers",category):
             data={subscriberid:[self.now(),startid]}
         else:
-            if startid<>0:
+            if startid!=0:
                 if not self.exists(category,startid):
                     raise RuntimeError("Cannot find %s:%s in db, cannot subscribe, select valid startid" % (category,startid))
 
@@ -385,7 +384,7 @@ class KeyValueStoreBase(object):
         if not self.exists("subscribers",category):
             raise RuntimeError("cannot find subscription")
         data=self.get("subscribers",category)
-        if not data.has_key(subscriberid):
+        if subscriberid not in data:
             raise RuntimeError("cannot find subscriber")
         lastaccesstime,lastid=data[subscriberid]
         lastid+=1

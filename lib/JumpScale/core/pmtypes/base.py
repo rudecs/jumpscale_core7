@@ -3,6 +3,7 @@
 import inspect
 import types
 import operator
+import collections
 
 try:
     import ujson as json
@@ -93,7 +94,7 @@ class BaseType(object):
                 raise RuntimeError(
                     'fset parameter of BaseType should return a generator')
 
-            real_new_value = helper.next()
+            real_new_value = next(helper)
             if real_new_value is not IGNORE:
                 saved_value = self._set_impl(obj, real_new_value)
             else:
@@ -101,7 +102,7 @@ class BaseType(object):
 
             try:
                 helper.send(saved_value)
-                helper.next()
+                next(helper)
             except StopIteration:
                 pass
             else:
@@ -141,7 +142,7 @@ class BaseType(object):
             return False
 
         #Object-class-specific check
-        if callable(self._check) and not self._check(obj, value):
+        if isinstance(self._check, collections.Callable) and not self._check(obj, value):
             return False
 
         return True
@@ -165,7 +166,7 @@ class BaseType(object):
             #     i = Integer(default=2)
             #     s = Integer(default=_get_i_square)
 
-            if callable(self._default):
+            if isinstance(self._default, collections.Callable):
                 value = self._default(obj)
             else:
                 value = self._default

@@ -1,7 +1,7 @@
 
 
 from JumpScale import j
-from ConfigFileManager import ConfigFileManager
+from .ConfigFileManager import ConfigFileManager
 import os
 import sys
 
@@ -31,7 +31,7 @@ class ShellConfig():
     def refresh(self):
         configfiles= j.system.fs.listFilesInDir(j.dirs.configsDir)
         for file in configfiles:
-            if file.find(".cfg")<>-1:
+            if file.find(".cfg")!=-1:
                 configType=os.path.basename(file.replace(".cfg",""))
                 #set configfilemanager under shellconfigure 
                 self.loadConfigFile(configType)

@@ -20,7 +20,7 @@ class MacroHelper():
 
         if args.tags.labelExists("show"):
             out=""
-            keys=obj.keys()
+            keys=list(obj.keys())
             keys.sort()
             for key in keys:
                 value=obj[key]
@@ -34,7 +34,7 @@ class MacroHelper():
             params.result=("{{code:\n%s\n}}"%out,doc)
             return params
 
-        objparams = { str(k).lower(): v for k,v in obj.iteritems() }
+        objparams = { str(k).lower(): v for k,v in obj.items() }
 
         #apply the properties of the object as parameters to the active wiki document
         doc.content=doc.applyParams(objparams, content=doc.content)

@@ -39,34 +39,34 @@ class TEST(unittest.TestCase):
         key,new,changed=self.osisclient.set(obj)
         key2,new,changed=self.osisclient.set(obj)
 
-        print "2x save should have same key"
+        print("2x save should have same key")
         self.assertEqual(key, key2)
 
-        print "check 2nd save new & changed are not new or changed"
+        print("check 2nd save new & changed are not new or changed")
         self.assertFalse(new)
         self.assertFalse(changed)
 
-        print "test content key does not get modified when set"
+        print("test content key does not get modified when set")
         self.assertEqual(ckeyOriginal, obj.getContentKey())
 
-        print "retrieve obj from db"
+        print("retrieve obj from db")
         obj2=self.osisclient.get(key)
-        print "test content key needs to remain same after fetching object"
+        print("test content key needs to remain same after fetching object")
 
         self.assertEqual(ckeyOriginal, obj2.getContentKey())
 
         obj.description="a descr"
-        print "obj needs to be different"
+        print("obj needs to be different")
         self.assertNotEqual(ckeyOriginal, obj.getContentKey())
         key3,new,changed=self.osisclient.set(obj)
-        print "check 3nd save new & changed are False,True for modified obj"
+        print("check 3nd save new & changed are False,True for modified obj")
         self.assertFalse(new)
         self.assertTrue(changed)
-        print "key should be same"
+        print("key should be same")
         self.assertEqual(key, key3)
 
         obj3=self.osisclient.get(key3)
-        print "guid should be same even after content change"
+        print("guid should be same even after content change")
         self.assertEqual(obj3.guid, key)
 
     def test_find(self):

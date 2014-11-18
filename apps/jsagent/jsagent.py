@@ -49,9 +49,9 @@ class Process():
         self.p=None
 
     def start(self):
-        if self.cmds<>[]:
+        if self.cmds!=[]:
             self._spawnProcess()
-        if self.pythonCode<>None:
+        if self.pythonCode!=None:
             if self.sync:
                 self.do()
             else:
@@ -65,12 +65,12 @@ class Process():
         self.p= psutil.Process(self.pid)
 
     def kill(self):
-        if self.p<>None:
+        if self.p!=None:
             self.p.kill()
 
     def is_running(self):
         rss,vms=self.p.get_memory_info()
-        return vms<>0
+        return vms!=0
 
     def _spawnProcess(self):   
         if self.logpath==None:
@@ -89,19 +89,19 @@ class Process():
         try:            
             self.p = psutil.Popen(self.cmds, env=self.env,cwd=self.workingdir,stdin=stdin, stdout=stdout, stderr=stderr,bufsize=0,shell=False) #f was: subprocess.PIPE
             self.pid=self.p.pid
-        except Exception,e:
-            print "could not execute:%s\nError:\n%s"%(self,e)
+        except Exception as e:
+            print("could not execute:%s\nError:\n%s"%(self,e))
 
         time.sleep(0.1)
         if self.is_running()==False:
-            print "could not execute:%s\n"%(self)
+            print("could not execute:%s\n"%(self))
             if j.system.fs.exists(path=self.logpath):
                 log=j.system.fs.fileGetContents(self.logpath)
-                print "log:\n%s"%log
+                print("log:\n%s"%log)
 
     def do(self):
-        print 'A new child %s' % self.name,  os.getpid()
-        if self.pythonCode<>None:
+        print('A new child %s' % self.name,  os.getpid())
+        if self.pythonCode!=None:
             exec(self.pythonCode)
 
         os._exit(0)  
@@ -176,7 +176,7 @@ class ProcessManager():
             self.processes.append(p)
 
 
-        if acip<>"":
+        if acip!="":
 
             if j.application.config.exists("grid.id"):
                 if j.application.config.get("grid.id")=="" or j.application.config.getInt("grid.id")==0:
@@ -189,7 +189,7 @@ class ProcessManager():
 
             #processmanager enabled
             while j.system.net.waitConnectionTest(acip,acport,2)==False:
-                print "cannot connect to agentcontroller, will retry forever: '%s:%s'"%(acip,acport)
+                print("cannot connect to agentcontroller, will retry forever: '%s:%s'"%(acip,acport))
 
             #now register to agentcontroller
             self.acclient = j.clients.agentcontroller.get(acip, login=aclogin, passwd=acpasswd)
@@ -257,7 +257,7 @@ class ProcessManager():
         j.core.processmanager.start()
 
     def _workerStart(self):
-        pwd = '/opt/jumpscale/apps/jsagent/lib'
+        pwd = '/opt/jumpscale7/apps/jsagent/lib'
         for qname in ["default","io","process","hypervisor"]:
             p = Process()
             p.domain = 'workers'
@@ -276,19 +276,19 @@ class ProcessManager():
             # print "NEXT:%s\n"%i    
             for p in self.processes[:]:
                 # p.refresh()        
-                if p.p<>None:        
+                if p.p!=None:        
                     if not p.is_running():
                         if p.restart:
-                            print "%s:%s was stopped restarting" % (p.domain, p.name)
+                            print("%s:%s was stopped restarting" % (p.domain, p.name))
                             p.start()
                         else:
-                            print "Process %s has stopped" % p
+                            print("Process %s has stopped" % p)
                             p.kill()
                             self.processes.remove(p)
 
             time.sleep(1)
             if len(self.processes)==0:
-                print "no more children"
+                print("no more children")
                 # return
 
 @atexit.register

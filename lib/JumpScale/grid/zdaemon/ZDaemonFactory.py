@@ -33,7 +33,7 @@ class ZDaemonFactory():
         use self.getZDaemonClientClass as client to this daemon
 
         """
-        from ZDaemon import ZDaemon
+        from .ZDaemon import ZDaemon
         zd = ZDaemon(port=port, name=name, nrCmdGreenlets=nrCmdGreenlets, sslorg=sslorg, ssluser=ssluser, sslkeyvaluestor=sslkeyvaluestor)
         return zd
 
@@ -94,7 +94,7 @@ class ZDaemonFactory():
             * means all
 
         """
-        from ZDaemonAgent import ZDaemonAgent
+        from .ZDaemonAgent import ZDaemonAgent
         cl = ZDaemonAgent(ipaddr=ipaddr, port=port, org=org, user=user, passwd=passwd, ssl=ssl, reset=reset, roles=roles)
 
         return cl

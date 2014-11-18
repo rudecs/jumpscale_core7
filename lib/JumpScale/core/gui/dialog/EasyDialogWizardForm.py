@@ -32,8 +32,8 @@
 # </License>
 
 from JumpScale import j
-from EasyDialogWizardServer import WizardActions
-from EasyDialogWizardServer import EasyDialogWizardServer
+from .EasyDialogWizardServer import WizardActions
+from .EasyDialogWizardServer import EasyDialogWizardServer
 
 try:
     import ujson as json
@@ -129,7 +129,7 @@ class WizardList(list):
 
     def _addItem(self, item):
         if item.name in self:
-            raise KeyError, "Item with name '%s' already exists"%item.name
+            raise KeyError("Item with name '%s' already exists"%item.name)
 
         self._items.append(item)
 
@@ -137,7 +137,7 @@ class WizardList(list):
         for item in self._items:
             if item.name.lower() == key.lower():
                 return item
-        raise KeyError, "No item defined with name '%s'"%key
+        raise KeyError("No item defined with name '%s'"%key)
 
     def _removeItem(self, key):
         for item in self._items:
@@ -294,7 +294,7 @@ class WizardTab(object):
         @param optional:      Define the integer field as optional parameter (boolean)
         @param stepSize:      Number to increase the steps
         """
-        number = WizardElementBase(self.pm_actions._showNumber(text, str(minValue) if minValue <> None else minValue, maxValue, value, name, message, status, trigger, callback, helpText, optional, stepSize))
+        number = WizardElementBase(self.pm_actions._showNumber(text, str(minValue) if minValue != None else minValue, maxValue, value, name, message, status, trigger, callback, helpText, optional, stepSize))
         self.elements._addItem(number)
 
     def addIntegers(self, name, question, value=None, message='', status='', trigger=None, callback=None, helpText='', optional=True):

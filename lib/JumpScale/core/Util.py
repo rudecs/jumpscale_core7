@@ -71,7 +71,7 @@ class Util:
                 myfile = self.__LOCKDICTIONARY.pop(lockname)
                 fcntl.flock(myfile.fileno(), fcntl.LOCK_UN)
                 myfile.close()
-            except Exception, exc:
+            except Exception as exc:
                 raise RuntimeError("Cannot unlock [%s] with ERROR:%s" % (lockname, str(exc)))
 
         elif j.system.platformtype.isWindows():

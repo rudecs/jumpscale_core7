@@ -1,6 +1,6 @@
 from JumpScale import j
 
-from ClassBase import ClassBase
+from .ClassBase import ClassBase
 
 class Appserver6GreenletTaskletsBase(ClassBase):    
     def __init__(self,taskletsPath):

@@ -100,16 +100,16 @@ class SpecModelActorsGenerator():
 
     def generate(self):
         
-        specnames=[item for item in j.core.specparser.specs.keys() if item.find("model_%s_%s"%(self.appname,self.actorname))==0]
+        specnames=[item for item in list(j.core.specparser.specs.keys()) if item.find("model_%s_%s"%(self.appname,self.actorname))==0]
      
 
         for specname in specnames:
-            print "##generate %s" % specname
+            print("##generate %s" % specname)
 
 
             spec=j.core.specparser.specs[specname]
 
-            if spec.tags<>None and spec.tags.find("nocrud")<>-1:
+            if spec.tags!=None and spec.tags.find("nocrud")!=-1:
                 #if no crud should be generated go to next
                 continue
 
@@ -123,7 +123,7 @@ class SpecModelActorsGenerator():
 
                 if j.system.fs.exists(specpath):
                     content=j.system.fs.fileGetContents(specpath)
-                    if content.find("##DONOTGENERATE##")<>-1:
+                    if content.find("##DONOTGENERATE##")!=-1:
                         specpath=j.system.fs.joinPaths(self.specpath,spec.name.lower(),"_modelactors.spec")
 
                 self.addModel(spec.name,modelactorname, spec)

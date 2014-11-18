@@ -1,5 +1,5 @@
 import requests, base64, phpserialize
-from settings import authenticationparams, WHMCS_API_ENDPOINT
+from .settings import authenticationparams, WHMCS_API_ENDPOINT
 
 class whmcsusers():
     def __init__(self):
@@ -13,7 +13,7 @@ class whmcsusers():
         return response
 
     def create_user(self, name, company, emails, password, companyurl, displayname, creationTime):
-        print 'Creating %s' % name
+        print('Creating %s' % name)
         create_user_request_params = dict(
 
                     action = 'addclient',
@@ -36,7 +36,7 @@ class whmcsusers():
 
 
     def update_user(self, name, company, emails, password, companyurl, displayname, creationTime):
-        print 'Updating %s' % name
+        print('Updating %s' % name)
         user_request_params = dict(
 
                     action = 'updateclient',

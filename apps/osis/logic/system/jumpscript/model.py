@@ -11,7 +11,7 @@ class Jumpscript(OsisBaseObject):
 
     def __init__(self, ddict={},name="", category="", organization="", author="", license="", version="", roles="", action=None, source="", path="", descr=""):
         
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
             if self.id is None:
                 self.id = 0
@@ -26,7 +26,7 @@ class Jumpscript(OsisBaseObject):
             self.license = license
             self.version = version
             self.roles = roles
-            if action<>None:
+            if action!=None:
                 self.setArgs(action)
             else:
                 self.args=[]

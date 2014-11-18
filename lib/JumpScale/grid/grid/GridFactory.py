@@ -25,7 +25,7 @@ class GridFactory():
         self.roles = list()
 
     def _loadConfig(self,test=True):
-        if not j.application.__dict__.has_key("config"):
+        if "config" not in j.application.__dict__:
             raise RuntimeWarning("Grid/Broker is not configured please run configureBroker/configureNode first and restart jshell")
         self.config = j.application.config
 
@@ -47,7 +47,7 @@ class GridFactory():
     def init(self,description="",instance=1):
         """
         """
-        print "init grid"
+        print("init grid")
         self._loadConfig(test=False)
 
         roles = list()

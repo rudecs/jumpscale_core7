@@ -83,7 +83,7 @@ class OSISStoreMongo(OSISStore):
                     return True
             return False
         def update(value):
-            if isinstance(value['guid'], basestring):
+            if isinstance(value['guid'], str):
                 value['guid'] = value['guid'].replace('-', '')
         def updateTTL(value):
                 if self.TTL != 0:
@@ -105,7 +105,7 @@ class OSISStoreMongo(OSISStore):
                 update(value)
                 objInDB=db.find_one({"guid":value["guid"]})
 
-            if objInDB<>None:
+            if objInDB!=None:
                 oldckey = self.getObject(objInDB).getContentKey()
                 value.pop('id', None)
                 value.pop('guid', None)
@@ -269,10 +269,10 @@ class OSISStoreMongo(OSISStore):
             if tags.tagExists("@fields"):
                 fields=tags.tagGet("@fields")
                 tags.tagDelete("@fields")
-                fields=[item.strip() for item in fields.split(",") if item.strip()<>""]
+                fields=[item.strip() for item in fields.split(",") if item.strip()!=""]
 
             params=tags.getDict()
-            for key, value in params.copy().iteritems():
+            for key, value in params.copy().items():
                 if value.startswith('>'):
                     if 'm' in value or 'd' in value or 'h' in value:
                         new_value = j.base.time.getEpochAgo(value[1:])
@@ -302,25 +302,25 @@ class OSISStoreMongo(OSISStore):
                 query['query']['bool'].setdefault('must', {})
                 for queryitem in query['query']['bool']['must']:
                     if 'term' in queryitem:
-                        for k, v in queryitem['term'].iteritems():
+                        for k, v in queryitem['term'].items():
                             mongoquery[k] = v
                     if 'range' in queryitem:
-                        for k, v in queryitem['range'].iteritems():
+                        for k, v in queryitem['range'].items():
                             operatormap = {'from':'$gte', 'to':'$lte', 'gt': '$gt', 'gte': '$gte'}
-                            for operator, val in v.iteritems():
+                            for operator, val in v.items():
                                 mongoquery[k] = {operatormap[operator]: val}
                     if 'wildcard' in queryitem:
-                        for k, v in queryitem['wildcard'].iteritems():
+                        for k, v in queryitem['wildcard'].items():
                             mongoquery[k] = {'$regex': '.*%s.*' % str(v).replace('*', ''), '$options':'i'}
                     if 'terms' in queryitem:
-                        for k, v in queryitem['terms'].iteritems():
+                        for k, v in queryitem['terms'].items():
                             mongoquery[k] = {'$in': v}
 
                 wilds = dict()
                 mongoquery['$or'] = list()
                 for queryitem in query['query']['bool']['should']:
                     if 'wildcard' in queryitem:
-                        for k, v in queryitem['wildcard'].iteritems():
+                        for k, v in queryitem['wildcard'].items():
                             wilds[k] = {'$regex': '.*%s.*' % str(v).replace('*', '')}
                             mongoquery['$or'].append(wilds)
 
@@ -337,7 +337,7 @@ class OSISStoreMongo(OSISStore):
             if 'sort' in query:
                 sorting = list()
                 for field in query['sort']:
-                    sorting.append((field.keys()[0], 1 if field.values()[0] == 'asc' else -1))
+                    sorting.append((list(field.keys())[0], 1 if list(field.values())[0] == 'asc' else -1))
                 mongoquery.pop('sort', None)
             if sorting:
                 resultdata = db.find(mongoquery, fields=fields).sort(sorting).skip(start).limit(size)

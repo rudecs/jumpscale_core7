@@ -20,7 +20,7 @@ def main(j, args, params, tags, tasklet):
         out = "ERROR: could not reload the docs for space %s, please check event log." % params.tags.tagGet("name")
         eco = j.errorconditionhandler.parsePythonErrorObject(e)
         eco.process()
-        print eco
+        print(eco)
 
     params.result = (out, params.doc)
 

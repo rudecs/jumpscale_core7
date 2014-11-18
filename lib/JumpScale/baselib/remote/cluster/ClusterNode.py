@@ -25,7 +25,7 @@ class ClusterNode():
     def executeJS(self, commands, dieOnError=True, silent=False, timeout=60):
         if not commands:
             raise RuntimeError('Commands is empty!')
-        print 'COMMANDS: ' + commands
+        print('COMMANDS: ' + commands)
         j.transaction.start("Execute jshellcmd %s on node %s %s" % (commands, self.hostname, self.ipaddr), silent=silent)
         tmpfilepath = j.system.fs.getTmpFilePath()
 
@@ -405,7 +405,7 @@ jp.install()
         self.execute("cd /; tar zft '%s' | grep -v ^d | awk {'print $6'} | xargs rm" % path, False)
         # extract all files in the tar
         self.execute("echo 'cd /; tar xzf '%s' -C /' > /tmp/out.tmp" % path, False)
-        print self.execute("cd /; tar xzf '%s' -C /" % path, False)
+        print(self.execute("cd /; tar xzf '%s' -C /" % path, False))
         j.transaction.stop()
 
     def prepareForSSODebug(self):

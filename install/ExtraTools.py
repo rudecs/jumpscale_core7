@@ -19,7 +19,7 @@ class ByteProcessor:
     @staticmethod
     def hashMd5(s):
         import hashlib
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             s = s.encode('utf-8')
         impl = hashlib.md5(s)
         return impl.hexdigest()
@@ -27,7 +27,7 @@ class ByteProcessor:
     @staticmethod
     def hashTiger160(s):
         import mhash
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             s = s.encode('utf-8')
         h=mhash.MHASH(mhash.MHASH_TIGER160,s)
         return h.hexdigest()
@@ -35,7 +35,7 @@ class ByteProcessor:
     @staticmethod
     def hashTiger160bin(s):
         import mhash
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             s = s.encode('utf-8')
         h=mhash.MHASH(mhash.MHASH_TIGER160,s)
         return h.digest()
@@ -81,7 +81,7 @@ class RegexTool():
     def match(pattern,text):
         m = regex.match(pattern,text)
         if m:
-            print("%s %s"%(pattern,text))
+            print(("%s %s"%(pattern,text)))
             return True
         else:
             return False        
@@ -143,13 +143,13 @@ class FSWalkerStats():
         self.duplicateTotal=0
 
     def registerType(self,ttype):
-        if not self.sizeUncompressed.has_key(ttype):
+        if ttype not in self.sizeUncompressed:
             self.sizeUncompressed[ttype]=0
-        if not self.sizeCompressed.has_key(ttype):
+        if ttype not in self.sizeCompressed:
             self.sizeCompressed[ttype]=0
-        if not self.nr.has_key(ttype):
+        if ttype not in self.nr:
             self.nr[ttype]=0
-        if not self.duplicate.has_key(ttype):
+        if ttype not in self.duplicate:
             self.duplicate[ttype]=0
 
     def callstop(self):
@@ -158,22 +158,22 @@ class FSWalkerStats():
 
     def _getTotals(self):
         sizeUncompressed=0
-        for key in self.sizeUncompressed.keys():
+        for key in list(self.sizeUncompressed.keys()):
             sizeUncompressed+=self.sizeUncompressed[key]
         self.sizeUncompressedTotal=sizeUncompressed
         
         sizeCompressed=0
-        for key in self.sizeCompressed.keys():
+        for key in list(self.sizeCompressed.keys()):
             sizeCompressed+=self.sizeCompressed[key]
         self.sizeCompressedTotal=sizeCompressed
         
         nr=0
-        for key in self.nr.keys():
+        for key in list(self.nr.keys()):
             nr+=self.nr[key]
         self.nrTotal=nr
 
         duplicate=0
-        for key in self.duplicate.keys():
+        for key in list(self.duplicate.keys()):
             duplicate+=self.duplicate[key]
         self.duplicateTotal=duplicate
 
@@ -251,9 +251,9 @@ class TIMER:
     
     @staticmethod
     def result():
-        print("duration:%s"%TIMER.duration)
-        print("nritems:%s"%TIMER.nritems)
-        print("performance:%s"%TIMER.performance)
+        print(("duration:%s"%TIMER.duration))
+        print(("nritems:%s"%TIMER.nritems))
+        print(("performance:%s"%TIMER.performance))
 
 
 class FSWalker():
@@ -278,10 +278,10 @@ class FSWalker():
 
     def statsPrint(self): 
         # print("lastpath:%s"%self.lastPath)
-        print "\n"
+        print("\n")
         try:
-            print(str(self.stats))
-        except Exception,e:
+            print((str(self.stats)))
+        except Exception as e:
             pass
 
     def statsAdd(self,path="",ttype="F",sizeUncompressed=0,sizeCompressed=0,duplicate=False):
@@ -318,7 +318,7 @@ class FSWalker():
             result["L"].append([src,dest,stat])   
 
         def processother(path,stat,type,arg):
-            if result.has_key(type):
+            if type in result:
                 result[type]=[]
             result[type].append([path,stat])  
 
@@ -356,15 +356,15 @@ else:
             exec(C2)
 
         callbackMatchFunctions={}
-        if matchobjF!=None and (pathRegexIncludes.has_key("F") or pathRegexExcludes.has_key("F")):
+        if matchobjF!=None and ("F" in pathRegexIncludes or "F" in pathRegexExcludes):
             callbackMatchFunctions["F"]=matchobjF
         if includeFolders:
-            if matchobjD!=None and (pathRegexIncludes.has_key("D") or pathRegexExcludes.has_key("D")):
+            if matchobjD!=None and ("D" in pathRegexIncludes or "D" in pathRegexExcludes):
                 callbackMatchFunctions["D"]=matchobjD
         if includeLinks:
-            if matchobjL!=None and (pathRegexIncludes.has_key("L") or pathRegexExcludes.has_key("L")):
+            if matchobjL!=None and ("L" in pathRegexIncludes or "L" in pathRegexExcludes):
                 callbackMatchFunctions["L"]=matchobjL
-        if pathRegexIncludes.has_key("O") or pathRegexExcludes.has_key("O"):
+        if "O" in pathRegexIncludes or "O" in pathRegexExcludes:
             callbackMatchFunctions["O"]=matchobjO
 
         return callbackMatchFunctions
@@ -435,11 +435,11 @@ else:
             else:
                 raise RuntimeError("Can only detect files, dirs, links,path was '%s'"%path2)
 
-            if not callbackMatchFunctions.has_key(ttype) or (callbackMatchFunctions.has_key(ttype) and callbackMatchFunctions[ttype](path2,arg,pathRegexIncludes,pathRegexExcludes)):
+            if ttype not in callbackMatchFunctions or (ttype in callbackMatchFunctions and callbackMatchFunctions[ttype](path2,arg,pathRegexIncludes,pathRegexExcludes)):
                 # self.log("walker filepath:%s"% path2)   
                 self.statsAdd(path=path2,ttype=ttype,sizeUncompressed=0,sizeCompressed=0,duplicate=False)
 
-                if callbackFunctions.has_key(ttype):
+                if ttype in callbackFunctions:
                     if ttype in "DF":
                         if stat:
                             stat=self.fs.stat(path2)
@@ -452,7 +452,7 @@ else:
                         callbackFunctions[ttype](src=path2,dest=os.path.realpath(path2),arg=arg,stat=statb)
 
             if ttype=="D":
-                if path2[-1]<>"/":
+                if path2[-1]!="/":
                     path2+="/"
 
                 if pathRegexIncludes.get(ttype,[])==[] and childrenRegexExcludes==[]:

@@ -29,7 +29,7 @@ class TEST():
                random.randint(0x00, 0x7f),
                random.randint(0x00, 0xff),
                random.randint(0x00, 0xff)]
-        return ':'.join(map(lambda x: "%02x" % x, mac))
+        return ':'.join(["%02x" % x for x in mac])
 
     def setUp(self):
         self.client = j.core.osis.getClient()
@@ -41,7 +41,7 @@ class TEST():
         obj = self.nodeclient.new()
         obj.name = "%s_1" % self.prefix
         obj.netaddr = {self.randomMAC(): ['127.0.0.1', '127.0.0.2']}
-        obj.machineguid = j.tools.hash.md5_string(str(obj.netaddr.keys()))
+        obj.machineguid = j.tools.hash.md5_string(str(list(obj.netaddr.keys())))
         key, new, changed = self.nodeclient.set(obj)
         testresult = self.verify_id(key) and new and changed
         assert testresult==True
@@ -51,20 +51,20 @@ class TEST():
         obj = self.nodeclient.new()
         obj.name = "%s_1" % self.prefix
         obj.netaddr = {self.randomMAC(): ['127.0.0.1', '127.0.0.2']}
-        obj.machineguid = j.tools.hash.md5_string(str(obj.netaddr.keys()))
+        obj.machineguid = j.tools.hash.md5_string(str(list(obj.netaddr.keys())))
         key, new, changed = self.nodeclient.set(obj)
         obj = json.loads(self.client.get("system", "fake4test", key))
         assert obj['name']== "%s_1" % self.prefix
 
     def test_set_and_self(self):
-        numbers = range(10)
+        numbers = list(range(10))
         items = self.client.list("system", "fake4test")
         startnr = len(items)
         for i in numbers:
             obj = self.nodeclient.new()
             obj.name = "%s_%s" % (self.prefix, i)
             obj.netaddr = {self.randomMAC(): ['127.0.0.1', '127.0.0.2']}
-            obj.machineguid = j.tools.hash.md5_string(str(obj.netaddr.keys()))
+            obj.machineguid = j.tools.hash.md5_string(str(list(obj.netaddr.keys())))
             key, new, changed = self.nodeclient.set(obj)
         items = self.client.list("system", "fake4test")
         assert len(items)== startnr + 10
@@ -73,7 +73,7 @@ class TEST():
         obj = self.nodeclient.new()
         obj.name = "%s_1" % self.prefix
         obj.netaddr = {self.randomMAC(): ['127.0.0.1', '127.0.0.2']}
-        obj.machineguid = j.tools.hash.md5_string(str(obj.netaddr.keys()))
+        obj.machineguid = j.tools.hash.md5_string(str(list(obj.netaddr.keys())))
         key, new, changed = self.nodeclient.set(obj)
         obj = self.client.get("system", "fake4test", key)
         self.client.delete("system", "fake4test", key)

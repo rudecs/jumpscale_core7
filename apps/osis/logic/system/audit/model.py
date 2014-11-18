@@ -10,7 +10,7 @@ class Audit(OsisBaseObject):
 
     def __init__(self, ddict={}, user="", call=None, args=None, kwargs=None, statuscode=None, result=None):
         import time
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.guid = None

@@ -123,7 +123,7 @@ class BlobStorClientFake:
         if compress==True or (len(data)>self._compressMin and self.compress):
             compress=self.compress
             # print "compress"
-            print ".",
+            print(".")
             data=lzma.compress(data)
             serialization="L"
         else:
@@ -132,7 +132,7 @@ class BlobStorClientFake:
         if not self._exists(key, parent):
             file_id = self.set(key=key, data=data,repoid=repoid,serialization=serialization,sync=False)
         else:
-            print 'Chunk %s already exists on weedfs' % key
+            print('Chunk %s already exists on weedfs' % key)
         if parent and file_id:
             self.redis.rpush('files:%s' % parent, file_id)
         return key
@@ -176,7 +176,7 @@ class BlobStorClientFake:
             for data in self._read_file(path):
                 self._dump2stor(data,repoid=repoid,compress=compress,parent=key)
         else:
-            print 'Key: %s already exists' % key
+            print('Key: %s already exists' % key)
         return key
 
     def downloadFile(self,key,dest,link=False,repoid=0, chmod=0,chownuid=0,chowngid=0,sync=False,size=0):
@@ -193,7 +193,7 @@ class BlobStorClientFake:
         if blob==None:
             raise RuntimeError("Cannot find blob with key:%s"%key)
                 
-        if self.cachepath<>"":
+        if self.cachepath!="":
             blob_path = self._getBlobCachePath(key)
             self._restoreBlobToDest(blob_path, blob, chmod=chmod,chownuid=chownuid,chowngid=chowngid,serialization=serialization)
             j.system.fs.createDir(j.system.fs.getDirName(dest))
@@ -241,9 +241,9 @@ class BlobStorClientFake:
             j.system.fs.writeFile(dest, blob)
 
         # chmod/chown
-        if chmod<>0:
+        if chmod!=0:
             os.chmod(dest,chmod)
-        if chownuid<>0:
+        if chownuid!=0:
             os.chown(dest,chownuid,chowngid)       
 
     def _link(self, src, dest):

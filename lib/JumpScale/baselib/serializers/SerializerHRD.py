@@ -4,7 +4,7 @@ from JumpScale.core.system.text import Text
 
 class SerializerHRD():
     def __init__(self):
-        self._primitiveTypes = (int, basestring, float, bool)
+        self._primitiveTypes = (int, str, float, bool)
         self.__escape = str(uuid.uuid1())
 
     def _formatPrepends(self, prepend, type):
@@ -20,7 +20,7 @@ class SerializerHRD():
             processed = self._dumpList(data, prepend)
         else:
             processed = data
-            if not isinstance(data, basestring):
+            if not isinstance(data, str):
                 processed = '%s.' % data
         return processed
 
@@ -28,7 +28,7 @@ class SerializerHRD():
         dictified = ''
         if not dictdata:
             dictified += self._formatPrepends(prepend, '{}')
-        for k, v in dictdata.iteritems():
+        for k, v in dictdata.items():
             if isinstance(k, str) and '..' in k:
                 k = k.replace('..', self.__escape)
             if not (isinstance(v, self._primitiveTypes)):
@@ -36,7 +36,7 @@ class SerializerHRD():
                 dictified += v
             else:
                 k = k.replace(self.__escape, '..')
-                if not isinstance(v, basestring):
+                if not isinstance(v, str):
                     dictified += '%s%s. = %s\n' % (prepend, k, v)
                 else:
                     dictified += '%s%s = %s\n' % (prepend, k, v)
@@ -55,7 +55,7 @@ class SerializerHRD():
                 item = self.dumps(item, listprepend)
                 listified += '%s' % item
             else:
-                if not isinstance(item, basestring):
+                if not isinstance(item, str):
                     listified += '%s. = %s\n' % (listprepend[:-1], item)
                 else:
                     listified += '%s = %s\n' % (listprepend[:-1], item)

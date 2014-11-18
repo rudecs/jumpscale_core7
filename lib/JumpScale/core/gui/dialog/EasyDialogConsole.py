@@ -4,7 +4,7 @@ from datetime import date
 
 from JumpScale import j
 
-from EasyDialogGeneric import EasyDialogGeneric
+from .EasyDialogGeneric import EasyDialogGeneric
 
 class EasyDialogConsole(EasyDialogGeneric):
 
@@ -137,7 +137,7 @@ class EasyDialogConsole(EasyDialogGeneric):
         @return:  selected choice
         """
 
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             raise RuntimeError ("Cannot ask a choice in an list of items in a non interactive mode.")
 
         defaultValues = list()
@@ -145,7 +145,7 @@ class EasyDialogConsole(EasyDialogGeneric):
         if defaultValue:
             defaultValues = [value.strip() for value in defaultValue.split(',')]
             #we choose tolerant approach by just filtering out the invalid defaultValues entries, without raising an error
-            defaultValues = filter(lambda value: value in choices, defaultValues)
+            defaultValues = [value for value in defaultValues if value in choices]
 
         result = None
 
@@ -180,7 +180,7 @@ class EasyDialogConsole(EasyDialogGeneric):
         @return:  selected choice[s] or default value[s]
         """
 
-        if j.application.interactive<>True:
+        if j.application.interactive!=True:
             raise RuntimeError ("Cannot ask a choice in a list of items in a non interactive mode.")
 
         defaultValues = list()
@@ -191,7 +191,7 @@ class EasyDialogConsole(EasyDialogGeneric):
             else:
                 defaultValues = [value.strip() for value in defaultValue.split(',')]
                 #we choose tolerant approach by just filtering out the invalid defaultValues entries, without raising an error
-                defaultValues = filter(lambda value: value in choices, defaultValues)
+                defaultValues = [value for value in defaultValues if value in choices]
 
 
         result = None
@@ -301,7 +301,7 @@ class EasyDialogConsole(EasyDialogGeneric):
         if selection:
             selection = self._checkSelection(selection, choices, multiSelection)
         elif defaultValue:
-            selection = map(lambda value : choices.index(value) + 1 , defaultValue) #convert values to corresponding indexes
+            selection = [choices.index(value) + 1 for value in defaultValue] #convert values to corresponding indexes
         else:
             raise ValueError("No/Invalid default value provided, please try again and select Nr.")
         return selection
@@ -332,7 +332,7 @@ class EasyDialogConsole(EasyDialogGeneric):
         #@todo implement is simple input, show format [day]/[month]/[year]  year is 09 or 2009, day is 2 or 02
         j.console.echo("%s\n"%question)
         j.console.echo("Enter a date with format YYYY/MM/DD, where year can be 09 or 2009, day is 2 or 02:")
-        userInput = raw_input()
+        userInput = input()
         #@todo validate date is in correct format
         yearPrefix = "20"
         if minValue:
@@ -421,8 +421,8 @@ class EasyDialogConsole(EasyDialogGeneric):
             selections = selections[:1] #ignore the rest of the values, if any
         else:
             try:
-                selections = map(int, selections) #convert to int
-            except ValueError, ex:
+                selections = list(map(int, selections)) #convert to int
+            except ValueError as ex:
                 raise ValueError('Invalid numeric values [%s]'%selections)
 
             if max(selections) > len(choices) or min(selections) <= 0:

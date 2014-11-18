@@ -5,6 +5,6 @@ from JumpScale import j
 
 
 from IPython import embed
-print "DEBUG NOW main"
+print("DEBUG NOW main")
 embed()
 

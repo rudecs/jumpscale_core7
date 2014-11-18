@@ -1,6 +1,7 @@
 # from JumpScale.core.System import System
 from JumpScale import j
-import urllib
+# import urllib.request, urllib.parse, urllib.error
+from urllib import parse
 
 class TemplateEngine(object):
     def __init__(self):
@@ -30,10 +31,10 @@ class TemplateEngine(object):
         return txt
             
     def __replace(self,body):
-        for search in self.replaceDict.keys():
+        for search in list(self.replaceDict.keys()):
             replace = self.replaceDict[search]
             body = body.replace("{" + search + "}", replace)
-            body = body.replace("{:urlencode:" + search + "}", urllib.quote(replace, ''))
+            body = body.replace("{:urlencode:" + search + "}", urllib.parse.quote(replace, ''))
         return body
 
     def replace(self, body, replaceCount = 3):
@@ -66,4 +67,4 @@ if __name__ == '__main__':
     te.add("login", "kristof")
     te.add("passwd","root")
     text="This is a test file for {login} with a passwd:{passwd}"
-    print te.replace(text)
+    print(te.replace(text))

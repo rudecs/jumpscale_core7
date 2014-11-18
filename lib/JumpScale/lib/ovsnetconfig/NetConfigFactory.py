@@ -4,9 +4,9 @@ import pprint
 import re
 
 from JumpScale import j
-import VXNet.vxlan as vxlan
-import VXNet.netclasses as netcl
-from VXNet.utils import *
+from . import VXNet.vxlan as vxlan
+from . import VXNet.netclasses as netcl
+from .VXNet.utils import *
 
 
 class NetConfigFactory():
@@ -27,20 +27,20 @@ class NetConfigFactory():
         return self._layout.nicdetail
 
     def _exec(self,cmd,failOnError=True):
-        print cmd
+        print(cmd)
         rc,out=j.system.process.execute(cmd,dieOnNonZeroExitCode=failOnError)
         return out
 
     def removeOldConfig(self):
         cmd="brctl show"
         for line in self._exec(cmd).split("\n"):
-            if line.strip()=="" or line.find("bridge name")<>-1:
+            if line.strip()=="" or line.find("bridge name")!=-1:
                 continue
             name=line.split("\t")[0]
             self._exec("ip link set %s down"%name)
             self._exec("brctl delbr %s"%name)
 
-        for intname,data in self.getConfigFromSystem(reload=True).iteritems():
+        for intname,data in self.getConfigFromSystem(reload=True).items():
             if "PHYS" in data["detail"]:
                 continue
             if intname =="ovs-system":
@@ -59,7 +59,7 @@ class NetConfigFactory():
                     self._exec("virsh net-destroy %s"%name,False)
                     self._exec("virsh net-undefine %s"%name,False)
 
-                if line.find("----")<>-1:
+                if line.find("----")!=-1:
                     state="found"
 
         j.system.fs.writeFile(filename="/etc/default/lxc-net",contents="USE_LXC_BRIDGE=\"false\"",append=True) #@todo UGLY use editor !!!
@@ -117,10 +117,10 @@ class NetConfigFactory():
 
     def getType(self,interfaceName):
         layout=self.getConfigFromSystem()
-        if not layout.has_key(interfaceName):
+        if interfaceName not in layout:
             raise RuntimeError("cannot find interface %s"%interfaceName)
         interf=layout[interfaceName]
-        if interf["params"].has_key("type"):
+        if "type" in interf["params"]:
             return interf["params"]["type"]
         return None
 
@@ -263,7 +263,7 @@ iface $iname inet manual
         C=C.replace("$ipbase", str(n.ip))
         C=C.replace("$mask", str(n.netmask))
         C=C.replace("$MTU", str(self.PHYSMTU))
-        if gw<>"" and gw<>None:
+        if gw!="" and gw!=None:
             C=C.replace("$gw", "gateway %s"%gw)
         else:
             C=C.replace("$gw", "")
@@ -306,7 +306,7 @@ iface $bondname inet manual
         C=C.replace("$ipbase", str(n.ip))
         C=C.replace("$mask", str(n.netmask))
         C=C.replace("$MTU", str(self.PHYSMTU))
-        if gw<>"" and gw<>None:
+        if gw!="" and gw!=None:
             C=C.replace("$gw", "gateway %s"%gw)
         else:
             C=C.replace("$gw", "")
@@ -322,24 +322,24 @@ iface $bondname inet manual
         """
         DANGEROUS, will remove old configuration
         """
-        for intname,data in self.getConfigFromSystem(reload=True).iteritems():
-            if "PHYS" in data["detail"] and intname<>interfacenameToExclude:
+        for intname,data in self.getConfigFromSystem(reload=True).items():
+            if "PHYS" in data["detail"] and intname!=interfacenameToExclude:
                 self._exec("ip addr flush dev %s" % intname, False)
                 self._exec("ip link set %s down"%intname,False)
 
-        if backplanename<>None:
+        if backplanename!=None:
             self._exec("ifdown %s"%backplanename, failOnError=False)
             # self._exec("ifup %s"%backplanename, failOnError=True)
 
         #@todo need to do more checks here that it came up and retry couple of times if it did not
         #@ can do this by investigating self.getConfigFromSystem
 
-        print "restarting network, can take a while."
+        print("restarting network, can take a while.")
         j.system.process.executeWithoutPipe("sudo service networking restart")
 
 
-        print self._exec("ip a", failOnError=True)
-        print self._exec("ovs-vsctl show", failOnError=True)
+        print(self._exec("ip a", failOnError=True))
+        print(self._exec("ovs-vsctl show", failOnError=True))
 
     def newBondedBackplane(self, name, interfaces, trunks=None):
         """

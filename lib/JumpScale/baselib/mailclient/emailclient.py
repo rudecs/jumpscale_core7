@@ -46,7 +46,7 @@ class EmailClient(object):
         @param mimetype: Type of the body plain, html or None for autodetection
         @type mimetype: string
         """
-        if isinstance(recipients, basestring):
+        if isinstance(recipients, str):
             recipients = [ recipients ]
         server = smtplib.SMTP(self._server, self._port) 
         server.ehlo()

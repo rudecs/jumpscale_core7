@@ -1,4 +1,4 @@
-import cPickle as pickle
+import pickle as pickle
 from JumpScale import j
 
 
@@ -165,7 +165,7 @@ class USBExtension:
                     spaceInfj.append(dictOfSpace)
         except Exception as ex:
             self._LOGGER.log('USB device not mounted, failed with exception {0}'.format(ex))
-            print ex
+            print(ex)
             return []
         return spaceInfo
 
@@ -348,7 +348,7 @@ class USBExtension:
                 size = int(size) * 1024 if size else None
 
                 freeSpace = j.cmdtools.disktools.parted.getFreeSpace(device)
-                freeSpaceValues = map(lambda val: self._convertToKB(val), freeSpace) if freeSpace else []
+                freeSpaceValues = [self._convertToKB(val) for val in freeSpace] if freeSpace else []
 
                 if not freeSpaceValues or freeSpaceValues[2] <= 1024:
                     self._LOGGER.log("No more space available on device %s" % usb.devicename)
@@ -557,7 +557,7 @@ class USBExtension:
         @rtype                : int
         """
         try:
-            sizeValue = int(filter(lambda c: c.isdigit(), size))
+            sizeValue = int([c for c in size if c.isdigit()])
             unit = size.split(str(sizeValue))[1]
             if unit == 'GB':
                 sizeValue = sizeValue * 1024 * 1024

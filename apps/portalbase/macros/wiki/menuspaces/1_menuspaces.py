@@ -4,7 +4,7 @@ def main(j, args, params, tags, tasklet):
     doc = args.doc
 
     params.result = ""
-    spaces = [ x.model.id for x in j.core.portal.active.spacesloader.spaces.values() ]
+    spaces = [ x.model.id for x in list(j.core.portal.active.spacesloader.spaces.values()) ]
     spaces.sort()
 
     C = "{{menudropdown: %s\n" % args.tags

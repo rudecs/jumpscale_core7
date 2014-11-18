@@ -62,7 +62,7 @@ class WatchdogFactory:
     def __init__(self):
         while j.system.net.tcpPortConnectionTest("127.0.0.1",9999)==False:
             time.sleep(0.1)
-            print "cannot connect to redis production, will keep on trying forever, please start redis production (port 9999)"        
+            print("cannot connect to redis production, will keep on trying forever, please start redis production (port 9999)")        
         self.redis=j.clients.credis.getRedisClient("localhost",9999)
         self.watchdogTypes={}
         self.alertTypes={}
@@ -81,7 +81,7 @@ class WatchdogFactory:
         obj=json.dumps(wde.__dict__)
         self.redis.hset(watchdog.getHSetKey(wde.gguid),"%s_%s"%(wde.nid,wde.category),obj)
         if pprint:
-            print wde
+            print(wde)
 
     def _getAlertHSetKey(self,gguid):
         return "alerts:%s"%gguid
@@ -108,12 +108,12 @@ class WatchdogFactory:
             raise RuntimeError("could not find:%s"%jspath)  
 
     def getWatchdogType(self,category):
-        if not self.watchdogTypes.has_key(category):
+        if category not in self.watchdogTypes:
             self.alert("bug in watchdogmanager: could not find watchdogtype:%s"%category,"critical")
         return self.watchdogTypes[category]
 
     def getAlertType(self,name):
-        if not self.alertTypes.has_key(name):
+        if name not in self.alertTypes:
             self.alert("bug in watchdogmanager: could not find alerttype:%s"%name,"critical")
         return self.alertTypes[name]
 
@@ -123,9 +123,9 @@ class WatchdogFactory:
         # print wdt
         try:
             wdt.checkfunction(wde)
-        except Exception,e:
+        except Exception as e:
             self.alert("bug in watchdogmanager: could not process watchdogcheck:%s, error %s"%(wdt,e),"critical")
-        if wde.state<>"OK":
+        if wde.state!="OK":
             self.alert("STATE","critical",wde)
         if wde.epoch<(self._now-wdt.maxperiod):
             wde.state="TIMEOUT"
@@ -195,7 +195,7 @@ class WatchdogFactory:
         """
         resets all watchdogs
         """
-        print "reset"
+        print("reset")
         for gguid in self.getGGUIDS():
             self.redis.delete(watchdog.getHSetKey(gguid))
 

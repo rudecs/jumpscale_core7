@@ -1,7 +1,7 @@
 
 from JumpScale import j
 import random
-
+import sys
 
 class IDGenerator:
     """
@@ -49,6 +49,6 @@ class IDGenerator:
         """
         generate unique guid
         how to use:  j.base.idgenerator.generateGUID()
-        """
+        """        
         import uuid
         return str(uuid.uuid4())

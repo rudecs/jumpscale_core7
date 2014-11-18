@@ -35,7 +35,7 @@
 
 from JumpScale import j
 from JumpScale.core.baseclasses.CMDBSubObject import CMDBSubObject
-from PartitionRaid import PartitionRaid
+from .PartitionRaid import PartitionRaid
 
 
 class Partition(CMDBSubObject):

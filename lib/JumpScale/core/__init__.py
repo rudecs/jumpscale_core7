@@ -145,8 +145,8 @@ def _setup_stacktrace_hook():
             output('%s\n%s\n' % (title, '=' * len(title)))
 
             try:
-                import thread
-                get_ident = thread.get_ident
+                import _thread
+                get_ident = _thread.get_ident
             except (ImportError, AttributeError):
                 get_ident = lambda: object()
 
@@ -156,7 +156,7 @@ def _setup_stacktrace_hook():
                 orig_frame = frame
                 while frame:
                     # If we found the frame of this 'handler' function
-                    if frame.f_code == handler.func_code:
+                    if frame.f_code == handler.__code__:
                         # Go one frame up and return
                         frame = frame.f_back
                         break
@@ -182,7 +182,7 @@ def _setup_stacktrace_hook():
     def handler(num, frame):
         '''Signal handler which dumps Python stacks of all running threads'''
         output = stderr()
-        output.next()
+        next(output)
         output = output.send
         try:
             handler_impl(output, num, frame)
@@ -218,7 +218,7 @@ from .Application import Application
 
 from . import system
 
-from . import enumerators
+# from . import enumerators
 
 j.application=Application()
 

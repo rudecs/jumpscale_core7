@@ -54,7 +54,7 @@ class CommandLauncher(threading.Thread):
         """
         self.cmd=cmd
         self.workingdir=workingdir
-        if name<>"":
+        if name!="":
             self.name=name
         threading.Thread.__init__(self)
         if setDaemon:

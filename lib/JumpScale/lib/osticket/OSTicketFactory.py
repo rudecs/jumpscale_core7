@@ -16,7 +16,7 @@ class OSTicketFactory():
         use info from osticket db server (mysql)
         """
         key="%s_%s_%s_%s_%s"%(ipaddr,port,login,passwd,dbname)
-        if not self.clients.has_key(key):
+        if key not in self.clients:
             self.clients[key]=j.client.mysql.getClient(ipaddr, port,login, passwd, dbname)
         return OSTicketClient(self.clients[key])
 
@@ -58,7 +58,7 @@ WHERE ticketID=$id;
         self.client.deleteRow("ost_ticket_event","ticket_id=%s"%id)
         self.client.deleteRow("ost_ticket_thread","ticket_id=%s"%id)
         attachid=self.client.select1("ost_ticket_attachment","file_id","ticket_id=%s"%id)
-        if attachid<>None:
+        if attachid!=None:
             self.client.deleteRow("ost_file","file_id=%s"%attachid)
             self.client.deleteRow("ost_file_chunk","file_id=%s"%attachid)
         self.client.deleteRow("ost_ticket","ticket_id=%s"%id)
@@ -95,7 +95,7 @@ WHERE (((ost_ticket.closed) Is Null));
             return ""
         currentsubject=""
         for item in result:
-            if currentsubject<>item["subject"]:
+            if currentsubject!=item["subject"]:
                 currentsubject=item["subject"]
                 out+= "\n##################################\n"
                 out=j.tools.text.addCmd(out,"ticket","new")
@@ -111,15 +111,15 @@ WHERE (((ost_ticket.closed) Is Null));
                 out=j.tools.text.addVal(out,"time_created",item["threadcreated"],addtimehr=True)
                 out=j.tools.text.addVal(out,"time_lastmessage",item["lastmessage"],addtimehr=True)
                 out=j.tools.text.addVal(out,"time_lastresponse",item["lastresponse"],addtimehr=True)
-                if staff.has_key(int(item["assignee"])):
+                if int(item["assignee"]) in staff:
                     st=staff[int(item["assignee"])]
                     out=j.tools.text.addVal(out,"assignee",st["email"])
                     
-                if item["closed"]<>0:
+                if item["closed"]!=0:
                     out=j.tools.text.addVal(out,"time_closed",item["closed"])
             else:
                 #add thread
-                if item["threadtitle"]<>currentsubject:
+                if item["threadtitle"]!=currentsubject:
                     out+="\n###\n!ticket.thread\n"
                     out=j.tools.text.addVal(out,"id_osticket",item["ticketid"])
                     out=j.tools.text.addVal(out,"subject",item["threadtitle"])

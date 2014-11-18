@@ -1,6 +1,6 @@
 
 from JumpScale import j
-from Sheets import *
+from .Sheets import *
 
 
 class Row(j.code.classGetBase()):
@@ -130,9 +130,9 @@ class Row(j.code.classGetBase()):
         try:
             interpolated = j.tools.numtools.interpolateList(tointerpolate, floatnr=self.nrfloat)
         except Exception as e:
-            print "could not interpolate row %s" % self.name
+            print("could not interpolate row %s" % self.name)
             from JumpScale.core.Shell import ipshellDebug, ipshell
-            print "DEBUG NOW cannot interpolate, explore self & tointerpolate"
+            print("DEBUG NOW cannot interpolate, explore self & tointerpolate")
             ipshell()
         xx = 0
         for x in range(start, stop + 1):
@@ -187,7 +187,7 @@ class Row(j.code.classGetBase()):
         if maxvalue != None and value > maxvalue:
             value = maxvalue
         if posx > self.nrcols - 1:
-            print "out of range: x:%s y:%s" % (posx, value)
+            print("out of range: x:%s y:%s" % (posx, value))
             return None, None
         self.cells[posx] = value
         # print "x:%s y:%s" % (posx,value)
@@ -368,10 +368,10 @@ class Row(j.code.classGetBase()):
                         try:
                             value = j.tools.numtools.text2val(value)
                         except Exception as e:
-                            print "error: %s " % e
-                            print "error in parsing input data for %s" % datas
-                            print "error in element %s" % data
-                            print "row:%s" % self.name
+                            print("error: %s " % e)
+                            print("error in parsing input data for %s" % datas)
+                            print("error in element %s" % data)
+                            print("row:%s" % self.name)
                         if value > maxval:
                             maxval = value
                         self.cells[pos - 1] = value
@@ -590,7 +590,7 @@ class Sheet(j.code.classGetBase()):
         self.headers = dict["headers"]
         self.nrcols = dict["nrcols"]
         slf.period = dict["period"]
-        for key in dict["rows"].keys():
+        for key in list(dict["rows"].keys()):
             item = dict["rows"][key]
             row = j.code.dict2object(Row(), item)
             self.rows[row.name] = row
@@ -847,7 +847,7 @@ class Sheet(j.code.classGetBase()):
             return width
 
         cols = {}
-        for key in self.rows.keys():
+        for key in list(self.rows.keys()):
             row = self.rows[key]
             for colnr in range(0, len(row.cells)):
                 if colnr not in cols:
@@ -861,7 +861,7 @@ class Sheet(j.code.classGetBase()):
         """
         @para rows2create {groupname:[rownames,...]}
         """
-        for group in rows2create.keys():
+        for group in list(rows2create.keys()):
             rownames = rows2create[group]
             for rowname in rownames:
                 if rowname in aggregation:

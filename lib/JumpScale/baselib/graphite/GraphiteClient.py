@@ -3,7 +3,7 @@ from JumpScale import j
 
 import socket
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 class GraphiteClient():
     def __init__(self):
@@ -40,6 +40,6 @@ class GraphiteClient():
         query['format'] = 'json'
         if 'from_' in query:
             query['from'] = query.pop('from_')
-        qs = urllib.urlencode(query)
+        qs = urllib.parse.urlencode(query)
         url = "%s?%s" % (self._url, qs)
         return requests.get(url).json()

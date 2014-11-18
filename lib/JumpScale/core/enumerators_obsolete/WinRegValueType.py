@@ -28,7 +28,7 @@ if not sys.platform.startswith('win'):
     raise "WinRegValueType enumerator is only supported on Windows operating system"
 
 from JumpScale.core.baseclasses import BaseEnumeration
-import _winreg as reg
+import winreg as reg
 
 class WinRegValueType(BaseEnumeration):
     ''' The windows registry value type'''

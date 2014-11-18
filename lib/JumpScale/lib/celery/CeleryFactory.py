@@ -87,7 +87,7 @@ class CeleryFactory:
         app.worker_main()
 
     def celeryClient(self,actorName,url="redis://localhost:9999/0",actorsPath="actors",local=False):
-        if self.actors.has_key(actorName):
+        if actorName in self.actors:
             return self.actors[actorName]
 
         if self.app==None:

@@ -49,9 +49,9 @@ class ClassDoc():
     def write(self,dest):
         dest2=j.system.fs.joinPaths(dest, self.location.split(".")[1],"%s.wiki"%self.location)
         out="h3. %s\n"%self.location
-        if self.path.find("JumpScale")<>-1:        
+        if self.path.find("JumpScale")!=-1:        
             path=self.path.split("JumpScale",1)[1]
-        elif self.path.find("python.zip")<>-1:
+        elif self.path.find("python.zip")!=-1:
             path="python.zip/%s"%self.path.split("python.zip",1)[1]
         else:
             # from IPython import embed
@@ -60,17 +60,17 @@ class ClassDoc():
             ##TODO
             pass
         out += " `Source <https://github.com/Jumpscale/jumpscale_core/tree/master/lib/JumpScale%s>`_  \n\n" % (path)
-        if self.comments<>None:
+        if self.comments!=None:
             out+="\n%s\n\n"%self.comments
 
-        keys=self.methods.keys()
+        keys=list(self.methods.keys())
         keys.sort()
         for name in keys:
             method=self.methods[name]
             out+="h4. %s\n\n"%(name)
             out+="* params: %s\n"%(method.params)
             out+="* path:%s (line:%s)\n\n"%(path,method.linenr)
-            if method.comments<>None:
+            if method.comments!=None:
                 out+="%s\n\n"%method.comments
 
         destdir= j.system.fs.getDirName(dest2)
@@ -127,11 +127,11 @@ class ObjectInspector():
             for modname in j.system.fs.listDirsInDir(path,False,True,True):
                 if modname not in ignore:
                     toexec="import JumpScale.%s.%s"%(item,modname)
-                    print toexec
+                    print(toexec)
                     try:
                         exec(toexec)
-                    except Exception,e:
-                        print "COULD NOT IMPORT %s"%toexec
+                    except Exception as e:
+                        print("COULD NOT IMPORT %s"%toexec)
                         errors+="**%s**\n\n"%toexec
                         errors+="%s\n\n"%e
         return errors
@@ -145,7 +145,7 @@ class ObjectInspector():
 
 
     def _processMethod(self, name,method,path,classobj):
-        if not self.classDocs.has_key(path):
+        if path not in self.classDocs:
             self.classDocs[path]=ClassDoc(classobj,path)
         obj=self.classDocs[path]
         return obj.addMethod(name,method)
@@ -158,34 +158,34 @@ class ObjectInspector():
         """
         if not j.basetype.string.check(objectLocationPath):
             raise RuntimeError("objectLocationPath needs to be string")
-        print objectLocationPath
+        print(objectLocationPath)
         if objectLocationPath.find("_object.")==-1:
             obj= eval(objectLocationPath)
             try:
                 self.processObject(obj,objectLocationPath)
-            except Exception, e:
+            except Exception as e:
                 pass
 
     def processObject(self,obj,objectLocationPath="j"):
         for dictitem in dir(obj):
             objectLocationPath2 = "%s.%s" % (objectLocationPath, dictitem)
-            print objectLocationPath2
+            print(objectLocationPath2)
             if len(dictitem)>1:
-                if dictitem.find("__getChildObjectsExamples")<>-1:
+                if dictitem.find("__getChildObjectsExamples")!=-1:
                     getChildObjectsExamples = eval("%s" % objectLocationPath2)
                     res=getChildObjectsExamples()
                     
-                    for objectLocationPath2,obj2 in res.iteritems():
+                    for objectLocationPath2,obj2 in res.items():
                         self.processObject(obj2,objectLocationPath2)
                 
             if len(dictitem)>1 and dictitem[0] != "_":
-                print objectLocationPath2
+                print(objectLocationPath2)
                 objectNew = None
                 try:
                     # objectNew = eval("%s" % objectLocationPath2)
                     objectNew= eval("obj.%s"%(dictitem))
                 except:                    
-                    print "COULD NOT EVAL %s" % objectLocationPath2
+                    print("COULD NOT EVAL %s" % objectLocationPath2)
                 if objectNew == None:
                     pass
                 elif dictitem.upper() == dictitem:
@@ -212,10 +212,10 @@ class ObjectInspector():
                     # print "property: %s" % objectLocationPath2
                     j.system.fs.writeFile(self.apiFileLocation, "%s?8\n" % objectLocationPath2, True)
                 else:
-                    print str(type(objectNew)) + " " + objectLocationPath2
+                    print(str(type(objectNew)) + " " + objectLocationPath2)
 
     def writeDocs(self,path):
-        for key,doc in self.classDocs.iteritems():
+        for key,doc in self.classDocs.items():
             doc.write(path)
 
         C="""

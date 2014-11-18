@@ -50,18 +50,18 @@ class InfoMgr():
         now5min = j.core.portal.active.fiveMinuteId
         nowh = j.core.portal.active.hourId
         # walk over history obj and save if needed
-        for key in self.historyObjs.keys():
+        for key in list(self.historyObjs.keys()):
             if force or ttime > (self.historyObjsLastSave[key] + 900):
                 if key in self.historyObjsMod and self.historyObjsMod[key]:
                     obj = self.historyObjs[key]
                     nrItemsIn5MinRow, nrItemsInHourRow = self.getNrItemsRow(key)
-                    print "save: %s" % (obj.guid)
+                    print("save: %s" % (obj.guid))
                     # trim values out of range
                     if nrItemsIn5MinRow != 0:
                         test = now5min - nrItemsIn5MinRow
                         if min(obj.month_5min.keys()) < test:
                             # remove old items for 5min
-                            for key in obj.month_5min.keys():
+                            for key in list(obj.month_5min.keys()):
                                 if key < test:
                                     obj.month_5min.pop(key)
                     else:
@@ -70,7 +70,7 @@ class InfoMgr():
                         test = nowh - nrItemsInHourRow
                         if min(obj.year_hour.keys()) < test:
                             # remove old items for 5min
-                            for key in obj.year_hour.keys():
+                            for key in list(obj.year_hour.keys()):
                                 if key < test:
                                     obj.year_hour.pop(key)
                     else:
@@ -92,10 +92,10 @@ class InfoMgr():
         return data
 
     def cleanCache(self):
-        print "clean cache"
+        print("clean cache")
         ttime = self.now()
         try:
-            for key in self.historyObjs.keys():
+            for key in list(self.historyObjs.keys()):
                 if self.historyObjsMod[key] == False and ttime > (self.historyObjsLastSave[key] + 600):
                     self.historyObjs.pop(key)
                     self.historyObjsLastSave.pop(key)
@@ -192,7 +192,7 @@ class InfoMgr():
             # make sure table of stats is complete
             if id not in self.infotable:
                 self.infotable[id] = True
-                print "infotable NEW"
+                print("infotable NEW")
                 self.models.infotable.set(self._infotableobj)
 
             self.addInfoLine2HistoryObj(id, value, epoch)
@@ -259,7 +259,7 @@ class InfoMgr():
         return r
 
     def getTimeStamp(self, timestamp):
-        if isinstance(timestamp, basestring):
+        if isinstance(timestamp, str):
             timestamp = j.base.time.getEpochAgo(timestamp)
         return timestamp
 
@@ -305,7 +305,7 @@ class InfoMgr():
         """
         result = []
         obj = self.getHistoryObject(id)
-        if len(obj.month_5min.keys()) == 0:
+        if len(list(obj.month_5min.keys())) == 0:
             result.append([])
             return None
         if start == 0:

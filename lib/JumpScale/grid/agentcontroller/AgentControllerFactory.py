@@ -76,7 +76,7 @@ class AgentControllerClient():
     def __init__(self,addr, port=PORT, login='root', passwd=None):
         import JumpScale.grid.geventws
 
-        if isinstance(addr, basestring):
+        if isinstance(addr, str):
             connections = list()
             for con in addr.split(','):
                 self.ipaddr = con
@@ -105,7 +105,7 @@ class AgentControllerClient():
         if wait and result['state'] != 'OK':
             if result['state'] == 'NOWORK' and dieOnFailure:
                 raise RuntimeError('Could not find agent with role:%s' %  role)
-            if result['result']<>"":
+            if result['result']!="":
                 ecodict=result['result']
                 eco=j.errorconditionhandler.getErrorConditionObject(ddict=ecodict)
                 # eco.gid=result["gid"]
@@ -118,7 +118,7 @@ class AgentControllerClient():
                 msg="%s\n\nCould not execute %s %s for role:%s, jobid was:%s\n"%(eco,organization,name,role,result["id"])
 
                 if errorreport:
-                    print msg                     
+                    print(msg)                     
 
                 if dieOnFailure:  
                     j.errorconditionhandler.halt(msg)

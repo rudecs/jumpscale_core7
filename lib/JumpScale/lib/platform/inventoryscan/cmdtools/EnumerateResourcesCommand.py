@@ -42,7 +42,7 @@ from JumpScale import j
 from JumpScale.core.baseclasses.CommandWrapper import CommandWrapper
 from collections import defaultdict
 
-from InventoryScanEnums import *
+from .InventoryScanEnums import *
 
 
 class NetworkCounterResetException(Exception):
@@ -113,7 +113,7 @@ class EnumerateResourcesCommand(CommandWrapper):
                                 if not name.startswith('/dev/md'):
                                     partionName += partition['number']
                                 if partionName in partionInfo:
-                                    for key, value in partionParams.iteritems():
+                                    for key, value in partionParams.items():
                                         if key in partionInfo[partionName]:
                                             partition[value] = partionInfo[partionName][key]
                                     if 'devices' in partition:
@@ -297,7 +297,7 @@ class EnumerateResourcesCommand(CommandWrapper):
             info = defaultdict(dict)
             for entry in processorInfo:
                 phId = entry['physicalId']
-                if phId not in info.keys():
+                if phId not in list(info.keys()):
                     info[phId]['ncores'] = entry['cpucores']
                 coreId = entry['coreId']
                 try:
@@ -517,7 +517,7 @@ class EnumerateResourcesCommand(CommandWrapper):
             for line in lines:
                 record = line.split('\t')
                 record.pop(len(record) - 1)
-                dRecord = dict(zip(columns, record))
+                dRecord = dict(list(zip(columns, record)))
                 try:
                     records[dRecord['name']] = dRecord
                 except KeyError as ex:
@@ -666,7 +666,7 @@ class EnumerateResourcesCommand(CommandWrapper):
                 j.logger.log(ex.message, 3)
                 raise RuntimeError("Failed to retrieve CPU usage on the system. Reason: [%s]" % ex.message)
             cpusPercentage = dict()
-            for cpuId in cpusInfo1.keys():
+            for cpuId in list(cpusInfo1.keys()):
                 if cpuId == 'cpu':
                     cpuIdName = 'average'
                 else:
@@ -772,7 +772,7 @@ class EnumerateResourcesCommand(CommandWrapper):
         """
         vMachinesStatus = dict()
         vmachines = q.hypervisors.cmdtools.xen.machineConfiguration.listMachines()
-        for machine in vmachines.values():
+        for machine in list(vmachines.values()):
             vMachinesStatus[machine['name_label']] = machine['power_state']
         return vMachinesStatus
 
@@ -901,9 +901,9 @@ class EnumerateResourcesCommand(CommandWrapper):
         Get the rate of Nics fields from Total readings( include severla machines and several Nics)
         """
         average = dict()
-        for domain, nics in firstReading.items():
+        for domain, nics in list(firstReading.items()):
             average[domain] = dict()
-            for nicName, nicStat in nics.items():
+            for nicName, nicStat in list(nics.items()):
                 average[domain][nicName] = self._getNicRatefromTwoReadings(firstReading[domain][nicName], secondReading[domain][nicName], delay)
         return average
 
@@ -1066,7 +1066,7 @@ class EnumerateResourcesCommand(CommandWrapper):
         # 'rxBytes': '1000bytes' means that the transmitted bytes rate are 1000 bytes
         networkStatistics = dict()
         try:
-            machines = q.hypervisors.manage.virtualbox.cmdb.machines.keys()
+            machines = list(q.hypervisors.manage.virtualbox.cmdb.machines.keys())
         except (AttributeError, RuntimeError) as ex:
             j.logger.log(ex.message, 3)
             raise RuntimeError("Failed to retrieves network statistics for VBox. Reason: [%(reason)s]" % {'reason': ex.message})

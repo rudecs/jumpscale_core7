@@ -211,7 +211,7 @@ class jumpscaleDebuggerConfigurationItem(ConfigManagementItem):
         '''Retrieve all required information to configure the debugger
         subsystem'''
         self.dialogAskChoice('type', 'Debugger type',
-                           sorted(DEBUGGERS.iterkeys()))
+                           sorted(DEBUGGERS.keys()))
         type_ = self.params['type']
         handler = DEBUGGERS[type_][1]
         handler(self)

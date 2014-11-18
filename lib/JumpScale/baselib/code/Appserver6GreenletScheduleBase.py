@@ -1,5 +1,5 @@
 from JumpScale import j
-from ClassBase import ClassBase
+from .ClassBase import ClassBase
 
 class Appserver6GreenletScheduleBase(ClassBase):    
     def __init__(self):

@@ -1,11 +1,11 @@
 from contextlib import contextmanager
 import unittest
 
-from arakoon_store import ArakoonKeyValueStore
-from file_system_store import FileSystemKeyValueStore
-from memory_store import MemoryKeyValueStore
+from .arakoon_store import ArakoonKeyValueStore
+from .file_system_store import FileSystemKeyValueStore
+from .memory_store import MemoryKeyValueStore
 from JumpScale import j
-from store import KeyValueStoreType
+from .store import KeyValueStoreType
 
 if not q._init_called:
     from JumpScale.core.InitBase import q
@@ -85,7 +85,7 @@ class KeyValueStoreTestCaseBase(object):
         name = "testing-1-2-3"
         i = self._store.increment(name)
         self.assertEqual(1, i)
-        for e in xrange(2, 10):
+        for e in range(2, 10):
             i = self._store.increment(name)
             self.assertEqual(e, i)
 

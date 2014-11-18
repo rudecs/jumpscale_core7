@@ -190,7 +190,7 @@ def daemonize(stdout, stderr, chdir='/', umask=0):
         '''
         try:
             fd = os.open(file_, os.O_CREAT | os.O_WRONLY)
-        except IOError, e:
+        except IOError as e:
             try:
                 import errno
             except ImportError:
@@ -252,11 +252,11 @@ def daemonize(stdout, stderr, chdir='/', umask=0):
                 os.chdir(chdir)
         else:
             #First child is useless now
-            print 'CHILDPID=%d' % pid
+            print('CHILDPID=%d' % pid)
             if hasattr(os, 'getuid'):
-                print 'UID=%d' % os.getuid()
+                print('UID=%d' % os.getuid())
             if hasattr(os, 'getgid'):
-                print 'GID=%d' % os.getgid()
+                print('GID=%d' % os.getgid())
             sys.exit()
     else:
         return False, os.getpid()
@@ -287,7 +287,7 @@ def daemonize(stdout, stderr, chdir='/', umask=0):
     if not stderr:
         close_safe(2)
 
-    for fd in xrange(3, maxfd):
+    for fd in range(3, maxfd):
         close_safe(fd)
 
     #Open fd0 to /dev/null
@@ -365,7 +365,7 @@ def main():
     # Reset all signal handlers
     # Check reset_signals in process.py for a more in-depth explanation
     import signal
-    for i in xrange(1, signal.NSIG):
+    for i in range(1, signal.NSIG):
         if signal.getsignal(i) != signal.SIG_DFL:
             #pylint: disable-msg=W0704
             try:

@@ -1,6 +1,6 @@
 from JumpScale import j
 
-from ZRedisGWClient import *
+from .ZRedisGWClient import *
 # from ZRedisGWServer import *
 
 
@@ -69,7 +69,7 @@ class ZRedisGWFactory:
 
     def getZRedisGWConnection(self,ipaddr,port,login,passwd):
         key="%s_%s"%(ipaddr,port)
-        if self._redisCache.has_key(key):
+        if key in self._redisCache:
             return self._redisCache[key]      
         self._redisCache[key]=  ZRedisGWTransport(addr=ipaddr,port=port,gevent=True)
         return self._redisCache[key]

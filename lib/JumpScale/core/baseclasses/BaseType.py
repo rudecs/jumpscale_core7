@@ -24,7 +24,7 @@ def generate_init_properties(cls, attrs):
         if hasattr(base, '__init_properties__'):
             base.__init_properties__()
 
-        for name, attr in (p for p in attrs.iteritems() \
+        for name, attr in (p for p in attrs.items() \
                             if isinstance(p[1], TypeBaseType)):
             value = attr.get_default(self)
             setattr(self, attr.attribute_name, value)
@@ -46,7 +46,7 @@ class BaseTypeMeta(type):
             return t
 
         # Store attribute name on BaseType attributes
-        for name, value in (p for p in attrs.iteritems() \
+        for name, value in (p for p in attrs.items() \
                             if isinstance(p[1], TypeBaseType)):
             value._PM_NAME = name
 
@@ -58,7 +58,7 @@ class BaseTypeMeta(type):
         for base in bases:
             property_metadata.update(
                 getattr(base, 'pm_property_metadata', dict()))
-        for name, value in (p for p in attrs.iteritems() \
+        for name, value in (p for p in attrs.items() \
                             if isinstance(p[1], TypeBaseType)):
             property_metadata[name] = value.constructor_args
 
@@ -68,8 +68,6 @@ class BaseTypeMeta(type):
 
 
 class BaseType(object):
-
-    __metaclass__ = BaseTypeMeta
 
     def __init__(self):
         """

@@ -1,6 +1,6 @@
 from JumpScale import j
-# import JumpScale.baselib.codeexecutor
-from HRDBase import HRDBase
+import JumpScale.baselib.regextools
+from .HRDBase import HRDBase
 
 class HRDItem():
     def __init__(self,name,hrd,ttype,data,comments):
@@ -23,13 +23,13 @@ class HRDItem():
     def getAsString(self):
         data=str(self.data).strip()
 
-        if data.lower().find("@ask")==-1 or self.data.find("$(")<>1:
+        if data.lower().find("@ask")==-1 or self.data.find("$(")!=1:
             if self.value==None:
                 self._process()
         else:
             return data        
 
-        if self.value<>None:
+        if self.value!=None:
             data=j.tools.text.pythonObjToStr(self.value)
 
         if self.ttype=="dict":
@@ -54,7 +54,7 @@ class HRDItem():
         
         self.value=value
 
-        if comments<>"":
+        if comments!="":
             self.comments=comments
 
         self.hrd._markChanged()
@@ -75,14 +75,14 @@ class HRDItem():
                     state="start"
                     #now add the var
                     found=True
-                    if self.comments<>"":
+                    if self.comments!="":
                         out+="%s\n" % (self.comments)
                     out+="%s = %s\n" % (name, self.getAsString())
 
                 out+="%s\n"%line
 
             if found==False:
-                if self.comments<>"":
+                if self.comments!="":
                     out+="%s\n" % (self.comments)
                 out+="%s = %s\n" % (name, self.getAsString())
 
@@ -95,7 +95,7 @@ class HRDItem():
     def _process(self):
 
         #check if link to other value $(...)
-        if self.data.find("$(")<>1:
+        if self.data.find("$(")!=1:
             value2=self.data
             items=j.codetools.regex.findAll(r"\$\([\w.]*\)",value2)
             if len(items)>0:
@@ -157,7 +157,7 @@ class HRD(HRDBase):
         self.prefixWithName=prefixWithName
         self.template=""        
 
-        if content<>"":
+        if content!="":
             self.process(content)
         else:
             self.read()
@@ -166,13 +166,13 @@ class HRD(HRDBase):
         """
         """
         key=key.lower()
-        if not self.items.has_key(key):
+        if key not in self.items:
             self.items[key]=HRDItem(name=key,hrd=self,ttype="base",data=value,comments="")    
         self.items[key].set(value,persistent=persistent,comments=comments)
 
     def get(self,key,default=None,):
         key=key.lower()
-        if not self.items.has_key(key):
+        if key not in self.items:
             if default==None:
                 j.events.inputerror_critical("Cannot find value with key %s in tree %s."%(key,self.path),"hrd.get.notexist")
             else:
@@ -183,7 +183,7 @@ class HRD(HRDBase):
 
     def _markChanged(self):
         self.changed=True
-        if self.tree<>None:
+        if self.tree!=None:
             self.tree.changed=True
 
     def save(self):
@@ -206,7 +206,7 @@ class HRD(HRDBase):
         return self
 
     def delete(self,key):
-        if self.items.has_key(key):
+        if key in self.items:
             self.items.pop(key)
 
         out=""
@@ -217,9 +217,9 @@ class HRD(HRDBase):
             if line=="" or line[0]=="#":
                 out+=line+"\n"
                 continue
-            if line.find("=")<>-1:
+            if line.find("=")!=-1:
                 #found line
-                if line.find("#")<>-1:
+                if line.find("#")!=-1:
                     comment=line.split("#",1)[1]
                     line2=line.split("#")[0]                    
                 else:
@@ -229,7 +229,7 @@ class HRD(HRDBase):
                     delete = True
 
             comment=""
-            if delete<>True:
+            if delete!=True:
                 out+=line+"\n"
 
         out = out.strip('\n') + '\n'
@@ -242,11 +242,11 @@ class HRD(HRDBase):
 
     def _recognizeType(self,content):        
         content=j.tools.text.replaceQuotes(content,"something")
-        if content.lower().find("@ask")<>-1:
+        if content.lower().find("@ask")!=-1:
             return "ask"
-        elif content.find(":")<>-1:
+        elif content.find(":")!=-1:
             return "dict"
-        elif content.find(",")<>-1:
+        elif content.find(",")!=-1:
             return "list"
         elif content.lower().strip().startswith("@ask"):
             return "ask"
@@ -256,10 +256,10 @@ class HRD(HRDBase):
     def applytemplate(self,path=""):
         if path=="":
             path=self.template
-        if path<>"":
+        if path!="":
             hrdtemplate=HRD(path=path)
-            for key in hrdtemplate.items.keys():
-                if not self.items.has_key(key):
+            for key in list(hrdtemplate.items.keys()):
+                if key not in self.items:
                     hrdtemplateitem=hrdtemplate.items[key]
                     self.set(hrdtemplateitem.name,hrdtemplateitem.data,comments=hrdtemplateitem.comments)
 
@@ -303,7 +303,7 @@ class HRD(HRDBase):
             line=splitted[x]
             line2=line.strip()
 
-            if len(line)>0 and line.find("#")<>-1:
+            if len(line)>0 and line.find("#")!=-1:
                 line,comment0=line.split("#",1)
                 line2=line.strip()
                 comments+="#%s\n"%comment0
@@ -319,7 +319,7 @@ class HRD(HRDBase):
                 continue
 
             if state=="multiline":
-                if line[0]<>" ":
+                if line[0]!=" ":
                     #if post was empty then we need to process current line again
                     if post.strip()=="":
                         x=x-1
@@ -337,7 +337,7 @@ class HRD(HRDBase):
             if state=="look4var":
                 # print "%s:%s"%(state,line)
 
-                if line.find("=")<>-1:
+                if line.find("=")!=-1:
                     pre,post=line2.split("=",1)                        
                     vartype="unknown"
                     name=pre.strip()
@@ -360,7 +360,7 @@ class HRD(HRDBase):
             if state=="multiline":                             
                 if vartype=="unknown":
                     #means first line of multiline, this will define type
-                    if line2.find(":")<>-1 and line2[-1]==",":
+                    if line2.find(":")!=-1 and line2[-1]==",":
                         vartype="dict"
                     elif line2[-1]==",":
                         vartype="list"
@@ -385,7 +385,7 @@ class HRD(HRDBase):
                 if self.prefixWithName:
                     name="%s.%s"%(self.name,name)
                 self.items[name]=HRDItem(name,self,vartype,post,comments)
-                if self.tree<>None:
+                if self.tree!=None:
                     self.tree.items[name]=self.items[name]
                     
                 state="look4var"

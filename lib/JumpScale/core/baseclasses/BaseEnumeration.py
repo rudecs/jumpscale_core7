@@ -171,7 +171,7 @@ def generateRegisterItem():
         if not hasattr(cls, '_pm_level2name'):
             cls._pm_level2name = dict()
         
-        if instance.__dict__.has_key("level"):
+        if "level" in instance.__dict__:
             #cls._pm_name2level[itemname] = instance.level
             cls._pm_level2name[instance.level] = instance
 
@@ -358,10 +358,6 @@ class BaseEnumeration(object):
     >>> print MyEnumeration.BAR
     bar
     '''
-
-    #Set type generator so registerItem and finishItemRegistration are added
-    #if necessary
-    __metaclass__ = BaseEnumerationMeta
 
     def getByName(cls, itemname):
         '''Get enumeration value based on item name as provided to L{registerItem}'''

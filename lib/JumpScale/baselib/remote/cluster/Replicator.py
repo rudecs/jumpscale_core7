@@ -41,7 +41,7 @@ class Replicator():
             self.recipe.append(RecipeLine(line))
 
         for recipeLine in self.recipe:
-            if j.system.fs.joinPaths("%s_%s" % (self.baseDir, recipeLine.sync2nodes), recipeLine.pathinqbase) not in self.dirs2monitor.itervalues():
+            if j.system.fs.joinPaths("%s_%s" % (self.baseDir, recipeLine.sync2nodes), recipeLine.pathinqbase) not in iter(self.dirs2monitor.values()):
                 if recipeLine.sync2nodes in self.dirs2monitor:
                     self.dirs2monitor[recipeLine.sync2nodes].append(j.system.fs.joinPaths(
                         "%s_%s" % (self.baseDir, recipeLine.sync2nodes), recipeLine.pathinqbase))
@@ -59,10 +59,10 @@ class Replicator():
         if j.codetools.regex.matchMultiple(self.replicationIncludeRegexes, path):
             # print "PATH:%s" % path
             # if event==1:
-            print "copy %s to cluster .... \n" % (path),
+            print("copy %s to cluster .... \n" % (path))
             #@todo call cluster to push changed file
             if not type:
-                for nodetype, dirs in self.dirs.iteritems():
+                for nodetype, dirs in self.dirs.items():
                     if j.system.fs.getDirName(path).rstrip('/') in dirs:
                         type = nodetype
                         break
@@ -71,9 +71,9 @@ class Replicator():
                 cluster.mkdir(j.system.fs.getDirName(destpath), hostnames=cluster.listnodes(type=type))
                 self._createddirs.append(destpath)
             cluster.sendfile(path, destpath, hostnames=cluster.listnodes(type=type))
-            taskletDir = filter(lambda x: re.search(x, destpath), self.taskletDirs)
+            taskletDir = [x for x in self.taskletDirs if re.search(x, destpath)]
             for dir in taskletDir:
-                print "Touching %s/%s" % (dir, 'tasklets_updated')
+                print("Touching %s/%s" % (dir, 'tasklets_updated'))
                 cluster.execute('touch %s' % j.system.fs.joinPaths(j.dirs.baseDir, dir, 'tasklets_updated'), hostnames=cluster.listnodes(type=type))
 
     def start(self, clustername="", copyFiles=True):
@@ -81,25 +81,24 @@ class Replicator():
         if not j.system.fs.exists("/opt/qbase3/lib/libgamin-1.so.0"):
             # means gamin not installed
             j.system.platform.ubuntu.installFileMonitor()
-        sys.path.append("/usr/lib/pymodules/python2.6/")
         import gamin
 
         answer, cluster = False, None
         if len(q.cluster.list()) == 0:
-            print "No cluster found, creating one"
+            print("No cluster found, creating one")
             clustername = j.gui.dialog.askString("Name for the new cluster")
             cluster = q.cluster.create(clustername=clustername)
         if clustername == "":
             clustername = j.console.askChoice(q.cluster.list(), "Choose cluster")
         answer = j.console.askYesNo("Are you sure you want to replicate to cluster %s" % clustername)
         if not answer:
-            print "Exiting replicator . . ."
+            print("Exiting replicator . . .")
             return
         if copyFiles:
             copyFiles = j.console.askYesNo("Do you want to synchronize the complete development sandbox to %s now" % clustername)
         cluster = q.cluster.get(clustername)
         self.loadRecipe()
-        if not 'all' in self.dirs2monitor.keys():
+        if not 'all' in list(self.dirs2monitor.keys()):
             self.dirs2monitor['all'] = []
         self.dirs2monitor['all'].append(j.system.fs.joinPaths("%s_all" % self.baseDir, "lib", "jumpscale"))
         self.dirs2monitor['all'].append(j.system.fs.joinPaths("%s_all" % self.baseDir, "utils"))
@@ -123,15 +122,15 @@ class Replicator():
                 # print "Delete: %s/%s" % (data,path)
                 pass
             elif event == 5:
-                print "Added: %s/%s" % (data, path)
+                print("Added: %s/%s" % (data, path))
                 if j.system.fs.isDir("%s/%s" % (data, path)):
-                    for type, typedirs in self.dirs.iteritems():
+                    for type, typedirs in self.dirs.items():
                         if data in typedirs:
                             self.dirs[type].append("%s/%s" % (data, path))
                             self.monitors[-1].watch_directory("%s/%s" % (data, path), callback, "%s/%s" % (data, path))
                 pass
             else:
-                print "??? %s, %s/%s" % (event, data, path)
+                print("??? %s, %s/%s" % (event, data, path))
             path = "%s/%s" % (data, path)
             path = path.strip()
             if j.system.fs.exists(path) and start and (event == 1 or event == 2):
@@ -145,7 +144,7 @@ class Replicator():
         self.dirs = {}
 
         starttime = j.base.time.getTimeEpoch()
-        for nodetype, directoryList in self.dirs2monitor.iteritems():
+        for nodetype, directoryList in self.dirs2monitor.items():
             for basedir in directoryList:
                 if not j.system.fs.exists(basedir):
                     raise RuntimeError(
@@ -155,7 +154,7 @@ Directory not found is %s
 """ % basedir)
 
                 subdirs = j.system.fs.listDirsInDir(basedir, True)
-                if nodetype in self.dirs.keys():
+                if nodetype in list(self.dirs.keys()):
                     self.dirs[nodetype].append(basedir)
                 else:
                     self.dirs[nodetype] = [basedir, ]
@@ -169,7 +168,7 @@ Directory not found is %s
 
         # make sure dirs are unique
         alluniquedirs = []
-        for nodetype, dirlist in self.dirs.iteritems():
+        for nodetype, dirlist in self.dirs.items():
             uniquedirs = []
             for item in dirlist:
                 if item not in uniquedirs and item not in alluniquedirs:
@@ -177,7 +176,7 @@ Directory not found is %s
                     uniquedirs.append(item)
             alluniquedirs += uniquedirs
             self.dirs[nodetype] = uniquedirs
-        nrofdirs = sum(map(lambda l: len(l), self.dirs.itervalues()))
+        nrofdirs = sum([len(l) for l in iter(self.dirs.values())])
         if nrofdirs > 5000:
             raise RuntimeError("Dir Monitor System max supports 5000 dirs, found %s" % len(dirs))
         self.monitors = []
@@ -185,7 +184,7 @@ Directory not found is %s
 
         counter = 0
         localcounter = 0
-        for nodetype, dirlist in self.dirs.iteritems():
+        for nodetype, dirlist in self.dirs.items():
             for item in dirlist:
                 # If we need to copy do it here
                 # if copyFiles:

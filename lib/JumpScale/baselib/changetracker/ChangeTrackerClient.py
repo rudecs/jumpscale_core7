@@ -39,7 +39,7 @@ class ChangeTrackerClient():
     def action_link(self, src, dest):
         #DO NOT IMPLEMENT YET
         j.system.fs.createDir(j.system.fs.getDirName(dest))
-        print "link:%s %s"%(src, dest)
+        print("link:%s %s"%(src, dest))
 
         if j.system.fs.exists(path=dest):
             stat=j.system.fs.statPath(dest)
@@ -49,10 +49,10 @@ class ChangeTrackerClient():
             cmd="ln '%s' '%s'"%(self._normalize(src),self._normalize(dest))
             try:
                 j.system.process.execute(cmd)
-            except Exception,e:
-                print "ERROR",
-                print cmd
-                print e
+            except Exception as e:
+                print("ERROR")
+                print(cmd)
+                print(e)
                 self.errors.append(["link",cmd,e])
 
     def _dump2stor(self, data,key=""):
@@ -96,7 +96,7 @@ class ChangeTrackerClient():
 
         try:
             stat=j.system.fs.statPath(path)
-        except Exception,e:
+        except Exception as e:
             if not j.system.fs.exists(path):
                 #can be link which does not exist
                 #or can be file which is deleted in mean time
@@ -126,29 +126,29 @@ class ChangeTrackerClient():
             mdchange=True
 
         if ttype=="F":          
-            if fullcheck or item.mtime<>stat.st_mtime or item.size<>stat.st_size:
+            if fullcheck or item.mtime!=stat.st_mtime or item.size!=stat.st_size:
                 newMD5=j.tools.hash.md5(path)
-                if item.hash<>newMD5:
+                if item.hash!=newMD5:
                     mdchange=True
                     change=True
                     item.hash=newMD5
         elif ttype=="L":
-            if not item.__dict__.has_key("dest"):
+            if "dest" not in item.__dict__:
                 mdchange=True          
-            elif linkdest<>item.dest:
+            elif linkdest!=item.dest:
                 mdchange=True
 
         if mdchange==False:
             #check metadata changed based on mode, uid, gid & mtime
             if ttype=="F":
-                if int(item.size)<>int(stat.st_size):
+                if int(item.size)!=int(stat.st_size):
                     mdchange==True
-            if int(item.mtime)<>int(stat.st_mtime) or int(item.mode)<>int(stat.st_mode) or\
-                    int(item.uid)<>int(stat.st_uid) or int(item.gid)<>int(stat.st_gid):
+            if int(item.mtime)!=int(stat.st_mtime) or int(item.mode)!=int(stat.st_mode) or\
+                    int(item.uid)!=int(stat.st_uid) or int(item.gid)!=int(stat.st_gid):
                 mdchange=True                
 
         if mdchange:
-            print "MD:%s CHANGE"%path
+            print("MD:%s CHANGE"%path)
 
             # print "MDCHANGE"
             item.mode=int(stat.st_mode)
@@ -205,7 +205,7 @@ class ChangeTrackerClient():
 
     def restore1file(self, src, dest, namespace):
 
-        print "restore: %s %s" % (src, dest)
+        print("restore: %s %s" % (src, dest))
 
         itemObj=self.getMDObjectFromFs(src)
 
@@ -218,7 +218,7 @@ class ChangeTrackerClient():
         blob_path = self._getBlobPath(namespace, itemObj.hash)
         if j.system.fs.exists(blob_path):
             # Blob exists in cache, we can get it from there!
-            print "Blob FOUND in cache: %s" % blob_path
+            print("Blob FOUND in cache: %s" % blob_path)
             j.system.fs.copyFile(blob_path, dest)
             return
 
@@ -239,7 +239,7 @@ class ChangeTrackerClient():
         check="##HASHLIST##"
         if blob.find(check)==0:
             # found hashlist
-            print "FOUND HASHLIST %s" % blob
+            print("FOUND HASHLIST %s" % blob)
             hashlist = blob[len(check) + 1:]
             j.system.fs.writeFile(dest,"")
             for hashitem in hashlist.split("\n"):
@@ -264,9 +264,9 @@ class ChangeTrackerClient():
         for src,md5 in batch:
             key2paths[md5]=(src,md5)
 
-        print "batch nr:%s check"%batchnr
-        notexist=self.client.existsBatch(keys=key2paths.keys()) 
-        print "batch checked on unique data"
+        print("batch nr:%s check"%batchnr)
+        notexist=self.client.existsBatch(keys=list(key2paths.keys())) 
+        print("batch checked on unique data")
 
         nr=batchnr*1000
 
@@ -275,7 +275,7 @@ class ChangeTrackerClient():
             if md5 in notexist:
                 hashes=[]
                 if j.system.fs.statPath(src).st_size>self._MB4:
-                    print "%s/%s:upload file (>4MB) %s"%(nr,total,src)
+                    print("%s/%s:upload file (>4MB) %s"%(nr,total,src))
                     for data in self._read_file(src):
                         hashes.append(self._dump2stor(data))
                     if len(hashes)>1:
@@ -287,11 +287,11 @@ class ChangeTrackerClient():
                     else:
                         raise RuntimeError("hashist needs to be more than 1.")
                 else:
-                    print "%s/%s:upload file (<4MB) %s"%(nr,total,src)
+                    print("%s/%s:upload file (<4MB) %s"%(nr,total,src))
                     for data in self._read_file(src):
                         hashes.append(self._dump2stor(data,key=md5))
             else:
-                print "%s/%s:no need to upload, exists: %s"%(nr,total,src)
+                print("%s/%s:no need to upload, exists: %s"%(nr,total,src))
 
     def backup(self,path,destination="", pathRegexIncludes={},pathRegexExcludes={".*\\.pyc"},childrenRegexExcludes=[".*/dev/.*",".*/proc/.*"],fullcheck=False):
 
@@ -302,7 +302,7 @@ class ChangeTrackerClient():
         #tar xzvf testDev.tgz -C testd
         self._createExistsList(destination)
 
-        print "SCAN MD:%s"%path
+        print("SCAN MD:%s"%path)
         
         self.errors=[]
 
@@ -408,16 +408,16 @@ class ChangeTrackerClient():
             dest=j.system.fs.joinPaths(self.MDPath,"LINKS",path)
             j.system.fs.removeDirTree(dest)
         f.close()
-        print "SCAN DONE MD:%s"%path
+        print("SCAN DONE MD:%s"%path)
 
-        print "START UPLOAD FILES."
+        print("START UPLOAD FILES.")
         #count lines
         total=0
         f=open(destFClist, "r")
         for line in f:
             total+=1
         f.close()
-        print "count done"
+        print("count done")
         f=open(destFClist, "r")
         counter=0
         batch=[]
@@ -432,11 +432,11 @@ class ChangeTrackerClient():
         #final batch
         self.backupBatch(batch,batchnr=batchnr,total=total)
         f.close()
-        print "BACKUP DONE."
+        print("BACKUP DONE.")
 
     def _createExistsList(self,dest):
         # j.system.fs.pathRemoveDirPart(dest,prefix,True)
-        print "Walk over MD, to create files which we already have found."
+        print("Walk over MD, to create files which we already have found.")
         destF=j.system.fs.joinPaths(self.STORpath, "../TMP","plists",self.namespace,dest,".mdfound")
         j.system.fs.createDir(j.system.fs.getDirName(destF))
         fileF = open(destF, 'w')
@@ -476,7 +476,7 @@ class ChangeTrackerClient():
             w.walk(wpath,callbackFunctions=callbackFunctions,arg=arg,childrenRegexExcludes=[])
 
         fileF.close()
-        print "Walk over MD, DONE"
+        print("Walk over MD, DONE")
 
     def _getBlobPath(self, namespace, key):
         """
@@ -557,7 +557,7 @@ class BackupClient:
 
     def _clean(self):
         for ddir in j.system.fs.listDirsInDir(self.mdpath,False,True,findDirectorySymlinks=False):
-            if ddir.lower()<>".git":
+            if ddir.lower()!=".git":
                 j.system.fs.removeDirTree(j.system.fs.joinPaths(self.mdpath,ddir))
         for ffile in j.system.fs.listFilesInDir(self.mdpath, recursive=False, followSymlinks=False):
             j.system.fs.remove(ffile)
@@ -581,12 +581,12 @@ class BackupClient:
         self.commitMD()
 
     def commitMD(self):
-        print "commit to git"
+        print("commit to git")
         self.gitclient.commit("backup %s"%j.base.time.getLocalTimeHRForFilesystem())
         if j.system.net.tcpPortConnectionTest(self.gitlab.addr,self.gitlab.port):
             #found gitlab
-            print "push to git"
+            print("push to git")
             self.gitclient.push()
         else:
-            print "WARNING COULD NOT COMMIT CHANGES TO GITLAB, no connection found.\nDO THIS LATER!!!!!!!!!!!!!!!!!!!!!!"
+            print("WARNING COULD NOT COMMIT CHANGES TO GITLAB, no connection found.\nDO THIS LATER!!!!!!!!!!!!!!!!!!!!!!")
 

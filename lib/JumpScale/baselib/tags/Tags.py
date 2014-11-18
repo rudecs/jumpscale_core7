@@ -1,9 +1,12 @@
 
 
 from JumpScale import j
-from urllib import unquote, quote
+try:
+    from urllib.parse import unquote, quote
+except:
+    from urllib import unquote, quote
 import re
-matchquote = re.compile(ur'\'[^\']*\'')
+matchquote = re.compile(r'\'[^\']*\'')
 
 class Tags():
     """
@@ -20,7 +23,7 @@ class Tags():
         self.tags = dict()
         self.labels = set()
         self.tagstring=tagstring or ''
-        if self.tagstring<>"":
+        if self.tagstring!="":
             self.fromString(self.tagstring)
         self._setFunction4Tagstring=setFunction4Tagstring
         
@@ -61,12 +64,12 @@ class Tags():
         @rtype: string                
         """
         labelsString = " ".join([quote(label) for label in self.labels])
-        tagsString = " ".join(["%s:%s" % (quote(k), quote(v)) for k, v in self.tags.iteritems()])
+        tagsString = " ".join(["%s:%s" % (quote(k), quote(v)) for k, v in self.tags.items()])
         
         self.tagstring = " ".join((labelsString, tagsString)).strip()
         self.tagstring=self.tagstring.replace("%2C", ",")
         
-        if self._setFunction4Tagstring<>None:
+        if self._setFunction4Tagstring!=None:
             self._setFunction4Tagstring(self.tagstring)
         
         return self.tagstring
@@ -94,11 +97,11 @@ class Tags():
         # else:
         #     defvalue=None
         result={}
-        for key in kwargs.keys():
+        for key in list(kwargs.keys()):
             val=kwargs[key]
             if  self.tagExists(key):
                 val2=self.tagGet(key)
-                if val2.find("$")<>0:
+                if val2.find("$")!=0:
                     val=val2
             result[key]=val
         return result
@@ -115,7 +118,7 @@ class Tags():
         @return: value behind tag 
         @rtype: string
         """
-        if self.tags.has_key(tagname):
+        if tagname in self.tags:
             return self.tags[tagname]
         elif default is not None:
             return default
@@ -130,7 +133,7 @@ class Tags():
         @return: true if tag exists
         @rtype: boolean        
         """
-        return self.tags.has_key(tagname)
+        return tagname in self.tags
     
     def tagCheckValue(self,tagname,value):
         """
@@ -156,7 +159,7 @@ class Tags():
         @type tagname: string        
         
         """
-        if self.tags.has_key(tagname):
+        if tagname in self.tags:
             val=self.tags.pop(tagname)
             self._toString()
             return val

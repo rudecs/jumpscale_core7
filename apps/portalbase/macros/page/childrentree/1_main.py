@@ -1,4 +1,4 @@
-from cStringIO import StringIO
+from io import StringIO
 import os
 from JumpScale import j
 
@@ -25,7 +25,7 @@ class Scope(dict):
     @staticmethod
     def _str_to_scope(str):
         # If there is a string argument, convert it to type scope
-        if isinstance(str, basestring):
+        if isinstance(str, str):
             return Scope((str, []))
         else:
             return str

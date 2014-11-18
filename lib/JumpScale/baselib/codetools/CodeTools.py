@@ -1,8 +1,8 @@
 
-from RegexTools import RegexTools
-from TemplateEngineWrapper import TemplateEngineWrapper
-from WordReplacer import WordReplacer
-from TextFileEditor import TextFileEditor
+from .RegexTools import RegexTools
+from .TemplateEngineWrapper import TemplateEngineWrapper
+from .WordReplacer import WordReplacer
+from .TextFileEditor import TextFileEditor
 
 class CodeTools:
     def __init__(self):

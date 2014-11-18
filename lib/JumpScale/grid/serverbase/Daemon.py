@@ -32,7 +32,7 @@ class DaemonCMDS(object):
         return ""
 
     def listCategories(self, session):
-        return self.daemon.cmdsInterfaces.keys()
+        return list(self.daemon.cmdsInterfaces.keys())
 
     def getpubkeyserver(self, session):
         return self.daemon.keystor.getPubKey(self.daemon.sslorg, self.daemon.ssluser, returnAsString=True)
@@ -43,7 +43,7 @@ class DaemonCMDS(object):
         """
         # ser=j.db.serializers.getMessagePack()
         # sessiondictstr=ser.loads(data)
-        print "register session:%s "%session
+        print("register session:%s "%session)
         session = Session(sessiondata)
 
         if ssl:
@@ -54,7 +54,7 @@ class DaemonCMDS(object):
             raise RuntimeError("Cannot Authenticate User:%s" % session.user)
 
         self.daemon.sessions[session.id] = session
-        print "OK"
+        print("OK")
 
         return "OK"
 
@@ -76,7 +76,7 @@ class DaemonCMDS(object):
             # Remove the 'session' parameter
             if 'session' in args.args:
                 session_index = args.args.index('session')
-                if session_index<>len(args.args)-1:
+                if session_index!=len(args.args)-1:
                     raise RuntimeError("session arg needs to be last argument of method. Cat:%s Method:%s \nArgs:%s"%(cat,name,args))
                 del args.args[session_index]
                 if args.defaults:
@@ -124,7 +124,7 @@ class Daemon(object):
             return message
 
     def addCMDsInterface(self, cmdInterfaceClass, category,proxy=False):
-        if not self.cmdsInterfaces.has_key(category):
+        if category not in self.cmdsInterfaces:
             self.cmdsInterfaces[category] = []
         if proxy==False:
             obj=cmdInterfaceClass(self)
@@ -153,7 +153,7 @@ class Daemon(object):
             ffunction = self.cmds[cmdkey]
         else:
             ffunction = None
-            if not self.cmdsInterfaces.has_key(category):
+            if category not in self.cmdsInterfaces:
                 return returnCodes.METHOD_NOT_FOUND, "", None
 
             cmdinterface= self.cmdsInterfaces[category]
@@ -166,8 +166,8 @@ class Daemon(object):
 
         try:
             if inputisdict:
-                if data.has_key("_agentid"):
-                    if data["_agentid"]<>0:
+                if "_agentid" in data:
+                    if data["_agentid"]!=0:
                         cmds=self.cmdsInterfaces["agent"]
                         gid=j.application.whoAmI.gid
                         nid=int(data["_agentid"])
@@ -181,7 +181,7 @@ class Daemon(object):
                             eco = j.errorconditionhandler.getErrorConditionObject(msg="Command %s.%s with args: %s timeout" % (category2, cmd, data))
                             return returnCodes.ERROR,returnformat,eco.__dict__
                         jobr=ujson.loads(jobr)
-                        if jobr["state"]<>"OK":
+                        if jobr["state"]!="OK":
                             return jobr["resultcode"],returnformat,jobr["result"]
                         else:
                             return returnCodes.OK,returnformat,jobr["result"]
@@ -191,7 +191,7 @@ class Daemon(object):
                 result = ffunction(**data)
             else:
                 result = ffunction(data, session=session)
-        except Exception, e:
+        except Exception as e:
             # if str(e)=="STOP APPLICATION 112299":  #needs to be cryptic otherwise smart developers can fake this
             #     j.application.stop()
             if isinstance(e, BaseException):
@@ -205,7 +205,7 @@ class Daemon(object):
 
             data2=data
             try:
-                if data2.has_key("session"):
+                if "session" in data2:
                     data2.pop("session")
             except:
                 pass
@@ -229,7 +229,7 @@ class Daemon(object):
             2= method not found
             2+ any other error
         """
-        if self.sessions.has_key(sessionid):
+        if sessionid in self.sessions:
             session = self.sessions[sessionid]
             encrkey = session.encrkey
         else:
@@ -241,10 +241,10 @@ class Daemon(object):
                 eco = j.errorconditionhandler.getErrorConditionObject(msg=error)
                 return returnCodes.AUTHERROR, "m", self.errorconditionserializer.dumps(eco.__dict__)
         try:
-            if informat <> "":
+            if informat != "":
                 ser = j.db.serializers.get(informat, key=self.key)
                 data = ser.loads(data)
-        except Exception,e:
+        except Exception as e:
             eco=j.errorconditionhandler.parsePythonErrorObject(e)
             eco.tb=""
             return returnCodes.SERIALIZATIONERRORIN, "m", self.errorconditionserializer.dumps(eco.__dict__)
@@ -252,12 +252,12 @@ class Daemon(object):
 
         parts = self.processRPC(cmd, data, returnformat=returnformat, session=session, category=category)
         returnformat = parts[1]  # return format as comes back from processRPC
-        if returnformat <> "":  # is
+        if returnformat != "":  # is
             returnser = j.db.serializers.get(returnformat, key=encrkey)
             error=0
             try:
                 data = self.encrypt(returnser.dumps(parts[2]), session)
-            except Exception,e:
+            except Exception as e:
                 error=1
             if error==1:
                 try:

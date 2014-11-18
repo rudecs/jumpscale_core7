@@ -1,5 +1,5 @@
 import re
-from itertools import izip_longest
+from itertools import zip_longest
 
 
 def main(j, args, params, tags, tasklet):
@@ -28,7 +28,7 @@ def main(j, args, params, tags, tasklet):
     current_option = 0
     options = []
     lines = re.findall(r'\s*(\*+)\s+(.*)', args.cmdstr)
-    for ((current_level, current_text), (next_level, _)) in izip_longest(lines, lines[1:], fillvalue=('', '')):
+    for ((current_level, current_text), (next_level, _)) in zip_longest(lines, lines[1:], fillvalue=('', '')):
         if len(current_level) < len(next_level):
             options.append('<optgroup label="{0}">'.format(current_text))
             continue

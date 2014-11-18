@@ -1,8 +1,8 @@
 from JumpScale import j
-from OSISCMDS import OSISCMDS
-from OSISClientForCat import OSISClientForCat
-from OSISBaseObject import OSISBaseObject
-from OSISBaseObjectComplexType import OSISBaseObjectComplexType
+from .OSISCMDS import OSISCMDS
+from .OSISClientForCat import OSISClientForCat
+from .OSISBaseObject import OSISBaseObject
+from .OSISBaseObjectComplexType import OSISBaseObjectComplexType
 import JumpScale.portal.codegentools
 
 import inspect
@@ -60,7 +60,7 @@ class OSISFactory:
         if self._out:
             out=self._out.out
             if pprint:
-                print out
+                print(out)
         self._out=None 
         return out
 
@@ -107,7 +107,7 @@ class OSISFactory:
         """
         start deamon
         """
-        if hrd<>None:
+        if hrd!=None:
             self.hrd=hrd
         self.key=key
         self.superadminpasswd=superadminpasswd
@@ -143,7 +143,7 @@ class OSISFactory:
         if passwd=="EMPTY":
             passwd=""
 
-        if ipaddr<>None:
+        if ipaddr!=None:
             ips = [ipaddr]
         elif j.application.config.exists('osis.ip'):
             ips = j.application.config.getList('osis.ip')
@@ -300,7 +300,7 @@ class OSISFactory:
         """
         key="%s_%s"%(namespace,category)
 
-        if not self.osisModels.has_key(key):
+        if key not in self.osisModels:
             # #need to check if there is a specfile or we go from model.py  
             if specpath=="":
                 specpath=j.system.fs.joinPaths("logic", namespace, "model.spec")            
@@ -313,7 +313,7 @@ class OSISFactory:
                 klass= j.system.fs.fileGetContents(modelpath)
                 name=""
                 for line in klass.split("\n"):
-                    if line.find("(OsisBaseObject")<>-1 and line.find("class ")<>-1:
+                    if line.find("(OsisBaseObject")!=-1 and line.find("class ")!=-1:
                         name=line.split("(")[0].lstrip("class").strip()
                 if name=="":
                     raise RuntimeError("could not find: class $modelName(OsisBaseObject) in model class file, should always be there")
@@ -342,6 +342,6 @@ class OSISFactory:
         # return module.__dict__[classname]
         try:
             return module.mainclass
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError("Could not load module on %s, could not find 'mainclass', check code on path. Error:%s"% (path,e))
             

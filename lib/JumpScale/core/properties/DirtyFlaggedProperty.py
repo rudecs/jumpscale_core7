@@ -1,3 +1,4 @@
+import collections
 # <License type="Sun Cloud BSD" version="2.2">
 #
 # Copyright (c) 2005-2009, Sun Microsystems, Inc.
@@ -62,7 +63,7 @@ class DirtyFlaggingProperty(property):
         if value == getattr(obj, '_%s' % self._propname):
             return
         
-        if value is not None and self._checkType and callable(self._checkType.check) and not self._checkType.check(value):
+        if value is not None and self._checkType and isinstance(self._checkType.check, collections.Callable) and not self._checkType.check(value):
             raise TypeError("The type of the value for '%s' is invalid."%self._propname)
         d = getattr(obj, '_dirtied', set())
         if not self._propname in d:

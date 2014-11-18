@@ -9,7 +9,7 @@ class Grid(OsisBaseObject):
     """
 
     def __init__(self, ddict={}, name="", id=0, useavahi=1):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.name = name
@@ -22,7 +22,7 @@ class Grid(OsisBaseObject):
         """
         get ipaddr info & gid & nid from local config
         """
-        self.ipaddr=[item for item in j.system.net.getIpAddresses() if item <>"127.0.0.1"]
+        self.ipaddr=[item for item in j.system.net.getIpAddresses() if item !="127.0.0.1"]
         self.id= j.application.config.getInt("gridmaster.grid.id")
 
         if not j.application.config.exists("grid.node.id"):

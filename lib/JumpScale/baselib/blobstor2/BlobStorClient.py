@@ -70,7 +70,7 @@ class BlobStorClient:
         if sync or len(self.queue)>200 or self.queuedatasize>self.maxqueuedatasize:
             full,res=self._send(sync,timeout)
             
-            for jid,val in res.iteritems():
+            for jid,val in res.items():
                 self.results[jid]=val
 
             if full:
@@ -87,7 +87,7 @@ class BlobStorClient:
 
     def _send(self,sync=False,timeout=60):
         if self.queuedatasize>0:
-            print "send: %s KB nr cmds:%s"%(int(self.queuedatasize/1024),len(self.queue))
+            print("send: %s KB nr cmds:%s"%(int(self.queuedatasize/1024),len(self.queue)))
         if len(self.queue)>0:
             full,res=self.blobstor.sendCmds(self.queue,sync=sync,timeout=timeout)
             return full,res
@@ -157,7 +157,7 @@ class BlobStorClient:
         if compress==True or (len(data)>self._compressMin and self.compress):
             compress=self.compress
             # print "compress"
-            print ".",
+            print(".")
             data=lzma.compress(data)
             serialization="L"
         else:
@@ -229,11 +229,11 @@ class BlobStorClient:
 
     def downloadFile(self,key,dest,link=False,repoid=0, chmod=0,chownuid=0,chowngid=0,sync=False,size=0):
 
-        if self.cachepath<>"":
+        if self.cachepath!="":
             blob_path = self._getBlobCachePath(key)
             if j.system.fs.exists(blob_path):
                 # Blob exists in cache, we can get it from there!
-                print "Blob FOUND in cache: %s" % blob_path
+                print("Blob FOUND in cache: %s" % blob_path)
                 if link:
                     self._link(blob_path,dest)
                 else:
@@ -247,21 +247,21 @@ class BlobStorClient:
 
         #now normally on server we should have results ready
 
-        if size<>0 and sync==False:
+        if size!=0 and sync==False:
             jid=self.get( key,repoid=repoid,sync=False)
             # print [jid,key,dest,link,repoid,chmod,chownuid,chowngid]
             self._downloadbatch[jid]=(jid,key,dest,link,repoid,chmod,chownuid,chowngid)
             self._downloadbatchSize+=int(size)
         else:
             # Get blob from blobstor2 
-            if key<>"":
+            if key!="":
                 key,serialization,blob = self.get( key,repoid=repoid,sync=True)
                 self._downloadFilePhase2(blob,dest,key,chmod,chownuid,chowngid,link,serialization)
 
 
     def downloadBatch(self):
         self._send()        
-        jids=self._downloadbatch.keys()
+        jids=list(self._downloadbatch.keys())
         self.blobstor._cmdchannel.send_multipart([msgpack.dumps([[0,"getresults",{},jids]]),"S",str(60),self.blobstor.sessionkey])
         res= self.blobstor._cmdchannel.recv_multipart()
        
@@ -273,7 +273,7 @@ class BlobStorClient:
                 if rcode==0:
                     jid,key,dest,link,repoid,chmod,chownuid,chowngid=self._downloadbatch[jid]
                     key2=result[0]
-                    if key2<>key:
+                    if key2!=key:
                         raise RuntimeError("Keys need to be the same")
                     blob=result[2]
                     serialization=result[1]
@@ -292,7 +292,7 @@ class BlobStorClient:
         if blob==None:
             raise RuntimeError("Cannot find blob with key:%s"%key)
                 
-        if self.cachepath<>"":
+        if self.cachepath!="":
             blob_path = self._getBlobCachePath(key)
             self._restoreBlobToDest(blob_path, blob, chmod=chmod,chownuid=chownuid,chowngid=chowngid,serialization=serialization)
             j.system.fs.createDir(j.system.fs.getDirName(dest))
@@ -340,9 +340,9 @@ class BlobStorClient:
             j.system.fs.writeFile(dest, blob)
 
         # chmod/chown
-        if chmod<>0:
+        if chmod!=0:
             os.chmod(dest,chmod)
-        if chownuid<>0:
+        if chownuid!=0:
             os.chown(dest,chownuid,chowngid)       
 
     def _link(self, src, dest):

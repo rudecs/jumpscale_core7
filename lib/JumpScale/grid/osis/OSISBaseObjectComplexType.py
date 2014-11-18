@@ -33,7 +33,7 @@ class OSISBaseObjectComplexType(j.code.classGetJSRootModelBase()):
     def getSetGuid(self):
         """
         """
-        if not self.__dict__.has_key("gid") or self.gid==0 or self.gid=="":
+        if "gid" not in self.__dict__ or self.gid==0 or self.gid=="":
             self.gid=j.application.whoAmI.gid
         # self.sguid=struct.pack("<HH",self.gid,self.id)
         # self.guid = "%s_%s" % (self.gid, self.id)
@@ -72,11 +72,11 @@ class OSISBaseObjectComplexType(j.code.classGetJSRootModelBase()):
             return False
         def clean(obj):
             dd={}
-            keys=obj.__dict__.keys()
+            keys=list(obj.__dict__.keys())
             keys.sort()
             for key in keys:
                 val= obj.__dict__[key]
-                if key[0]<>"_":
+                if key[0]!="_":
                     dd[str(key)]=val
             return dd
 

@@ -1,5 +1,5 @@
 __author__ = 'delandtj'
-from vxlan import *
+from .vxlan import *
 from netaddr import *
 
 def rebuildVXLan():
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     pprint_dict(ip_layout)
 
 
-    print 'vx1, ff31'
+    print('vx1, ff31')
 
     vx1 = VXNet(0xff33,backend='p2p1')
     vx1.innamespace = True
@@ -27,14 +27,14 @@ if __name__ == "__main__":
 
     # vxbackend implied (check for it)
     if not 'vxbackend' in get_all_ifaces():
-        print 'Error: vxbackend doensn\'t exist'
+        print('Error: vxbackend doensn\'t exist')
         backend = Bridge('vxbackend')
         backend.create()
         backend.connect('dummy0')
         disable_ipv6('dummy0')
 
-    print '\n'
-    print 'vx2, ff32'
+    print('\n')
+    print('vx2, ff32')
     vx2 = VXNet('ff32')
     vx2.innamespace = False
     vx2.inbridge = True
@@ -42,8 +42,8 @@ if __name__ == "__main__":
     vx2.ipv4 = IPNetwork('192.168.1.254/24')
     vx2.apply()
 
-    print'\n'
-    print 'vxlan, 3456'
+    print('\n')
+    print('vxlan, 3456')
     vxlan = VXNet(3456)
     vxlan.ipv4      = IPNetwork('10.101.111.9/24')
     vxlan.ipv6      = IPNetwork('2a02:578:f33:a01::1/64')

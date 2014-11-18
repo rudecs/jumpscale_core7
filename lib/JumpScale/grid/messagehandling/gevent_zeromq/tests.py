@@ -5,7 +5,7 @@ try:
     from gevent_utils import BlockingDetector
     gevent.spawn(BlockingDetector(5))
 except ImportError:
-    print 'If you encounter hangs consider installing gevent_utils'
+    print('If you encounter hangs consider installing gevent_utils')
 
 
 def monkey_patch_test_suite():

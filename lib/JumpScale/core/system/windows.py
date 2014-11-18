@@ -19,13 +19,13 @@ import win32serviceutil
 from win32com.client import GetObject
 #import ntsecuritycon as con
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 # from win32shell import shell
 from win32com.shell import shellcon
-import _winreg as reg
+import winreg as reg
 from JumpScale.core.enumerators.WinRegHiveType import WinRegHiveType
 from JumpScale.core.enumerators.WinRegValueType import WinRegValueType
 
@@ -985,7 +985,7 @@ class WindowsSystem:
         try:
             returncode,output=j.system.process.execute(programName)
         except Exception as inst:
-            if inst.args[1].lower().find("cannot find the file specified")<>-1:
+            if inst.args[1].lower().find("cannot find the file specified")!=-1:
                 return 1
             else:
                 return 2
@@ -999,7 +999,7 @@ class WindowsSystem:
                 return
           
         if type(text)==type(''):
-            text = unicode(text,'mbcs')
+            text = str(text,'mbcs')
         bufferSize = (len(text)+1)*2
         hGlobalMem = ctypes.windll.kernel32.GlobalAlloc(ctypes.c_int(GHND), ctypes.c_int(bufferSize))
         ctypes.windll.kernel32.GlobalLock.restype = ctypes.c_void_p
@@ -1038,7 +1038,7 @@ class WindowsSystem:
         """
         if descr=="":
             descr=name
-        import _winreg as winreg
+        import winreg as winreg
         for item in ["*","Directory"]:
             key = winreg.CreateKey(winreg.HKEY_CLASSES_ROOT,r'%s\shell\%s'%(item,name))
             key2 = winreg.CreateKey(winreg.HKEY_CLASSES_ROOT,r'%s\shell\%s\Command'%(item,name))

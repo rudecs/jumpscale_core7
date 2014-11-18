@@ -1,11 +1,11 @@
 from JumpScale import j
 
-from Replicator import Replicator
-from Cluster import Cluster
+from .Replicator import Replicator
+from .Cluster import Cluster
 
 import string
-from Replicator import *
-from ClusterConfigs import *
+from .Replicator import *
+from .ClusterConfigs import *
 
 
 class ClusterFactory():
@@ -38,7 +38,7 @@ class ClusterFactory():
             clustername = j.console.askChoice(self.list(), "select cluster")
         if clustername in self.clusters:
             return self.clusters[clustername]
-        for clustername in self.clusters.keys():
+        for clustername in list(self.clusters.keys()):
             cl = self.clusters[clustername]
             if cl.domainname == domainname:
                 return cl
@@ -100,15 +100,15 @@ class ClusterFactory():
         if clustername == "":
             if j.application.interactive:
                 ask = True
-                if len(self.clusters.keys()) == 1:
+                if len(list(self.clusters.keys())) == 1:
                     ask = j.gui.dialog.askYesNo('Are you sure you want to delete cluster %s' % q.cluster.get())
                 if ask:
-                    clustername = j.gui.dialog.askChoice('Select cluster to remove', self.clusters.keys())
+                    clustername = j.gui.dialog.askChoice('Select cluster to remove', list(self.clusters.keys()))
                 else:
                     return
             else:
                 raise ValueError("In non-interactive mode please specify clustername to be removed")
-        if clustername in self.clusters.keys():
+        if clustername in list(self.clusters.keys()):
             q.cluster.config.remove(clustername)
         else:
             raise ValueError("Cluster %s not found" % clustername)
@@ -130,7 +130,7 @@ class ClusterFactory():
         """
         return list of clusternames
         """
-        return self.clusters.keys()
+        return list(self.clusters.keys())
 
     # def _removeRedundantFiles(self):
         # path="/opt/qbase3"

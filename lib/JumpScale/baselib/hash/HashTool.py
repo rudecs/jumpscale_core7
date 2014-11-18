@@ -1,4 +1,4 @@
-from __future__ import with_statement
+
 from JumpScale import j
 
 class HashTool:
@@ -41,7 +41,7 @@ def _hash_funcs(alg):
         @returns: %(alg)s hash hex digest of the input value
         @rtype: string
         '''
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             s = s.encode('utf-8')
         impl = hashlib.new(alg, s)
         return impl.hexdigest()

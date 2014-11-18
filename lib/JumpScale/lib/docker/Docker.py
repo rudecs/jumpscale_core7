@@ -51,7 +51,7 @@ class Docker():
         if machinename=="":
             raise RuntimeError("Cannot be empty")
         base = j.system.fs.joinPaths( self.basepath,'%s%s' % (self._prefix, machinename))
-        if append<>"":
+        if append!="":
             base=j.system.fs.joinPaths(base,append)
         return base
 
@@ -110,12 +110,12 @@ class Docker():
             mem+=mem0
             cpu+=cpu0
             if stdout:
-                print "%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0)
+                print("%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0))
             result.append([child.name,child.pid,mem0,child.parent.name])
         cpu=children[0].get_cpu_percent()
         result.append([mem,cpu])
         if stdout:
-            print "TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu)
+            print("TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu))
         return result
 
     def exportRsync(self,name,backupname,key="pub"):
@@ -125,9 +125,9 @@ class Docker():
         path=self._getMachinePath(name)
         if not j.system.fs.exists(path):
             raise RuntimeError("cannot find machine:%s"%path)
-        if backupname[-1]<>"/":
+        if backupname[-1]!="/":
             backupname+="/"
-        if path[-1]<>"/":
+        if path[-1]!="/":
             path+="/"
         cmd="rsync -a %s %s::upload/%s/images/%s --delete-after --modify-window=60 --compress --stats  --progress --exclude '.Trash*'"%(path,ipaddr,key,backupname)
         # print cmd
@@ -135,7 +135,7 @@ class Docker():
 
     def _btrfsExecute(self,cmd):
         cmd="btrfs %s"%cmd
-        print cmd
+        print(cmd)
         return self.execute(cmd)
 
     def btrfsSubvolList(self):
@@ -145,7 +145,7 @@ class Docker():
         for line in out.split("\n"):
             if line.strip()=="":
                 continue
-            if line.find("path ")<>-1:
+            if line.find("path ")!=-1:
                 path=line.split("path ")[-1]
                 path=path.strip("/")
                 path=path.replace("lxc/","")
@@ -204,23 +204,23 @@ class Docker():
 
         # j.system.fs.createDir(path)
 
-        if backupname[-1]<>"/":
+        if backupname[-1]!="/":
             backupname+="/"
-        if path[-1]<>"/":
+        if path[-1]!="/":
             path+="/"
 
-        if basename<>"":
+        if basename!="":
             basepath=self._getMachinePath(basename)
-            if basepath[-1]<>"/":
+            if basepath[-1]!="/":
                 basepath+="/"
             if not j.system.fs.exists(basepath):
                 raise RuntimeError("cannot find base machine:%s"%basepath)
             cmd="rsync -av -v %s %s --delete-after --modify-window=60 --size-only --compress --stats  --progress"%(basepath,path)            
-            print cmd
+            print(cmd)
             j.system.process.executeWithoutPipe(cmd)
 
         cmd="rsync -av -v %s::download/%s/images/%s %s --delete-after --modify-window=60 --compress --stats  --progress"%(ipaddr,key,backupname,path)
-        print cmd
+        print(cmd)
         j.system.process.executeWithoutPipe(cmd)        
 
     def exportTgz(self,name,backupname):
@@ -253,9 +253,9 @@ class Docker():
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
         """
         name=name.lower().strip()
-        print "create:%s"%name
+        print("create:%s"%name)
         running=self.list()
-        running=running.keys()
+        running=list(running.keys())
         if not replace:
             if name in running:
                 j.events.opserror_critical("Cannot create machine with name %s, because it does already exists.")   
@@ -273,7 +273,7 @@ class Docker():
             mem=0
 
         if int(mem)>0:
-            mem=long(mem)*1024
+            mem=int(mem)*1024
 
         portsdict={}
         if len(ports)>0:
@@ -282,11 +282,11 @@ class Docker():
                 key,val=item.split(":",1)
                 portsdict[int(key)]=int(val)
 
-        if not portsdict.has_key(22):
+        if 22 not in portsdict:
             for port in range(9022,9190):
                 if not j.system.net.tcpPortConnectionTest("localhost", port):
                     portsdict[22]=port
-                    print "SSH PORT WILL BE ON:%s"%port
+                    print("SSH PORT WILL BE ON:%s"%port)
                     break                
 
         volsdict={}
@@ -297,7 +297,7 @@ class Docker():
                 volsdict[str(key).strip()]=str(val).strip()
 
         if j.system.fs.exists(path="/var/jumpscale/"):
-            if not volsdict.has_key("/var/jumpscale"):
+            if "/var/jumpscale" not in volsdict:
                 volsdict["/var/jumpscale"]="/var/jumpscale"
 
         tmppath="/tmp/dockertmp/%s"%name
@@ -317,12 +317,12 @@ class Docker():
         binds={}
         volskeys=[] #is location in docker
 
-        for key,path in volsdict.iteritems():
+        for key,path in volsdict.items():
             j.system.fs.createDir(path) #create the path on hostname
             binds[path]={"bind":key,"ro":False}
             volskeys.append(key)
 
-        for key,path in volsdictro.iteritems():
+        for key,path in volsdictro.items():
             j.system.fs.createDir(path) #create the path on hostname
             binds[path]={"bind":key,"ro":True}
             volskeys.append(key)
@@ -331,7 +331,7 @@ class Docker():
 
 
         if base not in self.getImages():
-            print "download docker"
+            print("download docker")
             cmd="docker pull %s"%base
             j.system.process.executeWithoutPipe(cmd)
 
@@ -341,13 +341,13 @@ class Docker():
         # cmd="sh -c \"exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
 
         # mem=1000000
-        print "install docker with name '%s'"%base     
+        print("install docker with name '%s'"%base)     
 
         res=self.client.create_container(image=base, command=cmd, hostname=name, user="root", \
-                detach=False, stdin_open=False, tty=True, mem_limit=mem, ports=portsdict.keys(), environment=None, volumes=volskeys,  \
+                detach=False, stdin_open=False, tty=True, mem_limit=mem, ports=list(portsdict.keys()), environment=None, volumes=volskeys,  \
                 network_disabled=False, name=name, entrypoint=None, cpu_shares=cpu, working_dir=None, domainname=None, memswap_limit=0)
 
-        if res["Warnings"]<>None:
+        if res["Warnings"]!=None:
             raise RuntimeError("Could not create docker, res:'%s'"%res)
 
         id=res["Id"]
@@ -356,9 +356,9 @@ class Docker():
             publish_all_ports=False, links=None, privileged=False, dns=nameserver, dns_search=None, volumes_from=None, network_mode=None)
 
         portfound=0
-        for internalport,extport in portsdict.iteritems():
+        for internalport,extport in portsdict.items():
             if internalport==22:
-                print "test docker internal port:22 on ext port:%s"%extport
+                print("test docker internal port:22 on ext port:%s"%extport)
                 portfound=extport
                 if j.system.net.waitConnectionTest("localhost",extport,timeout=2)==False:
                     cmd="docker logs %s"%name
@@ -382,7 +382,7 @@ class Docker():
         lines=j.system.fs.fileGetContents("/etc/hosts")
         out=""
         for line in lines.split("\n"):
-            if line.find(name)<>-1:
+            if line.find(name)!=-1:
                 continue
             out+="%s\n"%line
         out+="%s      %s\n"%(self.getIp(name),name)
@@ -392,7 +392,7 @@ class Docker():
         info=self.getInfo(name)
         for port2 in info["Ports"]:
             if int(port2["PrivatePort"])==int(port):
-                if not port2.has_key("PublicPort"):
+                if "PublicPort" not in port2:
                     j.events.inputerror_critical("cannot find publicport for ssh?")
                 return port2["PublicPort"]
 
@@ -417,7 +417,7 @@ class Docker():
         if ssh_port==None:
             j.events.opserror_critical("cannot find pub port ssh")        
 
-        c.connect('%s:%s' % ("localhost", ssh_port), u"root")
+        c.connect('%s:%s' % ("localhost", ssh_port), "root")
 
         c.ssh_authorize("root",key)
         return key
@@ -426,12 +426,12 @@ class Docker():
         ssh_port=self.getPubPortForInternalPort(name,22)        
         c=j.remote.cuisine.api
         c.fabric.api.env['connection_attempts'] = 2
-        c.connect('%s:%s' % ("localhost", ssh_port), u"root")
+        c.connect('%s:%s' % ("localhost", ssh_port), "root")
         return c
 
     def destroyall(self):
         running=self.list()
-        for item in running.keys():
+        for item in list(running.keys()):
             self.destroy(item)
 
         # startpath="/mnt/vmstor"
@@ -450,7 +450,7 @@ class Docker():
     def destroy(self,name):        
         running=self.list()
                   
-        if name in running.keys():
+        if name in list(running.keys()):
             idd=running[name]    
             self.client.kill(idd)
             self.client.remove_container(idd)
@@ -460,7 +460,7 @@ class Docker():
 
     def stop(self,name):
         running=self.list()        
-        if name in running.keys():
+        if name in list(running.keys()):
             idd=running[name]    
             self.client.kill(idd)
 

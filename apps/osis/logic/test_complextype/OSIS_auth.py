@@ -10,6 +10,6 @@ class AUTH():
         if j.core.osis.cmds._authenticateAdmin(user=user,passwd=passwd):
             return True
         if user=="node" and method in ["set","get"]:
-            if j.core.osis.nodeguids.has_key(passwd):
+            if passwd in j.core.osis.nodeguids:
                 return True
         return False

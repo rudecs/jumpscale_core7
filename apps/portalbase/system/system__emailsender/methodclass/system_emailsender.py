@@ -70,7 +70,7 @@ class system_emailsender(j.code.classGetBase()):
         
         if kwargs:
             other_params = []
-            for k, v in kwargs.items():
+            for k, v in list(kwargs.items()):
                 if isinstance(v, list):
                     v = ', '.join(v)
                 other_params.append('<tr><th>{0}</th><td>{1}</td></tr>'.format(k, v))

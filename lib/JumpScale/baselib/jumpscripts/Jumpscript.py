@@ -13,7 +13,7 @@ class Jumpscript(object):
     a jumpscript can have more than 1 action (methods in the script)
     """
     def __init__(self, ddict={}, path=None,organization="",actor=""):
-        if ddict<>{}:
+        if ddict!={}:
             self.__dict__.update(ddict)
         else:
             if path==None:
@@ -65,7 +65,7 @@ class Jumpscript(object):
 
             if state=="base" and line.find("@")==0:
                 line=line[1:]
-                if line.find("(")<>-1:
+                if line.find("(")!=-1:
                     tag,val=line.split("(",1)
                     val=val.split(")",1)[0]
                     val=val.strip()
@@ -90,7 +90,7 @@ class Jumpscript(object):
         return out,result
 
     def load(self,path):
-        print "load jumpscript: %s"%path
+        print("load jumpscript: %s"%path)
         source = j.system.fs.fileGetContents(path)
         out,tags=self._preprocess(source)        
         md5sum=j.tools.hash.md5_string(out)
@@ -111,7 +111,7 @@ class Jumpscript(object):
         #identifies the actions & tags linked to it
         self.tags=tags
 
-        for name,val in tags.iteritems():
+        for name,val in tags.items():
             self.actions[name]=eval("self.module.%s"%name)
 
     def getDict(self):
@@ -149,21 +149,21 @@ class Jumpscript(object):
         #execute without creating a job
         try:
             return True, self.actions[action](*args, **kwargs)
-        except Exception, e:
-            print "error in jumpscript execution."
+        except Exception as e:
+            print("error in jumpscript execution.")
             eco = j.errorconditionhandler.parsePythonErrorObject(e)
             eco.tb = None
             eco.errormessage='Exec error procmgr jumpscr:%s_%s on node:%s_%s %s'%(self.organization,self.name, \
                     j.application.whoAmI.gid, j.application.whoAmI.nid,eco.errormessage)
-            if job<>None:
+            if job!=None:
                 eco.jid = job.id
             eco.tags+=" jsorganization:%s"%self.organization
             eco.tags+=" jsname:%s"%self.name
             j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
-            print eco
+            print(eco)
             return False, eco
 
-        if job<>None:
+        if job!=None:
             pass
 
 
@@ -187,7 +187,7 @@ class Jumpscript(object):
             result=redisw.execJumpscript(self.id,_timeout=self.timeout,_queue=queue,_log=self.log,_sync=False)
 
         self.lastrun = time.time()
-        if result<>None:
-            print "ok:%s"%self.name
+        if result!=None:
+            print("ok:%s"%self.name)
         return result
 

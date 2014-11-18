@@ -44,7 +44,7 @@ except:
 
 from JumpScale import j
 
-from EasyDialogGeneric import EasyDialogGeneric
+from .EasyDialogGeneric import EasyDialogGeneric
 
 def dialogmessage(func):
     @functools.wraps(func)
@@ -106,7 +106,7 @@ class EasyDialogWizardServer(EasyDialogGeneric):
         if not isinstance(choices, dict):
             # choices is not a dict, convert it to a dict
             thechoices = dict.fromkeys(choices)
-            for k in thechoices.iterkeys():
+            for k in thechoices.keys():
                 thechoices[k] = k
         else:
             # choices is already a dict, nothing to do
@@ -122,7 +122,7 @@ class EasyDialogWizardServer(EasyDialogGeneric):
         if not isinstance(choices, dict):
             # choices is not a dict, convert it to a dict
             thechoices = dict.fromkeys(choices)
-            for k in thechoices.iterkeys():
+            for k in thechoices.keys():
                 thechoices[k] = k
         else:
             # choices is already a dict, nothing to do
@@ -304,7 +304,7 @@ class WizardActions(object):
         """
         params = {}
 
-        values = [(value, key) for (key, value) in values.iteritems()]
+        values = [(value, key) for (key, value) in values.items()]
 
         params = self.addParameter(params, 'control', 'option')
         params = self.addParameter(params, 'text', text)

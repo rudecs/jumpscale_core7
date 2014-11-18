@@ -27,7 +27,7 @@ $items
 
     def addComponents(out, components):
         comps = ""
-        for key in components.keys():
+        for key in list(components.keys()):
             comps += "    %s;\n" % key
         out = out.replace("$items", comps)
         return out
@@ -125,13 +125,13 @@ $items
                     out += "%s->%s [arrowsize=0];\n" % (ffrom, tto)
 
         except Exception as e:
-            print e
+            print(e)
             out = "ERROR: could not process, error %s, line trying to parse was %s" % (e, conn)
 
     defmanager = j.apps.system.contentmanager.extensions.defmanager
 
     # set the descriptions
-    for key in componentsall.keys():
+    for key in list(componentsall.keys()):
         descr = componentsall[key]
         if key.find("_nr") != -1:
             key2 = key.split("_nr")[0]
@@ -142,9 +142,9 @@ $items
 
     out = "{{graph:\ndigraph G {\n%s\n}\n}}\n\n" % out
 
-    if len(nodes.keys()) > 0:
+    if len(list(nodes.keys())) > 0:
         out += 'h4. nodes\n'
-        for key in nodes.keys():
+        for key in list(nodes.keys()):
             descr = nodes[key]
             link = defmanager.getLink(key)
             if link == None:
@@ -154,9 +154,9 @@ $items
             else:
                 out += '* %s\n' % link
 
-    if len(componentsall.keys()) > 0:
+    if len(list(componentsall.keys())) > 0:
         out += 'h4. components\n'
-        for key in componentsall.keys():
+        for key in list(componentsall.keys()):
             if key.find("_nr") != -1:
                 continue
             descr = componentsall[key]

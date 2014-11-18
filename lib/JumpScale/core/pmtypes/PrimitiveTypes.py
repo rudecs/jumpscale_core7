@@ -46,7 +46,7 @@ class Integer(BaseType):
     @staticmethod
     def check(value):
         '''Check whether provided value is an integer'''
-        return isinstance(value, (int, long, ))
+        return isinstance(value, int)
 
 class Float(BaseType):
     '''Generic float type'''
@@ -80,4 +80,4 @@ class String(BaseType):
     @staticmethod
     def check(value):
         '''Check whether provided value is a string'''
-        return isinstance(value, basestring)
+        return isinstance(value, str)

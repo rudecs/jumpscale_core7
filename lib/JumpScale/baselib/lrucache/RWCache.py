@@ -1,9 +1,9 @@
-from __future__ import generators
+
 import time
 from heapq import heappush, heappop, heapify
 
 from JumpScale import j
-from LRUCache import LRUCache
+from .LRUCache import LRUCache
 
 from operator import itemgetter, attrgetter
 
@@ -46,9 +46,9 @@ class WCache(object):
         """
         # Check arguments
         if size <= 0:
-            raise ValueError, size
+            raise ValueError(size)
         elif type(size) is not type(0):
-            raise TypeError, size
+            raise TypeError(size)
         object.__init__(self)
         self.__dict = {}
         self.size = size
@@ -58,7 +58,7 @@ class WCache(object):
         
         
     def flush(self):
-        if len(self.__dict.keys()) >= self.size and self.writermethod==None:
+        if len(list(self.__dict.keys())) >= self.size and self.writermethod==None:
             raise RuntimeError("Write cache full.")
 
         now=time.time()
@@ -73,22 +73,22 @@ class WCache(object):
         for key2 in todelete:
             del self.__dict[key2]
 
-        if len(self.__dict.keys()) < self.size:
+        if len(list(self.__dict.keys())) < self.size:
             return
         #not enough objects flushed, sort follow latest mdate
         tosort=[]
-        for key in self.__dict.keys():
+        for key in list(self.__dict.keys()):
             tosort.append([key,self.__dict[key].wtime])
         sortedItems=sorted(tosort,key=itemgetter(1))
         counter=0
-        while len(self.__dict.keys()) >= self.size:
+        while len(list(self.__dict.keys())) >= self.size:
             key=sortedItems[counter][0]
             counter+=1
             self.writermethod(self.__dict[key])
             del self.__dict[key]
 
     def __setitem__(self, key, obj):
-        if self.__dict.has_key(key):
+        if key in self.__dict:
             node = self.__dict[key]
             node.obj = obj
             node.mtime = node.atime
@@ -96,24 +96,24 @@ class WCache(object):
             # size may have been reset, so we loop
             node = self.__Node(key, obj, time.time())
             self.__dict[key] = node
-            if len(self.__dict.keys()) >= self.flushsize:
+            if len(list(self.__dict.keys())) >= self.flushsize:
                 self.flush()
 
     def __len__(self):
         return len(self.__heap)
     
     def __contains__(self, key):
-        return self.__dict.has_key(key)
+        return key in self.__dict
         
     def __getitem__(self, key):
-        if not self.__dict.has_key(key):
+        if key not in self.__dict:
             raise CacheKeyError(key)
         else:
             node = self.__dict[key]
             return node.obj
     
     def __delitem__(self, key):
-        if not self.__dict.has_key(key):
+        if key not in self.__dict:
             raise CacheKeyError(key)
         else:
             node = self.__dict[key]
@@ -121,7 +121,7 @@ class WCache(object):
             return node.obj
 
     def __iter__(self):
-        for key in self.__dict.keys():
+        for key in list(self.__dict.keys()):
             yield key
 
     # def __iter__(self):
@@ -140,13 +140,13 @@ class WCache(object):
     #             del self.__dict[lru.key]
         
     def __repr__(self):
-        return "<%s (%d elements)>" % (str(self.__class__), len(self.__dict.keys()))
+        return "<%s (%d elements)>" % (str(self.__class__), len(list(self.__dict.keys())))
 
     def mtime(self, key):
         """Return the last modification time for the cache record with key.
         May be useful for cache instances where the stored values can get
         'stale', such as caching file or network resource contents."""
-        if not self.__dict.has_key(key):
+        if key not in self.__dict:
             raise CacheKeyError(key)
         else:
             node = self.__dict[key]

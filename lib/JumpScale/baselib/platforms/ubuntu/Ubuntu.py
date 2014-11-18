@@ -68,7 +68,7 @@ class Ubuntu:
             self.createGroup(name)
             self.addUser2Group(name,name)
 
-        if home<>None and not homeexists:
+        if home!=None and not homeexists:
             c.dir_ensure(home,owner=name,group=name)
 
     def createGroup(self,name):
@@ -176,8 +176,8 @@ stop on runlevel [016]
             C += "respawn\n"
         if pwd:
             C += "chdir %s\n" % pwd
-        if env<>None:
-            for key,value in env.iteritems():
+        if env!=None:
+            for key,value in env.items():
                 C+="env %s=%s\n"%(key,value)
         C+="exec %s %s\n"%(daemonpath,args)
 
@@ -234,7 +234,7 @@ stop on runlevel [016]
         self._cache.upgrade()
 
     def getPackageNamesRepo(self):        
-        return self._cache.keys()
+        return list(self._cache.keys())
 
     def getPackageNamesInstalled(self):
         if self.installedPackageNames==[]:            
@@ -255,7 +255,7 @@ stop on runlevel [016]
         result=[]
         for item in self.getPackageNamesRepo():
             item2=item.replace("_","").replace("_","").lower()
-            if item2.find(packagename)<>-1:
+            if item2.find(packagename)!=-1:
                 result.append(item)
         return result
 
@@ -266,7 +266,7 @@ stop on runlevel [016]
         result=[]
         for item in self.getPackageNamesInstalled():
             item2=item.replace("_","").replace("_","").lower()
-            if item2.find(packagename)<>-1:
+            if item2.find(packagename)!=-1:
                 result.append(item)
         return result
 

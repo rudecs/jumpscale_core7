@@ -1,3 +1,4 @@
+
 import copy
 import unicodedata
 from JumpScale import j
@@ -19,21 +20,25 @@ class ErrorConditionObject():
     @param level #1:critical, 2:warning, 3:info see j.enumerators.ErrorConditionLevel
     """
     def __init__(self,ddict={},msg="",msgpub="",category="",level=1,type="UNKNOWN",tb=None):
-        if ddict<>{}:
+        if ddict!={}:
             self.__dict__=ddict
         else:
+
             self.backtrace=""
             self.backtraceDetailed=""
             btkis,filename0,linenr0,func0=j.errorconditionhandler.getErrorTraceKIS(tb=tb)
+
             if len(btkis)>1:
                 self.backtrace=self.getBacktrace(btkis,filename0,linenr0,func0)
-                
+    
             self.guid=j.base.idgenerator.generateGUID() #is for default case where there is no redis
             self.category=category #is category in dot notation
             self.errormessage=msg
             self.errormessagePub=msgpub
             self.level=int(level) #1:critical, 2:warning, 3:info see j.enumerators.ErrorConditionLevel.
             
+            
+
             if len(btkis)>1:                
                 self.code=btkis[-1][0]
                 self.funcname=func0
@@ -54,6 +59,8 @@ class ErrorConditionObject():
             self.jid = 0
             self.masterjid = 0
 
+            
+
             self.epoch= j.base.time.getTimeEpoch()
             self.type=str(type) #BUG,INPUT,MONITORING,OPERATIONS,PERFORMANCE,UNKNOWN  
             self.tb=tb  
@@ -67,13 +74,14 @@ class ErrorConditionObject():
             self.occurrences=1 #nr of times this error condition happened
 
             self.uniquekey=""
-
+            
+    
 
     def getUniqueKey(self):
         """
         return unique key for object, is used to define unique id
         """
-        if self.category<>"":
+        if self.category!="":
             C= "%s_%s_%s_%s_%s_%s_%s_%s"%(self.gid,self.nid,self.category,self.level,self.funcname,self.funcfilename,self.appname,self.type)
         else:
             C= "%s_%s_%s_%s_%s_%s_%s_%s"%(self.gid,self.nid,self.errormessage,self.level,self.funcname,self.funcfilename,self.appname,self.type)
@@ -83,9 +91,9 @@ class ErrorConditionObject():
     def toAscii(self):
         def _toAscii(s):
             try:
-                return unicodedata.normalize('NFKD', unicode(s)).encode('ascii','ignore') 
-            except Exception,e:
-                print "BUG"
+                return unicodedata.normalize('NFKD', str(s)).encode('ascii','ignore') 
+            except Exception as e:
+                print("BUG")
                 import ipdb
                 ipdb.set_trace()
                                                 
@@ -121,7 +129,7 @@ class ErrorConditionObject():
             self.level=3
 
         res=j.errorconditionhandler._send2Redis(self)
-        if res<>None:
+        if res!=None:
             self.__dict__=res
 
 
@@ -133,11 +141,11 @@ class ErrorConditionObject():
 
     def __str__(self):
         content="\n\n***ERROR***\n"
-        if self.backtrace<>"":
+        if self.backtrace!="":
             content="%s\n" % self.backtrace
         content+="type/level: %s/%s\n" % (self.type,self.level)
         content+="%s\n" % self.errormessage
-        if self.errormessagePub<>"":
+        if self.errormessagePub!="":
             content+="errorpub: %s\n" % self.errormessagePub        
 
         return content
@@ -154,7 +162,7 @@ class ErrorConditionObject():
         msg+="%s\n"%self.backtrace
         msg+="***ERROR MESSAGE***\n"
         msg+="%s\n"%self.errormessage
-        if self.errormessagePub<>"":
+        if self.errormessagePub!="":
             msg+="%s\n"%self.errormessagePub
         if len(j.logger.logs)>0:
             msg+="\n***LOG MESSAGES***\n"
@@ -232,13 +240,13 @@ class ErrorConditionObject():
             v="%s"%v
             if k in ["re","q","jumpscale","pprint","qexec","jshell","Shell","__doc__","__file__","__name__","__package__","i","main","page"]:
                 return False
-            if v.find("<module")<>-1:
+            if v.find("<module")!=-1:
                 return False
-            if v.find("IPython")<>-1:
+            if v.find("IPython")!=-1:
                 return False
-            if v.find("<built-in function")<>-1:
+            if v.find("<built-in function")!=-1:
                 return False
-            if v.find("jumpscale.Shell")<>-1:
+            if v.find("jumpscale.Shell")!=-1:
                 return False
         except:
             return False
@@ -283,7 +291,7 @@ class ErrorConditionObject():
                         if nrlines>100:
                             return result
                 result += "  " + "============ LOCALS============\n"
-                for (k,v) in sorted(frame.f_locals.iteritems()):
+                for (k,v) in sorted(frame.f_locals.items()):
                     if self._filterLocals(k,v):
                         try:
                             result += "    %s : %s\n" % (str(k), str(v))
@@ -318,12 +326,12 @@ class ErrorConditionObject():
         
         """
         dd=copy.copy(self.__dict__)
-        if dd.has_key("_ckey"):
+        if "_ckey" in dd:
             dd.pop("_ckey")
-        if dd.has_key("id"):
+        if "id" in dd:
             dd.pop("id")
-        if dd.has_key("guid"):
+        if "guid" in dd:
             dd.pop("guid")
-        if dd.has_key("sguid"):
+        if "sguid" in dd:
             dd.pop("sguid")
         return j.base.byteprocessor.hashMd5(str(dd))

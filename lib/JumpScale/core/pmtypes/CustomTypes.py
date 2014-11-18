@@ -193,12 +193,12 @@ class Duration(BaseType):
 
     @staticmethod
     def check(value):
-        if isinstance(value, (int, long)):
+        if isinstance(value, int):
             if value == DURATION_INFINITE:
                 return True
             elif value >= 0:
                 return True
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             if DURATION_RE.match(value):
                 return True
         return False
@@ -221,7 +221,7 @@ class Duration(BaseType):
         @return: amount of seconds
         @rtype: int
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             return value
         m = DURATION_RE.match(value)
         if m:

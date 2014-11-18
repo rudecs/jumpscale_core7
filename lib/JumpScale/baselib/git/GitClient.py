@@ -76,11 +76,11 @@ class GitClient(object):
         # self.addFiles(result["N"])
 
     def addFiles(self, files=[]):
-        if files<>[]:
+        if files!=[]:
             self.repo.index.add(files)
 
     def removeFiles(self, files=[]):
-        if files<>[]:
+        if files!=[]:
             self.repo.index.remove(files)
 
     def pull(self):

@@ -2,8 +2,8 @@ import gevent
 
 from gevent import Timeout
 from gevent.queue import Queue
-from gevent_zeromq import zmq
-from utils import printInDebugMode
+from .gevent_zeromq import zmq
+from .utils import printInDebugMode
 
 
 class MessageServerClient(object):
@@ -194,7 +194,7 @@ Retrying to send message to %(address)s in %(interval)d seconds'''
 
         try:
             self._socket.send(message)
-        except Exception, e:
+        except Exception as e:
             self._disconnect()
             printInDebugMode('Couldn\'t send message, unexpected exception'
                              ' while sending to server: %s' % e)
@@ -206,13 +206,13 @@ Retrying to send message to %(address)s in %(interval)d seconds'''
 
         try:
             result = self._socket.recv()
-        except Timeout, timeoutException:
+        except Timeout as timeoutException:
             if timeoutException == timeout:
                 printInDebugMode('Couldn\'t send message, server response timed'
                                  ' out after %d seconds' % receiveTimeout)
 
             self._disconnect()
-        except Exception, e:
+        except Exception as e:
             printInDebugMode('Couldn\'t send message, unexpected exception'
                              ' while receiving response from server: %s' % e)
             self._disconnect()

@@ -10,10 +10,10 @@ from JumpScale.core.baseclasses import BaseEnumeration
 # import urllib
 # import requests
 # from requests.auth import HTTPBasicAuth
-import gitlab
+from . import gitlab
 import os
 
-from gitlab import Gitlab
+from .gitlab import Gitlab
 import JumpScale.baselib.git
 
 class GitlabInstance(Gitlab):
@@ -23,7 +23,7 @@ class GitlabInstance(Gitlab):
         id=0
         for key in j.application.config.getKeysFromPrefix("gitlabclient.server"):
             # key=key.replace("gitlabclient.server.","")
-            if key.find("name")<>-1:
+            if key.find("name")!=-1:
                 if j.application.config.get(key)==account:
                     key2=key.replace("gitlabclient.server.","")
                     id=key2.split(".")[0]
@@ -38,7 +38,7 @@ class GitlabInstance(Gitlab):
         login=j.application.config.get("%s.login"%prefix)
         passwd=j.application.config.get("%s.passwd"%prefix)
         self.passwd=passwd
-        if passwd<>"":
+        if passwd!="":
             
             Gitlab.__init__(self, self.addr)#, token=token)
             self.login(login, passwd)
@@ -81,7 +81,7 @@ class GitlabInstance(Gitlab):
 
         try:
             cl = j.clients.git.getClient(path, url, branchname=branch, cleandir=clean,login=self.loginName,passwd=self.passwd)
-        except Exception,e:
+        except Exception as e:
             if not j.system.fs.exists(path=path):
                 #init repo
                 j.system.fs.createDir(path)

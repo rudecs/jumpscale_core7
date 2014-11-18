@@ -47,7 +47,7 @@ class Transaction(object):
         dictionary={"descr":self.description,"errmsg":self.errormessage,\
                                                "resolmsg":self.resolutionmessage}        
         msg=""
-        for key in dictionary.keys():
+        for key in list(dictionary.keys()):
             msg+=j.console.formatMessage(str(dictionary[key]),key,withStar=True)+"\n"
         return msg
      

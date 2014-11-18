@@ -4,17 +4,17 @@ def Sentry():
         extra={}
         tb=eco.tb
 
-        if eco.__dict__.has_key("frames"):
+        if "frames" in eco.__dict__:
             frames=eco.frames
         else:
             frames=[]
-        if eco.backtrace<>"":
+        if eco.backtrace!="":
             extra["tb"]=eco.backtrace
 
-        if eco.backtraceDetailed<>"":
+        if eco.backtraceDetailed!="":
             extra["tb_detail"]=eco.backtraceDetailed
 
-        if hasattr(eco,"extra") and eco.extra<>None:
+        if hasattr(eco,"extra") and eco.extra!=None:
             extra["details"]=eco.extra
 
         extra["category"]=eco.category        
@@ -55,7 +55,7 @@ def Sentry():
                     return True
                 toignore=["errorhandling"]
                 for check in toignore:
-                    if modulename.find(check)<>-1:
+                    if modulename.find(check)!=-1:
                         return True
                 return False
                 
@@ -83,7 +83,7 @@ def Sentry():
                             modulename="appname:%s"%(j.application.appname)
                     if modulename.find("appname")==-1:
                         modulename="appname:%s / %s"%(j.application.appname,modulename)
-                except Exception,e:
+                except Exception as e:
                     modulename="appname:%s"%(j.application.appname)  
 
                 
@@ -109,8 +109,8 @@ def Sentry():
             data["server_name"]="g%s.n%s"%(j.application.whoAmI.gid,j.application.whoAmI.nid)  
             data["extra"]=extra
 
-            if tb<>None:
-                from stacks import iter_traceback_frames,get_stack_info
+            if tb!=None:
+                from .stacks import iter_traceback_frames,get_stack_info
                 frames=iter_traceback_frames(tb)
                 data.update({
                     'sentry.interfaces.Stacktrace': {
@@ -135,6 +135,6 @@ def Sentry():
 
             try:
                 r = requests.post(url2,data=json.dumps(data), headers=headers, timeout=1)
-            except Exception,e:  
+            except Exception as e:  
                 pass              
                 # print "COULD NOT SEND \n%s \nTO SENTRY.\nReason:%s"%(data,e)

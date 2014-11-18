@@ -20,7 +20,7 @@ class Synonym():
         self.addConfluenceLinkTags=addConfluenceLinkTags
         self.replaceExclude = replaceExclude
         self._markers=dict()
-        if simpleSearch<>"":
+        if simpleSearch!="":
             search=simpleSearch.replace("?","[ -_]?")  #match " " or "-" or "_"  one or 0 time  
             if addConfluenceLinkTags:
                 bracketMatchStart="(\[ *|)"
@@ -70,7 +70,7 @@ class Synonym():
         """
         Removes markers out of text and puts the original strings back
         """
-        for marker,replacement in self._markers.iteritems():
+        for marker,replacement in self._markers.items():
             marker = re.escape(marker)
             text=j.codetools.regex.replace(regexFind=marker,regexFindsubsetToReplace=marker,replaceWith=replacement,text=text)
         return text
@@ -89,7 +89,7 @@ class WordReplacer():
             
     def synonymsPrint(self):
         for syn in self.synonyms:
-            print syn
+            print(syn)
 
     def synonymAdd(self,name='', simpleSearch='', regexFind='', regexFindForReplace='', replaceWith='',replaceExclude='', addConfluenceLinkTags =False):
         """
@@ -127,11 +127,11 @@ class WordReplacer():
         txt=j.system.fs.fileGetContents(path)
         for line in txt.split("\n"):
             line=line.strip()
-            if line<>"" and line.find(":")<>-1:
+            if line!="" and line.find(":")!=-1:
                 if j.codetools.regex.match("^'",line):
                     #found line which is regex format
                     splitted=line.split("'")
-                    if len(splitted)<>4:
+                    if len(splitted)!=4:
                         raise RuntimeError("syntax error in synonym line (has to be 2 'regex' statements" % line)
                     syn=Synonym(replaceWith=splitted[2])
                     syn.setRegexSearch(regexFind=splitted[0],regexFindForReplace=splitted[1])

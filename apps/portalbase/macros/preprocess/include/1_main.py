@@ -29,7 +29,7 @@ def main(j, args, params,  tags, tasklet):
         else:
             #doc.preprocessor.errorTrap("include %s not found in %s" % (name,tags))
             msg = "**ERROR**: include %s not found in %s" % (name, tags)
-            print msg
+            print(msg)
             params.result = (msg, doc)
             return params
     else:
@@ -39,7 +39,7 @@ def main(j, args, params,  tags, tasklet):
         else:
             #doc.preprocessor.errorTrap("include %s not found in %s" % (name,tags))
             msg = "**ERROR**: include %s not found in %s" % (name, tags)
-            print msg
+            print(msg)
             params.result = (msg, doc)
             return params
 

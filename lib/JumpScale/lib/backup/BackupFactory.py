@@ -15,7 +15,7 @@ class BackupFactory:
         @param backupdomain is domain used in blobstor
         """
         name="%s_%s_%s_%s"%(backupname,blobstorAccount,blobstorNamespace,gitlabAccount)
-        if self._cache.has_key(name):
+        if name in self._cache:
             return self._cache[name]
         self._cache[name]= BackupClient(backupname=backupname,blobstorAccount=blobstorAccount,blobstorNamespace=blobstorNamespace, \
             gitlabAccount=gitlabAccount,compress=compress,servercheck=servercheck,fullcheck=fullcheck,storpath=storpath)
@@ -26,7 +26,7 @@ class BackupFactory:
         @param backupdomain is domain used in blobstor
         """
         name="%s_%s_%s_%s"%(backupname,"ledis_weedfs",blobstorNamespace,"")
-        if self._cache.has_key(name):
+        if name in self._cache:
             return self._cache[name]
         self._cache[name]= BlobStorClientFake(namespace=blobstorNamespace)
         return self._cache[name]

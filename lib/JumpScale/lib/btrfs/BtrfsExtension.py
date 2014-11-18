@@ -21,7 +21,7 @@ class BtrfsExtension(object):
         self.__listpattern = re.compile("^ID (?P<id>\d+).+?path (?P<name>.+)$", re.MULTILINE)
         
     def __btrfs(self, command, action, *args):
-        cmd = "%s %s %s %s" % (BASECMD, command, action, " ".join(map(lambda a: '"%s"' % a, args)))
+        cmd = "%s %s %s %s" % (BASECMD, command, action, " ".join(['"%s"' % a for a in args]))
         code, out, err = j.system.process.run(cmd, stopOnError=False)
         
         if code:

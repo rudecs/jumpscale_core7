@@ -20,10 +20,10 @@ class TextLineEditor():
         return len(self.lines)
         
     def existsBlock(self,blockname):
-        return self._higestblocknr.has_key(blockname)
+        return blockname in self._higestblocknr
     
     def getBlockNames(self):
-        return self._higestblocknr.keys()
+        return list(self._higestblocknr.keys())
     
     def matchBlocks(self,blockname,blockStartPatterns=['.*'],blockStartPatternsNegative=[],blockStopPatterns=[],blockStopPatternsNegative=[],blockfilter=""):
         """
@@ -37,8 +37,8 @@ class TextLineEditor():
         """
 
         #check types of input
-        if type(blockStartPatterns).__name__<>'list' or type(blockStartPatternsNegative).__name__<>'list' or type(blockStopPatterns).__name__<>'list' \
-            or type(blockStopPatternsNegative).__name__<>'list':
+        if type(blockStartPatterns).__name__!='list' or type(blockStartPatternsNegative).__name__!='list' or type(blockStopPatterns).__name__!='list' \
+            or type(blockStopPatternsNegative).__name__!='list':
             raise RuntimeError("Blockstartpatterns,blockStartPatternsNegative,blockStopPatterns,blockStopPatternsNegative has to be of type list")
                                           
         state="scan"
@@ -81,14 +81,14 @@ class TextLineEditor():
             lineObject.blocknr=self.getHighestBlockNr(blockname)
 
     def getNextBlockNr(self,name):
-        if not self._higestblocknr.has_key(name):
+        if name not in self._higestblocknr:
             self._higestblocknr[name]=1
         else:
             self._higestblocknr[name]+=1
         return self._higestblocknr[name]
 
     def getHighestBlockNr(self,name):
-        if not self._higestblocknr.has_key(name):
+        if name not in self._higestblocknr:
             raise RuntimeError("Cound not find block with name %s" % name)
         else:
             return self._higestblocknr[name]
@@ -120,9 +120,9 @@ class TextLineEditor():
         else:
             self.getBlock(blockname,blocknr) #just to check if block exists
         if blocknr==None:
-            self.lines=[line for line in self.lines if (line.block<>blockname)]
+            self.lines=[line for line in self.lines if (line.block!=blockname)]
         else:
-            self.lines=[line for line in self.lines if (line.block<>blockname and line.blocknr==blocknr)]
+            self.lines=[line for line in self.lines if (line.block!=blockname and line.blocknr==blocknr)]
 
         
         
@@ -139,7 +139,7 @@ class TextLineEditor():
         """
         set block based on startline with new content
         """
-        if text[-1]<>"\n":
+        if text[-1]!="\n":
             text+="\n"
         state="scan"
         lastBlockNameNr=""
@@ -160,7 +160,7 @@ class TextLineEditor():
                 nrlines=len(self.lines)
                 lastx=x
 
-            if state=="found" and lastBlockNameNr<>lastBlockNameNr:
+            if state=="found" and lastBlockNameNr!=lastBlockNameNr:
                 #end of block
                 break
 
@@ -220,7 +220,7 @@ class LTLine():
         return self.__str__()
     
     def __str__(self):
-        if self.block<>"":
+        if self.block!="":
             text="+ %s %s: %s\n" % (self.block,self.blocknr,self.line)
             return text
         else:

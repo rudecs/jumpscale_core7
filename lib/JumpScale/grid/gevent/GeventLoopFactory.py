@@ -1,6 +1,6 @@
 from JumpScale import j
 
-from GeventLoop import GeventLoop
+from .GeventLoop import GeventLoop
 import time
 
 

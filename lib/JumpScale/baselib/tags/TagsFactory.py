@@ -1,7 +1,7 @@
 
 
 from JumpScale import j
-from Tags import Tags
+from .Tags import Tags
 
 
 class TagsFactory(object):

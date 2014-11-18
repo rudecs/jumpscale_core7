@@ -55,15 +55,15 @@ class GeventWSTransport(Transport):
                     break
                 try:
                     rcv = requests.post(self.url, data=data2, headers=headers) #, timeout=timeout)
-                except Exception,e:
-                    if str(e).find("Connection refused")<>-1:
-                        print "retry connection to %s"%self.url
+                except Exception as e:
+                    if str(e).find("Connection refused")!=-1:
+                        print("retry connection to %s"%self.url)
                         time.sleep(0.1)
                     else:
                         raise RuntimeError("error to send msg to %s,error was %s"%(self.url,e))
 
         else:
-            print "NO RETRY ON REQUEST WS TRANSPORT"
+            print("NO RETRY ON REQUEST WS TRANSPORT")
             rcv = requests.post(self.url, data=data2, headers=headers,timeout=timeout)
 
 

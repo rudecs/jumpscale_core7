@@ -20,7 +20,7 @@ class OSISCMDS(object):
             oi = self._getOsisInstanceForCat("system", "node")
             return oi.auth.authenticate(oi, 'auth', name, passwd, session)
 
-        if namespace<>"system" or categoryname<>"user":
+        if namespace!="system" or categoryname!="user":
             raise RuntimeError("Cannot process, only supported for system/user namespace")
         oi = self._getOsisInstanceForCat("system", "user")
 
@@ -41,7 +41,7 @@ class OSISCMDS(object):
 
     def _doAuth(self, namespace, categoryname, session):
         oi = self._getOsisInstanceForCat(namespace, categoryname)
-        if hasattr(oi, 'auth') and oi.auth<>None:
+        if hasattr(oi, 'auth') and oi.auth!=None:
             if oi.auth.authenticate(oi,"get",session.user,session.passwd, session=session)==False:
                 raise RuntimeError("Authentication error on get %s_%s for user %s"%(namespace,categoryname,session.user))
         return oi
@@ -118,7 +118,7 @@ class OSISCMDS(object):
                     if rediscl==None:
                         rediscl = j.db.keyvaluestore.getRedisStore(namespace='', host='127.0.0.1', port=7771)
                     rediscl.checkChangeLog()
-                except Exception, e:
+                except Exception as e:
                     j.errorconditionhandler.processPythonExceptionObject(e)
             gevent.sleep(2)
 
@@ -132,7 +132,7 @@ class OSISCMDS(object):
                 for cat in self.listNamespaceCategories(ns):
                     try:
                         self._rebuildindex(ns, cat, session)
-                    except Exception, e:
+                    except Exception as e:
                         j.errorconditionhandler.raiseOperationalWarning("Did not rebuild index for category '%s' in namespace '%s'. Error was: %s" % (cat, ns, e))
         else:
             self._rebuildindex(namespace, categoryname, session)
@@ -150,7 +150,7 @@ class OSISCMDS(object):
 
     def getStatus(self, session=None):
         status = dict()
-        for conntype, conn in self.dbconnections.iteritems():
+        for conntype, conn in self.dbconnections.items():
             if conntype.startswith('mongodb'):
                 status['mongodb'] = conn.alive()
             elif conntype.startswith('influxdb'):
@@ -172,7 +172,7 @@ class OSISCMDS(object):
             category="osis.valueerror")
 
     def _authenticateAdmin(self,session=None,user=None,passwd=None, die=True):
-        if session<>None:
+        if session!=None:
             user=session.user
             passwd=session.passwd
         
@@ -197,7 +197,7 @@ class OSISCMDS(object):
         """
         @return True
         """
-        if session<>None:
+        if session!=None:
             self._authenticateAdmin(session)
         #deal with incrementName
         if name == None:
@@ -211,7 +211,7 @@ class OSISCMDS(object):
 
         #namespace does not exist yet
         j.system.fs.createDir(j.system.fs.joinPaths(self.path, name))
-        if template <> None:
+        if template != None:
             j.system.fs.copyDirTree(j.system.fs.joinPaths(self.path, "_%s" % template), \
                 j.system.fs.joinPaths(self.path, name), overwriteFiles=False)
 
@@ -267,7 +267,7 @@ class OSISCMDS(object):
     def deleteNamespaceCategory(self, namespacename, name,removecode=False,session=None):
         """
         """
-        if session<>None:
+        if session!=None:
             self._authenticateAdmin(session)
         namespacepath = j.system.fs.joinPaths(self.path, namespacename)
         if not j.system.fs.exists(path=namespacepath):
@@ -285,7 +285,7 @@ class OSISCMDS(object):
     def createNamespaceCategory(self, namespacename, name,session=None):
         """
         """
-        if session<>None:
+        if session!=None:
             self._authenticateAdmin(session)
         namespacepath = j.system.fs.joinPaths(self.path, namespacename)
         if not j.system.fs.exists(path=namespacepath):
@@ -309,7 +309,7 @@ class OSISCMDS(object):
                 templatespath_category = j.system.fs.joinPaths(templatespath, "category")
                 namespacepath = j.system.fs.joinPaths(path, namespacename)
                 j.system.fs.copyDirTree(templatespath_namespace, namespacepath, overwriteFiles=False)
-                if namespacename[0] <> "_" and j.system.fs.exists(path=j.system.fs.joinPaths(namespacepath, ".parentInTemplate")):  
+                if namespacename[0] != "_" and j.system.fs.exists(path=j.system.fs.joinPaths(namespacepath, ".parentInTemplate")):  
                     # check if parent is coming from template
                     j.system.fs.remove(j.system.fs.joinPaths(namespacepath, "OSIS_parent.py"))
                     j.system.fs.remove(j.system.fs.joinPaths(namespacepath, "OSIS_parent.pyc"))
@@ -321,7 +321,7 @@ class OSISCMDS(object):
 
     def init(self, path="",overwriteImplementation=False, namespacename=None, template=None):
         
-        if path <> "":
+        if path != "":
             self.path = path
         else:
             path=self.path
@@ -374,7 +374,7 @@ class OSISCMDS(object):
 
 
                 classs = j.core.osis._loadModuleClass(implpath)
-                if namespacename[0] <> "_":
+                if namespacename[0] != "_":
                     osis = classs(self.dbconnections)
                     osis.init(catpath,namespace=namespacename, categoryname=catname)
                     key = "%s_%s" % (namespacename, catname)

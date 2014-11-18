@@ -100,7 +100,7 @@ class NumTools:
         result = []
         for x in range(len(dictOfArrays[keys()[0]])):
             result[x] = 0.0
-            for key in dictOfArrays.keys():
+            for key in list(dictOfArrays.keys()):
                 result[x] += dictOfArrays[key][x]
         return result
 
@@ -109,14 +109,14 @@ class NumTools:
         format input {key:{key:[,,,]},key:{key:[,,,]},...}
         """
         result = {}
-        key1 = data.keys()[0]  # first element key
-        key2 = data[key1].keys()[0]
+        key1 = list(data.keys())[0]  # first element key
+        key2 = list(data[key1].keys())[0]
         nrX = len(data[key1][key2])
 
         for x in range(nrX):
-            for key in data.keys():  # the keys we want to ignore (collapse)
+            for key in list(data.keys()):  # the keys we want to ignore (collapse)
                 datasub = data[key]
-                for keysub in datasub.keys():
+                for keysub in list(datasub.keys()):
                     if keysub not in result:
                         result[keysub] = []
                         for y in range(0, nrX):
@@ -139,7 +139,7 @@ class NumTools:
             if j.system.fs.exists(path):
                 ini = j.tools.inifile.open(path)
                 if ini.checkSection("eur"):
-                    for cur in ini.getSectionAsDict("eur").keys():
+                    for cur in list(ini.getSectionAsDict("eur").keys()):
                         self.currencies[cur] = ini.getFloatValue("eur", cur)
 
     def text2val(self, value):
@@ -157,7 +157,7 @@ class NumTools:
             value = value.replace("eur", "").strip()
         self._initCurrencies()
         cur = 1.0
-        for cur2 in self.currencies.keys():
+        for cur2 in list(self.currencies.keys()):
             if value.find(cur2) != -1:
                 value = value.replace(cur2, "").strip()
                 cur = self.currencies[cur2]

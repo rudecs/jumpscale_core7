@@ -9,7 +9,7 @@ from JumpScale.core.base.idgenerator.IDGenerator import IDGenerator
 class Empty():
     pass
 
-if not j.__dict__.has_key("base"):
+if "base" not in j.__dict__:
     j.base=Empty()
 
     

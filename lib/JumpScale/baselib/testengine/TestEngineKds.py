@@ -24,17 +24,17 @@ class Test():
     def execute(self,testrunname,debug=False):
 
         def testDebug(code):
-            return self.db.source[name].find("import ipdb")<>-1 or self.db.source[name].find("import embed")<>-1
-        print "\n##TEST:%s %s"%(self.db.organization,self.db.name)
+            return self.db.source[name].find("import ipdb")!=-1 or self.db.source[name].find("import embed")!=-1
+        print("\n##TEST:%s %s"%(self.db.organization,self.db.name))
         self.testclass.setUp()
-        print "setup"
+        print("setup")
         
-        print self.db.path
+        print(self.db.path)
         for test in inspect.getmembers(self.testclass):
             if str(test[0]).find("test_")==0:
                 #found test
                 name=test[0][5:]
-                print "execute test:%-30s"%name
+                print("execute test:%-30s"%name)
 
                 out=FileLikeStreamObject()
 
@@ -45,11 +45,11 @@ class Test():
                 
                 try:
                     self.db.result=test[1]()
-                except Exception,e:
+                except Exception as e:
                     sys.stdout =j.tools.testengineKds.sysstdout
                     sys.stderr =j.tools.testengineKds.sysstderr  
-                    print "ERROR IN TEST:"
-                    print out.out
+                    print("ERROR IN TEST:")
+                    print(out.out)
                     eco=j.errorconditionhandler.parsePythonErrorObject(e)
                     eco.tags="testrunner testrun:%s org:%s testgroup:%s testname:%s testpath:%s" % (self.db.testrun,\
                             self.db.organization, self.db.name,name,self.db.path)
@@ -58,17 +58,17 @@ class Test():
                         sys.exit()
                 sys.stdout =j.tools.testengineKds.sysstdout
                 sys.stderr =j.tools.testengineKds.sysstderr
-                print "ok"
+                print("ok")
                 self.db.output[name]=out.out
         try:
             self.testclass.tearDown()
-        except Exception,e:
+        except Exception as e:
             pass
 
     def __str__(self):
         out=""
-        for key,val in self.db.__dict__.iteritems():
-            if key[0]<>"_" and key not in ["source","output"]:
+        for key,val in self.db.__dict__.items():
+            if key[0]!="_" and key not in ["source","output"]:
                 out+="%-35s :  %s\n"%(key,val)
         items=out.split("\n")
         items.sort()
@@ -98,7 +98,7 @@ class TestEngineKds():
             testrunname=j.base.time.getLocalTimeHRForFilesystem()
 
         for path in self.paths:
-            print "scan dir: %s"%path
+            print("scan dir: %s"%path)
             for item in j.system.fs.listFilesInDir(path,filter="*__test.py",recursive=True):
                 testdb=self.osis.new()
                 name=j.system.fs.getBaseName(item).replace("__test.py","").lower()
@@ -133,21 +133,21 @@ class TestEngineKds():
                 methods=j.codetools.regex.extractBlocks(C,["def test"])
                 for method in methods:
                     methodname=method.split("\n")[0][len("    def test_"):].split("(")[0]
-                    methodsource="\n".join([item.strip() for item in method.split("\n")[1:] if item.strip()<>""])
+                    methodsource="\n".join([item.strip() for item in method.split("\n")[1:] if item.strip()!=""])
                     test.db.source[methodname]=methodsource
 
                 test.testclass=testclass
                 self.osis.set(test.db)
                 self.tests.append(test)
 
-        print "all tests loaded in osis"
+        print("all tests loaded in osis")
 
         priority={}
         for test in self.tests:
-            if not priority.has_key(test.db.priority):
+            if test.db.priority not in priority:
                 priority[test.db.priority]=[]    
             priority[test.db.priority].append(test)
-        prio=priority.keys()
+        prio=list(priority.keys())
         prio.sort()
         for key in prio:
             for test in priority[key]:

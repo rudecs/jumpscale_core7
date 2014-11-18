@@ -5,7 +5,7 @@ import struct
 
 from gevent import Greenlet, Timeout
 from gevent.queue import Queue
-from gevent_zeromq import zmq
+from .gevent_zeromq import zmq
 from JumpScale.core.InitBase import *
 from zmj.core.error import ZMQError
 import time
@@ -111,7 +111,7 @@ class MessageForwarder(object):
         self._log('Disconnected from %s' % self._address)
 
     def _log(self, message):
-        print message
+        print(message)
 
     def _logForwardFailure(self, attempts, interval):
         self._log('''\
@@ -208,7 +208,7 @@ class MessageServer(object):
         self._statsChanged = True
 
     def _log(self, message):
-        print message
+        print(message)
 
     def _logGreenletError(self, greenlet):
         self._log(greenlet.exception)
@@ -219,7 +219,7 @@ class MessageServer(object):
 
         content = "source/id/level: %s/%s/%s\n" % (eco.getSource(), eco.guid, eco.level)
         content += "error: %s\n" % eco.errormessage
-        print content
+        print(content)
 
         j.errorconditionhandler.db.store(eco)
 

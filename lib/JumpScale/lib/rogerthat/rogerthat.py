@@ -1,6 +1,6 @@
 from JumpScale import j
 import ujson
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 class RogerthatFactory(object):
 
@@ -26,8 +26,8 @@ class Rogerthat(object):
         data = {'id': j.base.idgenerator.generateGUID(), 'method': 'messaging.send', 'params': params}
         json_data = ujson.dumps(data)
         headers = {'Content-Type': 'application/json-rpc; charset=utf-8', 'X-Nuntiuz-API-key': self._api_key}
-        request = urllib2.Request(self._url, json_data, headers)
-        response = urllib2.urlopen(request)
+        request = urllib.request.Request(self._url, json_data, headers)
+        response = urllib.request.urlopen(request)
         if response.getcode() == 200:
             result = ujson.loads(response.read())
             return result

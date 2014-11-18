@@ -32,7 +32,7 @@ class TCPHATransport(Transport):
     def connect(self, sessionid):
         if self._client:
             self._client.close()
-        for attempt in xrange(2):
+        for attempt in range(2):
             for connection in sorted(self._connections, key=lambda c: c[-1]):
                 try:
                     if j.system.net.tcpPortConnectionTest(*connection[:2]):
@@ -44,8 +44,8 @@ class TCPHATransport(Transport):
                         self._connection = connection
                         self._client = client
                         return
-                except Exception, e:
-                    print "Error occured %s" % e
+                except Exception as e:
+                    print("Error occured %s" % e)
                     pass # invalidate the client
                 if self._client:
                     self._client.close()

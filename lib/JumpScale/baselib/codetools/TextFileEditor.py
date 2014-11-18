@@ -1,6 +1,6 @@
 from JumpScale import j
-from TextLineEditor import TextLineEditor
-from TextCharEditor import TextCharEditor
+from .TextLineEditor import TextLineEditor
+from .TextCharEditor import TextCharEditor
 
         
 class TextFileEditor:
@@ -29,7 +29,7 @@ class TextFileEditor:
         """
         if not self.content:
             return False        
-        return j.codetools.regex.findOne(pattern,self.content)<>""
+        return j.codetools.regex.findOne(pattern,self.content)!=""
                 
     
     def find1Line(self,includes="",excludes=""):
@@ -128,10 +128,10 @@ class TextFileEditor:
         if not self.content:
             self.content = "%s" % line
         else:
-            if self.content[-1]<>"\n":
+            if self.content[-1]!="\n":
                 self.content+="\n"
             self.content+="%s" %line
-            if self.content[-1]<>"\n":
+            if self.content[-1]!="\n":
                 self.content+="\n"
 
     def setSection(self,sectionName,content):
@@ -196,14 +196,14 @@ class TextFileEditor:
         out=""
         done=False
         for line in self.content.split("\n"):
-            if reset  and done==False and line.find(tofind)<>-1 and ignoreRegex<>None:
+            if reset  and done==False and line.find(tofind)!=-1 and ignoreRegex!=None:
                 #found right line
                 line=j.codetools.regex.replace(ignoreRegex, ignoreRegex, "", line).rstrip()
                 line=line+add
-                print "CH:%s" % line
+                print("CH:%s" % line)
                 done=True
-            if done==False and line.find(tofind)<>-1 and  \
-               (ignoreRegex<>None and not j.codetools.regex.match(ignoreRegex,line)):
+            if done==False and line.find(tofind)!=-1 and  \
+               (ignoreRegex!=None and not j.codetools.regex.match(ignoreRegex,line)):
                 #found line we can change
                 line=line.replace(tofind,tofind+add)
                 done=True

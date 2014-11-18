@@ -14,7 +14,7 @@ class test_complextype_project(OsisBaseObject,test_complextype_project_osismodel
     def __init__(self, ddict={}):
         # OsisBaseObject.__init__(self)
         test_complextype_project_osismodelbase.__init__(self)
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
 
     def getUniqueKey(self):

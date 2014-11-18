@@ -16,11 +16,11 @@ class CodeManager():
     def setusers(self,config):
         for line in config.split("\n"):
             line=line.strip()
-            if line<>"":
-                if line[0]<>"#":
-                    if line.find("#")<>-1:
+            if line!="":
+                if line[0]!="#":
+                    if line.find("#")!=-1:
                         line=line.split("#")[0]
-                    if line.find(":")<>-1:
+                    if line.find(":")!=-1:
                         userid,aliases=line.split(":")
                         self.users[userid]=userid
                         aliases=aliases.split(",")
@@ -30,21 +30,21 @@ class CodeManager():
     def setgroups(self,config):
         for line in config.split("\n"):
             line=line.strip()
-            if line<>"":
-                if line[0]<>"#":
-                    if line.find("#")<>-1:
+            if line!="":
+                if line[0]!="#":
+                    if line.find("#")!=-1:
                         line=line.split("#")[0]
-                    if line.find(":")<>-1:
+                    if line.find(":")!=-1:
                         groupid,grouptext=line.split(":")
                         groups=grouptext.split(",")
                         groups=[group.lower() for group in groups]
                         self.groups[groupid.lower()]=groups
         #resolve groups in groups
         for i in range(5):
-            for groupid in self.groups.keys():
+            for groupid in list(self.groups.keys()):
                 result=[]
                 for item in self.groups[groupid]:
-                    if self.groups.has_key(item):
+                    if item in self.groups:
                         result.extend(self.groups[item])
                     else:
                         result.append(item)
@@ -53,7 +53,7 @@ class CodeManager():
                             
         
     def getUserId(self,username):
-        if self.users.has_key(username):
+        if username in self.users:
             return self.users[username]
         else:
             return False
@@ -82,7 +82,7 @@ class CodeManager():
         for pathItem in files:
             if not self._pathIgnoreCheck(pathItem):
                 path2=pathItem.replace(path,"")
-                print "parse %s" % path2
+                print("parse %s" % path2)
                 if not path2=="/apps/incubaiddevelopmentprocess/appserver/service_developmentprocess/extensions/codeparser/Parser.py":
                     if path2[0]=="/":
                         path3=path2[1:]
@@ -102,7 +102,7 @@ class CodeManagerFile():
         self.codemanager=codemanager
 
     def process(self):    
-        if self.code.strip()<>"":
+        if self.code.strip()!="":
             self._findUsers(code,path3,pathItem)
             self._findStories(code,path3,pathItem)  
             self._findScrumteams(code,path3,pathItem)   
@@ -118,7 +118,7 @@ class CodeManagerFile():
             maxitems=10000000000
         def process(arg,line):
             line=line.split(item)[1].strip()            
-            if line.find("(")<>-1:
+            if line.find("(")!=-1:
                 line=line.split("(")[0].strip()                
             result.append(line)
             return ""   
@@ -153,7 +153,7 @@ class CodeManagerFile():
         else:
             try:
                 result=int(result)
-            except Exception,e:
+            except Exception as e:
                 raise RuntimeError("Could not parse if, error:%s. \nPath = %s" %(e,path))
             
             
@@ -170,7 +170,7 @@ class CodeManagerFile():
         modelobj.timestr=timestring
         modelobj.time=0
         for item in timeItems:
-            if item<>"":
+            if item!="":
                 if item.lower()[0]=="a":
                     modelobj.time_architecture=int(item.lower().replace("a",""))
                     modelobj.time+=modelobj.time_architecture
@@ -190,7 +190,7 @@ class CodeManagerFile():
 
     def _parseTaskInfo(self,storyTaskModelObject,info):
         for item in info.split(" "):
-            if item<>"":
+            if item!="":
                 if item.lower()[0]=="s":
                     #story
                     storyTaskModelObject.storyid=int(item.lower().replace("s",""))
@@ -203,7 +203,7 @@ class CodeManagerFile():
 
     def _parseStoryInfo(self,storyTaskModelObject,info):
         for item in info.split(" "):
-            if item<>"":
+            if item!="":
                 if item.lower()[0]=="s":
                     #story
                     storyTaskModelObject.id=int(item.lower().replace("s",""))
@@ -232,15 +232,15 @@ class CodeManagerFile():
         
         for item in items:
             item=item.strip()
-            if self.groups.has_key(item):
+            if item in self.groups:
                 for user in self.groups[item]:
                     users.append(user)
-            if self.users.has_key(item):
+            if item in self.users:
                 users.append(item)
             #get aliases
             usersout=[]
             for user in users:
-                if self.users.has_key(user):
+                if user in self.users:
                     if self.users[user] not in usersout:
                         usersout.append(self.users[user])        
         return text,usersout
@@ -281,7 +281,7 @@ class CodeManagerFile():
                         state="endofmeta"
                         timeitem=""
                         #raise RuntimeError("Time item match failed for text %s" % text)
-                elif item.find(":")<>-1:
+                elif item.find(":")!=-1:
                     tags+="%s "%item
                 else:
                     descr+=item+" "
@@ -299,7 +299,7 @@ class CodeManagerFile():
     def _findStories(self,text,path,fullPath):
         found=j.codetools.regex.extractBlocks(text,includeMatchingLine=False,blockStartPatterns=["\"\"\""]) 
         for item in found:
-            if item.lower().find("@storydef")<>-1:
+            if item.lower().find("@storydef")!=-1:
                 #found a story  
                 lineFull=self.findLine(item,"@story") 
                 id1=self.addUniqueId(lineFull,fullPath,ttype="story")                
@@ -334,7 +334,7 @@ class CodeManagerFile():
     def _findScrumteams(self,text,path,fullPath):
         found=j.codetools.regex.extractBlocks(text,includeMatchingLine=False,blockStartPatterns=["\"\"\""]) 
         for item in found:
-            if item.lower().find("@scrumteamdef")<>-1:
+            if item.lower().find("@scrumteamdef")!=-1:
                 #found a story      
                 lineFull=self.findLine(item,"@scrumteamdef") 
                 id1=self.addUniqueId(lineFull,fullPath,ttype="scrumteam")
@@ -352,7 +352,7 @@ class CodeManagerFile():
     def _findSprints(self,text,path,fullPath):
         found=j.codetools.regex.extractBlocks(text,includeMatchingLine=False,blockStartPatterns=["\"\"\""]) 
         for item in found:
-            if item.lower().find("@sprintdef")<>-1:
+            if item.lower().find("@sprintdef")!=-1:
                 #found a story      
                 lineFull=self.findLine(item,"@sprintdef") 
                 id1=self.addUniqueId(lineFull,fullPath,ttype="sprint")
@@ -399,7 +399,7 @@ class CodeManagerFile():
     def _findRoadmapitems(self,text,path,fullPath):
         found=j.codetools.regex.extractBlocks(text,includeMatchingLine=False,blockStartPatterns=["\"\"\""]) 
         for item in found:
-            if item.lower().find("@roadmapdef")<>-1:
+            if item.lower().find("@roadmapdef")!=-1:
                 #found a story      
                 lineFull=self.findLine(item,"@roadmapdef")                 
                 text2=item
@@ -444,7 +444,7 @@ class CodeManagerFile():
     def _findUsers(self,text,path,fullPath):
         found=j.codetools.regex.extractBlocks(text,includeMatchingLine=False,blockStartPatterns=["\"\"\""]) 
         for item in found:
-            if item.lower().find("@userdef")<>-1:       
+            if item.lower().find("@userdef")!=-1:       
                 lineFull=self.findLine(item,"@userdef") 
                 id1=self.addUniqueId(lineFull,fullPath,ttype="user")
                 text2=item
@@ -464,7 +464,7 @@ class CodeManagerFile():
     def _findGroups(self,text,path,fullPath):
         found=j.codetools.regex.extractBlocks(text,includeMatchingLine=False,blockStartPatterns=["\"\"\""]) 
         for item in found:
-            if item.lower().find("@groupdef")<>-1:      
+            if item.lower().find("@groupdef")!=-1:      
                 lineFull=self.findLine(item,"@groupdef") 
                 id1=self.addUniqueId(lineFull,fullPath,ttype="group")
                 text2=item
@@ -479,7 +479,7 @@ class CodeManagerFile():
                 obj.model.email=email           
                 
     def _descrToDescrAndRemarks(self,text):
-        if text.find("=======")<>-1:
+        if text.find("=======")!=-1:
             out=""
             descr=""
             intdescr=""
@@ -490,7 +490,7 @@ class CodeManagerFile():
                     descr+=line+"\n"
                 if state=="int":
                     intdescr+=line+"\n"
-                if line.find("======")<>-1:
+                if line.find("======")!=-1:
                     state="int"            
             return descr,intdescr
         else:
@@ -506,7 +506,7 @@ class CodeManagerFile():
         text=text.replace(":","")
         text=text.replace(";","")
         text=text.replace("  "," ")
-        if text<>"" and text[-1]==" ":
+        if text!="" and text[-1]==" ":
             text=text[:-1]
         text=text.replace("-","")
         text=text.replace("_","")
@@ -520,7 +520,7 @@ class CodeManagerFile():
         nr=0
         lines=text.split("\n")
         for line in lines:
-            if line.find(tofind)<>-1:
+            if line.find(tofind)!=-1:
                 if nr-nrabove<0:
                     nrstart=0
                 else:
@@ -552,7 +552,7 @@ class CodeManagerFile():
             for variant in variants:
                 if line.strip().find(variant)==0:
                     return variant
-        if text.lower().find("@todo")<>-1:
+        if text.lower().find("@todo")!=-1:
             lines=j.codetools.regex.findAll("@todo.*",text)
             for line in lines:
                 self.addUniqueId(line,fullPath,ttype="todo")
@@ -569,7 +569,7 @@ class CodeManagerFile():
                 obj.model.context=self._getLinesAround(fullPath,line,10,20)
 
                 obj.model.descrshort=self.shortenDescr(descr)
-                print "tasktext:%s" % line
+                print("tasktext:%s" % line)
                 #print "infotext:%s" % infotext
                 self._parseTaskInfo(obj.model,infotext)     
                 self.parseTimeInfo(timetext,obj.model,defaults=[0,1,0,1,0])
@@ -580,7 +580,7 @@ class CodeManagerFile():
         linenr=0
         for line in self.code.split("\n"):
             linenr+=1
-            if line.find(text)<>-1:
+            if line.find(text)!=-1:
                 return linenr
         else:
             return False

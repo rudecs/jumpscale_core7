@@ -22,7 +22,7 @@ def printable_out(str_in):
     str_in = str_in.replace(STRIP_ASCII_CHAR, '')
 
     # In general
-    str_out = filter(lambda x: x in string.printable, str_in)
+    str_out = [x for x in str_in if x in string.printable]
     return str_out
 
 class Router(object):
@@ -320,7 +320,7 @@ def main():
         R1 = Router(hostname, logfile='C:\\Barik\\MyPythonWinProject\\SyslogAutomation\\TEST\\Log1.log')
         password = Localhost1.get_rsa_token()
         out = R1.login(login_cmd, username, password, login_expect)
-        print repr(R1.exec_cmd('show clock'))
+        print(repr(R1.exec_cmd('show clock')))
     R1.logout()
 
 if __name__ == '__main__':

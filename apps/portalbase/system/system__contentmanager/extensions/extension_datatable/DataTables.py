@@ -106,7 +106,7 @@ class DataTables():
         #sort
         sort = dict()
         if kwargs['iSortCol_0']:
-            for i in xrange(int(kwargs['iSortingCols'])):
+            for i in range(int(kwargs['iSortingCols'])):
                 colidx = kwargs['iSortCol_%s' % i]
                 key = 'bSortable_%s' % colidx
                 if kwargs[key] == 'true':
@@ -115,7 +115,7 @@ class DataTables():
 
         #filters
         partials = dict()
-        for x in xrange(len(fieldids)):
+        for x in range(len(fieldids)):
             svalue = kwargs.get('sSearch_%s' % x)
             if kwargs['bSearchable_%s' % x] == 'true' and svalue:
                 fieldname = fieldids[x]
@@ -131,7 +131,7 @@ class DataTables():
             nativequery.setdefault('query', {}).setdefault('bool', {}).setdefault('must', [])
             nativequery.setdefault('query', {}).setdefault('bool', {}).setdefault('should', [])
             for idname in fieldids:
-                if isinstance(getattr(dummyobj, idname, None), basestring):
+                if isinstance(getattr(dummyobj, idname, None), str):
                     nativequery['query']['bool']['should'].append({'wildcard': {idname: '*%s*' % kwargs['sSearch'].lower()}})
             nativequery
 

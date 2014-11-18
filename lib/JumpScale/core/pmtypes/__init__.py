@@ -53,7 +53,7 @@ def register_types():
         #functions,...)
         #Using names 'classname' and 'class_', although not all discovered
         #attributes are classes... This will be a first discriminator though
-        for class_ in mod.__dict__.itervalues():
+        for class_ in mod.__dict__.values():
             #Check whether it's a class defined in our module (not imported)
             if inspect.isclass(class_) and inspect.getmodule(class_) is mod:
                 #Fail on duplicate names
@@ -69,7 +69,7 @@ def register_types():
     #This is similar to _register_types_from_module
     def _register_generic_types_from_module(mod, base):
         import inspect
-        for function in mod.__dict__.itervalues():
+        for function in mod.__dict__.values():
             if inspect.isfunction(function) and inspect.getmodule(function) is mod:
                 if hasattr(function, 'qtypename'):
                     if hasattr(base, function.qtypename):

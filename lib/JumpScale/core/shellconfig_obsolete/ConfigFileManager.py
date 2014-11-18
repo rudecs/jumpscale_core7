@@ -1,6 +1,7 @@
 
 from JumpScale import j
 import os
+import collections
 
 
 class ParamDetail:
@@ -59,7 +60,7 @@ class ConfigFileManager():
             if yesno==False:
                 #mistakes in config, ask which line
                 nr=j.console.askInteger("Which line is not correct?")
-                if params2.has_key(nr):
+                if nr in params2:
                     parameterName=params2[nr].name
                     newvalue= j.console.askString("Give appropriate new value for parameter %s" % parameterName)
                     cfg.setParam(section,parameterName,newvalue)
@@ -129,7 +130,7 @@ class ConfigFileManager():
         maincfg=self._getConfigFile()
         maincfg.addSection(section)
         if maincfg.checkParam(section,paramName)==False or maincfg.getValue(section,paramName)=="" or forceAsk:
-            if defaultValue<>"":
+            if defaultValue!="":
                 description2= " (default value: %s)" % defaultValue
             else:
                 description2=""
@@ -137,7 +138,7 @@ class ConfigFileManager():
                 description="Please provide input for parameter %s in section %s in configuration %s. %s" % (paramName,section,configType, description2)
             else:
                 description="%s%s" % (description,description2)
-            if forceDefaultValue==True and defaultValue<>"":
+            if forceDefaultValue==True and defaultValue!="":
                 value= defaultValue
             if forceDefaultValue==True and defaultValue==None:
                 value="*NONE*"
@@ -195,7 +196,7 @@ class ConfigFileManager():
         sections=cfg.getSections()
 
         if sort:
-            if callable(sort):
+            if isinstance(sort, collections.Callable):
                 #Custom sort method
                 sections = sort(sections)
             else:

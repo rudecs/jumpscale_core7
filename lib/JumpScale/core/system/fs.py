@@ -9,7 +9,7 @@ import shutil
 import errno
 import tempfile
 import codecs
-import cPickle as pickle
+import pickle as pickle
 import stat
 from stat import ST_MTIME
 
@@ -18,8 +18,8 @@ from stat import ST_MTIME
 
 
 from JumpScale import j
-import JumpScale.baselib.codetools #requirement for parsePath
-from text import Text
+# import JumpScale.baselib.codetools #requirement for parsePath
+from .text import Text
 
 toStr = Text.toStr
 #from JumpScale.core.decorators import deprecated
@@ -64,7 +64,7 @@ def lock(lockname, locktimeout=60, reentry=False):
     j.logger.log('Lock with name: %s'% lockname,6)
     try:
         result = lock_(lockname, locktimeout, reentry)
-    except Exception, e:
+    except Exception as e:
         raise LockException(innerException=e)
     else:
         if not result:
@@ -95,7 +95,7 @@ def lock_(lockname, locktimeout=60, reentry=False):
         return True
     else:
         locked = False
-        for i in xrange(locktimeout + 1):
+        for i in range(locktimeout + 1):
             locked = islocked(lockname, reentry)
             if not locked:
                 break
@@ -120,7 +120,7 @@ def islocked(lockname, reentry=False):
         else:
             return False
 
-    except (OSError, IOError), e:
+    except (OSError, IOError) as e:
         # failed to read the lockfile
         if e.errno != errno.ENOENT: # exception is not 'file or directory not found' -> file probably locked
             raise
@@ -142,7 +142,7 @@ def unlock(lockname):
     j.logger.log('UnLock with name: %s'% lockname,6)
     try:
         unlock_(lockname)
-    except Exception, msg:
+    except Exception as msg:
         raise RuntimeError("Cannot unlock [%s] with ERROR: %s" % (lockname, str(msg)))
 
 def unlock_(lockname):
@@ -252,7 +252,7 @@ class SystemFS:
             try:
                 shutil.copy(fileFrom, to)
                 self.log("Copied file from %s to %s" % (fileFrom,to),6)
-            except Exception,e:
+            except Exception as e:
                 raise RuntimeError("Could not copy file from %s to %s, error %s" % (fileFrom,to,e))                
         else:
             raise RuntimeError("Can not copy file, file: %s does not exist in system.fs.copyFile" % ( fileFrom ) )
@@ -269,7 +269,7 @@ class SystemFS:
             raise RuntimeError("The specified source path in system.fs.moveFile does not exist or is no file: %s" % source)
         try:
             self.move(source, destin)
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError("File could not be moved...in system.fs.moveFile: from %s to %s , Error %s" % (source, destin,str(e)))
 
     def renameFile(self, filePath, new_name):
@@ -300,7 +300,7 @@ class SystemFS:
             try:
                 os.remove(path)
             except:
-                raise RuntimeError("File with path: %s could not be removed\nDetails: %s"%(path, sys.exc_type))
+                raise RuntimeError("File with path: %s could not be removed\nDetails: %s"%(path, sys.exc_info()[0]))
             self.log('Done removing file with path: %s'%path)
 
     def createEmptyFile(self, filename):
@@ -322,7 +322,7 @@ class SystemFS:
         if newdir was only given as a directory name, the new directory will be created on the default path,
         if newdir was given as a complete path with the directory name, the new directory will be created in the specified path
         """
-        if newdir.find("file://")<>-1:
+        if newdir.find("file://")!=-1:
             raise RuntimeError("Cannot use file notation here")
         self.log('Creating directory if not exists %s' % toStr(newdir), 8)
         if skipProtectedDirs and j.dirs.checkInProtectedDir(newdir):
@@ -345,7 +345,7 @@ class SystemFS:
                 try:
                     os.mkdir(newdir)
                     # print "mkdir:%s"%newdir
-                except OSError, e:
+                except OSError as e:
                     if e.errno != os.errno.EEXIST: #File exists
                         raise
                     
@@ -361,7 +361,7 @@ class SystemFS:
         @param eraseDestination: bool (Set to True if you want to erase destination first, be carefull, this can erase directories)
         @param overwriteFiles: if True will overwrite files, otherwise will not overwrite when destination exists
         """
-        if src.find("file://")<>-1 or dst.find("file://")<>-1:
+        if src.find("file://")!=-1 or dst.find("file://")!=-1:
             raise RuntimeError("Cannot use file notation here")
 
         self.log('Copy directory tree from %s to %s'% (src, dst),6)
@@ -376,7 +376,7 @@ class SystemFS:
             errors = []
             for name in names:
                 #is only for the name
-                if applyHrdOnDestPaths<>None:
+                if applyHrdOnDestPaths!=None:
                     name2=applyHrdOnDestPaths.applyOnContent(name)
                 else:
                     name2=name
@@ -499,7 +499,7 @@ class SystemFS:
             args=args2
         try:
             return os.path.join(*args)
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError("Failed to join paths: %s, Error %s "%(str(args),str(e)))
 
     def getDirName(self, path,lastOnly=False,levelsUp=None):
@@ -522,7 +522,7 @@ class SystemFS:
         if lastOnly:
             dname=dname.split(os.sep)[-1]
             return dname
-        if levelsUp<>None:
+        if levelsUp!=None:
             parts=dname.split(os.sep)
             if len(parts)-levelsUp>0:
                 return parts[len(parts)-levelsUp-1]
@@ -538,7 +538,7 @@ class SystemFS:
             raise TypeError('Path is not passed in system.fs.getDirName')
         try:
             return os.path.basename(path.rstrip(os.path.sep))
-        except Exception,e:
+        except Exception as e:
             raise RuntimeError('Failed to get base name of the given path: %s, Error: %s'% (path,str(e)))
 
     def pathShorten(self, path):
@@ -590,7 +590,7 @@ class SystemFS:
         if root=="":
             root=self.getcwd()
         path=self.pathClean(path)
-        if len(path)>0 and path[0]<>os.sep:
+        if len(path)>0 and path[0]!=os.sep:
             path=self.joinPaths(root,path)
         return path
 
@@ -679,14 +679,14 @@ class SystemFS:
                 path = os.path.join(root, ddir)
                 try:
                     os.chown(path, uid, gid)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)                
             for file in files:
                 path = os.path.join(root, file)
                 try:
                     os.chown(path, uid, gid)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
 
@@ -700,7 +700,7 @@ class SystemFS:
                 path = os.path.join(root, ddir)
                 try:
                     os.chmod(path,permissions)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
                     
@@ -708,65 +708,65 @@ class SystemFS:
                 path = os.path.join(root, file)
                 try:
                     os.chmod(path,permissions)
-                except Exception,e:
+                except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
 
 
-    def parsePath(self,path, baseDir="",existCheck=True, checkIsFile=False):
-        """
-        parse paths of form /root/tmp/33_adoc.doc into the path, priority which is numbers before _ at beginning of path
-        also returns filename
-        checks if path can be found, if not will fail
-        when filename="" then is directory which has been parsed
-        if basedir specified that part of path will be removed
+    # def parsePath(self,path, baseDir="",existCheck=True, checkIsFile=False):
+    #     """
+    #     parse paths of form /root/tmp/33_adoc.doc into the path, priority which is numbers before _ at beginning of path
+    #     also returns filename
+    #     checks if path can be found, if not will fail
+    #     when filename="" then is directory which has been parsed
+    #     if basedir specified that part of path will be removed
 
-        example:
-        j.system.fs.parsePath("/opt/qbase3/apps/specs/myspecs/definitions/cloud/datacenter.txt","/opt/qbase3/apps/specs/myspecs/",existCheck=False)
-        @param path is existing path to a file
-        @param baseDir, is the absolute part of the path not required
-        @return list of dirpath,filename,extension,priority
-             priority = 0 if not specified
-        """
-        #make sure only clean path is left and the filename is out
-        if existCheck and not self.exists(path):
-            raise RuntimeError("Cannot find file %s when importing" % path)
-        if checkIsFile and not self.isFile(path):
-            raise RuntimeError("Path %s should be a file (not e.g. a dir), error when importing" % path)
-        extension=""
-        if self.isDir(path):
-            name=""
-            path=self.pathClean(path)
-        else:
-            name=self.getBaseName(path)
-            path=self.pathClean(path)
-            #make sure only clean path is left and the filename is out
-            path=self.getDirName(path)
-            #find extension
-            regexToFindExt="\.\w*$"
-            if j.codetools.regex.match(regexToFindExt,name):
-                extension=j.codetools.regex.findOne(regexToFindExt,name).replace(".","")
-                #remove extension from name
-                name=j.codetools.regex.replace(regexToFindExt,regexFindsubsetToReplace=regexToFindExt, replaceWith="", text=name)
+    #     example:
+    #     j.system.fs.parsePath("/opt/qbase3/apps/specs/myspecs/definitions/cloud/datacenter.txt","/opt/qbase3/apps/specs/myspecs/",existCheck=False)
+    #     @param path is existing path to a file
+    #     @param baseDir, is the absolute part of the path not required
+    #     @return list of dirpath,filename,extension,priority
+    #          priority = 0 if not specified
+    #     """
+    #     #make sure only clean path is left and the filename is out
+    #     if existCheck and not self.exists(path):
+    #         raise RuntimeError("Cannot find file %s when importing" % path)
+    #     if checkIsFile and not self.isFile(path):
+    #         raise RuntimeError("Path %s should be a file (not e.g. a dir), error when importing" % path)
+    #     extension=""
+    #     if self.isDir(path):
+    #         name=""
+    #         path=self.pathClean(path)
+    #     else:
+    #         name=self.getBaseName(path)
+    #         path=self.pathClean(path)
+    #         #make sure only clean path is left and the filename is out
+    #         path=self.getDirName(path)
+    #         #find extension
+    #         regexToFindExt="\.\w*$"
+    #         if j.codetools.regex.match(regexToFindExt,name):
+    #             extension=j.codetools.regex.findOne(regexToFindExt,name).replace(".","")
+    #             #remove extension from name
+    #             name=j.codetools.regex.replace(regexToFindExt,regexFindsubsetToReplace=regexToFindExt, replaceWith="", text=name)
 
-        if baseDir<>"":
-            path=self.pathRemoveDirPart(path,baseDir)
+    #     if baseDir!="":
+    #         path=self.pathRemoveDirPart(path,baseDir)
 
-        if name=="":
-            dirOrFilename=j.system.fs.getDirName(path,lastOnly=True)
-        else:
-            dirOrFilename=name
-        #check for priority
-        regexToFindPriority="^\d*_"
-        if j.codetools.regex.match(regexToFindPriority,dirOrFilename):
-            #found priority in path
-            priority=j.codetools.regex.findOne(regexToFindPriority,dirOrFilename).replace("_","")
-            #remove priority from path
-            name=j.codetools.regex.replace(regexToFindPriority,regexFindsubsetToReplace=regexToFindPriority, replaceWith="", text=name)
-        else:
-            priority=0
+    #     if name=="":
+    #         dirOrFilename=j.system.fs.getDirName(path,lastOnly=True)
+    #     else:
+    #         dirOrFilename=name
+    #     #check for priority
+    #     regexToFindPriority="^\d*_"
+    #     if j.codetools.regex.match(regexToFindPriority,dirOrFilename):
+    #         #found priority in path
+    #         priority=j.codetools.regex.findOne(regexToFindPriority,dirOrFilename).replace("_","")
+    #         #remove priority from path
+    #         name=j.codetools.regex.replace(regexToFindPriority,regexFindsubsetToReplace=regexToFindPriority, replaceWith="", text=name)
+    #     else:
+    #         priority=0
 
-        return path,name,extension,priority            #if name =="" then is dir
+    #     return path,name,extension,priority            #if name =="" then is dir
 
 
     def getcwd(self):
@@ -776,7 +776,7 @@ class SystemFS:
         self.log('Get current working directory',9)
         try:
             return os.getcwd()
-        except Exception, e:
+        except Exception as e:
             raise RuntimeError('Failed to get current working directory')
 
     def readlink(self, path):
@@ -791,7 +791,7 @@ class SystemFS:
         if j.system.platformtype.isUnix():
             try:
                 return os.readlink(path)
-            except Exception, e:
+            except Exception as e:
                 raise RuntimeError('Failed to read link with path: %s \nERROR: %s'%(path, str(e)))
         elif j.system.platformtype.isWindows():
             raise RuntimeError('Cannot readLink on windows')
@@ -838,7 +838,7 @@ class SystemFS:
         @Param exclude: list of std filters if matches then exclude
         @rtype: list
         """
-        if depth<>None:
+        if depth!=None:
             depth=int(depth)
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
@@ -864,7 +864,7 @@ class SystemFS:
         @param type is string with f & d inside (f for when to find files, d for when to find dirs)
         @rtype: list
         """
-        if depth<>None:
+        if depth!=None:
             depth=int(depth)
         self.log('List files in directory with path: %s' % path,9)
         if depth==0:
@@ -913,7 +913,7 @@ class SystemFS:
                     else:
                         includeFile = True
                 if includeFile:
-                    if exclude<>[]:
+                    if exclude!=[]:
                         for excludeItem in exclude:
                             if matcher(direntry, excludeItem):
                                 includeFile=False
@@ -924,11 +924,11 @@ class SystemFS:
                     if not(listSymlinks==False and self.isLink(fullpath)):
                         filesreturn.append(fullpath)
                 if recursive:
-                    if depth<>None and depth<>0:
+                    if depth!=None and depth!=0:
                         depth=depth-1
-                    if depth==None or depth<>0:
+                    if depth==None or depth!=0:
                         exclmatch=False
-                        if exclude<>[]:
+                        if exclude!=[]:
                             for excludeItem in exclude:
                                 if matcher(fullpath, excludeItem):
                                     exclmatch=True
@@ -969,7 +969,7 @@ class SystemFS:
         paths=self.listFilesInDir(pathToSearchIn, recursive, filter, minmtime, maxmtime)
         for path in paths:
             path2=path.replace(toReplace,replaceWith)
-            if path2<>path:
+            if path2!=path:
                 self.renameFile(path,path2)
 
     def replaceWordsInFiles(self,pathToSearchIn,templateengine,recursive=True, filter=None, minmtime=None, maxmtime=None):
@@ -1086,7 +1086,7 @@ class SystemFS:
         elif j.system.platformtype.isWindows():
             path=path.replace("+",":")
             cmd="junction \"%s\" \"%s\"" % (self.pathNormalize(target).replace("\\","/"),self.pathNormalize(path).replace("\\","/"))
-            print cmd
+            print(cmd)
             j.system.process.execute(cmd)
 
     def hardlinkFile(self, source, destin):
@@ -1113,7 +1113,7 @@ class SystemFS:
         path=path.replace("//","/")
         path=path.replace("\\\\","/")
         path=path.replace("\\","/")
-        if path[-1]<>"/":
+        if path[-1]!="/":
             path=path+"/"
         path=path.replace("/",os.sep)
         return path
@@ -1193,11 +1193,11 @@ class SystemFS:
             cmd="junction %s" % path
             try:
                 result=j.system.process.execute(cmd)
-            except Exception,e:
+            except Exception as e:
                 raise RuntimeError("Could not execute junction cmd, is junction installed? Cmd was %s."%cmd)
-            if result[0]<>0:
+            if result[0]!=0:
                 raise RuntimeError("Could not execute junction cmd, is junction installed? Cmd was %s."%cmd)
-            if result[1].lower().find("substitute name")<>-1:
+            if result[1].lower().find("substitute name")!=-1:
                 return True
             else:
                 return False
@@ -1369,7 +1369,7 @@ class SystemFS:
             raise RuntimeError("Specified file: %s does not exist"% filename)
         try:
             return os.path.getsize(filename)
-        except Exception, e:
+        except Exception as e:
             raise OSError("Could not get filesize of %s\nError: %s"%(filename,str(e)))
 
 
@@ -1384,7 +1384,7 @@ class SystemFS:
         self.log("Creating pickle and write it to file: %s" % filelocation,6)
         try:
             pcl = pickle.dumps(obj)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Could not create pickle from the object \nError: %s" %(str(e)))
         j.system.fs.writeFile(filelocation,pcl)
         if not self.exists(filelocation):
@@ -1403,7 +1403,7 @@ class SystemFS:
         self.log("creating object",9)
         try:
             obj = pickle.loads(contents)
-        except Exception, e:
+        except Exception as e:
             raise Exception("Could not create the object from the file contents \n Error: %s" %(str(e)))
         return obj
 
@@ -1427,7 +1427,7 @@ class SystemFS:
             finally:
                 fh.close()
             return digest.hexdigest()
-        except Exception, e:
+        except Exception as e:
             raise RuntimeError("Failed to get the hex digest of the file %sin system.fs.md5sum. Error: %s"  % (filename,str(e)))
 
     def walkExtended(self, root, recurse=0, dirPattern='*' , filePattern='*', followSoftLinks = True, dirs=True, files=True ):
@@ -1503,12 +1503,12 @@ class SystemFS:
 
     #WalkExtended = deprecated('j.system.fs.WalkExtended','j.system.fs.walkExtended', '3.2')(walkExtended)
 
-    def walk(self, root, recurse=0, pattern='*', return_folders=0, return_files=1, followSoftlinks = True,unicode=False ):
+    def walk(self, root, recurse=0, pattern='*', return_folders=0, return_files=1, followSoftlinks = True,str=False ):
         """This is to provide ScanDir similar function
         It is going to be used wherever some one wants to list all files and subfolders
         under one given directly with specific or none matchers
         """
-        if unicode:
+        if str:
             os.path.supports_unicode_filenames=True
 
         self.log('Scanning directory (walk)%s'%root,6)
@@ -1551,7 +1551,7 @@ class SystemFS:
             dirname2=j.system.string.decodeUnicode2Asci(dirname)
             for name in names:
                 name2=j.system.string.decodeUnicode2Asci(name)
-                if name2<>name:
+                if name2!=name:
                     ##print "name not unicode"
                     source=os.path.join(dirname,name)
                     if spacesToUnderscore:
@@ -1562,7 +1562,7 @@ class SystemFS:
                     if os.path.isfile(source):
                         #  #print "renamefile"
                         j.system.fs.renameFile(source,j.system.fs.joinPaths(dirname,name2))
-            if dirname2<>dirname:
+            if dirname2!=dirname:
                 #dirname not unicode
                 ##print "dirname not unicode"
                 if spacesToUnderscore:
@@ -1574,7 +1574,7 @@ class SystemFS:
 
     def convertFileDirnamesSpaceToUnderscore(self,rootdir):
         def visit(arg,dirname,names):
-            if dirname.find(" ")<>-1:
+            if dirname.find(" ")!=-1:
                 #dirname has space inside
                 dirname2=dirname.replace(" ","_")
                 if j.system.fs.isDir(dirname):
@@ -1726,17 +1726,17 @@ class SystemFS:
             if os.path.splitext(filename)[0] in ('CON', 'PRN', 'AUX', 'CLOCK$', 'NUL'):
                 return False
 
-            if os.path.splitext(filename)[0] in ('COM%d' % i for i in xrange(1, 9)):
+            if os.path.splitext(filename)[0] in ('COM%d' % i for i in range(1, 9)):
                 return False
 
-            if os.path.splitext(filename)[0] in ('LPT%d' % i for i in xrange(1, 9)):
+            if os.path.splitext(filename)[0] in ('LPT%d' % i for i in range(1, 9)):
                 return False
 
             #ASCII characters 0x00 - 0x1F are invalid in a Windows filename
             #We loop from 0x00 to 0x20 (xrange is [a, b[), and check whether
             #the corresponding ASCII character (which we get through the chr(i)
             #function) is in the filename
-            for c in xrange(0x00, 0x20):
+            for c in range(0x00, 0x20):
                 if chr(c) in filename:
                     return False
 
@@ -1797,9 +1797,9 @@ class SystemFS:
         for filename in glob.glob(fileregex):
             if os.path.isfile(filename):
                 f = open(filename, 'r')
-                for line in f.xreadlines():
+                for line in f:
                     if re.match(lineregex, line):
-                        print "%s: %s" % (filename, line)
+                        print("%s: %s" % (filename, line))
 
     cleanupString = staticmethod(cleanupString)
 
@@ -1859,8 +1859,8 @@ class SystemFS:
         if not j.system.fs.exists(j.system.fs.getDirName(destinationpath)):
             j.system.fs.createDir(j.system.fs.getDirName(destinationpath))
         t = tarfile.open(name = destinationpath, mode = 'w:gz')
-        if not(followlinks<>False or destInTar<>"" or pathRegexIncludes<>['.*'] or pathRegexExcludes<>[] \
-               or contentRegexIncludes<>[] or contentRegexExcludes<>[] or depths<>[]):
+        if not(followlinks!=False or destInTar!="" or pathRegexIncludes!=['.*'] or pathRegexExcludes!=[] \
+               or contentRegexIncludes!=[] or contentRegexExcludes!=[] or depths!=[]):
             t.add(sourcepath, "/")
         else:
             def addToTar(params,path):
@@ -1884,7 +1884,7 @@ class SystemFS:
                                           pathRegexIncludes=pathRegexIncludes, pathRegexExcludes=pathRegexExcludes, contentRegexIncludes=contentRegexIncludes, \
                                           contentRegexExcludes=contentRegexExcludes, depths=depths,followlinks=False)
 
-            if extrafiles<>[]:
+            if extrafiles!=[]:
                 for extrafile in extrafiles:
                     source=extrafile[0]
                     destpath=extrafile[1]

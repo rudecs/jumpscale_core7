@@ -47,7 +47,7 @@ class Lxc():
         if machinename=="":
             raise RuntimeError("Cannot be empty")
         base = j.system.fs.joinPaths( self.basepath,'%s%s' % (self._prefix, machinename))
-        if append<>"":
+        if append!="":
             base=j.system.fs.joinPaths(base,append)
         return base
 
@@ -64,9 +64,9 @@ class Lxc():
         current = None
         for line in out.split("\n"):
             line = line.strip()
-            if line.find('RUNNING')<>-1:
+            if line.find('RUNNING')!=-1:
                 current = running
-            elif line.find('STOPPED')<>-1:
+            elif line.find('STOPPED')!=-1:
                 current = stopped
             else:
                 continue
@@ -128,12 +128,12 @@ ipaddr=
             mem+=mem0
             cpu+=cpu0
             if stdout:
-                print "%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0)
+                print("%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0))
             result.append([child.name,child.pid,mem0,child.parent.name])
         cpu=children[0].get_cpu_percent()
         result.append([mem,cpu])
         if stdout:
-            print "TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu)
+            print("TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu))
         return result
 
     def exportRsync(self,name,backupname,key="pub"):
@@ -142,9 +142,9 @@ ipaddr=
         path=self._getMachinePath(name)
         if not j.system.fs.exists(path):
             raise RuntimeError("cannot find machine:%s"%path)
-        if backupname[-1]<>"/":
+        if backupname[-1]!="/":
             backupname+="/"
-        if path[-1]<>"/":
+        if path[-1]!="/":
             path+="/"
         cmd="rsync -a %s %s::upload/%s/images/%s --delete-after --modify-window=60 --compress --stats  --progress --exclude '.Trash*'"%(path,ipaddr,key,backupname)
         # print cmd
@@ -152,7 +152,7 @@ ipaddr=
 
     def _btrfsExecute(self,cmd):
         cmd="btrfs %s"%cmd
-        print cmd
+        print(cmd)
         return self.execute(cmd)
 
     def btrfsSubvolList(self):
@@ -161,7 +161,7 @@ ipaddr=
         for line in out.split("\n"):
             if line.strip()=="":
                 continue
-            if line.find("path ")<>-1:
+            if line.find("path ")!=-1:
                 path=line.split("path ")[-1]
                 path=path.strip("/")
                 path=path.replace("lxc/","")
@@ -214,23 +214,23 @@ ipaddr=
 
         # j.system.fs.createDir(path)
 
-        if backupname[-1]<>"/":
+        if backupname[-1]!="/":
             backupname+="/"
-        if path[-1]<>"/":
+        if path[-1]!="/":
             path+="/"
 
-        if basename<>"":
+        if basename!="":
             basepath=self._getMachinePath(basename)
-            if basepath[-1]<>"/":
+            if basepath[-1]!="/":
                 basepath+="/"
             if not j.system.fs.exists(basepath):
                 raise RuntimeError("cannot find base machine:%s"%basepath)
             cmd="rsync -av -v %s %s --delete-after --modify-window=60 --size-only --compress --stats  --progress"%(basepath,path)            
-            print cmd
+            print(cmd)
             j.system.process.executeWithoutPipe(cmd)
 
         cmd="rsync -av -v %s::download/%s/images/%s %s --delete-after --modify-window=60 --compress --stats  --progress"%(ipaddr,key,backupname,path)
-        print cmd
+        print(cmd)
         j.system.process.executeWithoutPipe(cmd)        
 
     def exportTgz(self,name,backupname):
@@ -259,7 +259,7 @@ ipaddr=
         """
         @param name if "" then will be an incremental nr
         """
-        print "create:%s"%name
+        print("create:%s"%name)
         if replace:
             if j.system.fs.exists(self._getMachinePath(name)):
                 self.destroy(name)
@@ -302,7 +302,7 @@ ipaddr=
             line=line.strip()
             if line.strip()=="" or line[0]=="#":
                 continue
-            if line.find(name)<>-1:
+            if line.find(name)!=-1:
                 continue
             out+="%s\n"%line
         out+="%s      %s\n"%("127.0.0.1",name)
@@ -317,12 +317,12 @@ ipaddr=
 
         hrd=self.getConfig(name)
         ipaddrs=j.application.config.getDict("lxc.mgmt.ipaddresses")
-        if ipaddrs.has_key(name):
+        if name in ipaddrs:
             ipaddr=ipaddrs[name]
         else:
             #find free ip addr
             import netaddr            
-            existing=[netaddr.ip.IPAddress(item).value for item in  ipaddrs.itervalues() if item.strip()<>""]
+            existing=[netaddr.ip.IPAddress(item).value for item in  ipaddrs.values() if item.strip()!=""]
             ip = netaddr.IPNetwork(j.application.config.get("lxc.mgmt.ip"))
             for i in range(ip.first+2,ip.last-2):
                 if i not in existing:
@@ -348,7 +348,7 @@ ipaddr=
         lines=j.system.fs.fileGetContents("/etc/hosts")
         out=""
         for line in lines.split("\n"):
-            if line.find(name)<>-1:
+            if line.find(name)!=-1:
                 continue
             out+="%s\n"%line
         out+="%s      %s\n"%(self.getIp(name),name)
@@ -370,8 +370,8 @@ ipaddr=
     def destroy(self,name):
         running,stopped=self.list()
         alll=running+stopped
-        print "running:%s"%",".join(running)
-        print "stopped:%s"%",".join(stopped)
+        print("running:%s"%",".join(running))
+        print("stopped:%s"%",".join(stopped))
         if name in running:            
             # cmd="lxc-destroy -n %s%s -f"%(self._prefix,name)
             cmd="lxc-kill -P %s -n %s%s"%(self.basepath,self._prefix,name)
@@ -379,7 +379,7 @@ ipaddr=
         while name in running:
             running,stopped=self.list()
             time.sleep(0.1)
-            print "wait stop"
+            print("wait stop")
             alll=running+stopped
 
         self.btrfsSubvolDelete(name)
@@ -391,9 +391,9 @@ ipaddr=
         self.execute(cmd)
 
     def start(self,name,stdout=True,test=True):
-        print "start:%s"%name
+        print("start:%s"%name)
         cmd="lxc-start -d -P %s -n %s%s"%(self.basepath,self._prefix,name)
-        print cmd
+        print(cmd)
         # cmd="lxc-start -d -n %s%s"%(self._prefix,name)
         self.execute(cmd)
         start=time.time()
@@ -410,13 +410,13 @@ ipaddr=
         if found==False:
             msg= "could not start new machine, did not start in 20 sec."
             if stdout:
-                print msg
+                print(msg)
             raise RuntimeError(msg)
     
         self.setHostName(name)
 
         ipaddr=self.getIp(name)
-        print "test ssh access to %s"%ipaddr
+        print("test ssh access to %s"%ipaddr)
         timeout=time.time()+10        
         while time.time()<timeout:  
             if j.system.net.tcpPortConnectionTest(ipaddr,22):
@@ -426,7 +426,7 @@ ipaddr=
 
     def networkSet(self, machinename,netname="pub0",pubips=[],bridge="public",gateway=None):
         bridge=bridge.lower()
-        print "set pub network %s on %s" %(pubips,machinename)
+        print("set pub network %s on %s" %(pubips,machinename))
         machine_cfg_file = j.system.fs.joinPaths(self.basepath, '%s%s' % (self._prefix, machinename), 'config')
         machine_ovs_file = j.system.fs.joinPaths(self.basepath, '%s%s' % (self._prefix, machinename), 'ovsbr_%s'%bridge)
         
@@ -454,7 +454,7 @@ fi
 
         j.system.fs.writeFile(filename=machine_ovs_file,contents=Covs)
 
-        j.system.unix.chmod(machine_ovs_file, 0755)
+        j.system.unix.chmod(machine_ovs_file, 0o755)
 
         ed=j.codetools.getTextFileEditor(machine_cfg_file)
         ed.setSection(netname,config)
@@ -469,7 +469,7 @@ fi
         raise RuntimeError("not implemented")
 
     def _setConfig(self,name,parent):
-        print "SET CONFIG"
+        print("SET CONFIG")
         base=self._getMachinePath(name)
         baseparent=self._getMachinePath(parent)
         machine_cfg_file = self._getMachinePath(name,'config')

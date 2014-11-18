@@ -1,6 +1,6 @@
 from JumpScale import j
 import struct
-import SocketServer
+import socketserver
 import socket
 try:
     import gevent
@@ -34,17 +34,17 @@ class SocketServerClient():
         data = "A" + struct.pack("I", len(data)) + data
         try:
             self.socket.sendall(data)
-        except Exception, e:
-            print "sendata error: %s" % e
+        except Exception as e:
+            print("sendata error: %s" % e)
             self.reinitclient()
             return self.senddata(data)
 
     def reinitclient(self):
         try:
             self.socket.close()
-        except Exception, e:
-            print "Error in send to socket, could not close the socket"
-            print e
+        except Exception as e:
+            print("Error in send to socket, could not close the socket")
+            print(e)
         self.initclient()
 
     def initclient(self):
@@ -56,27 +56,27 @@ class SocketServerClient():
         raise RuntimeError("Connection timed out to server %s" % self.addr)
 
     def _initclient(self):
-        print "try to connect to %s:%s" % (self.addr, self.port)
+        print("try to connect to %s:%s" % (self.addr, self.port))
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # self.sender.settimeout(2)
         data = '**connect** whoami:%s key:%s' % (j.application.whoAmI, self.key)
         try:
             self.socket.connect((self.addr, self.port))
             self.senddata(data)
-        except Exception, e:
+        except Exception as e:
             try:
-                print "connection error to %s %s" % (self.addr, self.port)
+                print("connection error to %s %s" % (self.addr, self.port))
             except:
                 pass
             try:
                 self.socket.close()
             except:
                 pass
-            print "initclient error:%s, sleep 1 sec." % e
+            print("initclient error:%s, sleep 1 sec." % e)
             sleep(1)
             return False
 
-        print "connected"
+        print("connected")
         if self.readdata() == "ok":
             return True
         else:
@@ -84,14 +84,14 @@ class SocketServerClient():
 
     def getsize(self, data):
         check = data[0]
-        if check <> "A":
+        if check != "A":
             raise RuntimeError("error in tcp stream, first byte needs to be 'A'")
         sizebytes = data[1:5]
         size = struct.unpack("I", sizebytes)[0]
         return data[5:], size
 
     def _readdata(self, data):
-        print "select"
+        print("select")
         ready = select.select([self.socket], [], [], self.timeout)
         if ready[0]:
             data += self.socket.recv(4096)

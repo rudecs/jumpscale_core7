@@ -113,13 +113,13 @@ class Time:
             txt=txt.lower()
             if txt.find("-")==-1:
                 raise RuntimeError("Cannot find time, needs to be in format -3d and -3h  (ofcourse 3 can be any int)")
-            if txt.find("m")<>-1:
+            if txt.find("m")!=-1:
                 ago=int(txt.replace("m","").replace("-",""))
                 return self.getTimeEpoch()-(ago*60)
-            if txt.find("d")<>-1:
+            if txt.find("d")!=-1:
                 ago=int(txt.replace("d","").replace("-",""))
                 return self.getTimeEpoch()-(ago*60*60*24)
-            if txt.find("h")<>-1:
+            if txt.find("h")!=-1:
                 ago=int(txt.replace("h","").replace("-",""))
                 return self.getTimeEpoch()-(ago*60*60)
             raise RuntimeError("Cannot find time, needs to be in format -3d and -3h  (ofcourse 3 can be any int)")
@@ -139,10 +139,10 @@ class Time:
             txt=txt.lower()
             if txt.find("+")==-1:
                 raise RuntimeError("Cannot find time, needs to be in format +3d and +3h  (ofcourse 3 can be any int)")
-            if txt.find("d")<>-1:
+            if txt.find("d")!=-1:
                 future=int(txt.replace("d","").replace("+",""))
                 return self.getTimeEpoch()+(future*60*60*24)
-            if txt.find("h")<>-1:
+            if txt.find("h")!=-1:
                 future=int(txt.replace("h","").replace("+",""))
                 return self.getTimeEpoch()+(future*60*60)
             raise RuntimeError("Cannot find time, needs to be in format +3d and +3h  (ofcourse 3 can be any int)")

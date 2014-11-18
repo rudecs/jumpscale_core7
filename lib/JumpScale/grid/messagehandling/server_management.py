@@ -3,8 +3,8 @@ import signal
 import time
 
 from JumpScale import j
-from utils import printInDebugMode
-from server import MessageServer
+from .utils import printInDebugMode
+from .server import MessageServer
 
 
 class MessageServerConfig(object):
@@ -148,7 +148,7 @@ class MessageServerManager(object):
         #@TODO this needs to be fixed, a real test needs to be done, if e.g. server crashes this can still return positive
         try:
             pid = self._getPidFromPidFile()
-        except (IOError, ValueError), error:
+        except (IOError, ValueError) as error:
             j.logger.exception('Can\'t get pid from pid file (error: %s)'
                                % error)
             return False
@@ -188,7 +188,7 @@ class MessageServerManager(object):
     def _getPidFromPidFile(self, safe=False):
         try:
             pidStr = j.system.fs.fileGetContents(self._pidFile)
-        except IOError, error:
+        except IOError as error:
             if error.errno == errno.ENOENT:
                 raise IOError('Could\'t get message server pid, pid file'
                               ' doesn\'t exists')
@@ -198,7 +198,7 @@ class MessageServerManager(object):
 
         try:
             pid = int(pidStr.strip())
-        except ValueError, error:
+        except ValueError as error:
             message = 'Could\'t get message server pid, invalid pid file' \
                 ' contents (error: %s)' % error
             j.logger.log(message)

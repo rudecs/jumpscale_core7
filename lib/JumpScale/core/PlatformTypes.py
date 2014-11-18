@@ -19,6 +19,7 @@ def _useELFtrick(file):
 class PlatformTypes():
 
     def __init__(self):
+        self.myplatform=self._getPlatform()        
         self.platformParents={}
         self.addPlatform("unknown",parent="")
         self.addPlatform("generic",parent="unknown")
@@ -45,15 +46,15 @@ class PlatformTypes():
         self.addPlatform("vista",parent="win")
         self.addPlatform("win2008_64",parent="win64")
         self.addPlatform("win2012_64",parent="win64")
-        self.myplatform=self._getPlatform()
+        
 
     def getMyRelevantPlatforms(self):
         return self.platformParents[str(self.myplatform).lower()]
 
     def getPlatforms(self):
-        return self.platformParents.keys()
+        return list(self.platformParents.keys())
 
-    def getParents(self,name):
+    def getParents(self,name):            
         result=self.platformParents[name]
         try:
             result.pop(result.index(""))
@@ -79,7 +80,7 @@ class PlatformTypes():
                 if parentofparent != parent:
                     self.addPlatform(name,parentofparent)
         else:
-            if parent<>"":
+            if parent!="":
                 raise RuntimeError("Could not find parent %s in tree, probably order of insertion not ok."%parent)
 
 
@@ -102,14 +103,16 @@ class PlatformTypes():
                     _platform = "mint32"
                 else:
                     _platform = "linux32"
-            elif bits == 64:
+            elif bits == 64 or bits==0:  #@todo does not work in python 3 anymore
                 if info == 'ubuntu':
                     _platform = "ubuntu64"
                 elif info == 'linuxmint':
                     _platform = "mint64"
                 else:
                     _platform = "linux64"
-
+            else:
+                raise RuntimeError("dont find which nr bits in platform")
+            
             # if os.path.exists("/proc/vmware"):
             #     _platform = PlatformType.ESX
 
@@ -132,6 +135,11 @@ class PlatformTypes():
 
         # elif sys.platform.startswith("darwin"):
         #     _platform = PlatformType.DARWIN
+
+        else:
+            raise RuntimeError("can't establish platform name")
+
+
 
         return _platform        
 
@@ -175,7 +183,7 @@ class PlatformTypes():
     def isHyperV(self):
         '''Check whether the system supports HyperV'''
         if self.isWindows():
-            import _winreg as wr
+            import winreg as wr
             try:
                 virt = wr.OpenKey(wr.HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows NT\CurrentVersion\Virtualization', 0, wr.KEY_READ | wr.KEY_WOW64_64KEY)
                 wr.QueryValueEx(virt, 'Version')

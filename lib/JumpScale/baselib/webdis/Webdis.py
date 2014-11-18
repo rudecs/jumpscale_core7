@@ -19,7 +19,7 @@ class WebdisFactory:
 
     def get(self, addr="127.0.0.1",port=7779,timeout=10):
         key = "%s_%s" % (addr, port)
-        if not self._webdis.has_key(key):
+        if key not in self._webdis:
             self._webdis[key] = Webdis(addr, port,timeout=timeout)
         res=self._webdis[key].ping()
         if res==False:
@@ -64,7 +64,7 @@ class Webdis(object):
                 headers={}
                 # if data<>None:
                 #     headers = {'content-type': 'binary/octet-stream'}
-                if url<>"":
+                if url!="":
                     url2='http://%s:%s/%s/%s.png'%(self.addr,self.port,cmd,url)
                 else:
                     url2='http://%s:%s/%s'%(self.addr,self.port,cmd)
@@ -77,12 +77,12 @@ class Webdis(object):
                 # if data<>None:
                 #     print len(data)
                 # r=requests.get('http://%s:%s/%s'%(self.addr,self.port,data2),headers=headers)
-            except Exception,e:
+            except Exception as e:
                 # print e
                 if die==False:
                     return False
-                if str(e).find("Max retries exceeded with url")<>-1:
-                    print "Webdis not available"
+                if str(e).find("Max retries exceeded with url")!=-1:
+                    print("Webdis not available")
                     time.sleep(0.5)
                     continue
                 raise RuntimeError(e)
@@ -106,8 +106,8 @@ class Webdis(object):
                 raise RuntimeError("Webdis could not execute %s,not supported"%url2)
             elif r.status_code==503:
                 raise RuntimeError("Webdis not available for url:'%s',please restart webdis on server."%url2)                
-            elif r.status_code<>200:
-                print "Unknown status code webdis:%s"%r.status_code
+            elif r.status_code!=200:
+                print("Unknown status code webdis:%s"%r.status_code)
                 raise RuntimeError("Webdis not available for url:'%s',unknown status code:'%s'."%(url2,r.status_code))
             else:
                 # from IPython import embed
@@ -122,7 +122,7 @@ class Webdis(object):
 
     def ping(self):
         res=self.execute('PING',die=False)
-        if res==False or len(res)<>2 or res[1]<>u"PONG":
+        if res==False or len(res)!=2 or res[1]!="PONG":
             return False
 
     def llen(self,key):
@@ -149,7 +149,7 @@ class Webdis(object):
     def set(self,key,value):
         res=self.execute('SET',key,data=value)
         res=res.strip()
-        if res<>"+OK":
+        if res!="+OK":
             raise RuntimeError("could not set %s"%key)
 
     def hset(self,hkey,key,value):

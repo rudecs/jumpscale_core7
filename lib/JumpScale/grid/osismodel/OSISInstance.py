@@ -107,7 +107,7 @@ class OSISInstance(OSISInstanceNoDB):
             obj.guid = j.base.idgenerator.generateGUID()
         else:
             obj.guid = guid
-        if id <> None:
+        if id != None:
             obj.id = id
         elif self.idType == "int":
             obj.id = self._db.increment("%s__%s" % (self.actorname, self.modelname))
@@ -139,7 +139,7 @@ class OSISInstance(OSISInstanceNoDB):
         return obj.id
 
     def _index(self, obj):
-        if self.indexer <> None:
+        if self.indexer != None:
             spec = j.core.specparser.getModelSpec(self.appname, self.actorname, self.modelname)
             indexcontent = self.indexer.indexdef.getIndexArgs(obj, j.core.osis.objectToText4Index(obj, spec))
             self.indexer.addIndexContent(indexcontent)
@@ -155,7 +155,7 @@ class OSISInstance(OSISInstanceNoDB):
             # did not find object, will create
             obj = self.new(guid, id)
             self.set(obj)
-            print "get object did not exist:%s %s %s " % (self.modelname, guid, id)
+            print("get object did not exist:%s %s %s " % (self.modelname, guid, id))
             return obj
 
         id = self._getId(guid, id)
@@ -180,7 +180,7 @@ class OSISInstance(OSISInstanceNoDB):
     def exists(self, guid=None, id=None):
         if not id:
             guid = self.getguid2id(id, guid, ignoreError=True)
-            if guid <> None:
+            if guid != None:
                 exist = self._db.exists("model_%s" % self.modelname, str(id))
                 if exist:
                     return True
@@ -197,7 +197,7 @@ class OSISInstance(OSISInstanceNoDB):
         # delete metadata about model in cat modellist
         self._db.delete("modellist", self.modelname)
         id = self._getId(guid, id)
-        if self.indexer <> None:
+        if self.indexer != None:
             self.indexer.delete(id)
         if self._db.exists("model_%s" % self.modelname, str(id)):
             # now starting from object remove the id which also refers to this obj
@@ -207,17 +207,17 @@ class OSISInstance(OSISInstanceNoDB):
             self._db.delete("model_%s" % self.modelname, str(id))
 
     def optimize(self):
-        if self.indexer <> None:
+        if self.indexer != None:
             self.indexer.optimize()
 
     def find(self, query, start=0, size=None):
-        if self.indexer <> None:
+        if self.indexer != None:
             return self.indexer.find(query, start, size)
         else:
             raise RuntimeError("Cannot find indexer")
 
     def destroyindex(self):
-        if self.indexer <> None:
+        if self.indexer != None:
             self.indexer.destroy()
 
     def destroy(self):
@@ -445,9 +445,9 @@ class OSISInstance(OSISInstanceNoDB):
         """
         def normalize(obj):
             d = obj.obj2dict()
-            if d.has_key("id"):
+            if "id" in d:
                 d.pop("id")
-            if d.has_key("guid"):
+            if "guid" in d:
                 d.pop("guid")
             return str(d).replace(" ", "").strip()
 
@@ -479,7 +479,7 @@ class OSISInstance(OSISInstanceNoDB):
                 if j.basetype.list.check(r):
                     r = ",".join(r)
                 if j.basetype.dictionary.check(r):
-                    for key in r.keys():
+                    for key in list(r.keys()):
                         r += "%s:%s," % (key, r[key])
                     r.rstrip(",")
                 row.append(r)

@@ -20,7 +20,7 @@ class BlobserverCMDS():
         # self.STORpath = "/opt/STOR"  # hardcoded for now needs to come from HRD
         self.name = j.application.appname
 
-        print "APP NAME: %s" % self.name
+        print("APP NAME: %s" % self.name)
 
         # Just for the sake of running two blobservers on the same node
         # This is how we can distinguish `child` blobserver from `parent` one!
@@ -65,7 +65,7 @@ class BlobserverCMDS():
             md["format"] = serialization
         else:
             md = ujson.loads(j.system.fs.fileGetContents(mdpath))
-        if not md.has_key("repos"):
+        if "repos" not in md:
             md["repos"] = {}
         md["repos"][str(repoId)] = True
         mddata = ujson.dumps(md)
@@ -96,7 +96,7 @@ class BlobserverCMDS():
         return data2
 
     def getMD(self,namespace,key,session=None):
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
 
         storpath,mdpath=self._getPaths(namespace,key)
@@ -106,7 +106,7 @@ class BlobserverCMDS():
     def delete(self,namespace,key,repoId="",force=False,session=None):
         if force=='':
             force=False #@todo is workaround default values dont work as properly, when not filled in always ''
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
 
         if force:
@@ -115,7 +115,7 @@ class BlobserverCMDS():
             j.system.fs.remove(mdpath)
             return
 
-        if key<>"" and not self.exists(namespace,key):
+        if key!="" and not self.exists(namespace,key):
             return
 
         storpath,mdpath=self._getPaths(namespace,key)
@@ -123,9 +123,9 @@ class BlobserverCMDS():
         if not j.system.fs.exists(path=mdpath):
             raise RuntimeError("did not find metadata")
         md=ujson.loads(j.system.fs.fileGetContents(mdpath))
-        if not md.has_key("repos"):
+        if "repos" not in md:
             raise RuntimeError("error in metadata on path:%s, needs to have repos as key."%mdpath)
-        if md["repos"].has_key(str(repoId)):
+        if str(repoId) in md["repos"]:
             md["repos"].pop(str(repoId))
         if md["repos"]=={}:
             j.system.fs.remove(storpath)
@@ -140,11 +140,11 @@ class BlobserverCMDS():
             return j.system.fs.exists(path=storpath)
         if j.system.fs.exists(path=storpath):
             md=ujson.loads(j.system.fs.fileGetContents(mdpath))
-            return md["repos"].has_key(str(repoId))
+            return str(repoId) in md["repos"]
         return False
 
     def deleteNamespace(self, namespace, session=None):
-        if session<>None:
+        if session!=None:
             self._adminAuth(session.user,session.passwd)
         storpath=j.system.fs.joinPaths(self.STORpath,namespace)
         j.system.fs.removeDirTree(storpath)

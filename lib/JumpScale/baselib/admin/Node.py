@@ -28,7 +28,7 @@ class Node():
         scriptRun=self.getScriptRun()
         out=scriptRun.out
         for line in cmds.split("\n"):
-            if line.strip()<>"" and line[0]<>"#":
+            if line.strip()!="" and line[0]!="#":
                 self.log("execcmd",line)
                 if insandbox:
                     line2="source /opt/jsbox/activate;%s"%line 
@@ -36,7 +36,7 @@ class Node():
                     line2=line               
                 try:                    
                     out+="%s\n"%self.ssh.run(line2)
-                except BaseException,e:
+                except BaseException as e:
                     if die:
                         self.raiseError("execcmd","error execute:%s"%line,e)
 
@@ -46,7 +46,7 @@ class Node():
             self.log("killprocess","kill:%s"%item)
             try:
                 self.ssh.run("kill -9 %s"%item)
-            except Exception,e:
+            except Exception as e:
                 if die:
                     self.raiseError("killprocess","kill:%s"%item,e)
 
@@ -55,13 +55,13 @@ class Node():
         with hide('output'):
             try:
                 out=self.ssh.run("ps ax")
-            except Exception,e:
+            except Exception as e:
                 if die:
                     self.raiseError("getpids","ps ax",e)
         found=[]
         for line in out.split("\n"):
-            if line.strip()<>"":
-                if line.find(filterstr)<>-1:
+            if line.strip()!="":
+                if line.find(filterstr)!=-1:
                     line=line.strip()
                     found.append(int(line.split(" ")[0]))   
         return found
@@ -83,7 +83,7 @@ class Node():
         self.log("jpackagestop","%s (%s)"%(name,filterstr))
         try:
             self.ssh.run("source /opt/jsbox/activate;jpackage stop -n %s"%name)
-        except Exception,e:
+        except Exception as e:
             if die:
                 self.raiseError("jpackagestop","%s"%name,e)
         
@@ -104,7 +104,7 @@ class Node():
             scriptRun=self.getScriptRun()
             try:
                 self.ssh.run("source /opt/jsbox/activate;jpackage start -n %s"%name)  
-            except Exception,e:
+            except Exception as e:
                 if die:
                     self.raiseError("jpackagestart","%s"%name,e)                          
             time.sleep(1)
@@ -149,7 +149,7 @@ class Node():
     def raiseError(self,action,msg,e=None):
         scriptRun=self.getScriptRun()
         scriptRun.state="ERROR"
-        if e<>None:
+        if e!=None:
             msg="Stack:\n%s\nError:\n%s\n"%(j.errorconditionhandler.parsePythonErrorObject(e),e)
             scriptRun.state="ERROR"
             scriptRun.error+=msg
@@ -157,7 +157,7 @@ class Node():
         for line in msg.split("\n"):
             toadd="%-10s: %s\n" % (action,line)
             scriptRun.error+=toadd
-            print "**ERROR** %-10s:%s"%(self.name,toadd)
+            print("**ERROR** %-10s:%s"%(self.name,toadd))
         self.lastcheck=0
         j.admin.setNode(self)
         j.admin.setNode(self)
@@ -167,7 +167,7 @@ class Node():
         out=""
         for line in msg.split("\n"):
             toadd="%-10s: %s\n" % (action,line)
-            print "%-10s:%s"%(self.name,toadd)
+            print("%-10s:%s"%(self.name,toadd))
             out+=toadd
 
     def setpasswd(self,passwd):
@@ -178,7 +178,7 @@ class Node():
            self.args.seedpasswd=self.findpasswd()
         try:
             cl.login(remote=self.name,passwd=passwd,seedpasswd=None)
-        except Exception,e:
+        except Exception as e:
             self.raiseError("setpasswd","Could not set root passwd.")
 
     def findpasswd(self):
@@ -188,7 +188,7 @@ class Node():
             try:            
                 pass
                 cl.login(remote=self.name,passwd=passwd,seedpasswd=None)
-            except Exception,e:
+            except Exception as e:
                 self.raiseError("findpasswd","could not login using:%s"%passwd,e)
                 continue
             self.passwd=passwd
@@ -236,7 +236,7 @@ class Node():
                     done.append(partpathdir)
                 try:            
                     cuapi.file_upload("%s/%s"%(dest,partpath),item)#,True,True)  
-                except Exception,e:
+                except Exception as e:
                     j.system.fs.removeDirTree(tmpcfgdir)
                     self.raiseError("uploadcfg","could not upload file %s to %s"%(ttype,dest))
             j.system.fs.removeDirTree(tmpcfgdir)
@@ -254,7 +254,7 @@ class Node():
             partpath=j.system.fs.pathRemoveDirPart(item,cfgdir)
             partpathdir=j.system.fs.getDirName(partpath).rstrip("/")
             if partpathdir not in done:
-                print cuapi.dir_ensure("%s/%s"%(dest,partpathdir), True)
+                print(cuapi.dir_ensure("%s/%s"%(dest,partpathdir), True))
                 done.append(partpathdir)            
             cuapi.file_upload("%s/%s"%(dest,partpath),item)#,True,True)                       
 

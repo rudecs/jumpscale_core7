@@ -1,7 +1,7 @@
 
-from PropertyDef import PropertyDef
-from MethodDef import MethodDef
-from ClassDef import ClassDef
+from .PropertyDef import PropertyDef
+from .MethodDef import MethodDef
+from .ClassDef import ClassDef
 from JumpScale import j
 
 class CodeElements:

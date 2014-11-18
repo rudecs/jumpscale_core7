@@ -2,7 +2,7 @@ from JumpScale import j
 import os,sys
 import atexit
 import struct
-from JumpScale.core.enumerators import AppStatusType
+# from JumpScale.core.enumerators import AppStatusType
 from collections import namedtuple
 
 try:
@@ -21,7 +21,7 @@ WhoAmI = namedtuple('WhoAmI', 'gid nid pid')
 class Application:
 
     def __init__(self):
-        self.state = AppStatusType.UNKNOWN
+        self.state = "UNKNOWN"
         # self.state = None
         self.appname = 'starting'
         self.agentid = "starting"
@@ -106,10 +106,10 @@ class Application:
         if name:
             self.appname = name
 
-        if os.environ.has_key("JSPROCNAME"):
+        if "JSPROCNAME" in os.environ:
             self.appname=os.environ["JSPROCNAME"]
 
-        if self.state == AppStatusType.RUNNING:
+        if self.state == "RUNNING":
             raise RuntimeError("Application %s already started" % self.appname)
 
         # Register exit handler for sys.exit and for script termination
@@ -122,7 +122,7 @@ class Application:
         if hasattr(self, 'config'):
             self.debug = j.application.config.getBool('system.debug', default=True)
 
-        if self.redis<>None:
+        if self.redis!=None:
             if self.redis.hexists("application",self.appname):
                 pids=json.loads(self.redis.hget("application",self.appname))
             else:
@@ -132,7 +132,7 @@ class Application:
             self.redis.hset("application",self.appname,json.dumps(pids))
 
         # Set state
-        self.state = AppStatusType.RUNNING
+        self.state = "RUNNING"
 
         # self.initWhoAmI()
 
@@ -148,9 +148,9 @@ class Application:
         import sys
 
         #@todo should we check the status (e.g. if application wasnt started, we shouldnt call this method)
-        if self.state == AppStatusType.UNKNOWN:
+        if self.state == "UNKNOWN":
             # Consider this a normal exit
-            self.state = AppStatusType.HALTED
+            self.state = "HALTED"
             sys.exit(exitcode)
 
         # Since we call os._exit, the exithandler of IPython is not called.

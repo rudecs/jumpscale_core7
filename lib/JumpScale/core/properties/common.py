@@ -72,6 +72,7 @@ Some interesting links:
  * http://users.rcn.com/python/download/Descriptor.htm
  * http://gulopine.gamemusic.org/2007/nov/23/python-descriptors-part-1-of-2/
 '''
+import collections
 
 class BaseDescriptor(property):
     '''Base class for pmtypes descriptors
@@ -99,7 +100,7 @@ class BaseDescriptor(property):
         @type check: callable
         '''
         property.__init__(self, fget=fget, fset=fset, fdel=fdel, doc=doc)
-        if check and not callable(check):
+        if check and not isinstance(check, collections.Callable):
             raise ValueError('check argument should be a callable')
         self._check = check
 

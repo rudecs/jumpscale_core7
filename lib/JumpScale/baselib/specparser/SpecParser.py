@@ -34,7 +34,7 @@ class SpecEnum(Specbase):
 
     def _parse(self,parser,content):
         for line in  content.split("\n"):
-            if line.strip()<>"":
+            if line.strip()!="":
                 self.enums.append(line.strip())
 
 
@@ -76,7 +76,7 @@ class SpecActorMethod(Specbase):
             line0=line
             if line.strip()=="" or line.strip()[0]=="#":
                 continue
-            if line.find(":")<>-1:
+            if line.find(":")!=-1:
                 comments,tags,line=parser.getTagsComment(line)
                 errormsg="Syntax error, right syntax var:$name $type,$defaultvalue,$description @tags #remarks"
                 try:
@@ -101,7 +101,7 @@ class SpecActorMethod(Specbase):
                     self.vars.append(spec)
                 elif varname=="result":
                     errormsg="Syntax error, right syntax result:$type @tags #remarks"
-                    if line.find(" ")==-1 and (line.find("@")<>-1 or line.find("$")<>-1):
+                    if line.find(" ")==-1 and (line.find("@")!=-1 or line.find("$")!=-1):
                         return parser.raiseError(errormsg,line0,linenr)
                     if line.find(" ")==-1:
                         ttype=line
@@ -220,7 +220,7 @@ class SpecBlock():
         if self.type=="actor":
             ttypeId="method"
             spec=None
-            if len(j.core.specparser.specs.keys())>0 and self.type=="actor":
+            if len(list(j.core.specparser.specs.keys()))>0 and self.type=="actor":
                 key="%s_%s"%(self.appname,self.actorname)
                 if key in j.core.specparser.actornames:
                     spec=j.core.specparser.getActorSpec(self.appname,self.actorname, False)
@@ -228,7 +228,7 @@ class SpecBlock():
                 spec=SpecActor(self.name,self.descr,self.tags,self.parser.path,self.startline)
                 spec.actorname=self.actorname
                 spec.appname=self.appname
-            if not j.core.specparser.app_actornames.has_key(spec.appname):
+            if spec.appname not in j.core.specparser.app_actornames:
                 j.core.specparser.app_actornames[self.appname]=[]
             if spec.actorname not in j.core.specparser.app_actornames[self.appname]:
                 j.core.specparser.app_actornames[self.appname].append(spec.actorname)
@@ -270,7 +270,7 @@ class SpecBlock():
             line=line.rstrip()
             #print "line:%s state:%s" % (line,state)
             if line.strip()=="":
-                if currentitem<>None and currentitemContent=="":
+                if currentitem!=None and currentitemContent=="":
                     currentitem.linenr=linenr+1
                 continue
             if state=="description" and line.strip().find("\"\"\"")==0:
@@ -297,20 +297,20 @@ class SpecBlock():
                 #we are in block & no block descr
                 currentitemContent+="%s\n" % line
 
-            if (state=="start" or state=="blockfound")  and line[0]<>" " and line.find(":")<>-1:
+            if (state=="start" or state=="blockfound")  and line[0]!=" " and line.find(":")!=-1:
                 typeOnLine= line.split(":",1)[0].strip()
                 if ttypeId==typeOnLine:
                     state="blockfound"
-                    if currentitemContent<>"":
+                    if currentitemContent!="":
                         currentitem._parse(self.parser,currentitemContent)
                         currentitemContent=""
                     currentitem=currentitemClass(linenr)
 
                     comment,tags,line=self.parser.getTagsComment(line)
                     currentitem._parseFirstLine(self.parser,line.split(":",1)[1].strip())
-                    if comment<>"":
+                    if comment!="":
                         currentitem.comment=comment
-                    if tags<>"":
+                    if tags!="":
                         currentitem.tags=tags
                     spec._addItem(currentitem)
                     currentitemContent=""
@@ -319,7 +319,7 @@ class SpecBlock():
 
 
         #are at end of file make sure last item is processed
-        if currentitemContent<>"":
+        if currentitemContent!="":
             currentitem._parse(self.parser,currentitemContent)
         #spec.appname=self.appname
         #spec.actorname=self.actorname
@@ -358,10 +358,10 @@ class SpecDirParser():
                         files.pop(files.index(p))
 
             for p in files:
-                if not r.has_key(len(p)):
+                if len(p) not in r:
                     r[len(p)]=[]
                 r[len(p)].append(p)
-            lkeysSorted=r.keys()
+            lkeysSorted=list(r.keys())
             lkeysSorted.sort()
             for lkey in lkeysSorted:
                 result=result+r[lkey]
@@ -375,20 +375,20 @@ class SpecDirParser():
                 continue
             parser=j.core.specparser._getSpecFileParser(path,self.appname,self.actorname)
 
-            for key in parser.specblocks.keys():
+            for key in list(parser.specblocks.keys()):
                 block=parser.specblocks[key]
                 self.specblocks[block.type+"_"+block.name]=block
 
     def getSpecBlock(self,type,name):
         key=type+"_"+name
-        if self.specblocks.has_key(key):
+        if key in self.specblocks:
             return self.specblocks[key]
         else:
             return False
 
     def __str__(self):
         s="path:%s\n" % self.path
-        for key in self.specblocks.keys():
+        for key in list(self.specblocks.keys()):
             block=self.specblocks[key]
             s+="%s\n\n" % block
 
@@ -405,7 +405,7 @@ class SpecFileParser():
         self.path=path
         self.appname=appname
         self.actorname=actorname
-        if self.appname<>self.appname.lower().strip():
+        if self.appname!=self.appname.lower().strip():
             emsg="appname %s for specs should be lowercase & no spaces" % self.appname
             raise RuntimeError(emsg+" {category:spec.nameerror}")
         self.contentin=j.system.fs.fileGetContents(path)
@@ -423,7 +423,7 @@ class SpecFileParser():
             #remove empty lines
             line=line.replace("\t","    ")
             if line.strip()=="" or line.strip()[0]=="#":
-                if currentblock<>None and currentblock.content=="":
+                if currentblock!=None and currentblock.content=="":
                     currentblock.startline=linenr+1
                 continue
             ##remove comments from line
@@ -479,7 +479,7 @@ class SpecFileParser():
 
             self.contentout+="%s\n" % line
 
-        for key in self.specblocks.keys():
+        for key in list(self.specblocks.keys()):
             block=self.specblocks[key]
             block.parse()
             #print block.name
@@ -489,23 +489,23 @@ class SpecFileParser():
         """
         return comment,tags,line
         """
-        if line.find("#")<>-1:
+        if line.find("#")!=-1:
             comment=line.split("#",1)[1]
             line=line.split("#",1)[0]
         else:
             comment=""
         tags=None
-        if line.find("@")<>-1:
+        if line.find("@")!=-1:
             tags=line.split("@",1)[1]
             line=line.split("@",1)[0]
-        if comment.find("@")<>-1:
+        if comment.find("@")!=-1:
             tags=comment.split("@",1)[1]
             comment=comment.split("@")[0]
 
-        if comment<>None:
+        if comment!=None:
             comment=comment.strip()
 
-        if tags<>None:
+        if tags!=None:
             tags=tags.strip()
 
         return comment,tags,line
@@ -519,7 +519,7 @@ class SpecFileParser():
             if line.strip()=="":
                 continue
             else:
-                if line.find("    ")<>0:
+                if line.find("    ")!=0:
                     return self.raiseError("identation error.",line,linenr)
                 content2+="%s\n" % line[4:]
         return content2
@@ -532,7 +532,7 @@ class SpecFileParser():
         if(len(line)<maxLevel*4):
             self.raiseError("line is too small, there should be max identation of %s" % maxLevel,line,linenr)
         for i in range(0,minLevel):
-            if line[i*4:(i+1)*4]<>"    ":
+            if line[i*4:(i+1)*4]!="    ":
                 ok=False
         if line[maxLevel*4+1]==" ":
             ok=False
@@ -561,7 +561,7 @@ class SpecParserFactory():
 
     def getEnumerationSpec(self,app,actorname,name,die=True):
             key="enumeration_%s_%s_%s"%(app,actorname,name)
-            if self.specs.has_key(key):
+            if key in self.specs:
                 return self.specs[key]
             else:
                 if die:
@@ -572,7 +572,7 @@ class SpecParserFactory():
 
     def getActorSpec(self,app,name,raiseError=True):
         key="actor_%s_%s_%s"%(app,name,"")
-        if self.specs.has_key(key):
+        if key in self.specs:
             return self.specs[key]
         else:
             if raiseError:
@@ -583,7 +583,7 @@ class SpecParserFactory():
     def getModelSpec(self,app,actorname,name,die=True):
         key="model_%s_%s_%s"%(app,actorname,name)
         key = key.lower()
-        if self.specs.has_key(key):
+        if key in self.specs:
             return self.specs[key]
         else:
             if die:
@@ -594,7 +594,7 @@ class SpecParserFactory():
 
     def getModelNames(self,appname,actorname):
         key="%s_%s"%(appname,actorname)
-        if j.core.specparser.modelnames.has_key(key):
+        if key in j.core.specparser.modelnames:
             return self.modelnames[key]
         else:
             return []
@@ -603,7 +603,7 @@ class SpecParserFactory():
         if spec.type=="rootmodel":
             spec.type="model"
             key="%s_%s"%(spec.appname,spec.actorname)
-            if not self.modelnames.has_key(key):
+            if key not in self.modelnames:
                 self.modelnames[key]=[]
             if spec.name not in self.modelnames[key]:
                 self.modelnames[key].append(spec.name)
@@ -613,17 +613,17 @@ class SpecParserFactory():
         else:
             specname=spec.name
 
-        if spec.type=="actor" and specname<>"":
+        if spec.type=="actor" and specname!="":
             from JumpScale.core.Shell import ipshell
-            print "DEBUG NOW addSpec in specparser, cannot have actor with specname<>empty"
+            print("DEBUG NOW addSpec in specparser, cannot have actor with specname<>empty")
             ipshell()
 
         key="%s_%s_%s_%s"%(spec.type,spec.appname,spec.actorname,specname)
 
-        if spec.type<>spec.type.lower().strip():
+        if spec.type!=spec.type.lower().strip():
             emsg="type %s of spec %s should be lowercase & no spaces" % (spec.type,key)
             raise RuntimeError(emsg+" {category:specs.input}") #@todo P2 the errorcondition handler does not deal with this format to escalate categories
-        if spec.name<>spec.name.lower().strip():
+        if spec.name!=spec.name.lower().strip():
             emsg="name %s of spec %s should be lowercase & no spaces" % (spec.name,key)
             raise RuntimeError(emsg+" {category:specs.input}")
 
@@ -645,13 +645,13 @@ class SpecParserFactory():
         # print "findspec: '%s/%s/%s'"%(appname,actorname,specname)
         # print "query:'%s'"%query
         spec=findFromSpec
-        if query<>"":
+        if query!="":
             type=""
             if query[0]=="E":
                 type="enumeration"
             if query[0]=="M":
                 type="model"
-            if query.find("(") <>-1 and query.find(")")<>-1:
+            if query.find("(") !=-1 and query.find(")")!=-1:
                 query=query.split("(",1)[1]
                 query=query.split(")")[0]
             splitted=query.split(".")
@@ -673,14 +673,14 @@ class SpecParserFactory():
                     splitted=splitted[1:] #remove the already matched item
 
             query=".".join(splitted)
-            if query.strip()<>"." and query.strip()<>"":
+            if query.strip()!="." and query.strip()!="":
                 specname=query
 
-            if actorname=="" and spec<>None:
+            if actorname=="" and spec!=None:
                 #no specificiation of actor or app so needs to be local to this spec
                 actorname=spec.actorname
 
-            if appname=="" and spec<>None:
+            if appname=="" and spec!=None:
                 #no specificiation of actor or app so needs to be local to this spec
                 appname=spec.appname
 
@@ -691,22 +691,22 @@ class SpecParserFactory():
         else:
             specname=specname
 
-        if actorname<>"" and appname<>""  and specname<>"" and type<>"":
+        if actorname!="" and appname!=""  and specname!="" and type!="":
             key="%s_%s_%s_%s" % (type,appname,actorname,specname)
-            if j.core.specparser.specs.has_key(key):
+            if key in j.core.specparser.specs:
                 result=[j.core.specparser.specs[key]]
         else:
             #not enough specified need to walk over all
-            for  key in j.core.specparser.specs.keys():
+            for  key in list(j.core.specparser.specs.keys()):
                 spec=j.core.specparser.specs[key]
                 found=True
-                if actorname<>"" and spec.actorname<>actorname:
+                if actorname!="" and spec.actorname!=actorname:
                     found=False
-                if appname<>"" and spec.appname<>appname:
+                if appname!="" and spec.appname!=appname:
                     found=False
-                if specname<>"" and spec.name<>specname:
+                if specname!="" and spec.name!=specname:
                     found=False
-                if type<>"" and spec.type<>type:
+                if type!="" and spec.type!=type:
                     found=False
                 if found:
                     result.append(spec)
@@ -714,7 +714,7 @@ class SpecParserFactory():
         # print 'actorname:%s'%actorname
 
         if len(result)==0:
-            if spec<>None:
+            if spec!=None:
                 emsg="Could not find spec with query:%s appname:%s actorname:%s name:%s (spec info: '%s'_'%s'_'%s')" % \
                     (query,appname,actorname,specname,spec.name,spec.specpath,spec.linenr)
             else:
@@ -723,8 +723,8 @@ class SpecParserFactory():
             raise RuntimeError(emsg+" {category:specs.finderror}")
 
         if findOnlyOne:
-            if len(result)<>1:
-                if spec<>None:
+            if len(result)!=1:
+                if spec!=None:
                     emsg="Found more than 1 spec for search query:%s appname:%s actorname:%s name:%s (spec info: %s_%s_%s)" % \
                         (query,appname,actorname,specname,spec.name,spec.specpath,spec.linenr)
                 else:
@@ -751,23 +751,23 @@ class SpecParserFactory():
         key="%s_%s"%(appname,actorname)
         if key in self.actornames:
             #found actor remove the specs
-            for key2 in self.specs.keys():
+            for key2 in list(self.specs.keys()):
                 type,app,item,remaining=key2.split("_",3)
                 if app==appname and item.find(actorname)==0:
-                    print "remove specs %s from memory" % key
+                    print("remove specs %s from memory" % key)
                     self.specs.pop(key2)
             i=self.actornames.index(key)
             self.actornames.pop(i)
 
     def resetMemNonSystem(self):
         self.appnames=["system"]
-        for key2 in self.specs.keys():
+        for key2 in list(self.specs.keys()):
             type,app,item,remaining=key2.split("_",3)
-            if app<>"system":
+            if app!="system":
                 self.specs.pop(key2)
         for key in self.actornames:
             appname,actorname=key.split("_",1)
-            if appname<>"system":
+            if appname!="system":
                 i=self.actornames.index(key)
                 self.actornames.pop(i)
 

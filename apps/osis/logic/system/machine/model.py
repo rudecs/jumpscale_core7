@@ -10,7 +10,7 @@ class Machine(OsisBaseObject):
     """
 
     def __init__(self, ddict={}):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.id = 0

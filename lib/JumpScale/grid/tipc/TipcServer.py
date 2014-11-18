@@ -21,7 +21,7 @@ class TipcServer(object):
   
         self.socket = socket.socket(family=socket.AF_TIPC, type=socket.SOCK_RDM)
         self.socket.bind(self.srvaddr)
-        print 'server started, addr:', self.socket.getsockname()
+        print('server started, addr:', self.socket.getsockname())
         while True:
             data, addr = self.socket.recvfrom(66000)
             returndata = self.handleData(data, addr)

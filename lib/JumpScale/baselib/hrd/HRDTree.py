@@ -1,9 +1,9 @@
 from JumpScale import j
 # import JumpScale.baselib.codeexecutor
 
-from HRDBase import HRDBase
+from .HRDBase import HRDBase
 
-from HRD import HRD
+from .HRD import HRD
 
 
 class HRDTree(HRDBase):
@@ -16,7 +16,7 @@ class HRDTree(HRDBase):
         self.path="tree"
         self.prefixWithName=prefixWithName
         self.keepformat=keepformat
-        if path<>"":
+        if path!="":
             self.add2tree(path)
 
     def add2treeFromContent(self,content):
@@ -34,7 +34,7 @@ class HRDTree(HRDBase):
             self.hrds.append(hrd)
 
     def getHrd(self,key):
-        if not self.items.has_key(key):
+        if key not in self.items:
             j.events.inputerror_critical("Cannot find key:'%s' in tree"%key,"hrdtree.gethrd.notfound")
         return self.items[key].hrd
 
@@ -47,7 +47,7 @@ class HRDTree(HRDBase):
         hrd.delete(key)
 
     def get(self,key,default=None,):
-        if not self.items.has_key(key):
+        if key not in self.items:
             if default==None:
                 j.events.inputerror_critical("Cannot find value with key %s in tree %s."%(key,self.path),"hrd.get.notexist")
             val=default

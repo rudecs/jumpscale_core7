@@ -10,7 +10,7 @@ class Test(OsisBaseObject):
 
     def __init__(self, ddict={}, gid=0, jsname='', jsorganization='', roles=[], args=[], timeout=60, sessionid=None, jscriptid=None,lock="",\
             lockduration=3600,nid=0):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.id=0

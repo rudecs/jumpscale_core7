@@ -1,6 +1,6 @@
 from JumpScale import j
 
-from Daemon import Daemon
+from .Daemon import Daemon
 import time
 import struct
 
@@ -88,7 +88,7 @@ class ServerBaseFactory():
         print client.echo("atest")
 
         """
-        from DaemonClient import DaemonClient
+        from .DaemonClient import DaemonClient
         return DaemonClient
 
     def _serializeBinSend(self, category, cmd, data, sendformat, returnformat, sessionid):

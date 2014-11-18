@@ -59,7 +59,7 @@ class IPv4Address:
         result = ''
         #We take a copy since we got to alter this value
         ip = self._ip
-        for i in xrange(4):
+        for i in range(4):
             result = ".%d%s" % ((ip & 0x000000FF), result)
             ip = ip >> 8
         #Strip of starting .

@@ -7,20 +7,20 @@ j.application.start("jumpscale:workertest")
 import JumpScale.baselib.redisworker
 
 def atest(msg):
-    print msg
+    print(msg)
     # raise RuntimeError("e")
     return msg
 
 w=j.clients.redisworker
 
 def test1():
-    print "START"
+    print("START")
     for i in range(10):
         job=w.execFunction( method=atest, _category='mytest', _organization='unknown', _timeout=60, _queue='default', _log=True,_sync=True, msg="this is a test")
-    print job
-    print "STOP"
+    print(job)
+    print("STOP")
 
-print w.getQueuedJobs()
+print(w.getQueuedJobs())
 
 test1()
 

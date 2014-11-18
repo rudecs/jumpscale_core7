@@ -6,7 +6,7 @@ class SerializerBlowfish(object):
         self.c = None
 
     def _init(self,encrkey):
-        if self.encrkey<>encrkey:
+        if self.encrkey!=encrkey:
             from Crypto.Cipher import Blowfish
             from random import randrange
             self.randrange=randrange

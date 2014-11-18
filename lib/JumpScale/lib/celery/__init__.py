@@ -1,6 +1,6 @@
 from JumpScale import j
 
-from CeleryFactory import *
+from .CeleryFactory import *
 
 j.base.loader.makeAvailable(j, 'clients')
 

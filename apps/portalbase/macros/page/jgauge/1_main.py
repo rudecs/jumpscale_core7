@@ -98,7 +98,7 @@ $gid.range.color = 'rgba(0, 0, 0, 0)';
             "ticks.color ", "ticks.thickness", "ticks.radius", "ticks.labelPrecision", "ticks.labelRadius", "range.radius",
             "range.thickness ", " range.start ", "range.end ", "range.color"]
     for cmd in cmds:
-        if cmd in paramsd.keys():
+        if cmd in list(paramsd.keys()):
             C = "myGauge%s.%s=%s\n" % (gaugeid, cmd, paramsd["%s" % cmd])
 
     C = C.replace("$id", str(gaugeid))

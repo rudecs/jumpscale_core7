@@ -35,8 +35,8 @@
 
 from JumpScale import j
 
-from DialogType import DialogType
-from EasyDialogConsole import EasyDialogConsole
+from .DialogType import DialogType
+from .EasyDialogConsole import EasyDialogConsole
 
 class EasyDialog():
     def __init__(self):
@@ -55,7 +55,7 @@ class EasyDialog():
         self.type=type
         self.easyDialog=EasyDialogConsole()
         if self.type==DialogType.WIZARDSERVER:
-            from EasyDialogWizardServer import EasyDialogWizardServer
+            from .EasyDialogWizardServer import EasyDialogWizardServer
             self.easyDialog=EasyDialogWizardServer()
         if self.type==DialogType.WIN32 and j.system.platformtype.isWindows():
             try:
@@ -64,7 +64,7 @@ class EasyDialog():
             except ImportError:
                 easyDialogsInstalled = False  # EasyDialog is not installed, fall back to Console.
             if easyDialogsInstalled:
-                from EasyDialogWin32 import EasyDialogWin32
+                from .EasyDialogWin32 import EasyDialogWin32
                 self.easyDialog=EasyDialogWin32()
 
     def message(self, message):
@@ -272,4 +272,4 @@ class EasyDialog():
 
 if __name__=='__main__':
     #print EasyDialog().askFilePath()
-    print EasyDialog().askString("something")
+    print(EasyDialog().askString("something"))

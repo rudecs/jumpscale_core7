@@ -4,7 +4,7 @@ import time
 import calendar
 from htmllib import HTMLParser
 from formatter import AbstractFormatter, DumbWriter
-from cStringIO import StringIO
+from io import StringIO
 import JumpScale.lib.html
 
 class MySQLFactory():
@@ -17,7 +17,7 @@ class MySQLFactory():
 
     def getClient(self,ipaddr,port,login,passwd,dbname):
         key="%s_%s_%s_%s_%s"%(ipaddr,port,login,passwd,dbname)
-        if not self.clients.has_key(key):
+        if key not in self.clients:
             self.clients[key]=_mysql.connect(ipaddr, login, passwd, dbname,port=port)
         return MySQLClient(self.clients[key])
 
@@ -46,7 +46,7 @@ class MySQLClient():
         Q="DELETE FROM %s WHERE %s"%(tablename,whereclause)
         self.client.query(Q)
         result = self.client.use_result()
-        if result<>None:
+        if result!=None:
             result.fetch_row()
             
         return result      

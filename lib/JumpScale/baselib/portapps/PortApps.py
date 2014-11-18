@@ -1,6 +1,6 @@
 from JumpScale import j
 import platform
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import gzip
 import os
 import tarfile
@@ -37,7 +37,7 @@ class PortApp(j.code.classGetBase()):
     def kill(self):
         self._update()
         def shutdown():
-            if self.shutdowncmd.strip()<>"":
+            if self.shutdowncmd.strip()!="":
                 cmd=self._replaceArgs(self.shutdowncmd)
                 try:
                     j.system.process.execute(cmd)
@@ -49,15 +49,15 @@ class PortApp(j.code.classGetBase()):
         for procid in j.system.windows.listRunningProcesses():
             procid=str(procid.lower().strip())
             for name in self.processnames.split(","):
-                if procid.find(name)<>-1:
+                if procid.find(name)!=-1:
                     pid=j.system.windows.getPidOfProcess(procid)
                     if pid>100:
                         shutdown()
                         try:
                             j.system.process.kill(pid)
-                        except Exception,e:
-                            print "could not kill %s %s" % (pid,name)
-                            print e
+                        except Exception as e:
+                            print("could not kill %s %s" % (pid,name))
+                            print(e)
         
     def start(self,args="",agent=False,kill=True):
         self._update()
@@ -69,9 +69,9 @@ class PortApp(j.code.classGetBase()):
             q.client.portapps.install(app.name)
         dest=self._replaceArgs(app.exe)
         cmd=dest            
-        if args<>"":
+        if args!="":
             cmd=cmd+" "+args
-        print "Execute %s" % cmd
+        print("Execute %s" % cmd)
         j.system.process.execute(dest)
 
 class PortApps(j.code.classGetBase()):
@@ -108,7 +108,7 @@ class PortApps(j.code.classGetBase()):
             pa.installed=False
             pa._update()
             self.portappsrepo[section]=pa   
-        print "metadata portapps updated"
+        print("metadata portapps updated")
 
     def reset(self):
         self.killall()
@@ -130,12 +130,12 @@ class PortApps(j.code.classGetBase()):
         if j.system.fs.exists(destcfg):
             data=j.system.fs.fileGetContents(destcfg)
             data=j.tools.json.decode(data)
-            for name in data["portappsactive"].keys():
+            for name in list(data["portappsactive"].keys()):
                 datasub=data["portappsactive"][name]
                 pa=PortApp()
                 j.code.dict2object(pa,datasub)
                 self.portappsactive[name]=pa
-            for name in data["portappsrepo"].keys():
+            for name in list(data["portappsrepo"].keys()):
                 datasub=data["portappsrepo"][name]
                 pa=PortApp()
                 j.code.dict2object(pa,datasub)
@@ -147,14 +147,14 @@ class PortApps(j.code.classGetBase()):
             toTgz="portappexpanded.tgz"
         else:
             toTgz=to
-        print 'Downloading %s \n to %s' % (url,to)
-        handle = urllib2.urlopen(url)
+        print('Downloading %s \n to %s' % (url,to))
+        handle = urllib.request.urlopen(url)
         progress=0
         with open(toTgz, 'wb') as out:
             while True:
                 progress+=1
                 if progress>100:
-                    print"#",
+                    print("#")
                     progress=0
                 data = handle.read(1024)
                 if len(data) == 0: break
@@ -166,7 +166,7 @@ class PortApps(j.code.classGetBase()):
             
             
     def exists(self,name):
-        return self.portappsactive.has_key(name)
+        return name in self.portappsactive
     
     def get(self,name):
         """
@@ -174,9 +174,9 @@ class PortApps(j.code.classGetBase()):
         """
         if self.portappsrepo=={}:
             self.updatefromrepo()
-        if self.portappsactive.has_key(name):
+        if name in self.portappsactive:
             return self.portappsactive[name]            
-        if self.portappsrepo.has_key(name):
+        if name in self.portappsrepo:
             return self.portappsrepo[name]
         else:
             raise RuntimeError("Could not find portapp %s" % name)
@@ -187,21 +187,21 @@ class PortApps(j.code.classGetBase()):
         """
         if self.portappsrepo=={}:
             self.updatefromrepo()
-        if self.portappsrepo.has_key(name):
+        if name in self.portappsrepo:
             return self.portappsrepo[name]
         else:
             raise RuntimeError("Could not find portapp %s" % name)
 
     def getActive(self):
         result=[]
-        for name in self.portappsactive.keys():
+        for name in list(self.portappsactive.keys()):
             pa=self.portappsactive[name]  
             result.append(pa)
         return result        
 
     def getRepoApps(self):
         result=[]
-        for name in self.portappsrepo.keys():
+        for name in list(self.portappsrepo.keys()):
             pa=self.portappsrepo[name]  
             result.append(pa)
         return result    
@@ -239,22 +239,22 @@ class PortApps(j.code.classGetBase()):
         if self.portappsrepo=={}:
             self.updatefromrepo()
         if name=="":
-            names=j.console.askChoiceMultiple([item for item in j.clients.portapps.list().split("\n") if item.strip()<>""])
+            names=j.console.askChoiceMultiple([item for item in j.clients.portapps.list().split("\n") if item.strip()!=""])
             names=[item.split(" ")[0].strip() for item in names]
         else:
             names=[name]
         for name in names:
             paActive=copy.deepcopy(self.get(name))
-            if self.portappsrepo.has_key(name):
+            if name in self.portappsrepo:
                 pa=self.portappsrepo[name]
                 to=j.system.fs.joinPaths(j.dirs.baseDir,"portapps",name)
                 if not j.system.fs.exists(to):
                     j.system.fs.createDir(to)
                     paActive.installed=False
                 if paActive.installed==False or int(paActive.build)<int(pa.build):
-                    print "download portapp %s, this can take a while please wait." % name
+                    print("download portapp %s, this can take a while please wait." % name)
                     self._download(pa.url,to)
-                    print "download done for %s" %name
+                    print("download done for %s" %name)
                 
                 #remember downloaded app
                 paActive.installed=True

@@ -1,5 +1,5 @@
 from JumpScale import j
-from OSISInstance import *
+from .OSISInstance import *
 
 
 class OSIS:
@@ -13,28 +13,28 @@ class OSIS:
 
     def get(self, appname, actorname, modelname, modelClass=None, db=None, index=False, indexer=None):
         fullname = "%s_%s_%s" % (appname, actorname, modelname)
-        if self.osisInstances.has_key(fullname):
+        if fullname in self.osisInstances:
             return self.osisInstances[fullname]
         self.osisInstances[fullname] = OSISInstance(appname, actorname, modelname, modelClass, db, index, indexer)
         return self.osisInstances[fullname]
 
     def getNoDB(self, appname, actorname, modelname, modelClass=None):
         fullname = "%s_%s_%s" % (appname, actorname, modelname)
-        if self.osisInstances.has_key(fullname):
+        if fullname in self.osisInstances:
             return self.osisInstances[fullname]
         self.osisInstances[fullname] = OSISInstanceNoDB(appname, actorname, modelname, modelClass)
         return self.osisInstances[fullname]
 
     def getRemoteOsisDB(self, appname, actorname, modelname, modelClass=None):
         fullname = "%s_%s_%s" % (appname, actorname, modelname)
-        if self.osisInstances.has_key(fullname):
+        if fullname in self.osisInstances:
             return self.osisInstances[fullname]
         self.osisInstances[fullname] = OSISRemoteOSISInstance(appname, actorname, modelname, modelClass)
         return self.osisInstances[fullname]
 
     def _findModels(self, appname, actorname="*", modelname="*"):
         result = []
-        for fullname in self.osisInstances.keys():
+        for fullname in list(self.osisInstances.keys()):
             appname2, actorname2, modelname2 = fullname.split("_", 2)
 
             o = self.osisInstances[fullname]
@@ -54,7 +54,7 @@ class OSIS:
         for o in objects:
             o.destroy()
             fullname = "%s_%s_%s" % (o.appname, o.actorname, o.modelname)
-            print "destroy model: %s" % fullname
+            print("destroy model: %s" % fullname)
 
     def rebuildindex(self, appname, actorname="*", modelname="*"):
         """

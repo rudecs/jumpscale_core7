@@ -1,6 +1,6 @@
 from JumpScale import j
 from JumpScale.core.baseclasses import BaseEnumeration
-from BlobStorConfigManagement import BlobStorConfigManagement
+from .BlobStorConfigManagement import BlobStorConfigManagement
 
 class BlobType(BaseEnumeration):
     """
@@ -70,19 +70,19 @@ class BlobStor:
         resultMeta = j.cloud.system.fs.sourcePathExists(j.system.fs.joinPaths(targetDirPath, '%(key)s.meta' % {'key': key})) #@todo gives error when source not found, need other method
 
         try:
-            if self.config["type"] <> "local":
-                print "exists %s: "%key,
+            if self.config["type"] != "local":
+                print("exists %s: "%key)
             
             resultGz = j.cloud.system.fs.sourcePathExists(j.system.fs.joinPaths(targetDirPath, '%(key)s.tgz' % {'key': key})) or \
                        j.cloud.system.fs.sourcePathExists(j.system.fs.joinPaths(targetDirPath, '%(key)s.gz' % {'key': key}))
-        except Exception, e:
-            if str(e).find("Name or service not known")<>-1:
+        except Exception as e:
+            if str(e).find("Name or service not known")!=-1:
                 raise RuntimeError("Check network connection to %s"%j.system.fs.joinPaths(targetDirPath, '%(key)s.meta' % {'key': key}))
             msg="Could not check existence of key %s in blobstor %s in namespace %s, there was error:\n%s" % (key, self.name, self.namespace,e)
             raise RuntimeError(msg)
         res= resultMeta and resultGz
-        if self.config["type"] <> "local":
-            print res
+        if self.config["type"] != "local":
+            print(res)
         return res
 
     def getMetadata(self, key):
@@ -169,7 +169,7 @@ class BlobStor:
                         targetFileNameTgz = j.system.fs.joinPaths(targetDirName, hashh + ".tgz")
                     targetFileNameTgz=targetFileNameTgz.replace("file://","")
                     md5=j.tools.hash.md5(targetFileNameTgz)
-                    if md5<> metadata.md5:
+                    if md5!= metadata.md5:
                         raise RuntimeError("source file not ok, hash error: %s"%targetFileNameTgz)
                     self._put(blobstor, metadata, targetFileNameTgz)
                 else:                
@@ -179,7 +179,7 @@ class BlobStor:
             else:
                 j.clients.blobstor.log("No need to download '%s' to blobstor, because is already there" % key, "download")
         else:
-            print "COULD NOT FIND %s on %s"%(key,blobstor)
+            print("COULD NOT FIND %s on %s"%(key,blobstor))
 
     def _put(self, blobstor, metadata, tmpfile):
         # print "put:%s"%tmpfile
@@ -195,28 +195,28 @@ class BlobStor:
         ok=False
 
         if blobstor.config["type"] == "local":
-            print "local:",
+            print("local:")
             targetFileNameTgz = targetFileNameTgz.replace("file://", "")
             targetFileNameMeta=targetFileNameMeta.replace("file://", "")
             j.system.fs.createDir(j.system.fs.getDirName(targetFileNameTgz))
             j.system.fs.copyFile(tmpfile, targetFileNameTgz)
             j.system.fs.writeFile(targetFileNameMeta, metadata.content)
             ok=True
-            print "OK."
+            print("OK.")
         else:
-            print "upload remote:"
+            print("upload remote:")
             try:                
                 j.cloud.system.fs.copyFile('file://' + tmpfile, targetFileNameTgz)
                 ok=True
-            except Exception,e:
-                if str(e).find("Failed to login on ftp server")<>-1:
+            except Exception as e:
+                if str(e).find("Failed to login on ftp server")!=-1:
                     if j.application.interactive:
                         j.console.echo("Could not login to FTP server for blobstor, please give your login details.")
                         login=j.console.askString("login")
                         passwd=j.console.askPassword("passwd", False)
                         config=j.config.getInifile("blobstor")
                         ftpurl=config.getValue(blobstor.name,"ftp")
-                        if ftpurl.find("@")<>-1:
+                        if ftpurl.find("@")!=-1:
                             end=ftpurl.split("@")[1].strip()
                         else:
                             end=ftpurl.split("//")[1].strip()
@@ -224,12 +224,12 @@ class BlobStor:
                         config.setParam(blobstor.name,"ftp",ftpurl)
                         blobstor.loadConfig()
                         return self._put(blobstor, metadata, tmpfile) 
-                print "ERROR:could not upload"
+                print("ERROR:could not upload")
                 j.errorconditionhandler.processPythonExceptionObject(e)
                 j.errorconditionhandler.raiseOperationalCritical("cannot upload file to %s (ftp), error %s"%(targetFileNameTgz,e), category='ftp.upload')
                     
             if ok:
-                print "OK."
+                print("OK.")
                 j.cloud.system.fs.writeFile(targetFileNameMeta, metadata.content)
 
 
@@ -272,9 +272,9 @@ class BlobStor:
             #    j.system.fs.gzip(path, tmpfile)
             pass
         else:
-            print "compress:%s"%path,
+            print("compress:%s"%path)
             j.system.fs.targzCompress(path, tmpfile, followlinks=False)
-            print "ok."            
+            print("ok.")            
 
         hashFromCompressed = j.tools.hash.md5(tmpfile)
         descr = ""
@@ -343,7 +343,7 @@ class BlobStorFactory:
         self.blobstorCache={} 
 
     def get(self, name=""):
-        if self.blobstorCache.has_key(name):
+        if name in self.blobstorCache:
             return self.blobstorCache[name]
         self.blobstorCache[name]= BlobStor(name)
         return self.blobstorCache[name]

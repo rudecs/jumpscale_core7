@@ -9,7 +9,7 @@ class Alert(OsisBaseObject):
     """
 
     def __init__(self, ddict={},id=0, gid=0, nid=0, guid="",description="",descriptionpub="",level=1,category="",tags="",transactionsinfo=""   ):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
         else:
             self.id=id  #is unique where alert has been created

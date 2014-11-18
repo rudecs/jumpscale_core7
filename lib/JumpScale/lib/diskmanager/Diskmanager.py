@@ -7,7 +7,7 @@ import stat
 def _is_block(file):
     try:
         st = os.stat(file)
-    except OSError, err:
+    except OSError as err:
         if err.errno == errno.ENOENT:
             return False
         raise
@@ -22,7 +22,7 @@ def get_open_blks(pid):
         if os.path.islink(file):
             try:
                 file = os.readlink(file)
-            except OSError, err:
+            except OSError as err:
                 if err.errno == errno.ENOENT:
                     hit_enoent = True
                     continue
@@ -174,7 +174,7 @@ class Diskmanager():
                         disko.path=partition.path if disk.type != 'loop' else disk.device.path
                         disko.size=round(partition.getSize(unit="mb"),2)
                         disko.free = 0
-                        print "partition:%s %s"%(disko.path,disko.size)
+                        print("partition:%s %s"%(disko.path,disko.size))
                         try:
                             fs = self.parted.probeFileSystem(partition.geometry)
                         except:
@@ -183,11 +183,11 @@ class Diskmanager():
                         disko.fs=fs
                         partfound=getpsutilpart(disko.path)
                         mountpoint=None
-                        if partfound==None and mounted<>True:
+                        if partfound==None and mounted!=True:
                             mountpoint="/mnt/tmp"
                             cmd="mount %s /mnt/tmp"%partition.path
                             rcode,output=j.system.process.execute(cmd,ignoreErrorOutput=False,dieOnNonZeroExitCode=False,)
-                            if rcode<>0:
+                            if rcode!=0:
                                 #mount did not work
                                 mountpoint==None
 
@@ -206,8 +206,8 @@ class Diskmanager():
                         disko.ssd=ssd0
                         result.append(disko)
 
-                        if mountpoint<>None:
-                            print "mountpoint:%s"%mountpoint
+                        if mountpoint!=None:
+                            print("mountpoint:%s"%mountpoint)
                             size, used, free, percent=psutil.disk_usage(mountpoint)
                             disko.free=disko.size*float(1-percent/100)
 
@@ -247,7 +247,7 @@ diskinfo.description=
                                         client_disk=j.core.osis.getClientForCategory(client,"system","disk")
 
                                         disk=client_disk.new()
-                                        for key,val in disko.__dict__.iteritems():
+                                        for key,val in disko.__dict__.items():
                                             disk.__dict__[key]=val
 
                                         disk.description=hrd.get("diskinfo.description")
@@ -267,7 +267,7 @@ diskinfo.description=
                                         disko.type=hrd.get("diskinfo.type").split(",")
                                         disko.type.sort()
                                         disko.description=hrd.get("diskinfo.description")
-                                        print "found disk:\n%s"%(disko)
+                                        print("found disk:\n%s"%(disko))
                                     cmd="umount /mnt/tmp"
                                     j.system.process.execute(cmd,dieOnNonZeroExitCode=False)
                                     if os.path.ismount("/mnt/tmp")==True:

@@ -14,7 +14,7 @@ def pathToUnicode(path):
     @return: unicode path
     @rtype: unicode
     """
-    if isinstance(path, unicode):
+    if isinstance(path, str):
         return path
 
     return path.decode(sys.getfilesystemencoding())
@@ -80,7 +80,7 @@ class Dirs(object):
         txt=txt.replace("$jslibextdir",self.libExtDir)
         txt=txt.replace("$jsbindir",self.binDir)
         txt=txt.replace("$nodeid",str(j.application.whoAmI.nid))
-        for key,value in additionalArgs.iteritems():
+        for key,value in additionalArgs.items():
             txt=txt.replace("$%s"%key,str(value))
         return txt
 
@@ -93,7 +93,7 @@ class Dirs(object):
         for path in paths:
             content=j.system.fs.fileGetContents(path)
             content2=self.replaceTxtDirVars(content,additionalArgs)
-            if content2<>content:
+            if content2!=content:
                 j.system.fs.writeFile(filename=path,contents=content2)
 
     def _createDir(self,path):

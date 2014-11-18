@@ -3,7 +3,7 @@ import JumpScale.baselib.gitlab
 import JumpScale.baselib.blobstor2
 import os
 
-from JSFileMgr import JSFileMgr
+from .JSFileMgr import JSFileMgr
 
 class BackupClient:
     """
@@ -92,7 +92,7 @@ class BackupClient:
 
     def _clean(self):
         for ddir in j.system.fs.listDirsInDir(self.mdpath,False,True,findDirectorySymlinks=False):
-            if ddir.lower()<>".git":
+            if ddir.lower()!=".git":
                 j.system.fs.removeDirTree(j.system.fs.joinPaths(self.mdpath,ddir))
         for ffile in j.system.fs.listFilesInDir(self.mdpath, recursive=False, followSymlinks=False):
             j.system.fs.remove(ffile)
@@ -116,19 +116,19 @@ class BackupClient:
     #     self.commitMD()
 
     def commitMD(self):
-        print "commit to git"
+        print("commit to git")
         self.gitclient.commit("backup %s"%j.base.time.getLocalTimeHRForFilesystem())
         if j.system.net.tcpPortConnectionTest(self.gitlab.addr,self.gitlab.port):
             #found gitlab
-            print "push to git"
+            print("push to git")
             self.gitclient.push(force=True)
         else:
-            print "WARNING COULD NOT COMMIT CHANGES TO GITLAB, no connection found.\nDO THIS LATER!!!!!!!!!!!!!!!!!!!!!!"
+            print("WARNING COULD NOT COMMIT CHANGES TO GITLAB, no connection found.\nDO THIS LATER!!!!!!!!!!!!!!!!!!!!!!")
 
     def pullMD(self):
-        print "pull from git"        
+        print("pull from git")        
         if j.system.net.tcpPortConnectionTest(self.gitlab.addr,self.gitlab.port):
             #found gitlab
             self.gitclient.pull()        
         else:
-            print "WARNING COULD NOT PULL CHANGES FROM GITLAB, no connection found.\nDO THIS LATER!!!!!!!!!!!!!!!!!!!!!!"
+            print("WARNING COULD NOT PULL CHANGES FROM GITLAB, no connection found.\nDO THIS LATER!!!!!!!!!!!!!!!!!!!!!!")

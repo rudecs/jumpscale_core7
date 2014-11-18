@@ -15,7 +15,7 @@ class OurCuisine():
         j.remote.fabric.setHost()
 
     def connect(self,addr,port,passwd=""):
-        if passwd<>"":
+        if passwd!="":
             env.password=passwd
 
         cmd="ssh-keygen -f \"/root/.ssh/known_hosts\" -R [%s]:%s"%(addr,port)
@@ -37,4 +37,4 @@ c=j.remote.cuisine
 
 c.user_ensure(...)
         """
-        print C
+        print(C)

@@ -1,7 +1,7 @@
 from JumpScale import j
 
 class Dep():
-    def __init__(self,name,path):
+    def __init__(self,name,path):        
         self.name=name
         self.path=path
         if j.system.fs.isLink(self.path):
@@ -23,7 +23,8 @@ class Dep():
     def copyTo(self,path):
         dest=j.system.fs.joinPaths(path,self.name)
         j.system.fs.createDir(j.system.fs.getDirName(dest))
-        j.system.fs.copyFile(self.path, dest)
+        if dest!=self.path:
+            j.system.fs.copyFile(self.path, dest)
 
     def __str__(self):
         return "%-40s %s"%(self.name,self.path)
@@ -37,34 +38,45 @@ class Sandboxer():
 
     def __init__(self):
         self._done=[]
-        self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so"]
+        self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so","libz.so"]
 
     def _ldd(self,path,result={}):
+
+        if j.system.fs.getFileExtension(path) in ["py","pyc","cfg","hrd"]:
+            return result
+
+        print ("check:%s"%path)
+
         cmd="ldd %s"%path
-        rc,out=j.system.process.execute(cmd)
+        rc,out=j.system.process.execute(cmd,dieOnNonZeroExitCode=False)
+        if rc>0:
+            if out.find("not a dynamic executable")!=-1:
+                return result    
         for line in out.split("\n"):
             line=line.strip()
             if line=="":
                 continue
             if line.find('=>')==-1:
                 continue
+                
             name,lpath=line.split("=>")
-            name=name.strip()       
+            name=name.strip().strip("\t")
+            name=name.replace("\\t","")
             lpath=lpath.split("(")[0]
             lpath=lpath.strip()
             if lpath=="":
                 continue
-            if name.find("libc.so")<>0 and name.lower().find("libx")<>0 and name not in self._done \
-                and name.find("libdl.so")<>0:
+            if name.find("libc.so")!=0 and name.lower().find("libx")!=0 and name not in self._done \
+                and name.find("libdl.so")!=0:
                 excl=False
                 for toexeclude in self.exclude:
                     if name.find(toexeclude)==0:
                         excl=True 
                 if not excl:
-                    print "found:%s"%name
+                    print("found:%s"%name)
                     result[name]=Dep(name,lpath)
                     self._done.append(name)
-            result=self._ldd(lpath,result)
+                    result=self._ldd(lpath,result)
 
         return result
 
@@ -80,8 +92,7 @@ class Sandboxer():
                     self.copyLibsTo(item,dest,recursive=recursive)                
         else:     
             result=self.findLibs(path)
-            print "copy libs for %s"%path
-            for name,deb in result.iteritems():
+            for name,deb in result.items():
                 deb.copyTo(dest)
         
 

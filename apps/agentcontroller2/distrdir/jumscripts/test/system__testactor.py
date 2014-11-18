@@ -49,7 +49,7 @@ def msg_scheduled(msg):
     this will print a message each 60 seconds on worker queue io
     """
     msg="alive"
-    print msg
+    print(msg)
 
 @timeout(50)
 def wait(ttime=5):
@@ -64,7 +64,7 @@ def debug():
     be careful when debugging because will be done in mother process of agent, DO NEVER DO THIS IN PRODUCTION
     """
     from IPython import embed
-    print "DEBUG NOW"
+    print("DEBUG NOW")
     embed()
     
 

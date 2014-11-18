@@ -1,5 +1,5 @@
 def main(j, args, params, tags, tasklet):
-    print 'hello world'
+    print('hello world')
     import time
     params.merge(args)
     doc = params.doc
@@ -8,7 +8,7 @@ def main(j, args, params, tags, tasklet):
     out = ""
     logdir = j.core.portal.active.logdir
     backupdir = j.system.fs.joinPaths(logdir, 'backup')
-    if 'filename' in tags.keys():
+    if 'filename' in list(tags.keys()):
         filen = tags['filename']
         if not j.system.fs.exists(backupdir):
             j.system.fs.createDir(backupdir)

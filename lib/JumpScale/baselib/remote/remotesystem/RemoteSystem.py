@@ -9,7 +9,7 @@ except:
     try:
         j.system.platform.ubuntu.install("python-paramiko")
     except Exception as e:
-        print "Could not install python-paramiko, this only works on ubuntu, please install it."
+        print("Could not install python-paramiko, this only works on ubuntu, please install it.")
 import paramiko
 
 import os
@@ -17,7 +17,7 @@ import socket
 from JumpScale import j
 
 import signal
-import SocketServer
+import socketserver
 import select
 import threading
 import re
@@ -73,7 +73,7 @@ class RemoteSystem(object):
         #     raise InvalidIpAddressError("IP address is not a valid IPv4 address")
 
         key="%s_%s_%s_%s"%(ip,login,password,port)
-        if self.connections.has_key(key):
+        if key in self.connections:
             return self.connections[key]
 
         try:
@@ -192,7 +192,7 @@ class RemoteSystemProcess(_remoteSystemObject):
                 tmp = (channelFileStdOut.channel.recv(1024))
                 j.logger.log("ssh %s out:%s" % (self._ipaddress, tmp), 3)
                 if tostdout:
-                    print tmp.strip()
+                    print(tmp.strip())
                 myOut += tmp
             if channelFileStdErr.channel.recv_stderr_ready():
                 tmp = (channelFileStdErr.channel.recv_stderr(1024))
@@ -810,12 +810,12 @@ class RemoteSystemPortForward(_remoteSystemObject):
         raise RuntimeError('Failed to cancel remote port forwarding for remote port %s. Reason: %s' % (serverPort, output))
 
 
-class LocalForwardServer(SocketServer.ThreadingTCPServer):
+class LocalForwardServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
     allow_reuse_address = True
 
 
-class LocalPortForwardHandler(SocketServer.BaseRequestHandler):
+class LocalPortForwardHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         try:

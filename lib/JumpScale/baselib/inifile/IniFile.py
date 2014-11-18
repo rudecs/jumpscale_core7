@@ -1,6 +1,6 @@
 from JumpScale import j
 import JumpScale as jumpscale
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 #@todo UGLY, validation should not happen on object (file) where you read from but on file where you populate values (kds)
 
@@ -17,7 +17,7 @@ class InifileTool:
         @returns: Opened INI file object
         @rtype: jumpscale.inifile.IniFile.IniFile
         '''
-        if isinstance(filename, basestring) and not j.system.fs.exists(filename):
+        if isinstance(filename, str) and not j.system.fs.exists(filename):
             if createIfNonExisting:
                 return InifileTool.new(filename)
             else:
@@ -36,7 +36,7 @@ class InifileTool:
         @returns: New INI file object
         @rtype: jumpscale.inifile.IniFile.IniFile
         '''
-        if isinstance(filename, basestring) and j.system.fs.exists(filename):
+        if isinstance(filename, str) and j.system.fs.exists(filename):
             raise RuntimeError('Attempt to create existing INI file %s as a new file' % filename)
         return IniFile(filename, create=True)
 
@@ -67,7 +67,7 @@ class IniFile(object):
         """
         self.__configParser = ConfigParser()
         self.__removeWhenDereferenced = removeWhenDereferenced
-        if isinstance(iniFile, basestring): # iniFile is a filepath
+        if isinstance(iniFile, str): # iniFile is a filepath
             self.__inifilepath = iniFile
             if create:
                 j.system.fs.createDir(j.system.fs.getDirName(iniFile))
@@ -99,8 +99,8 @@ class IniFile(object):
             else:
                 fp = self.__file
             return self.__configParser.readfp(fp)
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             if fp and not fp.closed:
                 fp.close()
             raise RuntimeError("Failed to read the inifile \nERROR: %s"%(str(err)))
@@ -109,7 +109,7 @@ class IniFile(object):
         """ Return list of sections from this IniFile"""
         try:
             return self.__configParser.sections()
-        except Exception, err:
+        except Exception as err:
             raise LookupError("Failed to get sections \nERROR: %s"%str(err))
 
     def getParams(self, sectionName):
@@ -118,7 +118,7 @@ class IniFile(object):
         if not self.checkSection(sectionName): return
         try:
             return self.__configParser.options(sectionName)
-        except Exception, err:
+        except Exception as err:
             raise LookupError("Failed to get parameters under the specified section: %s \nERROR: %s"%(sectionName, str(err)))
 
     def checkSection(self, sectionName):
@@ -126,7 +126,7 @@ class IniFile(object):
         @param sectionName: name of the section"""
         try:
             return self.__configParser.has_section(sectionName)
-        except Exception, err:
+        except Exception as err:
             raise ValueError('Failed to check if the specified section: %s exists \nERROR: %s'%(sectionName, str(err)))
 
     def checkParam(self, sectionName, paramName):
@@ -135,7 +135,7 @@ class IniFile(object):
         @param paramName:   name of the parameter you wish to check"""
         try:
             return self.__configParser.has_option(sectionName, paramName)
-        except Exception, e:
+        except Exception as e:
             raise ValueError('Failed to check if the parameter: %s under section: %s exists \nERROR: %s'%(paramName, sectionName, str(e)))
 
     def getValue(self, sectionName, paramName, raw=False,default=None):
@@ -145,13 +145,13 @@ class IniFile(object):
         @param raw:         boolean specifying whether you wish the value to be returned raw
         @param default: if given and the value does not exist the default value will be given
         @return: The value"""
-        if default<>None and not self.checkParam(sectionName,paramName):
+        if default!=None and not self.checkParam(sectionName,paramName):
             return default
         try:
             result=self.__configParser.get(sectionName, paramName, raw)
             j.logger.log("Inifile: get %s:%s from %s, result:%s" % (sectionName,paramName,self.__inifilepath,result),7)
             return result
-        except Exception, err:
+        except Exception as err:
             raise LookupError('Failed to get value of the parameter: %s under section: %s in file %s.\nERROR: %s'%(paramName, sectionName, self.__inifilepath,str(err)))
 
     def getBooleanValue(self, sectionName, paramName):
@@ -163,7 +163,7 @@ class IniFile(object):
             j.logger.log("Inifile: get boolean %s:%s from %s, result:%s" % (sectionName,paramName,self.__inifilepath,result),7)
             return result
 
-        except Exception, e:
+        except Exception as e:
             raise LookupError('Inifile: Failed to get boolean value of parameter:%s under section:%s \nERROR: %s'%(paramName, sectionName, e))
 
     def getIntValue(self, sectionName, paramName):
@@ -174,7 +174,7 @@ class IniFile(object):
             result= self.__configParser.getint(sectionName, paramName)
             j.logger.log("Inifile: get integer %s:%s from %s, result:%s" % (sectionName,paramName,self.__inifilepath,result),7)
             return result
-        except Exception, e:
+        except Exception as e:
             raise LookupError('Failed to get integer value of parameter: %s under section: %s\nERROR: %s' % (paramName, sectionName, e))
 
     def getFloatValue(self, sectionName, paramName):
@@ -185,7 +185,7 @@ class IniFile(object):
             result=self.__configParser.getfloat(sectionName, paramName)
             j.logger.log("Inifile: get integer %s:%s from %s, result:%s" % (sectionName,paramName,self.__inifilepath,result),7)
             return result
-        except Exception, e:
+        except Exception as e:
             raise LookupError('Failed to get float value of parameter:%s under section:%s \nERROR: %'%(paramName, sectionName, e))
 
     def addSection(self, sectionName):
@@ -198,7 +198,7 @@ class IniFile(object):
             self.__configParser.add_section(sectionName)
             if self.checkSection(sectionName):
                 return True
-        except Exception, err:
+        except Exception as err:
             raise RuntimeError('Failed to add section with sectionName: %s \nERROR: %s'%(sectionName, str(err)))
 
     def addParam(self, sectionName, paramName, newvalue):
@@ -215,7 +215,7 @@ class IniFile(object):
             #    return True
             self.write()
             return False
-        except Exception, err:
+        except Exception as err:
             raise RuntimeError('Failed to add parameter with sectionName: %s, parameterName: %s, value: %s \nERROR: %s'%(sectionName, paramName, newvalue, str(err)))
 
     def setParam(self, sectionName, paramName, newvalue):
@@ -235,7 +235,7 @@ class IniFile(object):
             if self.checkSection(sectionName):
                 return False
             return True
-        except Exception, err:
+        except Exception as err:
             raise RuntimeError('Failed to remove section %s with \nERROR: %s'%(sectionName, str(err)))
 
     def removeParam(self, sectionName, paramName):
@@ -247,7 +247,7 @@ class IniFile(object):
             self.__configParser.remove_option(sectionName, paramName)
             j.logger.log("Inifile:remove %s:%s from %s" % (sectionName,paramName,self.__inifilepath))
             return True
-        except Exception, err:
+        except Exception as err:
             raise RuntimeError('Failed to remove parameter: %s under section: %s \nERROR: %s'%(paramName, sectionName, str(err)))
 
     def write(self, filePath=None):
@@ -279,7 +279,7 @@ class IniFile(object):
                 fp.close()
                 j.system.fs.unlock_(filePath)
 
-        except Exception, err:
+        except Exception as err:
             if fp and closeFileHandler and not fp.closed:
                 fp.close()
                 j.system.fs.unlock_(filePath)
@@ -296,9 +296,9 @@ class IniFile(object):
             fp.truncate()
         else:
             try:
-                from cStringIO import StringIO
+                from io import StringIO
             except ImportError:
-                from StringIO import StringIO
+                from io import StringIO
             fp = StringIO()
         self.__configParser.write(fp)
         fp.seek(0)

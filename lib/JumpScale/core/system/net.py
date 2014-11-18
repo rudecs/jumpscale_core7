@@ -19,7 +19,7 @@ def parseBlock(block):
             result.update(match.groupdict())
     for mrec in (IPIP, ):
         for m in mrec.finditer(block):
-            for key, value in m.groupdict().iteritems():
+            for key, value in m.groupdict().items():
                 result[key].append(value)
     return result
 
@@ -90,9 +90,9 @@ class SystemNet:
         raise operational critical if unreachable
         return True if reachable
         """
-        import urllib
+        import urllib.request, urllib.parse, urllib.error
         try:
-            code = urllib.urlopen(url).getcode()
+            code = urllib.request.urlopen(url).getcode()
         except Exception:
             j.errorconditionhandler.raiseOperationalCritical("Url %s is unreachable" % url)
         
@@ -240,7 +240,7 @@ class SystemNet:
     def enableProxy(self):
         maincfg = j.config.getConfig('main')
         if 'proxy' in maincfg:
-            import os, urllib2
+            import os, urllib.request, urllib.error, urllib.parse
             proxycfg = maincfg['proxy']
             proxyserver = proxycfg['server']
             params = ""
@@ -254,9 +254,9 @@ class SystemNet:
             params += proxyserver
             if j.system.platformtype.isUnix():
                 os.environ['http_proxy'] = proxyserver
-            proxy_support = urllib2.ProxyHandler()
-            opener = urllib2.build_opener(proxy_support)
-            urllib2.install_opener(opener)
+            proxy_support = urllib.request.ProxyHandler()
+            opener = urllib.request.build_opener(proxy_support)
+            urllib.request.install_opener(opener)
     
     def getNics(self,up=False):
         """ Get Nics on this machine
@@ -445,7 +445,7 @@ class SystemNet:
             for nic in nics:
                 mac=self.getMacAddress(nic)
                 ips=[item[0] for item in self.getIpAddress(nic)]
-                if nic.lower()<>"lo":
+                if nic.lower()!="lo":
                     netaddr[mac]=[nic.lower(),",".join(ips)]
         return  netaddr
 
@@ -530,10 +530,10 @@ class SystemNet:
                     return self.pm_formatMacAddress(match.group("mac"))
             return None
         elif j.system.platformtype.isWindows():
-			import wmi
-			w = wmi.WMI()	
-			NICIndex = interface.split(":")[0]
-			return str(w.Win32_NetworkAdapterConfiguration(index=NICIndex)[0].MACAddress)
+            import wmi
+            w = wmi.WMI()   
+            NICIndex = interface.split(":")[0]
+            return str(w.Win32_NetworkAdapterConfiguration(index=NICIndex)[0].MACAddress)
         else:
             raise RuntimeError("j.system.net.getMacAddress not supported on this platform")
 
@@ -826,8 +826,8 @@ class SystemNet:
             else:
                 raise ValueError('Local path is an invalid path')
         j.logger.log('Downloading url %s to local path %s'%(url, filename), 4)
-
-        from urllib import FancyURLopener, splittype
+        from urllib import FancyURLopener
+        from urllib import splittype
         class myURLOpener(FancyURLopener):
             # read a URL, with automatic HTTP authentication
             def __init__(self, user, passwd):

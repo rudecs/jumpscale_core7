@@ -1,5 +1,5 @@
 from JumpScale import j
-from ClusterNode import ClusterNode
+from .ClusterNode import ClusterNode
 from JumpScale.core.baseclasses import BaseType
 import os
 import threading
@@ -34,15 +34,15 @@ class Executor(object):
 
         method = args.pop("method")
         exec("method2=node.%s" % method)
-        print "execute method:%s" % method
-        print "args:%s" % args
+        print("execute method:%s" % method)
+        print("args:%s" % args)
 
         try:
             self.result[node.hostname] = method2(**args)
         except Exception as e:
-            print "ERROR:%s" % e
+            print("ERROR:%s" % e)
             from JumpScale.core.Shell import ipshellDebug, ipshell
-            print "DEBUG NOW in cluster executor in thread"
+            print("DEBUG NOW in cluster executor in thread")
             ipshell()
 
         # print "result:%s"%self.result[node.hostname]
@@ -151,7 +151,7 @@ class Cluster(BaseType):
 
         e = Executor(nodes)
         result = e.execute(method, **args)
-        for key in result.keys():
+        for key in list(result.keys()):
             exitcode, output, error = result[key]
             if exitcode != 0 and dieOnError:
                 raise RuntimeError("Cannot execute method%s on node:%s. Error:\n%s\n\n" % (method, key, error))
@@ -212,7 +212,7 @@ class Cluster(BaseType):
         if result == {}:
             raise RuntimeError("Could not execute %s on cluster %s" % (command, hostnames))
 
-        for key in result.keys():
+        for key in list(result.keys()):
             exitcode, output, error = result[key]
             if exitcode != 0:
                 if recoveryaction != "":

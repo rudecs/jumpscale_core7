@@ -1,4 +1,4 @@
-from store import KeyValueStoreBase
+from .store import KeyValueStoreBase
 
 NAMESPACES = dict()
 
@@ -34,7 +34,7 @@ class MemoryKeyValueStore(KeyValueStoreBase):
         if self.exists(category, key):
             del(self.db[category][key])
 
-        if self.db.has_key(category) and not self.db[category]:
+        if category in self.db and not self.db[category]:
             del(self.db[category])
 
     def exists(self, category, key):
@@ -47,7 +47,7 @@ class MemoryKeyValueStore(KeyValueStoreBase):
     def list(self, category="", prefix=""):
         if category=="":
             res=[]
-            for category in self.db.keys():
+            for category in list(self.db.keys()):
                 res+= [k for k in self.db[category] if k.startswith(prefix)]
             return res
         else:
@@ -55,7 +55,7 @@ class MemoryKeyValueStore(KeyValueStoreBase):
             return [k for k in self.db[category] if k.startswith(prefix)]
 
     def listCategories(self):
-        return self.db.keys()
+        return list(self.db.keys())
 
     def _categoryExists(self, category):
         return category in self.db

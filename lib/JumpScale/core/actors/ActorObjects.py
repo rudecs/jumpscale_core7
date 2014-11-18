@@ -1,4 +1,4 @@
-from ActorObject import ActorObject 
+from .ActorObject import ActorObject 
 
 class ActorObjects:
 	"""

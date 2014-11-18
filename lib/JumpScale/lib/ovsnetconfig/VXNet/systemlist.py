@@ -1,11 +1,11 @@
 __author__ = 'delandtj'
 
-from utils import *
+from .utils import *
 import fcntl
 import time
 import re
 from netaddr import *
-from utils import *
+from .utils import *
 
 
 def acquire_lock(path):
@@ -21,7 +21,7 @@ def acquire_lock(path):
             fcntl.lockf(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
             send_to_syslog("acquired lock %s" % path)
             return lock_file
-        except IOError, e:
+        except IOError as e:
             send_to_syslog("failed to acquire lock %s because '%s' - waiting 1 second" % (path, e))
             time.sleep(1)
 
@@ -32,7 +32,7 @@ def wait_for_if(interface):
 
 def pprint_dict(a):
     from pprint import pprint
-    pprint(dict(a.items()))
+    pprint(dict(list(a.items())))
 
 
 def get_nic_params():
@@ -84,7 +84,7 @@ def get_nic_params():
         cmd = '%s netns exec %s %s -o -d link show' % (ip,ns,ip)
         (r,s,e) = doexec(cmd.split())
         lines = s.readlines()
-        nictypes = dict(populatenictypes(lines,namespace=ns).items() + nictypes.items())
+        nictypes = dict(list(populatenictypes(lines,namespace=ns).items()) + list(nictypes.items()))
     return nictypes
 
 
@@ -215,9 +215,9 @@ def getnetworkstructure(onlypermanent=True,without_ip=False):
         if not 'forever' in l and onlypermanent and not without_ip: continue
         id = re.match('\d+',i[0]).group()
         intf = i[1]; inet = i[2]; ipstr = i[3]
-        if not s.has_key(intf): s[intf] = {}
+        if intf not in s: s[intf] = {}
         s[intf]['id'] = id
-        if not s[intf].has_key(inet): s[intf][inet] = []
+        if inet not in s[intf]: s[intf][inet] = []
         s[intf][inet].append(IPNetwork(ipstr))
         nictype,mac,carrier,speed = get_nic_detail(intf)
         s[intf]['nictype'] = nictype

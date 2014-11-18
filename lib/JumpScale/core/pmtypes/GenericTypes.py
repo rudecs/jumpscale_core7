@@ -116,7 +116,7 @@ def Enumeration(enumerationtype, **kwargs):
         @classmethod
         def check(cls, value):
             '''Check whether provided value is an instance of the required type'''
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 try:
                     cls._type.getByName(value)
                 except KeyError:

@@ -15,7 +15,7 @@ class FSWalker:
         for depth in depths:
             dname=os.path.dirname(path)
             split=dname.split(os.sep)
-            split = [ item for item in split if item<>""]
+            split = [ item for item in split if item!=""]
             #print split
             if depth==len(split):
                 return True
@@ -205,7 +205,7 @@ class FSWalker:
                         j.system.fswalker._walkFunctional(path2,callbackFunctionFile, callbackFunctionDir,arg, callbackForMatchDir,callbackForMatchFile)
                     else:
                         result=callbackFunctionDir(path2,arg)
-                        if result<>False:
+                        if result!=False:
                             # print "walker recurse:%s"% path2
                             j.system.fswalker._walkFunctional(path2,callbackFunctionFile, callbackFunctionDir,arg, callbackForMatchDir,callbackForMatchFile)
         

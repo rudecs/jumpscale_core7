@@ -1,4 +1,4 @@
-from store import KeyValueStoreBase
+from .store import KeyValueStoreBase
 from JumpScale import j
 
 import JumpScale.baselib.serializers
@@ -68,7 +68,7 @@ class ArakoonKeyValueStore(KeyValueStoreBase):
         return incr
 
     def listCategories(self):
-        return self.categories.keys()
+        return list(self.categories.keys())
 
     def _stripKey(self, catKey):
         if "." not in catKey:

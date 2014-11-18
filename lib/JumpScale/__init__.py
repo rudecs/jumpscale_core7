@@ -1,4 +1,4 @@
-# __version__ = '6.0.0'
+# __version__ = '7.0.0'
 # __all__ = ['__version__', 'j']
 
 
@@ -10,12 +10,13 @@ import sys
 import os
 
 if not 'JSBASE' in os.environ:
+    from IPython import embed
+    print ("DEBUG NOW jsbase in __init__ jumpscale")
+    embed()
+    
     base="/opt/jumpscale7"
 else:
     base=os.environ['JSBASE']
-#     home = os.environ['JSBASE']
-#     sys.path=['', '%s/bin'%home,'%s/bin/core.zip'%home,'%s/lib'%home,'%s/libjs'%home,\
-#         '%s/lib/python.zip'%home,'%s/libext'%home,'%s/lib/JumpScale.zip'%home]
 
 class JumpScale():
 	def __init__(self):
@@ -39,8 +40,8 @@ class Core():
 
 class EventsTemp():
     def inputerror_critical(self,msg,category):
-        print "ERROR IN BOOTSTRAP"
-        print msg
+        print("ERROR IN BOOTSTRAP")
+        print(msg)
         sys.exit(1)
 
 j = JumpScale()
@@ -53,32 +54,32 @@ j.do=InstallTools()
 
 from . import core
 
-from core.PlatformTypes import PlatformTypes
+from .core.PlatformTypes import PlatformTypes
 j.system.platformtype=PlatformTypes()
 
-from core import pmtypes
+from .core import pmtypes
 pmtypes.register_types()
 j.basetype=pmtypes.register_types()
 
-from core.Console import Console
+from .core.Console import Console
 j.console=Console()
 
-import baselib.hrd
+from .baselib import hrd
 j.application.config = j.core.hrd.getHRD(path="%s/hrd"%base)
 
-from core.Dirs import Dirs
+from .core.Dirs import Dirs
 j.dirs=Dirs()
 
 # from JumpScale.core.baseclasses.BaseEnumeration import enumerations
 # j.enumerators=enumerations
 
-from core import errorhandling
+from .core import errorhandling
 
 # import JumpScale.baselib.codeexecutor
-import baselib.tags
-import baselib.platforms
-import core.config
-import baselib.hrd
+from .baselib import tags
+from .baselib import platforms
+# from .core import config
+from .baselib import hrd
 
 # import JumpScale.baselib.startupmanager
 # from . import shellconfig

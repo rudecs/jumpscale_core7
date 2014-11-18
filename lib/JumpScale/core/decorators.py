@@ -95,7 +95,7 @@ class Version:
 
         else:
             parts = str_.split('.')
-            parts = map(int, parts)
+            parts = list(map(int, parts))
             if len(parts) > 3:
                 raise ValueError('Unable to parse version %s' % str_)
             if len(parts) == 3:

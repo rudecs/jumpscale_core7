@@ -27,7 +27,7 @@ class RegexMatches:
         self.matches=[]
         
     def addMatch(self,match):
-        if match<>None or match<>"":
+        if match!=None or match!="":
             rm=RegexMatch()
             rm.start=match.start()
             rm.end=match.end()
@@ -112,7 +112,7 @@ class RegexTools:
             raise RuntimeError("Cannot do .codetools.regex.matchMultiple when pattern is empty")        
         if text=="":
             return False
-        if type(patterns).__name__<>'list' :
+        if type(patterns).__name__!='list' :
             raise RuntimeError("patterns has to be of type list []")
         if patterns==[]:
             return False
@@ -219,7 +219,7 @@ class RegexTools:
         result=self.getRegexMatch( pattern, text)
         if result==None:
             return False
-        if result.founditem.strip()<>text.strip():
+        if result.founditem.strip()!=text.strip():
             return False
         
     def getRegexMatch(self, pattern, text, flags=0):
@@ -287,7 +287,7 @@ class RegexTools:
             if self.matchMultiple(includes,line) and not self.matchMultiple(excludes,line):
                 line=replaceFunction(arg,line)
             #if line.strip()<>"":
-            if line<>False:
+            if line!=False:
                 out="%s%s\n" % (out,line)
         if out[-2:]=="\n\n":
             out=out[:-1]
@@ -314,7 +314,7 @@ class RegexTools:
         getINIAlikeVariable("testarray",text,True) will return [1,2,4,5]
         """
         line=self.findLine("^%s *=" % variableName,text)
-        if line<>"":
+        if line!="":
             val=line.split("=")[1].strip()
             if isArray==True:
                 splitted=val.split(",")
@@ -343,8 +343,8 @@ class RegexTools:
         example pattern: '^class ' looks for class at beginning of line with space behind 
         """
         #check types of input
-        if type(blockStartPatterns).__name__<>'list' or type(blockStartPatternsNegative).__name__<>'list' or type(blockStopPatterns).__name__<>'list' \
-            or type(blockStopPatternsNegative).__name__<>'list' or type(linesIncludePatterns).__name__<>'list' or type(linesExcludePatterns).__name__<>'list' :
+        if type(blockStartPatterns).__name__!='list' or type(blockStartPatternsNegative).__name__!='list' or type(blockStopPatterns).__name__!='list' \
+            or type(blockStopPatternsNegative).__name__!='list' or type(linesIncludePatterns).__name__!='list' or type(linesExcludePatterns).__name__!='list' :
             raise RuntimeError("Blockstartpatterns,blockStartPatternsNegative,blockStopPatterns,blockStopPatternsNegative,linesIncludePatterns,linesExcludePatterns has to be of type list")                                
         
         state="scan"
@@ -402,7 +402,7 @@ class RegexTools:
 if __name__ == '__main__':
     content=j.system.fs.fileGetContents("examplecontent1.txt")
     rt=RegexTools()
-    print rt.getClassName("class iets(test):")
+    print(rt.getClassName("class iets(test):"))
     #content="class iets(test):"
     regexmatches=rt.getRegexMatches(r"(?m)(?<=^class )[ A-Za-z0-9_\-]*\b",content)  #find all occurences of class and find positions
     

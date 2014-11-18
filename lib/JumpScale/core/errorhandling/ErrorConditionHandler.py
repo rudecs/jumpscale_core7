@@ -10,7 +10,7 @@ except ImportError:
     import json
 
 from JumpScale import j
-from ErrorConditionObject import ErrorConditionObject
+from .ErrorConditionObject import ErrorConditionObject
 
 
 class BaseException(Exception):
@@ -19,7 +19,7 @@ class BaseException(Exception):
         self.eco = eco
 
     def __str__(self):
-        if self.eco<>None:
+        if self.eco!=None:
             return str(j.errorconditionhandler.getErrorConditionObject(self.eco))
         return "Unexpected Error Happened"
 
@@ -51,7 +51,7 @@ class ErrorConditionHandler():
                     lua=j.system.fs.fileGetContents(luapath)
                     self.escalateToRedis=self.redis.register_script(lua)    
 
-        if self.redis<>None and self.escalateToRedis<>None:
+        if self.redis!=None and self.escalateToRedis!=None:
             key=eco.getUniqueKey()
             
             data=eco.toJson()
@@ -82,7 +82,7 @@ class ErrorConditionHandler():
 
 
     def _handleRaise(self, type, level, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags=""):
-        if pythonExceptionObject<>None:
+        if pythonExceptionObject!=None:
             eco=self.parsePythonErrorObject(pythonExceptionObject,level=level,message=message)            
             eco.category=category
         else:
@@ -148,9 +148,9 @@ class ErrorConditionHandler():
             eco.type="OPERATIONS"
             eco.level=1
 
-        if eco<>None:
+        if eco!=None:
             eco.errormessage=eco.errormessage.strip("\"")
-        if extra<>None:
+        if extra!=None:
             eco.extra=extra
         
         eco.type="OPERATIONS"
@@ -161,16 +161,16 @@ class ErrorConditionHandler():
         if j.application.debug:
             msg=str(eco)
 
-        print "\n#########   Operational Critical Error    #################\n%s\n###########################################################\n"% msg
-        print 
+        print("\n#########   Operational Critical Error    #################\n%s\n###########################################################\n"% msg)
+        print() 
         if die:
             self.halt(msg,eco)
 
     def raiseRuntimeErrorWithEco(self,eco,tostdout=False):
         message=""
-        if eco.tags<>"":
+        if eco.tags!="":
             message+="((tags:%s))\n"%eco.tags
-        if eco.category<>"":
+        if eco.category!="":
             message+="((category:%s))\n"%eco.category
         message+="((type:%s))\n"%str(eco.type)
         message+="((level:%s))\n"%eco.level
@@ -197,12 +197,12 @@ class ErrorConditionHandler():
         eco.process()
    
         if j.application.debug:
-            print eco
+            print(eco)
         else:
-            print "***INPUT ERROR***"
-            if category<>None:
-                print "category:%s"%category     
-            print message
+            print("***INPUT ERROR***")
+            if category!=None:
+                print("category:%s"%category)     
+            print(message)
 
         if die:
             self.halt(eco.errormessage, eco)
@@ -270,7 +270,7 @@ class ErrorConditionHandler():
         @param tb : can be a python data object for traceback, can be None
         
         @return a ErrorConditionObject object as used by jumpscale (should be the only type of object we send around)
-        """
+        """        
         if isinstance(pythonExceptionObject, BaseException):
             return self.getErrorConditionObject(pythonExceptionObject.eco)
 
@@ -283,14 +283,14 @@ class ErrorConditionHandler():
         except:
             message2=str(pythonExceptionObject)
             
-        if message2.find("((")<>-1:
+        if message2.find("((")!=-1:
             tag=j.codetools.regex.findOne("\(\(.*\)\)",message2)         
         else:
             tag=""
             
         message+=message2
         
-        if ttype<>None:
+        if ttype!=None:
             try:
                 type_str=str(ttype).split("exceptions.")[1].split("'")[0]
             except:
@@ -308,10 +308,14 @@ class ErrorConditionHandler():
             import ujson as json
         except:
             import json
-
-        errorobject.exceptioninfo = json.dumps({'message': pythonExceptionObject.message})
+        
+        if "message" in pythonExceptionObject.__dict__:
+            errorobject.exceptioninfo = json.dumps({'message': pythonExceptionObject.message})
+        else:
+            errorobject.exceptioninfo = json.dumps({'message': str(pythonExceptionObject)})
 
         errorobject.exceptionclassname = pythonExceptionObject.__class__.__name__
+
         module = inspect.getmodule(pythonExceptionObject)
         errorobject.exceptionmodule = module.__name__ if module else None
         
@@ -324,7 +328,7 @@ class ErrorConditionHandler():
                 backtrace=backtrace[:10000]
             errorobject.backtrace=backtrace
         except:
-            print "ERROR in trying to get backtrace"
+            print("ERROR in trying to get backtrace")
 
         # except Exception,e:
         #     print "CRITICAL ERROR in trying to get errorobject, is BUG, please check (ErrorConditionHandler.py on line 228)"
@@ -335,7 +339,6 @@ class ErrorConditionHandler():
             errorobject.funcfilename=tb.tb_frame.f_code.co_filename
         except:
             pass
-                        
         return errorobject        
 
     def reRaiseECO(self, eco):
@@ -343,15 +346,13 @@ class ErrorConditionHandler():
         if eco.exceptionmodule:
             mod = imp.load_package(eco.exceptionmodule, eco.exceptionmodule)
         else:
-            import __builtin__ as mod
+            import builtins as mod
         Klass = getattr(mod, eco.exceptionclassname, RuntimeError)
         exc = Klass(eco.errormessage)
-        for key, value in json.loads(eco.exceptioninfo).iteritems():
+        for key, value in json.loads(eco.exceptioninfo).items():
             setattr(exc, key, value)
         raise exc
 
-    def parsepythonExceptionObject(self,*args,**kwargs):
-        raise RuntimeError("Do not use .parsepythonExceptionObject method use .parsePythonErrorObject")
 
     def excepthook(self, ttype, pythonExceptionObject, tb):
         """ every fatal error in jumpscale or by python itself will result in an exception
@@ -365,20 +366,20 @@ class ErrorConditionHandler():
 
         # print "jumpscale EXCEPTIONHOOK"
         if self.inException:
-            print "ERROR IN EXCEPTION HANDLING ROUTINES, which causes recursive errorhandling behaviour."
-            print pythonExceptionObject
+            print("ERROR IN EXCEPTION HANDLING ROUTINES, which causes recursive errorhandling behaviour.")
+            print(pythonExceptionObject)
             return 
 
         self.inException=True
 
         eco=self.parsePythonErrorObject(pythonExceptionObject,ttype=ttype,tb=tb)
 
-        if self.lastAction<>"":
+        if self.lastAction!="":
             j.logger.log("Last action done before error was %s" % self.lastAction)
         self._dealWithRunningAction()      
         self.inException=False             
         eco.process()
-        print eco
+        print(eco)
 
         #from IPython import embed
         #print "DEBUG NOW ooo"
@@ -391,7 +392,7 @@ class ErrorConditionHandler():
         else:
             ignorelist=["KeyboardInterrupt"]
         for item in ignorelist:
-            if eco.errormessage.find(item)<>-1:
+            if eco.errormessage.find(item)!=-1:
                 return True
         if j.application.appname in self.blacklist:
             return True
@@ -433,7 +434,7 @@ class ErrorConditionHandler():
             name=name.lower()
             toignore=False
             for check in ignore:
-                if name.find(check)<>-1:
+                if name.find(check)!=-1:
                     toignore=True
             if not toignore:
                 result.append((frame,linenr))
@@ -470,7 +471,7 @@ class ErrorConditionHandler():
         """Function that deals with the error/resolution messages generated by j.action.start() and j.action.stop()
         such that when an action fails it throws a jumpscale event and is directed to be handled here
         """
-        if j.__dict__.has_key("action") and j.action.hasRunningActions():
+        if "action" in j.__dict__ and j.action.hasRunningActions():
             j.console.echo("\n\n")
             j.action.printOutput()
             j.console.echo("\n\n")
@@ -575,6 +576,6 @@ class ErrorConditionHandler():
             j.application.stop(1)
 
     def halt(self,msg, eco):
-        if eco <> None:
+        if eco != None:
             eco = eco.__dict__
         raise HaltException(msg, eco)

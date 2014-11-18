@@ -1,7 +1,7 @@
 import requests
 import hashlib, base64, phpserialize
 
-from settings import authenticationparams, WHMCS_API_ENDPOINT
+from .settings import authenticationparams, WHMCS_API_ENDPOINT
 
 class whmcsorders():
     def __init__(self):

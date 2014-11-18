@@ -1,6 +1,6 @@
 
 from JumpScale import j
-from Sheet import *
+from .Sheet import *
 
 
 class Sheets(j.code.classGetBase()):
@@ -39,7 +39,7 @@ class Sheets(j.code.classGetBase()):
         sheets = []
         for name in sheetnames:
             sheets.append(self.sheets[name])
-        for group in rowdescr.keys():
+        for group in list(rowdescr.keys()):
             rownames = rowdescr[group]
             for rowname in rownames:
                 for x in range(0, sheettotal.nrcols):

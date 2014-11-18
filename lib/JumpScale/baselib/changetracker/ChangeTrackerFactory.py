@@ -11,7 +11,7 @@ class ChangeTrackerFactory:
 
     def get(self, gitlabName="incubaid"):
         name="%s_%s"%(blobclientName,gitlabName)
-        if self._cache.has_key(gitlabName):
+        if gitlabName in self._cache:
             return self._cache[gitlabName]
         self._cache[gitlabName]= ChangeTrackerClient(gitlabName)
         return self._cache[gitlabName]

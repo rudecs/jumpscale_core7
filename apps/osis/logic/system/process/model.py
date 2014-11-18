@@ -9,7 +9,7 @@ class Process(OsisBaseObject):
     """
 
     def __init__(self, ddict={}, gid=0,aid=0,nid=0,name="",instance="",systempid=0, id=''):
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
             self.getSetGuid()
         else:
@@ -22,7 +22,7 @@ class Process(OsisBaseObject):
             self.sname= "" #name as specified in startup manager
             self.ports = []
             self.instance = instance
-            if systempid<>0:
+            if systempid!=0:
                 self.systempids = [systempid]  # system process id (PID) at this point
             else:
                 self.systempids=[]

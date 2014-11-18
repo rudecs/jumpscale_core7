@@ -1,8 +1,8 @@
 __author__ = 'delandtj'
 
 from netaddr import *
-from netclasses import *
-from systemlist import *
+from .netclasses import *
+from .systemlist import *
 
 
 command_name = sys.argv[0]

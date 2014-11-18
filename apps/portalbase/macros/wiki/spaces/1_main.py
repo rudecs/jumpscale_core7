@@ -8,7 +8,7 @@ def main(j, args, params, tags, tasklet):
 
     bullets = params.tags.labelExists("bullets")
     table = params.tags.labelExists("table")
-    spaces = [ x.model.id for x in j.core.portal.active.spacesloader.spaces.values() ]
+    spaces = [ x.model.id for x in list(j.core.portal.active.spacesloader.spaces.values()) ]
     spaces.sort()
 
 

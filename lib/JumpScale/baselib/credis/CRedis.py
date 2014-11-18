@@ -22,13 +22,13 @@ class CRedisFactory:
 
     def getRedisClient(self, ipaddr, port,timeout=None):
         key = "%s_%s" % (ipaddr, port)
-        if not self.redis.has_key(key):
+        if key not in self.redis:
             self.redis[key] = CRedis(ipaddr, port,timeout=timeout)
         return self.redis[key]
 
     def getRedisQueue(self, ipaddr, port, name, namespace="queues"):
         key = "%s_%s_%s_%s" % (ipaddr, port, name, namespace)
-        if not self.redisq.has_key(key):
+        if key not in self.redisq:
             self.redisq[key] = CRedisQueue(self.getRedisClient(ipaddr, port), name, namespace=namespace)
         return self.redisq[key]
 
@@ -54,9 +54,9 @@ class CRedis():
         for i in range(100):
             try:
                 return self.redis.connect()
-            except BaseException,e:
-                if str(e).find("Connection refused")<>-1:
-                    print "redis not available"
+            except BaseException as e:
+                if str(e).find("Connection refused")!=-1:
+                    print("redis not available")
                     time.sleep(0.1)
                     continue
                 eco=j.errorconditionhandler.parsePythonErrorObject(e)
@@ -67,12 +67,12 @@ class CRedis():
         for i in range(100):
             try:
                 return self.redis.execute(*args)
-            except Exception,e:
-                if str(e).find("Socket closed on remote end")<>-1:
-                    print "redis socket closed, retry"
+            except Exception as e:
+                if str(e).find("Socket closed on remote end")!=-1:
+                    print("redis socket closed, retry")
                     time.sleep(0.1)
                     continue
-                if str(e).find("Connection refused")<>-1:
+                if str(e).find("Connection refused")!=-1:
                     self.connect()
                     time.sleep(1)
                     continue

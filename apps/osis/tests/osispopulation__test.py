@@ -36,16 +36,16 @@ class TEST(unittest.TestCase):
             "memory.vms",\
             "contentswitches"]
         values = list()
-        for i in xrange(10):
+        for i in range(10):
             for key in keys:
                 values.append((key, i))
         client.set(values)
 
     def test_node(self):
-        print 'node'
+        print('node')
         client = j.core.osis.getClientForCategory(self.client, "system", "node")
 
-        for i in xrange(0, 20):
+        for i in range(0, 20):
             obj = client.new()
             obj.gid = 1
             mac1 = '46:3a:26:39:67:%s' % i
@@ -63,10 +63,10 @@ class TEST(unittest.TestCase):
             client.set(obj)
         
     def test_machine(self):
-        print 'machine'
+        print('machine')
         client=j.core.osis.getClientForCategory(self.client,"system","machine")        
 
-        for i in xrange(30,50):
+        for i in range(30,50):
 
             obj=client.new()            
             obj.gid=1
@@ -89,10 +89,10 @@ class TEST(unittest.TestCase):
             client.set(obj)
 
     def test_process(self):
-        print 'process'
+        print('process')
         client=j.core.osis.getClientForCategory(self.client,"system","process")        
 
-        for i in xrange(30,100):
+        for i in range(30,100):
 
             obj=client.new()            
             obj.gid=1
@@ -114,10 +114,10 @@ class TEST(unittest.TestCase):
             client.set(obj)
 
     def test_disk(self):
-        print 'disk'
+        print('disk')
         client = j.core.osis.getClientForCategory(self.client, "system", "disk")
 
-        for i in xrange(20, 70):
+        for i in range(20, 70):
             obj = client.new()
 
             obj.gid = 1
@@ -158,10 +158,10 @@ class TEST(unittest.TestCase):
             client.set(obj)
 
     def test_vdisk(self):
-        print 'vdisk'
+        print('vdisk')
         client=j.core.osis.getClientForCategory(self.client,"system","vdisk")        
 
-        for i in xrange(20,70):
+        for i in range(20,70):
             obj=client.new()            
             obj.gid=1
             obj.nid=obj.nid=j.base.idgenerator.generateRandomInt(1,10)

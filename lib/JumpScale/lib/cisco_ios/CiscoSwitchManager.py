@@ -7,7 +7,7 @@ class CiscoSwitchManager(object):
         return CiscoSwitch(host, login,password)
 #!/usr/bin/python
 
-from Router import Router
+from .Router import Router
 
 class CiscoSwitch(object):
 
@@ -61,7 +61,7 @@ class CiscoSwitch(object):
         """
 
     def _normalizespaces(self,line):
-        while line.find("  ")<>-1:
+        while line.find("  ")!=-1:
             line=line.replace("  "," ")
         return line
 
@@ -76,7 +76,7 @@ class CiscoSwitch(object):
         out=self.do("sh mac-address-table")
         for line in out.split("\n"):
             line=line.strip()
-            if line=="" or line[0]<>"*":
+            if line=="" or line[0]!="*":
                 continue
             line=self._normalizespaces(line)
             splitted=line.split(" ")
@@ -85,7 +85,7 @@ class CiscoSwitch(object):
                 mac=splitted[2].replace(".","").lower()
                 ttype=splitted[3]
                 interface=splitted[5]
-                if not result.has_key(interface):
+                if interface not in result:
                     result[interface]=[]
                 result[interface].append(mac)
             else:

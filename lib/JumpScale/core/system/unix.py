@@ -3,7 +3,7 @@ import os
 import re
 import grp
 import pwd
-import commands
+import subprocess
 import sys
 import math
 
@@ -117,7 +117,7 @@ class UnixSystem:
             allowedIntervals = [1,2,3,4,6,8,12]
             unitRange = 24; startAt = 0; unitPlace = 2
         elif unit == TimeIntervalUnit.DAYS:
-            allowedIntervals = range(1,16) # 1,2,...,16
+            allowedIntervals = list(range(1,16)) # 1,2,...,16
             unitRange = 31; startAt = 1; unitPlace = 3
         elif unit == TimeIntervalUnit.MONTHS:
             allowedIntervals = [1,2,3,4,6]
@@ -316,7 +316,7 @@ class UnixSystem:
         if not j.system.fs.exists(subin):
             raise RuntimeError('%s not found on this system, I need it there' % subin)
 
-        command = '%s --login --command %s %s' % (subin, commands.mkarg(command), username)
+        command = '%s --login --command %s %s' % (subin, subprocess.mkarg(command), username)
 
         return command
 
@@ -365,7 +365,7 @@ class UnixSystem:
                 output = '\n'.join(('Stdout:', stdout, 'Stderr:', stderr, ))
                 raise RuntimeError('Failed to add user %s, error: %s' % \
                                     (username,output))
-            if homedir<>None:
+            if homedir!=None:
                 j.system.fs.createDir(homedir)
                 j.system.fs.chown(homedir,username)
                 j.system.fs.chmod(homedir,0o700)
@@ -597,7 +597,7 @@ class UnixSystem:
         sys.stdout.close()
         sys.stderr.close()
 
-        for fd in xrange(maxfd):
+        for fd in range(maxfd):
             try:
                 os.close(fd)
             except OSError:

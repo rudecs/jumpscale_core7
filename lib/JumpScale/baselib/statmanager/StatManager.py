@@ -21,13 +21,13 @@ class StatManager():
         self.osis = j.core.osis.getClientForCategory(self.osisclient, 'stats', 'history')
 
     def getFiveMinuteId(self):
-        if self.fiveMinuteId<>None:
+        if self.fiveMinuteId!=None:
             return self.fiveMinuteId
         else:
             return j.base.time.get5MinuteId()
 
     def getHourId(self):
-        if self.hourId<>None:
+        if self.hourId!=None:
             return self.hourId
         else:
             return self.base.time.getHourId()
@@ -73,18 +73,18 @@ class StatManager():
         now5min = j.core.portal.active.fiveMinuteId
         nowh = j.core.portal.active.hourId
         # walk over history obj and save if needed
-        for key in self.historyObjs.keys():
+        for key in list(self.historyObjs.keys()):
             if force or ttime > (self.historyObjsLastSave[key] + 900):
                 if key in self.historyObjsMod and self.historyObjsMod[key]:
                     obj = self.historyObjs[key]
                     nrItemsIn5MinRow, nrItemsInHourRow = self.getNrItemsRow(key)
-                    print "save: %s" % (obj.guid)
+                    print("save: %s" % (obj.guid))
                     # trim values out of range
                     if nrItemsIn5MinRow != 0:
                         test = now5min - nrItemsIn5MinRow
                         if min(obj.month_5min.keys()) < test:
                             # remove old items for 5min
-                            for key in obj.month_5min.keys():
+                            for key in list(obj.month_5min.keys()):
                                 if key < test:
                                     obj.month_5min.pop(key)
                     else:
@@ -93,7 +93,7 @@ class StatManager():
                         test = nowh - nrItemsInHourRow
                         if min(obj.year_hour.keys()) < test:
                             # remove old items for 5min
-                            for key in obj.year_hour.keys():
+                            for key in list(obj.year_hour.keys()):
                                 if key < test:
                                     obj.year_hour.pop(key)
                     else:
@@ -115,10 +115,10 @@ class StatManager():
         return data
 
     def cleanCache(self):
-        print "clean cache"
+        print("clean cache")
         ttime = self.getEpoch()
         try:
-            for key in self.historyObjs.keys():
+            for key in list(self.historyObjs.keys()):
                 if self.historyObjsMod[key] == False and ttime > (self.historyObjsLastSave[key] + 600):
                     self.historyObjs.pop(key)
                     self.historyObjsLastSave.pop(key)
@@ -130,13 +130,13 @@ class StatManager():
             pass
 
     def getEpoch(self):
-        if self.now<>None:
+        if self.now!=None:
             return self.now
         else:
             return j.base.time.getTimeEpoch()
 
     def getHistoryObject(self, id):
-        if self.historyObjs.has_key(id):
+        if id in self.historyObjs:
             return self.historyObjs[id]
         # now = self.getEpoch()
         # from IPython import embed
@@ -289,7 +289,7 @@ class StatManager():
         return r
 
     def getTimeStamp(self, timestamp):
-        if isinstance(timestamp, basestring):
+        if isinstance(timestamp, str):
             timestamp = j.base.time.getEpochAgo(timestamp)
         return timestamp
 
@@ -335,7 +335,7 @@ class StatManager():
         """
         result = []
         obj = self.getHistoryObject(id)
-        if len(obj.month_5min.keys()) == 0:
+        if len(list(obj.month_5min.keys())) == 0:
             result.append([])
             return None
         if start == 0:

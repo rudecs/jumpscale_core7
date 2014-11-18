@@ -72,7 +72,7 @@ class TornadoServer():
         self.type = "tornado"
 
     def start(self):
-        print "started on %s" % self.port
+        print("started on %s" % self.port)
         self.application.listen(self.port)
 
         self.ioloop = tornado.ioloop.IOLoop.instance()

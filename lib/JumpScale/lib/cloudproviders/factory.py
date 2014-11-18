@@ -1,5 +1,5 @@
-from amazon import AmazonProvider
-from digitalocean import DigitalOcean
+from .amazon import AmazonProvider
+from .digitalocean import DigitalOcean
 
 class Factory(object):
 

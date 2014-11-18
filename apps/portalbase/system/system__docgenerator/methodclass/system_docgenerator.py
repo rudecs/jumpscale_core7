@@ -15,14 +15,14 @@ class system_docgenerator(j.code.classGetBase()):
         actorjson = {'swaggerVersion': '1.1', 'basePath': '/',
                      'resourcePath': '/%s' % actorname, 'apis': []}
         routes = j.core.portal.active.routes
-        for path, route in routes.iteritems():
+        for path, route in routes.items():
             (ttype,app, actor, method) = path.split('_')
             if actor == actorname.split('__')[1]:
                 methodjson = {'path': '/restmachine/%s/%s/%s' % (app, actor, method), 'description': route[4], 'operations': []}
                 operationjson = {'httpMethod': 'GET', 'summary': route[4], 'notes': route[4], 'nickname': method.replace('.', '_')}
                 if route[2]:
                     operationjson['parameters'] = list()
-                    for paramname, paramdoc in route[2].iteritems():
+                    for paramname, paramdoc in route[2].items():
                         paramjson = {'name': paramname, 'description': paramdoc, 'paramType': 'query',
                                      'required': paramdoc.find('optional') == -1, 'allowMultiple': False, 'dataType': 'string'}
                         operationjson['parameters'].append(paramjson)
