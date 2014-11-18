@@ -115,7 +115,7 @@ for pd in pds:
         active = 'enabled' if pd.autostart else 'disabled'
         status = 'RUNNING' if pd.isRunning() else 'HALTED'
 
-        if len(pd.pids)>0 and pd.numprocesses<>len(pd.pids):
+        if len(pd.pids)>0 and pd.numprocesses != len(pd.pids):
             status = 'INCOMPLETE'
 
         if pd.pids==[]:

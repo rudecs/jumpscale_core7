@@ -30,9 +30,9 @@ def llist():
     current = None
     for line in out.split("\n"):
         line = line.strip()
-        if line.find('RUNNING')<>-1:
+        if line.find('RUNNING') != -1:
             current = running
-        elif line.find('STOPPED')<>-1:
+        elif line.find('STOPPED') != -1:
             current = stopped
         else:
             continue
@@ -107,7 +107,7 @@ if opts.action =='ps':
     cpu0=0.0
     prevparent=""
     for child in children:
-        if child.parent.name<>prevparent:
+        if child.parent.name != prevparent:
             pre+=".."
             prevparent=child.parent.name
         # cpu0=child.get_cpu_percent()
@@ -150,7 +150,7 @@ if opts.action =='new':
     now=start
     while now<start+10:    
         ip=getip(m,fail=False)
-        if ip<>"":
+        if ip != "":
             break
         time.sleep(0.2)
         now=time.time()

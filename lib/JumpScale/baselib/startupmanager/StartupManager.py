@@ -417,7 +417,7 @@ class ProcessDef:
         pids=self.getPids(ifNoPidFail=False,wait=wait)
 
         if len(pids) != self.numprocesses:
-            # print "numprocesses <> pids"
+            # print "numprocesses != pids"
             return False
         for pid in pids:
             test=j.system.process.isPidAlive(pid)
@@ -802,7 +802,7 @@ exec $cmd >>/var/log/$name.log 2>&1
         for pd in self.getProcessDefs():
             if pd.jpackage_name==jpackage.name and pd.jpackage_domain==jpackage.domain:
                 #@todo this is bug need to fix (despiegk)
-                # if jpackage.instance<>None:
+                # if jpackage.instance != None:
                 #     if pd.jpackage_instance==jpackage.instance:
                 #         result.append(pd)
                 # else:

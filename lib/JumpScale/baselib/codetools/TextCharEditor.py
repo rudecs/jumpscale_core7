@@ -158,7 +158,7 @@ class TextCharEditor():
         if blocknr==None and blockname=="":
             blocknr=0
         if blocknr!=None and blockname=="":
-            raise RuntimeError("Cannot have a blockname <>\"\" with blocknr>0")
+            raise RuntimeError("Cannot have a blockname != \"\" with blocknr>0")
         if len(text)==0:
             raise RuntimeError("Cannot insert empty block of text.")
         counter=start

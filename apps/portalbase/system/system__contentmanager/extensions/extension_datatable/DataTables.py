@@ -48,7 +48,7 @@ class DataTables():
                 # if lprop.find("id")==0 and iddone==False:
                 #     fprop="[$%s|%s]"%(counter,"/%s/%s/view_%s?guid=$%s"%(appname,actorname,modelname,getGuidPos()))
                 #     iddone=True
-                # if lprop.find("name")<>-1 and iddone==False and guidpos<>None:
+                # if lprop.find("name") != -1 and iddone==False and guidpos != None:
                 #     fprop="[$%s|%s]"%(counter,"/%s/%s/view_%s?guid=$%s"%(appname,actorname,modelname,getGuidPos()))
                 #     iddone=True
                 fprop = "[$%s|%s]" % (counter, "/space_%s__%s/form_%s?guid=$%s" % (appname, actorname, modelname, getGuidPos()))

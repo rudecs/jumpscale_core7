@@ -23,7 +23,7 @@ class MainHandlerRPC(tornado.web.RequestHandler):
         resultcode, returnformat, result = self.server.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
         data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
         # resultcode,returnformat,result2=j.servers.base._unserializeBinReturn(data3)
-        # if result<>result2:
+        # if result != result2:
         #     from IPython import embed
         #     print "DEBUG NOW serialization not work in post"
         #     embed()

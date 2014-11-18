@@ -14,7 +14,7 @@ class $modelbase(OsisBaseObject,$modelbase_osismodelbase):
     def __init__(self, ddict={}):
         # OsisBaseObject.__init__(self)
         $modelbase_osismodelbase.__init__(self)
-        if ddict <> {}:
+        if ddict != {}:
             self.load(ddict)
 
 

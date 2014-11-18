@@ -221,7 +221,7 @@ class Row(j.code.classGetBase()):
             return start, None
         y = self.cells[start]  # start height
         if y == None:
-            raise RuntimeError("start position y needs to <> None")
+            raise RuntimeError("start position y needs to != None")
         y = float(y)
         minvalue = y - godown
         if minvalue < 0:
@@ -254,7 +254,7 @@ class Row(j.code.classGetBase()):
             return start, None
         y = self.cells[start]  # start height
         if y == None:
-            raise RuntimeError("start position y needs to <> None")
+            raise RuntimeError("start position y needs to != None")
         y = float(y)
         minvalue = y
         if minvalue < 0:
@@ -762,7 +762,7 @@ class Sheet(j.code.classGetBase()):
                 # break
             # i+=1
         # i=0
-        # if copy2otherRowName<>None:
+        # if copy2otherRowName != None:
             # check if row already exists
             # if not self.rows.has_key(copy2otherRowName):
                 # self.addRow(copy2otherRowName,"float")

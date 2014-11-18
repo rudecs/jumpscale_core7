@@ -82,14 +82,14 @@ if opts.action =='delete':
     userclient.delete(user.guid)
 
 if opts.action =='add' or opts.action =='set':
-    if opts.data<>None:
+    if opts.data != None:
         splitted=opts.data.split(":")
-        if len(splitted)<>5:
+        if len(splitted) != 5:
             raise RuntimeError("error, format for param data needs to be: username:passwd:group1,group2:email1,email2:domain")
         name,passwd,groups,emails,domain=splitted
         groups=groups.split(",")
         emails=emails.split(",")
-    elif opts.hrd<>None:
+    elif opts.hrd != None:
         hrd=j.core.hrd.getHRD(content=opts.hrd.replace("#","\n"))
         if hrd.exists("user.name"):
             name=hrd.get("user.name")

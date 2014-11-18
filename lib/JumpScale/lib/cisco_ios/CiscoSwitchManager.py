@@ -29,7 +29,7 @@ class CiscoSwitch(object):
         self.host=host
         self.login=login
         self.password=password
-        # if res<>True: #adjust to check @TODO
+        # if res != True: #adjust to check @TODO
         #     raise RuntimeError("Could not login into cisco switch: %s"%host)
 
         # inputsentence = []

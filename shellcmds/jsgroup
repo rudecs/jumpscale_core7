@@ -40,9 +40,9 @@ groupclient=j.core.osis.getClientForCategory(osis,"system","group")
 
 ############ADD
 if opts.action =='add':
-    if opts.data<>None:
+    if opts.data != None:
         splitted=opts.data.split(":")
-        if len(splitted)<>2:
+        if len(splitted) != 2:
             raise RuntimeError("error, format for param data needs to be: groupname:domain")
         name,domain=splitted
     else:

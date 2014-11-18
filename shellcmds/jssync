@@ -84,7 +84,7 @@ def createdir(path):
     
     order=[]
     order.insert(0,path)
-    while path[-7:]<>":upload":
+    while path[-7:] != ":upload":
         path=j.system.fs.getParent(path)
         order.insert(0,path)
 
@@ -93,7 +93,7 @@ def createdir(path):
 
     order.pop(0)
     for item in order:
-        if item[-1]<>"/":
+        if item[-1] != "/":
             item+="/"
         cmd="rsync /tmp/empty/ %s"%item
         j.system.process.execute(cmd)
@@ -144,7 +144,7 @@ def upload(category,path="",data=False):
             j.system.process.execute(cmd)    
             return
         except Exception,e:
-            if str(e).find("No such file or directory")<>-1:
+            if str(e).find("No such file or directory") != -1:
                 createdir("%s::upload/%s/%s%s"%(ipaddr,key,category,path))            
             print "error in sync:%s"%e
             print "RETRY"
@@ -153,7 +153,7 @@ def finddomain(name):
     for provider in j.system.fs.listDirsInDir("/opt/code/"):
         for cat in j.system.fs.listDirsInDir(provider, recursive=False, findDirectorySymlinks=True):
             for dname in j.system.fs.listDirsInDir(cat, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                if dname.find("jp_")<>-1:
+                if dname.find("jp_") != -1:
                     dname2=dname.split("jp_",1)[1]
                     if dname2.lower().strip()==name.lower().strip():
                         return "%s/%s"%(cat,dname)
@@ -183,12 +183,12 @@ if opts.action.find('sync2sb')==0 and checkcat("jpackages"):
 
     doms=opts.jpdomains.split(",")
     for item in ["jumpscale","serverapps","desktop"]:
-        if item<>None or item.strip()<>"":
+        if item != None or item.strip() != "":
             if item not in doms:
                 doms.append(item)
 
     for dom in doms:
-        if dom.strip()<>"":
+        if dom.strip() != "":
             path=finddomain(dom)
             # print "JPACKAGEDOM:%s"%path
             sync("%s/%s/"%(path,opts.qualitylevel),"%s/jpackages/%s/"%(opts.sbpath,dom))
@@ -250,7 +250,7 @@ if opts.action.find('sync2sb')==0 and checkcat("base"):
 
 
 #cleanup
-if opts.action.find("upload")<>-1:
+if opts.action.find("upload") != -1:
     j.system.fs.removeDirTree("%s/apps/redis"%(opts.sbpath))
     j.system.fs.removeDirTree("%s/libext/raven"%(opts.sbpath))
     j.system.fs.removeDirTree("%s/libext/raven-4.0.3.egg-info"%(opts.sbpath))
@@ -259,10 +259,10 @@ if opts.action.find("upload")<>-1:
         j.system.fs.removeDirTree("%s/libjs/lib/%s/"%(opts.sbpath,item))
 
 #UPLOAD JPACKAGES
-if opts.action.find("upload")<>-1 and checkcat("jpackages"):
+if opts.action.find("upload") != -1 and checkcat("jpackages"):
     upload("jsbox","jpackages")
 
-if opts.action.find("upload")<>-1 and checkcat("cfg",True):
+if opts.action.find("upload") != -1 and checkcat("cfg",True):
     upload("jsbox","cfg",data=True)
 
 if opts.action=="upload" and checkcat("installer"):    
@@ -272,7 +272,7 @@ if opts.action=="upload" and checkcat("installer"):
     print cmd
     j.system.process.executeWithoutPipe(cmd)   
 
-if opts.action.find("upload")<>-1 and checkcat("libs"):
+if opts.action.find("upload") != -1 and checkcat("libs"):
     uploadfile("jsbox","activate")
     upload("jsbox","libjs")
     # upload("jsbox","libjs/JumpScale/base")
@@ -287,7 +287,7 @@ if opts.action.find("upload")<>-1 and checkcat("libs"):
     # upload("jsbox","apps/processmanager")
     upload("jsbox","tools")
 
-if opts.action.find("upload")<>-1 and checkcat("base"):  
+if opts.action.find("upload") != -1 and checkcat("base"):  
     # upload("jsbox","apps/redis")
     upload("jsbox","lib")
     upload("jsbox","bin")

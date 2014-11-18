@@ -111,7 +111,7 @@ blobstor.disk.size=100
 
                 if cmd not in ("SET","GET","HSET","INCREMENT","RPUSH","LPUSH"):
                     deny=True
-                # if key.find("blobstor")<>0:
+                # if key.find("blobstor") != 0:
                 #     deny=True
             if deny==True:
                 cmdsocket.send_multipart(["DENY"])
@@ -144,7 +144,7 @@ blobstor.disk.size=100
 
                 if cmd not in ("SET","GET","HSET","INCREMENT","RPUSH","LPUSH"):
                     deny=True
-                # if key.find("blobstor")<>0:
+                # if key.find("blobstor") != 0:
                 #     deny=True
             if deny==True:
                 cmdsocket.send_multipart(["DENY"])

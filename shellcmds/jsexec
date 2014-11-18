@@ -67,10 +67,10 @@ def doRemote(args,hostkey,cmd):
         sr.state="ERROR"
         if args.sync==False:
             sr.out+="\nSTDOUT:\n%s"%r.out            
-        if sr.out<>"":
+        if sr.out != "":
             print "ERROR: COULD NOT EXECUTE: STDOUT:"
             print sr.out
-        if sr.error<>"":
+        if sr.error != "":
             print "ERROR: COULD NOT EXECUTE: ERROR:"
         print "ERROR: could not execute:%s on \n%s"%(cmd,node)
         j.admin.setNode(node)
@@ -80,7 +80,7 @@ def doRemote(args,hostkey,cmd):
     gridname,name=hostkey.split("__")
     node=j.admin.getNode(gridname,name)
     sr=node.getScriptRun()
-    if cmd<>"":        
+    if cmd != "":        
         error=False
         r=RedirectSTDOUT(hostkey)
         print "EXECCMD:%s:%s:"%(hostkey,cmd)
@@ -94,7 +94,7 @@ def doRemote(args,hostkey,cmd):
             error=True
             report(node,args)
         sys.stdout=r.oldstdout
-        if sr.state<>"OK":
+        if sr.state != "OK":
             print "ERROR  :%s:%s:"%(hostkey,cmd)
             report(node,args)
         elif not error:
@@ -114,7 +114,7 @@ def doRemote(args,hostkey,cmd):
                 once=False
             j.admin.executeForNode(node,jsname=cmd,once=once)
             sys.stdout=r.oldstdout
-            if sr.state<>"OK":
+            if sr.state != "OK":
                 print "ERROR  :%s:%s:"%(hostkey,cmd)
                 report(node,args)
             else:

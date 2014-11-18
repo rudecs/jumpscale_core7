@@ -90,14 +90,14 @@ class JailFactory(object):
         # try:
         #     rc,out=j.system.process.execute("sudo -i -u %s tmux list-sessions"%user)
         # except Exception,e:
-        #     if str(e).find("Connection refused")<>-1:
+        #     if str(e).find("Connection refused") != -1:
         #         return []
         #     print "Exception in listsessions:%s"%e
         #     return []
         # for line in out.split("\n"):
         #     if line.strip()=="":
         #         continue
-        #     if line.find(":")<>-1:
+        #     if line.find(":") != -1:
         #         name=line.split(":",1)[0].strip()
         #         res.append(name)
         # return res

@@ -3,7 +3,7 @@ h4. Portal Spaces
 
 {{spaces: table exclude:help,system}}
 
-@show error<>""
+@show error != ""
 
 h5. The following error brought you here:
 

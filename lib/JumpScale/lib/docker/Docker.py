@@ -438,9 +438,9 @@ class Docker():
         # cmd="btrfs subvol list %s"%startpath
         # res=self.execute(cmd)
         # for line in res.split("\n"):
-        #     if line.find("path")<>-1:
+        #     if line.find("path") != -1:
         #         part=line.split("path",1)[1]
-        #         if part.find("docker2")<>-1:
+        #         if part.find("docker2") != -1:
         #             # id=line.split("gen")[0].strip("ID").strip()
         #             part=part.strip()
         #             path="%s/%s"%(startpath,part)

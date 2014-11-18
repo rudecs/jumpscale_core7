@@ -360,7 +360,7 @@ class EnumerateResourcesCommand(CommandWrapper):
         """
         Retrieves all the available components of PCI Bus on a machine
 
-        @rtype: List  of dictionaries [{componentName:<>, manufacturer:<>, model:<>}]
+        @rtype: List  of dictionaries [{componentName: != , manufacturer: != , model: != }]
         @return: Component name, manufacturer, and model for each PCI component
         """
         if j.system.platformtype.isLinux() or j.system.platformtype.isESX():
@@ -383,7 +383,7 @@ class EnumerateResourcesCommand(CommandWrapper):
         """
         Retrieves all the running processes on a machine
 
-        @rtype: List  of dictionaries [{PID:<>, processName:<>}]
+        @rtype: List  of dictionaries [{PID: != , processName: != }]
         @return: PID, and processName for each running process
         @raise RuntimeError:
         """
@@ -410,7 +410,7 @@ class EnumerateResourcesCommand(CommandWrapper):
         """
         Retrieves IPAdress, subnet mask, and default route of an interface
 
-        @rtype: dict {'ip':<>, 'subnetMask':<>, 'defaultRoute':<>}
+        @rtype: dict {'ip': != , 'subnetMask': != , 'defaultRoute': != }
         @return: IPAdress, subnet mask, and default route of an interface
         """
         addresses = j.system.net.getIpAddress(nicName)
@@ -464,7 +464,7 @@ class EnumerateResourcesCommand(CommandWrapper):
         """
         Retrieves target, name, and connections information for each ISCSI target
 
-        @rtype: list of dict{target:<>, name:<>, connections:<>}
+        @rtype: list of dict{target: != , name: != , connections: != }
         @return: target, name, and connections for each ISCSI target
         """
         # Only supported on Solaris as iscsitadm vapp was only supported on Solaris (there is a dummy vapp version supported on all platforms)
@@ -484,7 +484,7 @@ class EnumerateResourcesCommand(CommandWrapper):
         """
         Retrieves target and deviceName information for each ISCSI initiator
 
-        @rtype: list of dict{target:<>, deviceName:<>}
+        @rtype: list of dict{target: != , deviceName: != }
         @return: target and deviceName for each ISCSI initiator
         """
         # Only supported on Solaris as iscsiadm vapp was only supported on Solaris (there is a dummy vapp version supported on all platforms)

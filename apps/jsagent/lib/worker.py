@@ -200,7 +200,7 @@ class Worker(object):
     def notifyWorkCompleted(self,job):
         job.timeStop=int(time.time())
 
-        # if job.state[0:2]<>"OK":
+        # if job.state[0:2] != "OK":
         #     self.log("result:%s"%job.result)
 
 
