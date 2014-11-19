@@ -80,13 +80,30 @@ class InstallTools():
         
     #     shutil.copytree(source,dest)
 
-    def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info","__pycache__",".dist-info"],ignorefiles=[".egg-info"]):
+    def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"],rsync=True):
         if self.debug:
             print("copy %s %s" % (source,dest))
-        old_debug=self.debug
-        self.debug=False
-        self._copyTree(source, dest, keepsymlinks, deletefirst, overwriteFiles,ignoredir=ignoredir,ignorefiles=ignorefiles)    
-        self.debug=  old_debug
+        if rsync:
+            excl=""
+            for item in ignoredir:
+                excl+="--exclude '*%s*/' "%item
+            for item in ignorefiles:
+                excl+="--exclude '*%s*' "%item
+            excl+="--exclude '*.pyc' "
+            excl+="--exclude '*.bak' "
+            excl+="--exclude '*__pycache__*' "
+            if dest[-1]!="/":
+                dest+="/"
+            if source[-1]!="/":
+                source+="/"
+            cmd="rsync -aW --no-compress %s %s %s"%(excl,source,dest)           
+            self.execute(cmd)
+            return()
+        else:
+            old_debug=self.debug
+            self.debug=False
+            self._copyTree(source, dest, keepsymlinks, deletefirst, overwriteFiles,ignoredir=ignoredir,ignorefiles=ignorefiles)    
+            self.debug=  old_debug
 
     def _copyTree(self, src, dst, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info","__pycache__"],ignorefiles=[".egg-info"]):
         """Recursively copy an entire directory tree rooted at src.
@@ -325,6 +342,8 @@ class InstallTools():
                 os.system(cmd)
             except Exception as e:
                 pass
+        else:
+            os.unlink(path)
 
     def getBaseName(self, path):
         """Return the base name of pathname path."""
@@ -466,7 +485,7 @@ class InstallTools():
         """
         if depth!=None:
             depth=int(depth)
-        self.log('List files in directory with path: %s' % path,9)
+        # self.log('List files in directory with path: %s' % path,9)
         if depth==0:
             depth=None
         # if depth != None:
@@ -809,6 +828,9 @@ class InstallTools():
         except Exception as e:
             print("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
             raise
+        
+        output=str(output).replace("\\n","\n")
+        output=output.replace("\\t","    ")
 
         if exitcode!=0 or error!="":
             self.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)
@@ -819,8 +841,6 @@ class InstallTools():
             self.log("command: [%s]\nexitcode:%s\noutput:%s\nerror:%s" % (command, exitcode, output, error), 3)
             raise RuntimeError("Error during execution! (system.process.execute())\n\nCommand: [%s]\n\nExitcode: %s\n\nProgram output:\n%s\n\nErrormessage:\n%s\n" % (command, exitcode, output, error))
 
-        output=output.replace("\\n","\n")
-        output=output.replace("\\t","    ")
         return output        
 
     def executeInteractive(self,command):
@@ -1010,7 +1030,7 @@ class InstallTools():
 
 ############# package installation
 
-    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False,pythonversion=2):
+    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False,pythonversion=2,web=False):
         """
         @param pythonversion is 2 or 3
         if 3 and base not specified then base becaomes /opt/jumpscale73
@@ -1045,7 +1065,7 @@ class InstallTools():
             dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
         if insystem or not self.exists(dest):            
             self.symlink(src, dest)
-            
+
         dest="%s/lib/JumpScale"%base
         self.symlink(src, dest)
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
@@ -1072,6 +1092,32 @@ class InstallTools():
         for item in j.application.config.getListFromPrefix("system.paths"):
             self.createDir(item)
 
+        if web:
+            if pythonversion==2:
+                gitbase="web"
+            else:
+                gitbase="web_python3"
+            self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)  
+            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base) 
+
+        C="""
+#!/bin/bash
+#export JSBASE=/opt/jumpscale$version
+#export PATH=$PATH/bin:$PATH
+#export PYTHONPATH=$PATH/lib:$PATH/lib/lib-dynload/:$PATH/bin:$PATH/lib/python.zip:$PATH/lib/plat-x86_64-linux-gnu
+#export PYTHONHOME=$PATH/lib
+#export LD_LIBRARY_PATH=$PATH/bin
+python3 "$@"
+"""
+        if pythonversion==2:
+            C=C.replace("$version","7")
+            C=C.replace("python3","python")            
+        else:
+            C=C.replace("$version","73")
+
+        self.removesymlink("%s/bin/jspython"%base)
+        self.writeFile("%s/bin/jspython"%base,C)
+        self.chmod("%s/bin/jspython"%base,0o770)        
 
     def loadScript(self,path):
         print(("load jumpscript: %s"%path))

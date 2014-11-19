@@ -10,11 +10,10 @@ import sys
 import os
 
 if not 'JSBASE' in os.environ:
-    from IPython import embed
-    print ("DEBUG NOW jsbase in __init__ jumpscale")
-    embed()
-    
-    base="/opt/jumpscale7"
+    if sys.version.startswith("3"):
+        base="/opt/jumpscale73"
+    else:    
+        base="/opt/jumpscale7"
 else:
     base=os.environ['JSBASE']
 
