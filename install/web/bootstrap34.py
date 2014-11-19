@@ -1,6 +1,6 @@
 #BOOTSTRAP CODE
 try:
-    from urllib3.request import urlopen
+    from urllib.request import urlopen
 except ImportError:
     from urllib import urlopen
 import random
@@ -13,7 +13,7 @@ exec(handle.read())
 
 #there are many more functions available in jumpscale
 
-do.installJS(base="/opt/jumpscale7",clean=False,pythonversion=2,web=True)
+do.installJS(base="/opt/jumpscale7",clean=False,pythonversion=3,web=True)
 
 from JumpScale import j
 
