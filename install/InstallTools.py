@@ -1010,24 +1010,42 @@ class InstallTools():
 
 ############# package installation
 
-    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False):
+    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False,pythonversion=2):
+        """
+        @param pythonversion is 2 or 3
+        if 3 and base not specified then base becaomes /opt/jumpscale73
+        """
         print(("Install Jumpscale in %s"%base))
         if clean:
             self.cleanSystem()
 
+        if pythonversion==3 and base=="/opt/jumpscale7":
+            base="/opt/jumpscale73"
+
         self.debug=True
 
-        self.pullGitRepo("http://git.aydo.com/binary/base",depth=1)        
+        if pythonversion==2:
+            gitbase="base"
+        else:
+            gitbase="base_python3"
+        
+
+        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)        
+
         # self.createDir(base)        
-        self.copyTree("/opt/code/git/binary/base/root/",base)
+        self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
         self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         print("install js")
-        dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        if pythonversion==2:
+            dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        else:
+            dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
         if insystem or not self.exists(dest):            
             self.symlink(src, dest)
+            
         dest="%s/lib/JumpScale"%base
         self.symlink(src, dest)
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
