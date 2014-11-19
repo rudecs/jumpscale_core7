@@ -1,10 +1,9 @@
-
 try:
-    # from urllib3.request import urlopen
+# from urllib3.request import urlopen
     from urllib.request import urlopen
 except ImportError:
-    from urllib.request import urlopen
-import gzip
+    from urllib import urlopen
+
 import os
 import tarfile
 import sys
