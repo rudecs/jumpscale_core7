@@ -97,7 +97,7 @@ class InstallTools():
             if source[-1]!="/":
                 source+="/"
             cmd="rsync -aW --no-compress %s %s %s"%(excl,source,dest)           
-            self.execute(cmd)
+            self.execute(cmd,outputToStdout=False)
             return()
         else:
             old_debug=self.debug
