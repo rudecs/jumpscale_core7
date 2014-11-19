@@ -117,15 +117,15 @@ class ServerBaseFactory():
     def _serializeBinReturn(self, resultcode, returnformat, result):
         lendata = len(result)
         if resultcode == None:
-            resultcode = b'\x00'
+            resultcode = '\x00'
         lenreturnformat = len(returnformat)
         packed = struct.pack("<II", lenreturnformat, lendata)
-        return bytes(resultcode, 'utf-8') + packed + bytes(returnformat, 'utf-8') + result
+        return bytes(resultcode, 'utf-8') + packed + bytes(returnformat, 'utf-8') if returnformat else returnformat + bytes(result, 'utf-8')
 
     def _unserializeBinReturn(self, data):
         """
         return resultcode,returnformat,result
         """
-        resultcode=data[0]
+        resultcode=data.decode('utf-8')[0]
         lenreturnformat, lendata = struct.unpack("<II", data[1:9])
         return (resultcode, data[9:lenreturnformat + 9], data[lenreturnformat + 9:])

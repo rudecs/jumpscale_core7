@@ -178,13 +178,15 @@ class DaemonClient(object):
             msg = "Execution error on %s.\n Could not find method:%s\n" % (self.transport, cmd)
             raise MethodNotFoundException(msg)
         if str(returncode) != returnCodes.OK:
+            if isinstance(returnformat, bytes):
+                returnformat = returnformat.decode('utf-8', 'ignore')
+            s = j.db.serializers.get(rreturnformat)
             # print "*** error in client to zdaemon ***"
-            s = j.db.serializers.get(rreturnformat.decode('utf-8', 'ignore'))
             ecodict = s.loads(returndata)
             if cmd == "logeco":
                 raise RuntimeError("Could not forward errorcondition object to logserver, error was %s" % ecodict)
             for k, v in ecodict.items():
-                if not isinstance(k, str):
+                if isinstance(k, bytes):
                     ecodict.pop(k)
                     k = k.decode('utf-8', 'ignore')
                 if isinstance(v, bytes):
@@ -195,7 +197,9 @@ class DaemonClient(object):
             raise RemoteException("Cannot execute cmd:%s/%s on server:'%s:%s' error:'%s' ((ECOID:%s))" %(category,cmd,ecodict["gid"],ecodict["nid"],ecodict["errormessage"],ecodict["guid"]), ecodict)
 
         if returnformat != "":
-            ser = j.db.serializers.get(rreturnformat.decode('utf-8', 'ignore'), key=self.key)
+            if isinstance(returnformat, bytes):
+                returnformat = returnformat.decode('utf-8', 'ignore')
+            ser = j.db.serializers.get(rreturnformat, key=self.key)
             res = self.decrypt(returndata)
             result = ser.loads(res)
         else:
