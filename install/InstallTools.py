@@ -443,7 +443,7 @@ class InstallTools():
         @param path: string represents directory path to search in
         @rtype: list
         """
-        self.log('List directories in directory with path: %s, recursive = %s' % (path, str(recursive)),9)
+        # self.log('List directories in directory with path: %s, recursive = %s' % (path, str(recursive)),9)
 
         #if recursive:
             #if not self.exists(path):
