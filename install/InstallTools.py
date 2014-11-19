@@ -829,9 +829,8 @@ class InstallTools():
             print("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
             raise
         
-        output=str(output).replace("\\n","\n")
-        error=str(error).replace("\\n","\n")
-        output=output.replace("\\t","    ")
+        output=output.decode('ascii')
+        error=error.decode('ascii')
 
         if int(exitcode)!=0 or str(error)!="":            
             self.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)

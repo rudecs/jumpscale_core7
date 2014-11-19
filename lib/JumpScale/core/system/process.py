@@ -1406,6 +1406,9 @@ class SystemProcess:
         except Exception as e:
             raise
 
+        output=output.decode('ascii')
+        error=error.decode('ascii')
+
         if exitcode!=0 or error!="":
             j.logger.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)
             if ignoreErrorOutput!=True:
@@ -1415,8 +1418,7 @@ class SystemProcess:
             j.logger.log("command: [%s]\nexitcode:%s\noutput:%s\nerror:%s" % (command, exitcode, output, error), 3)
             raise RuntimeError("Error during execution! (system.process.execute())\n\nCommand: [%s]\n\nExitcode: %s\n\nProgram output:\n%s\n\nErrormessage:\n%s\n" % (command, exitcode, output, error))
 
-        output=output.replace("\\n","\n")
-        output=output.replace("\\t","    ")
+
         return exitcode, output
 
     def executeIndependant(self,cmd):
