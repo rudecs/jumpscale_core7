@@ -1049,16 +1049,17 @@ class InstallTools():
         else:
             gitbase="base_python3"
         
-
+        print ("pull binaries")
         self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)        
 
+        print ("copy binaries")
         # self.createDir(base)        
         self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
+        print ("pull core")
         self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
-        print("install js")
         if pythonversion==2:
             dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
         else:
@@ -1077,6 +1078,7 @@ class InstallTools():
         dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
 
+        print ("copycore")
         self.copyTree("/opt/code/github/jumpscale/jumpscale_core7/jsbox/cfg/hrd/","%s/hrd/"%base)
 
         for item in ["InstallTools","ExtraTools"]:
@@ -1121,6 +1123,9 @@ python3 "$@"
         #make sure all configured paths are created
         for item in j.application.config.getListFromPrefix("system.paths"):
             self.createDir(item)
+
+        print ("install was successfull")
+        print ("to use do 'source %s/env.sh;ipython3'"%base)
 
     def loadScript(self,path):
         print(("load jumpscript: %s"%path))
