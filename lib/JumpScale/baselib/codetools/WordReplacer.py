@@ -70,7 +70,7 @@ class Synonym():
         """
         Removes markers out of text and puts the original strings back
         """
-        for marker,replacement in self._markers.items():
+        for marker,replacement in list(self._markers.items()):
             marker = re.escape(marker)
             text=j.codetools.regex.replace(regexFind=marker,regexFindsubsetToReplace=marker,replaceWith=replacement,text=text)
         return text

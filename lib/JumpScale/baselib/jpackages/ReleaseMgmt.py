@@ -58,8 +58,8 @@ class ReleaseMgmt():
             p1levels = (p1.domain, p1.name, p1.version, p1.buildNr)
             p2levels = (p2.domain, p2.name, p2.version, p2.buildNr)
             if level > 3:
-	        return 0
-	    else: 
+                return 0
+            else: 
                 if p1levels[level] < p2levels[level]:
                     return -1
                 elif p1levels[level] > p2levels[level]:
@@ -84,7 +84,7 @@ class ReleaseMgmt():
         - laterFile: string - file containing the packages for a later release. Added packages will be given back by this method if comparison = '+'
         - comparison: char - '+' if you want the added packages back. '-' if you want the removed packages back.
 
-	    Returns:
+        Returns:
         list of strings - each string is the name of a package
         """
         if comparison not in ('+', '-'):
@@ -106,8 +106,8 @@ class ReleaseMgmt():
         - laterFile: string - file containing the packages for a later release. Added packages will be given back by this method if comparison = '+'
         - comparison: char - '+' if you want the added packages back. '-' if you want the removed packages back.
 
-	    Returns:
-	    list of package objects
+        Returns:
+        list of package objects
         """
         strlist = self.listChangedPackagesAsStrings(earlierFile, laterFile, comparison)
         addedpackagelist = []
@@ -140,8 +140,8 @@ class ReleaseMgmt():
         - tempDir: string - temporary directory where files will be downloaded. This directory will be cleaned up at the beginning of the method and must be located in an existing directory!
         - tarName: string - name of the tgz file to be created
 
-	    Returns:
-	    None
+        Returns:
+        None
         """
         failed = False
         # First check if earlierFile or laterFile are located within the directory that will be removed. 
@@ -180,8 +180,4 @@ class ReleaseMgmt():
         finally:
             tar.close()
             if failed:
-                j.system.fs.removeDirTree(tempDir, onlyLogWarningOnRemoveError=True)  # clean up everything            
-    
-
-
-        
+                j.system.fs.removeDirTree(tempDir, onlyLogWarningOnRemoveError=True)  # clean up everything

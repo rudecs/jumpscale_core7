@@ -145,7 +145,6 @@ class DaemonClient(object):
         return is always multipart message [$resultcode(0=no error,1=autherror),$formatstr,$data]
 
         """
-
         ##LOGGING FOR DEBUG
         # try:
         #     dest=self.transport.url
@@ -180,17 +179,23 @@ class DaemonClient(object):
             raise MethodNotFoundException(msg)
         if str(returncode) != returnCodes.OK:
             # print "*** error in client to zdaemon ***"
-            s = j.db.serializers.get(rreturnformat)
+            s = j.db.serializers.get(rreturnformat.decode('utf-8', 'ignore'))
             ecodict = s.loads(returndata)
             if cmd == "logeco":
                 raise RuntimeError("Could not forward errorcondition object to logserver, error was %s" % ecodict)
-
-            if ecodict["errormessage"].find("Authentication error")!=-1:
+            for k, v in ecodict.items():
+                if not isinstance(k, str):
+                    ecodict.pop(k)
+                    k = k.decode('utf-8', 'ignore')
+                if isinstance(v, bytes):
+                    v = v.decode('utf-8', 'ignore')
+                ecodict[k] = v
+            if ecodict.get("errormessage").find("Authentication error")!=-1:
                 raise AuthenticationError("Could not authenticate to %s for user:%s"%(self.transport,self.user), ecodict)
             raise RemoteException("Cannot execute cmd:%s/%s on server:'%s:%s' error:'%s' ((ECOID:%s))" %(category,cmd,ecodict["gid"],ecodict["nid"],ecodict["errormessage"],ecodict["guid"]), ecodict)
 
         if returnformat != "":
-            ser = j.db.serializers.get(rreturnformat, key=self.key)
+            ser = j.db.serializers.get(rreturnformat.decode('utf-8', 'ignore'), key=self.key)
             res = self.decrypt(returndata)
             result = ser.loads(res)
         else:

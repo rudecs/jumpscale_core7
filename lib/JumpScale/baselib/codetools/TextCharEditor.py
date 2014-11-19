@@ -212,9 +212,9 @@ class TextCharEditor():
             if self.chars[pos][0]=="\n":
                 print(line)
                 #print blocknames
-                print(string.join(["%s"%self.chars[pos][1] for pos in linepositions]))
+                print((string.join(["%s"%self.chars[pos][1] for pos in linepositions])))
                 #print blocknrs
-                print(string.join(["%s"%self.chars[pos][2] for pos in linepositions]))
+                print((string.join(["%s"%self.chars[pos][2] for pos in linepositions])))
                 line=""
                 linepositions=[]
         

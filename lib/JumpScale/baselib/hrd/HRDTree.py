@@ -26,7 +26,7 @@ class HRDTree(HRDBase):
         hrd.process(content)
 
     def add2tree(self,path,recursive=True):
-        paths= j.do.listFilesInDir(path, recursive=False, filter="*.hrd")
+        paths= j.do.listFilesInDir(path, recursive=True, filter="*.hrd")
         
         for pathfound in paths:
             j.core.hrd.log("Add hrd %s" % (pathfound), level=7, category="load")                        

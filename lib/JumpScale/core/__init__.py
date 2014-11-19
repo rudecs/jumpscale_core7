@@ -2,6 +2,7 @@
 from JumpScale import j
 
 import os
+from . import gui
 
 class Empty():
     pass

@@ -34,7 +34,7 @@
 # </License>
 
 from JumpScale import j
-from JumpScale.core.baseclasses import BaseEnumeration
+from JumpScale.core.baseclasses.BaseEnumeration import BaseEnumeration
 
 class DialogType(BaseEnumeration):    
     @classmethod

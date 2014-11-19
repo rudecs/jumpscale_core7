@@ -378,9 +378,9 @@ class BaseEnumeration(object):
             raise KeyError('Enumeration %s got no item with level %s' % \
                     (cls.__name__, level))
         
-    getByName._pm_enumeration_hidden = True
-    getByName = classmethod(getByName)
-    getByLevel = classmethod(getByLevel)
+    #getByName._pm_enumeration_hidden = True
+    #getByName = classmethod(getByName)
+    #getByLevel = classmethod(getByLevel)
 
 
 

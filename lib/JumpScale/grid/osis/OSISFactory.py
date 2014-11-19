@@ -4,6 +4,7 @@ from .OSISClientForCat import OSISClientForCat
 from .OSISBaseObject import OSISBaseObject
 from .OSISBaseObjectComplexType import OSISBaseObjectComplexType
 import JumpScale.portal.codegentools
+import JumpScale.baselib.codetools
 
 import inspect
 import imp
@@ -116,16 +117,15 @@ class OSISFactory:
         if self.superadminpasswd=="":
              j.events.inputerror_critical("cannot start osis, superadminpasswd needs to be specified")
 
-        daemon = j.servers.geventws.getServer(port=port)
+        daemon = j.servers.tornado.getServer(port=port)
         OSISCMDS.dbconnections = dbconnections
         daemon.addCMDsInterface(OSISCMDS, category="osis")  # pass as class not as object !!!
         daemon.daemon.cmdsInterfaces["osis"].init(path=path)#,esip=elasticsearchip,esport=elasticsearchport,db=db)
         self.cmds=daemon.daemon.cmdsInterfaces["osis"]
-        daemon.schedule("checkchangelog", self.cmds.checkChangeLog)
+        # daemon.schedule("checkchangelog", self.cmds.checkChangeLog)
         daemon.start()
 
     def getClient(self, ipaddr=None, port=5544,user=None,passwd=None,ssl=False,gevent=False):
-
         if ipaddr==None or user==None or passwd==None:
             osisjp=j.packages.findNewest(name="osis_client",domain="jumpscale")
             inames=osisjp.getInstanceNames()
@@ -165,24 +165,25 @@ class OSISFactory:
 
         with j.logger.nostdout():
             #client = j.core.zdaemon.getZDaemonHAClient(connections, category="osis", user=user, passwd=passwd,ssl=ssl,sendformat="j", returnformat="j",gevent=gevent)
-            client= j.servers.geventws.getHAClient(connections, user=user, passwd=passwd,category="osis")
+            client= j.servers.tornado.getClient(connections[0][0], connections[0][1], user=user, passwd=passwd,category="osis")
         self.osisConnections[key] = client
         return client
 
     def getClientByInstance(self, instance=None, ssl=False, gevent=False,die=True):
         if instance is None:
             if hasattr(j.application, 'instanceconfig'):
-                instance = j.application.instanceconfig.get('osis.connection')
+                instance = j.application.instanceconfig.get('portal.osis.connection')
             else:
                 instance = 'main'
-        osisjp=j.packages.findNewest(name="osis_client",domain="jumpscale")
-        osisjp.load(instance=instance)
-        if osisjp.isInstalled():
-            hrd=osisjp.hrd_instance
-            ipaddr=hrd.get("osis.client.addr")
-            port=int(hrd.get("osis.client.port"))
-            user=hrd.get("osis.client.login")
-            passwd=hrd.get("osis.client.passwd")            
+        # osisjp=j.packages.findNewest(name="osis_client",domain="jumpscale")
+        # osisjp.load(instance=instance)
+        # if osisjp.isInstalled():
+        hrdinstance = j.core.hrd.getHRD('/opt/jumpscale7/hrd/jumpscale/osis_client/%s/osis.hrd' % instance)
+        if hrdinstance:
+            ipaddr=hrdinstance.get("osis.client.addr")
+            port=int(hrdinstance.get("osis.client.port"))
+            user=hrdinstance.get("osis.client.login")
+            passwd=hrdinstance.get("osis.client.passwd")
             return self.getClient(ipaddr=ipaddr, port=port, user=user, passwd=passwd, ssl=ssl, gevent=gevent)
         if die:
             j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)
@@ -309,7 +310,9 @@ class OSISFactory:
             basepath=j.system.fs.joinPaths(basepathspec,category)            
             modelpath=j.system.fs.joinPaths(basepath,"model.py")
 
-            if j.system.fs.exists(path=modelpath):                
+            if j.system.fs.exists(path=modelpath):
+                if  '__pycache__' in modelpath:
+                    return
                 klass= j.system.fs.fileGetContents(modelpath)
                 name=""
                 for line in klass.split("\n"):

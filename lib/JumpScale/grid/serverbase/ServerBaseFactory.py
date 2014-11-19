@@ -98,7 +98,8 @@ class ServerBaseFactory():
         lenreturnformat = len(returnformat)
         lensendformat = len(sendformat)
         lensessionid = len(sessionid)
-        return struct.pack("<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid) + category + cmd + data + sendformat + returnformat + sessionid
+        packed = struct.pack(b"<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid)
+        return packed + bytes(category,'utf-8') + bytes(cmd, 'utf-8') + data + bytes(sendformat, 'utf-8') + bytes(returnformat, 'utf-8') + bytes(sessionid, 'utf-8')
 
     def _unserializeBinSend(self, data):
         """
@@ -116,14 +117,15 @@ class ServerBaseFactory():
     def _serializeBinReturn(self, resultcode, returnformat, result):
         lendata = len(result)
         if resultcode == None:
-            resultcode = '\x00'
+            resultcode = b'\x00'
         lenreturnformat = len(returnformat)
-        return str(resultcode)+struct.pack("<II", lenreturnformat, lendata) + returnformat + result
+        packed = struct.pack("<II", lenreturnformat, lendata)
+        return bytes(resultcode, 'utf-8') + packed + bytes(returnformat, 'utf-8') + result
 
     def _unserializeBinReturn(self, data):
         """
         return resultcode,returnformat,result
         """
         resultcode=data[0]
-        lenreturnformat, lendata = struct.unpack("<II", str(data[1:9]))
+        lenreturnformat, lendata = struct.unpack("<II", data[1:9])
         return (resultcode, data[9:lenreturnformat + 9], data[lenreturnformat + 9:])
