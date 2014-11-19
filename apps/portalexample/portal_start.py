@@ -14,12 +14,19 @@ import sys
 
 if __name__ == '__main__':
 
-    args=sys.argv
-    instance=args[1]
+    # args=sys.argv
+    # instance=args[1]
 
-    jp = j.packages.findNewest('jumpscale', 'portal')
-    jp = jp.load(instance=instance)
-    j.application.instanceconfig = jp.hrd_instance
+    # jp = j.packages.findNewest('jumpscale', 'portal')
+    # jp = jp.load(instance=instance)
+    hrdstring = """
+changed:True
+osis_connection:main
+portal_ipaddr:localhost
+portal_name:main
+portal_port:82
+    """
+    j.application.instanceconfig = j.core.hrd.getHRD(content=hrdstring)
 
     j.application.start("portal")
 

@@ -1,0 +1,22 @@
+jp.domain=
+jp.name=
+jp.version=
+jp.autobuild=0
+
+jp.export=0
+
+#supported platforms linux, linux32, linux64, win32, win64, win
+jp.supportedplatforms=
+
+jp.description=!(../description.wiki)
+
+jp.buildnr=-1
+
+jp.taskletschecksum=
+jp.descrchecksum=
+jp.hrdchecksum=
+
+##dependencies
+#jp.dependency.1.name = processmanager
+#jp.dependency.1.domain = jumpscale
+
