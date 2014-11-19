@@ -1084,7 +1084,7 @@ class InstallTools():
             dest="%s/lib/%s.py"%(base,item)
             self.symlink(src, dest)  
 
-        sys.path.insert(0,"%s/lib"%base)
+        
 
         if web:
             if pythonversion==2:
@@ -1113,11 +1113,14 @@ python3 "$@"
         self.writeFile("%s/bin/jspython"%base,C)
         self.chmod("%s/bin/jspython"%base,0o770)        
 
-        # from JumpScale import j
+        sys.path=[]
+        sys.path.insert(0,"%s/lib"%base)
 
-        # #make sure all configured paths are created
-        # for item in j.application.config.getListFromPrefix("system.paths"):
-        #     self.createDir(item)
+        from JumpScale import j
+
+        #make sure all configured paths are created
+        for item in j.application.config.getListFromPrefix("system.paths"):
+            self.createDir(item)
 
     def loadScript(self,path):
         print(("load jumpscript: %s"%path))
