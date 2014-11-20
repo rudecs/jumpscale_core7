@@ -98,14 +98,15 @@ class ServerBaseFactory():
         lenreturnformat = len(returnformat)
         lensendformat = len(sendformat)
         lensessionid = len(sessionid)
-        packed = struct.pack(b"<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid)
-        return packed + bytes(category,'utf-8') + bytes(cmd, 'utf-8') + data + bytes(sendformat, 'utf-8') + bytes(returnformat, 'utf-8') + bytes(sessionid, 'utf-8')
+        return struct.pack("<IIIIIIssssss", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid, 
+            bytearray(category, 'ascii'), bytearray(cmd, 'ascii'), bytearray(data, 'ascii'), bytearray(sendformat, 'ascii'), 
+            bytearray(returnformat, 'ascii'), bytearray(sessionid, 'ascii'))
 
     def _unserializeBinSend(self, data):
         """
         return cmd,data,sendformat,returnformat,sessionid
         """
-        fformat = "<IIIIII"
+        fformat = "<IIIIIIssssss"
         size = struct.calcsize(fformat)
         datasizes = struct.unpack(fformat, data[0:size])
         data = data[size:]
