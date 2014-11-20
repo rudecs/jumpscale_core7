@@ -30,11 +30,11 @@ redism=j.application.redis
 redisp=j.clients.redis.getRedisClient("127.0.0.1",9999) #redis production
 
 if opts.action =='workerwatchdog':
-    print "hget:workers:watchdog"
+    print("hget:workers:watchdog")
     items = redism.hgetall("workers:watchdog")
-    items2=zip(items[0::2], items[1::2])
+    items2=list(zip(items[0::2], items[1::2]))
     for  workername, last in items2:
-        print "%-20s %s"%(workername,timeago(last))
+        print("%-20s %s"%(workername,timeago(last)))
 
 elif opts.action =='emptyall':
     j.clients.redis.emptyAllInstances()
@@ -45,17 +45,17 @@ elif opts.action =='checkall':
 elif opts.action =='apps':
     j.system.process.appsGet()
     items = redism.hgetall("application")
-    items2=zip(items[0::2], items[1::2])
+    items2=list(zip(items[0::2], items[1::2]))
     for name, val in items2:
         # val=",".join(val)
-        print "%-40s %s"%(name,val) 
+        print("%-40s %s"%(name,val)) 
 
 elif opts.action =='appsreset':
     redism.delete("application")
 
 elif opts.action =='keys':
     redis = j.clients.credis.getRedisClient("127.0.0.1", 9999)
-    print "\n".join(redis.keys())
+    print("\n".join(list(redis.keys())))
     
 elif opts.action =='clearjobqueue':
     redis = j.clients.credis.getRedisClient("127.0.0.1", 9999)
@@ -64,9 +64,9 @@ elif opts.action =='clearjobqueue':
     keys.append('jobs:%s' % j.application.whoAmI.gid)
     total = len(keys)
     for idx, key in enumerate(keys):
-        print '\rRemoving keys %s/%s %s' % (idx+1, total, key),
+        print('\rRemoving keys %s/%s %s' % (idx+1, total, key), end=' ')
         redis.delete(key)
-    print '\nDone'
+    print('\nDone')
     
 
 j.application.stop()

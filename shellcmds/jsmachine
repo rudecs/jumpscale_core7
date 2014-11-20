@@ -38,12 +38,12 @@ if opts.action =='ps':
 ##########NEW
 if opts.action =='list':
     running,stopped=l.list()
-    print "## running:"
+    print("## running:")
     for item in running:
-        print "  machine: %-25s %s"%(item,l.getIp(item))
-    print "## stopped:"
+        print("  machine: %-25s %s"%(item,l.getIp(item)))
+    print("## stopped:")
     for item in stopped:
-        print "  machine: %-25s %s"%(item,l.getIp(item))
+        print("  machine: %-25s %s"%(item,l.getIp(item)))
 
 if opts.action =='new':
     if opts.base==None:
@@ -61,14 +61,14 @@ if opts.action =='getip':
     if opts.name==None:
         raise RuntimeError("specify machine name")    
     ip=l.getIp(opts.name)
-    print "%s"%ip
+    print("%s"%ip)
 
 if opts.action =='exportTGZ':
     if opts.name==None:
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "export %s to %s"%(opts.name,opts.bname)
+    print("export %s to %s"%(opts.name,opts.bname))
     l.exportTgz(opts.name,opts.bname)
 
 if opts.action =='importTGZ':
@@ -76,7 +76,7 @@ if opts.action =='importTGZ':
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "import %s to %s"%(opts.bname,opts.name)
+    print("import %s to %s"%(opts.bname,opts.name))
     l.importTgz(opts.bname,opts.name)
 
 if opts.action =='exportR':
@@ -84,7 +84,7 @@ if opts.action =='exportR':
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "export %s to %s"%(opts.name,opts.bname)
+    print("export %s to %s"%(opts.name,opts.bname))
     l.exportRsync(opts.name,opts.bname,key=opts.key)
 
 if opts.action =='importR':
@@ -92,7 +92,7 @@ if opts.action =='importR':
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "import %s to %s"%(opts.bname,opts.name)
+    print("import %s to %s"%(opts.bname,opts.name))
     if opts.base != None:
         l.importRsync(opts.bname,opts.name,basename=opts.base)
     else:
@@ -102,7 +102,7 @@ if opts.action =='cmd':
     if opts.name==None:
         raise RuntimeError("specify machine name")    
     ip=l.getIp(opts.name)
-    print "ipaddr:%s"%ip
+    print("ipaddr:%s"%ip)
 
     import JumpScale.baselib.remote
 
@@ -112,14 +112,14 @@ if opts.action =='cmd':
         opts.passwd="rooter"
 
     if j.system.net.waitConnectionTest(ip,22,4)==False:
-        print "could not connect over ssh to ip:%s"%(22)
+        print("could not connect over ssh to ip:%s"%(22))
         j.application.stop(1)        
     
     j.remote.cuisine.fabric.env["password"]= opts.passwd
     cuapi = j.remote.cuisine.api
     cuapi.connect(ip)    
 
-    print cuapi.run(opts.cmd)
+    print(cuapi.run(opts.cmd))
 
     # #this will make sure new password is set
     # seedpasswd="rooter"

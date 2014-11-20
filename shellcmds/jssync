@@ -30,7 +30,7 @@ if opts.key=="":
     if not j.application.config.exists("jssync_key_default"):
         cmd="jpackage install -n jssync"
         j.system.process.executeWithoutPipe(cmd)
-        print "PLEASE DO JSSYNC AGAIN."
+        print("PLEASE DO JSSYNC AGAIN.")
         j.application.stop()
         
     opts.key=j.application.config.get("jssync_key_default")    
@@ -41,7 +41,7 @@ def getkey():
     return opts.key
 
 def sync(src,dest,delete=True):
-    print "SYNC: %s %s"%(src,dest)
+    print("SYNC: %s %s"%(src,dest))
     if delete:
         d="--delete-after "
     else:
@@ -49,13 +49,13 @@ def sync(src,dest,delete=True):
     cmd="rsync -Lrpo %s%s %s"%(d,src,dest)
 
     if not j.system.fs.exists(path="%s"%(src)):
-        print "ERROR:could not find dir:%s"%(src)
+        print("ERROR:could not find dir:%s"%(src))
         j.application.stop(1)
 
     j.system.process.executeWithoutPipe(cmd)
 
 def download(category,path="",data=False,deleteFirst=False):
-    print "DOWNLOAD: %s %s"%(category,path)
+    print("DOWNLOAD: %s %s"%(category,path))
     key=getkey()
     category=category.strip("/")
     path=path.strip("/")
@@ -76,7 +76,7 @@ def download(category,path="",data=False,deleteFirst=False):
         key,category,path,pathfs)
     if opts.delete:
         cmd+=" --delete-after"
-    print cmd
+    print(cmd)
     j.system.process.executeWithoutPipe(cmd)    
 
 def createdir(path):
@@ -102,7 +102,7 @@ def getUserPasswd():
     return j.application.config.get("jssync.login"),j.application.config.get("jssync.passwd")    
 
 def uploadfile(category,path="",data=False):
-    print "UPLOAD: %s %s"%(category,path)
+    print("UPLOAD: %s %s"%(category,path))
     key=getkey()
 
     path=path.strip("/")
@@ -113,11 +113,11 @@ def uploadfile(category,path="",data=False):
     user,passwd=getUserPasswd()
     cmd="export RSYNC_PASSWORD=%s;rsync -azvPh %s %s@%s::upload/%s/%s/%s --delete-after --modify-window=60 --progress  "%(passwd,pathfs,user,\
         ipaddr,key,category,path)
-    print cmd
+    print(cmd)
     j.system.process.execute(cmd)    
     
 def upload(category,path="",data=False):
-    print "UPLOAD: %s %s"%(category,path)
+    print("UPLOAD: %s %s"%(category,path))
     key=getkey()
 
     category=category.strip("/")
@@ -140,14 +140,14 @@ def upload(category,path="",data=False):
         ipaddr,key,category,path)
     for i in range(100):
         try:
-            print cmd
+            print(cmd)
             j.system.process.execute(cmd)    
             return
-        except Exception,e:
+        except Exception as e:
             if str(e).find("No such file or directory") != -1:
                 createdir("%s::upload/%s/%s%s"%(ipaddr,key,category,path))            
-            print "error in sync:%s"%e
-            print "RETRY"
+            print("error in sync:%s"%e)
+            print("RETRY")
 
 def finddomain(name):
     for provider in j.system.fs.listDirsInDir("/opt/code/"):
@@ -232,7 +232,7 @@ if opts.action.find('sync2sb')==0 and checkcat("libs"):
 if opts.action.find('sync2sb')==0 and checkcat("cfg",True):
     if opts.branch=="":
         raise RuntimeError("branch name needs to be specified")
-    print "cfg to sandbox"
+    print("cfg to sandbox")
     cfgdir="%s_data/cfg/"%opts.sbpath
     j.system.fs.removeDirTree(cfgdir)
     j.system.fs.createDir(cfgdir)
@@ -269,7 +269,7 @@ if opts.action=="upload" and checkcat("installer"):
     path="/opt/code/github/jumpscale/jumpscale_core/jsbox/installers/"
     user,passwd=getUserPasswd()
     cmd="export RSYNC_PASSWORD=%s;rsync -azvPh %s %s@%s::www/cmds/ --modify-window=60 --progress  "%(passwd,path,user,ipaddr)
-    print cmd
+    print(cmd)
     j.system.process.executeWithoutPipe(cmd)   
 
 if opts.action.find("upload") != -1 and checkcat("libs"):

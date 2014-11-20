@@ -45,12 +45,12 @@ if opts.action =='ps':
 if opts.action =='list':
     #@todo bug list is not working on jsdocker
     running,stopped=l.list()
-    print "## running:"
+    print("## running:")
     for item in running:
-        print "  machine: %-25s %s"%(item,l.getIp(item))
-    print "## stopped:"
+        print("  machine: %-25s %s"%(item,l.getIp(item)))
+    print("## stopped:")
     for item in stopped:
-        print "  machine: %-25s %s"%(item,l.getIp(item))
+        print("  machine: %-25s %s"%(item,l.getIp(item)))
 
 if opts.action =='pull':
     if opts.base==None:
@@ -60,16 +60,16 @@ if opts.action =='pull':
 
 if opts.action =='commit':
     if opts.name==None:
-        print "specify name of machine with -n"
+        print("specify name of machine with -n")
         sys.exit(1)
     if opts.base==None:
-        print "specify name of image to commit to with -b"
+        print("specify name of image to commit to with -b")
         sys.exit(1)
     cmd="docker rmi %s"%opts.base
-    print cmd
+    print(cmd)
     j.system.process.executeWithoutPipe(cmd,dieOnNonZeroExitCode=False)
     cmd="docker commit %s %s"%(opts.name,opts.base)
-    print cmd
+    print(cmd)
     j.system.process.executeWithoutPipe(cmd)
 
 if opts.action =='new':
@@ -82,14 +82,14 @@ if opts.action =='getip':
     if opts.name==None:
         raise RuntimeError("specify machine name")    
     ip=l.getIp(opts.name)
-    print "%s"%ip
+    print("%s"%ip)
 
 if opts.action =='exportTGZ':
     if opts.name==None:
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "export %s to %s"%(opts.name,opts.bname)
+    print("export %s to %s"%(opts.name,opts.bname))
     l.exportTgz(opts.name,opts.bname)
 
 if opts.action =='importTGZ':
@@ -97,7 +97,7 @@ if opts.action =='importTGZ':
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "import %s to %s"%(opts.bname,opts.name)
+    print("import %s to %s"%(opts.bname,opts.name))
     l.importTgz(opts.bname,opts.name)
 
 if opts.action =='exportR':
@@ -105,7 +105,7 @@ if opts.action =='exportR':
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "export %s to %s"%(opts.name,opts.bname)
+    print("export %s to %s"%(opts.name,opts.bname))
     l.exportRsync(opts.name,opts.bname,key=opts.key)
 
 if opts.action =='importR':
@@ -113,7 +113,7 @@ if opts.action =='importR':
         raise RuntimeError("specify machine name")    
     if opts.bname==None:
         raise RuntimeError("specify backup name")    
-    print "import %s to %s"%(opts.bname,opts.name)
+    print("import %s to %s"%(opts.bname,opts.name))
     if opts.base != None:
         l.importRsync(opts.bname,opts.name,basename=opts.base)
     else:
@@ -129,7 +129,7 @@ if opts.action =='cmd':
 
     c=l.getSSH(opts.name)
 
-    print c.run(opts.cmd)
+    print(c.run(opts.cmd))
 
     # #this will make sure new password is set
     # seedpasswd="rooter"

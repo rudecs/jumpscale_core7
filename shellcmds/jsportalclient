@@ -20,7 +20,7 @@ if __name__ == '__main__':
         url = "http://%s:%s" % (opts.host, opts.port)
         resp = requests.post(url, {'user_login_': opts.username, 'passwd': opts.password})
         newsecret = resp.cookies.get('beaker.session.id')
-        print "Next time you can use %s as secret" % newsecret
+        print("Next time you can use %s as secret" % newsecret)
         cl = j.core.portal.getClient(opts.host, opts.port, newsecret)
     else:
         cl = j.core.portal.getClientByInstance(opts.portclientinstance)
@@ -31,11 +31,11 @@ if __name__ == '__main__':
     for actor in cl.actors.system.contentmanager.getActors():
         space, actor = actor.split('__')
         if space != 'system':
-            print '\rLoading', space, actor,
+            print('\rLoading', space, actor, end=' ')
             try:
                 cl.getActor(space,actor)
             except:
-                print "\nFailed to load", space, actor
-    print ''
+                print("\nFailed to load", space, actor)
+    print('')
     embed()
 

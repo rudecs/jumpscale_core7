@@ -30,7 +30,7 @@ if opts.action == "hrdset":
 
 if opts.action == "hrdget":
     hrd=j.core.hrd.getHRD("%s/hrd"%j.dirs.cfgDir)
-    print hrd.get(opts.name)
+    print(hrd.get(opts.name))
 
 if opts.action == "configset":
     config=j.config.getInifile(opts.configname)

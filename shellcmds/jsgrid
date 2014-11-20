@@ -92,7 +92,7 @@ if opts.action =='reinit':
         if not jp.isInstalled():
             jp.install()
         elif jp.isInstalled():
-            print "RECONFIGURE:%s"%jp
+            print("RECONFIGURE:%s"%jp)
             jp.configure()
 
 
@@ -108,7 +108,7 @@ if opts.action =='reinit':
 
     j.system.process.executeWithoutPipe("jsuser add -d admin:admin:admin::")
 
-    print "has set user admin with passwd admin, please change using command 'jsuser' if required."
+    print("has set user admin with passwd admin, please change using command 'jsuser' if required.")
 
 #################HEALTHCHECK
 if opts.action == 'healthcheck':
@@ -128,9 +128,9 @@ if opts.action == 'restartworkers':
     import JumpScale.baselib.redis
     rcl = j.clients.redis.getRedisClient('127.0.0.1', 9999)
     for proc in j.tools.startupmanager.getProcessDefs('workers'):
-        for num in xrange(1, proc.numprocesses +1):
+        for num in range(1, proc.numprocesses +1):
             name = "%s_%s" % (proc.name, num)
-            print "Sending command to %s" % name
+            print("Sending command to %s" % name)
             rcl.set("workers:action:%s" % name,"STOP")
 
 if opts.action == 'reloadjumpscripts':
@@ -199,7 +199,7 @@ def purge(opts,action):
         aftercount = esclient.count(index=index, query=query, doc_type='json')['count']
 
         if result['_indices'][index]['_shards']['successful'] == result['_indices'][index]['_shards']['total'] and result['ok']:
-            print 'purge %s executed successfully. %s records deleted.' % (index, beforecount-aftercount)
+            print('purge %s executed successfully. %s records deleted.' % (index, beforecount-aftercount))
 
 
 if opts.action in ['purgeall','purgelogs','purgejobs', 'purgeecos']:

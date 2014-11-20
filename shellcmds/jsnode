@@ -23,12 +23,12 @@ opts = parser.parse_args()
 def _deleteNode(nid):
     nodeguid = "%s_%s" % (j.application.whoAmI.gid, nid)
 
-    print "Starting delete of node %s" % nid
+    print("Starting delete of node %s" % nid)
     categories = oscl.listNamespaceCategories('system')
     categories.remove('info')
 
     for category in categories:
-        print "  * Deleting %s..." % category
+        print("  * Deleting %s..." % category)
         catclient = j.core.osis.getClientForCategory(oscl, 'system', category)
         if category == 'stats':
             # TODO catclient.delete(nid)
@@ -41,7 +41,7 @@ def _deleteNode(nid):
         if ncl.exists(nodeguid):
             raise
 
-    print 'Node %s deleted successfully' % (nid)
+    print('Node %s deleted successfully' % (nid))
 
 if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole']:
     import JumpScale.grid.osis
@@ -52,10 +52,10 @@ if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole
 
     if opts.action == 'list':
         form = '%(gid)-8s %(nid)-8s %(name)-11s %(ips)-60s %(active)-8s %(roles)-25s'
-        print form % {'gid': 'GRID ID', 'nid': 'NODE ID', 'name': 'NAME', 'ips': 'IP ADDRESS', 'active': 'ACTIVE', \
-            'roles':'ROLES'}
-        print '=' * 100
-        print ''
+        print(form % {'gid': 'GRID ID', 'nid': 'NODE ID', 'name': 'NAME', 'ips': 'IP ADDRESS', 'active': 'ACTIVE', \
+            'roles':'ROLES'})
+        print('=' * 100)
+        print('')
         query = dict()
         if opts.gid:
             query['gid'] = opts.gid
@@ -68,7 +68,7 @@ if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole
             if len(ips)>60:
                 ips=ips[:51]
             noded={'gid': node['gid'], 'nid': node['id'], 'name': name, 'ips': ips, 'active': node['active'], 'roles': ', '.join(node['roles'])}
-            print form % noded
+            print(form % noded)
 
     else:
         nodes = dict()
@@ -78,7 +78,7 @@ if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole
                 query['gid'] = opts.gid
             for node in ncl.simpleSearch(query, size=0):
                 nodes[node['name']] = node
-            choicearray = nodes.keys()
+            choicearray = list(nodes.keys())
             items = j.console.askChoiceMultiple(choicearray,"Select node")
         else:
             if opts.action == 'delete':
@@ -86,7 +86,7 @@ if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole
                 j.application.stop()
             nodesl = ncl.simpleSearch({'id':int(opts.nid)}, withguid=True)
             if not nodesl:
-                print "Could not find node with nid %s" % opts.nid
+                print("Could not find node with nid %s" % opts.nid)
                 j.application.stop(1)
 
             node = nodesl[0]

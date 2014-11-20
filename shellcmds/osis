@@ -29,7 +29,7 @@ if opts.action =='deleteall':
 
     if opts.force==None:
         if j.console.askString("Are you sure to delete full osis & elasticsearch indexes, type YES") != "YES":
-            print "did not see yes, will not continue"
+            print("did not see yes, will not continue")
             j.application.stop()
 
     try:
@@ -66,13 +66,13 @@ if opts.action =='delete':
     cl=j.core.osis.getClientByInstance('main')
 
     if opts.namespace==None:
-        print "Namespace:"
+        print("Namespace:")
         namespace=j.console.askChoice(cl.listNamespaces())
     else:
         namespace=opts.namespace.strip()
 
     if opts.model==None:
-        print "Model:"
+        print("Model:")
         models=j.console.askChoiceMultiple(cl.listNamespaceCategories(namespace))
     else:
         models=opts.model.split(",")
@@ -91,13 +91,13 @@ if opts.action =='export':
     cl = j.core.osis.getClientByInstance('main')
 
     if not opts.namespace:
-        print "Namespace: "
+        print("Namespace: ")
         namespace = j.console.askChoice(cl.listNamespaces())
     else:
         namespace = opts.namespace.strip()
 
     if not opts.category:
-        print "Category: "
+        print("Category: ")
         category = j.console.askChoice(cl.listNamespaceCategories(namespace))
     else:
         category = opts.category.strip()
@@ -114,7 +114,7 @@ if opts.action =='export':
 
 ############exportall
 if opts.action =='exportall':
-    print 'This command might take a few minutes to finish...'
+    print('This command might take a few minutes to finish...')
     import JumpScale.grid.osis
     cl = j.core.osis.getClientByInstance('main')
 
@@ -135,12 +135,12 @@ if opts.action =='exportall':
             try:
                 cl.export(namespace, category, catpath)
             except:
-                print "Can't export: %s_%s category" % (namespace, category)
+                print("Can't export: %s_%s category" % (namespace, category))
                 continue
 
 ############importall
 if opts.action =='importall':
-    print 'This command might take a few minutes to finish...'
+    print('This command might take a few minutes to finish...')
     import JumpScale.grid.osis
     cl = j.core.osis.getClientByInstance('main')
 
@@ -163,13 +163,13 @@ if opts.action =='import':
     cl = j.core.osis.getClientByInstance('main')
 
     if not opts.namespace:
-        print "Namespace: "
+        print("Namespace: ")
         namespace = j.console.askChoice(cl.listNamespaces())
     else:
         namespace = opts.namespace.strip()
 
     if not opts.category:
-        print "Category: "
+        print("Category: ")
         category = j.console.askChoice(cl.listNamespaceCategories(namespace))
     else:
         category = opts.category.strip()

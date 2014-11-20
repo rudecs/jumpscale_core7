@@ -36,16 +36,16 @@ if __name__ == "__main__":
     layout = a.nicdetail
     spaces = []
     for i in layout:
-        if not layout[i]['params'].has_key('type'): continue
+        if 'type' not in layout[i]['params']: continue
         if layout[i]['params']['type'] == 'bridge' and 'space_' in i:
             oid = netcl.NetID(i[6:])
             ostr = oid.tostring()
-            if not layout.has_key('vx-%s' % ostr):
-                print('vx-%s not existing, creating' % ostr)
+            if 'vx-%s' % ostr not in layout:
+                print(('vx-%s not existing, creating' % ostr))
                 vxlan = netcl.VXlan(oid, vxbackend)
                 vxlan.create()
                 bridge = netcl.VXBridge(oid)
-                print('connecting vx-%s to space_%s' %(ostr,ostr))
+                print(('connecting vx-%s to space_%s' %(ostr,ostr)))
                 bridge.connect(vxlan.name)
 
 j.application.stop()
