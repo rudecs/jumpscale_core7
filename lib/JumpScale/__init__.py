@@ -80,6 +80,8 @@ from .baselib import platforms
 # from .core import config
 from .baselib import hrd
 
+from .baselib import jpackages
+
 # import JumpScale.baselib.startupmanager
 # from . import shellconfig
 # from . import gui

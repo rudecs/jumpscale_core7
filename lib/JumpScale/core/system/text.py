@@ -116,7 +116,7 @@ class Text:
         return re_nondigit.search(txt)==None
 
     @staticmethod
-    def ask(content):
+    def ask(content,name=None):
         """
         look for @ASK statements in text, where found replace with input from user
 
@@ -142,6 +142,9 @@ class Text:
         
         out=""
         for line in content.split("\n"):
+
+            # print ("ask:%s"%line)
+
             if line.find("@ASK")==-1:
                 out+="%s\n"%line
                 continue
@@ -153,6 +156,12 @@ class Text:
 
             if tags.tagExists("name"):
                 name=tags.tagGet("name")
+            else:
+                if name==None:
+                    if line.find("=")!=-1:
+                        name=line.split("=")[0].strip()
+                    else:
+                        name=""
 
             if tags.tagExists("type"):
                 ttype=tags.tagGet("type").strip().lower()
@@ -163,7 +172,10 @@ class Text:
             if tags.tagExists("descr"):
                 descr=tags.tagGet("descr")
             else:
-                descr="Please provide value for %s"%name
+                if name!="":
+                    descr="Please provide value for %s"%name
+                else:
+                    descr="Please provide value"
 
             # name=name.replace("__"," ")
 
@@ -184,6 +196,10 @@ class Text:
                 regex = tags.tagGet("regex")
             else:
                 regex = None
+
+            if len(descr)>30:
+                print (descr)
+                descr=""
 
             if ttype=="str":
                 result=j.console.askString(question=descr, defaultparam=default, regex=regex, retry=retry)

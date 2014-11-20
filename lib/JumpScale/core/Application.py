@@ -43,6 +43,8 @@ class Application:
         else:
             self.sandbox=False
 
+        self.interactive=True
+
     def init(self):
 
         j.logger.init()

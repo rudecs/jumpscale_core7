@@ -95,7 +95,7 @@ class HRDItem():
     def _process(self):
 
         #check if link to other value $(...)
-        if self.data.find("$(")!=1:
+        if self.data.find("$(")!=-1:
             value2=self.data
             items=j.codetools.regex.findAll(r"\$\([\w.]*\)",value2)
             if len(items)>0:
@@ -112,7 +112,10 @@ class HRDItem():
                         value2=value2.replace(item,replacewith)                    
                         value2=value2.replace("//","/")
         else:
-            value2=j.tools.text.ask(self.data)
+            value2=j.tools.text.ask(self.data,self.name)
+            if self.data.find("@ASK")!=-1:
+                # print ("CHANGED")
+                self.hrd.changed=True
 
         self.value=j.tools.text.hrd2machinetext(value2)
         if self.ttype=="dict":
@@ -136,6 +139,9 @@ class HRDItem():
                 self.value=j.tools.text.str2var(currentobj)
         else:
             self.value=j.tools.text.str2var(self.value)
+
+        if self.hrd.changed:
+            self.hrd.save()
 
     def __str__(self):
         return "%-15s|%-5s|'%s' -- '%s'"%(self.name,self.ttype,self.data,self.value)
@@ -273,25 +279,6 @@ class HRD(HRDBase):
         multiline=""
         self.content=content
 
-        #NO LONGER RELEVANT
-        # #find instructions
-        # for line in content.split("\n"):
-        #     line2=line.strip()
-        #     if line2=="":
-        #         continue
-        #     if line2.startswith("@"):
-        #         #found instruction
-        #         if line2.startswith("@prefixWithName"):
-        #             arg=line2.replace("@prefixWithName","").strip()
-        #             arg=arg.replace("$name",self.name)
-        #             self.prefixWithName=arg.strip().strip(".")
-        #         if line2.startswith("@template"):
-        #             arg=line2.replace("@template","").strip()
-        #             ddir=j.system.fs.getDirName(self.path)
-        #             for tpath in [arg,arg+".hrdt","%s/%s"%(ddir,arg),"%s/%s.hrdt"%(ddir,arg)]:
-        #                 if j.system.fs.exists(path=tpath):
-        #                     self.template=tpath
-
         splitted=content.split("\n")
         x=-1
         go=True
@@ -335,15 +322,15 @@ class HRD(HRDBase):
                     state="look4var"
 
             if state=="look4var":
-                # print "%s:%s"%(state,line)
+                # print ("%s:%s"%(state,line))
 
                 if line.find("=")!=-1:
                     pre,post=line2.split("=",1)                        
                     vartype="unknown"
                     name=pre.strip()
-                    if post.strip()=="" or post.strip().lower()=="@ask":
+                    if post.strip()=="" or post.strip().lower()=="@ask,":
                         state="multiline"
-                        if  post.strip().lower()=="@ask":
+                        if  post.lower().strip().startswith("@ask"):
                             vartype="ask"                            
                         post=post.strip()+" " #make sure there is space trailing
                         continue
