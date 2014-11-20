@@ -82,7 +82,7 @@ class CodeManager():
         for pathItem in files:
             if not self._pathIgnoreCheck(pathItem):
                 path2=pathItem.replace(path,"")
-                print("parse %s" % path2)
+                print(("parse %s" % path2))
                 if not path2=="/apps/incubaiddevelopmentprocess/appserver/service_developmentprocess/extensions/codeparser/Parser.py":
                     if path2[0]=="/":
                         path3=path2[1:]
@@ -569,7 +569,7 @@ class CodeManagerFile():
                 obj.model.context=self._getLinesAround(fullPath,line,10,20)
 
                 obj.model.descrshort=self.shortenDescr(descr)
-                print("tasktext:%s" % line)
+                print(("tasktext:%s" % line))
                 #print "infotext:%s" % infotext
                 self._parseTaskInfo(obj.model,infotext)     
                 self.parseTimeInfo(timetext,obj.model,defaults=[0,1,0,1,0])

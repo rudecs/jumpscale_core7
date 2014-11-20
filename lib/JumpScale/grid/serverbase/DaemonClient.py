@@ -145,7 +145,6 @@ class DaemonClient(object):
         return is always multipart message [$resultcode(0=no error,1=autherror),$formatstr,$data]
 
         """
-
         ##LOGGING FOR DEBUG
         # try:
         #     dest=self.transport.url
@@ -179,17 +178,27 @@ class DaemonClient(object):
             msg = "Execution error on %s.\n Could not find method:%s\n" % (self.transport, cmd)
             raise MethodNotFoundException(msg)
         if str(returncode) != returnCodes.OK:
-            # print "*** error in client to zdaemon ***"
+            if isinstance(returnformat, bytes):
+                returnformat = returnformat.decode('utf-8', 'ignore')
             s = j.db.serializers.get(rreturnformat)
+            # print "*** error in client to zdaemon ***"
             ecodict = s.loads(returndata)
             if cmd == "logeco":
                 raise RuntimeError("Could not forward errorcondition object to logserver, error was %s" % ecodict)
-
-            if ecodict["errormessage"].find("Authentication error")!=-1:
+            for k, v in ecodict.items():
+                if isinstance(k, bytes):
+                    ecodict.pop(k)
+                    k = k.decode('utf-8', 'ignore')
+                if isinstance(v, bytes):
+                    v = v.decode('utf-8', 'ignore')
+                ecodict[k] = v
+            if ecodict.get("errormessage").find("Authentication error")!=-1:
                 raise AuthenticationError("Could not authenticate to %s for user:%s"%(self.transport,self.user), ecodict)
             raise RemoteException("Cannot execute cmd:%s/%s on server:'%s:%s' error:'%s' ((ECOID:%s))" %(category,cmd,ecodict["gid"],ecodict["nid"],ecodict["errormessage"],ecodict["guid"]), ecodict)
 
         if returnformat != "":
+            if isinstance(returnformat, bytes):
+                returnformat = returnformat.decode('utf-8', 'ignore')
             ser = j.db.serializers.get(rreturnformat, key=self.key)
             res = self.decrypt(returndata)
             result = ser.loads(res)

@@ -1,6 +1,8 @@
 from JumpScale import j
-import gevent
-
+# import gevent
+from tornado.ioloop import IOLoop
+from tornado import gen
+import time
 
 
 class OSISCMDS(object):
@@ -11,6 +13,7 @@ class OSISCMDS(object):
         self.osisInstances = {}  # key is namespace_categoryname
         self.db = None  # default db
         self.path="%s/apps/osis/logic"%j.dirs.baseDir
+        self.loop = IOLoop.current()
 
     def authenticate(self, namespace, categoryname, name,passwd, session=None):
         """
@@ -120,7 +123,8 @@ class OSISCMDS(object):
                     rediscl.checkChangeLog()
                 except Exception as e:
                     j.errorconditionhandler.processPythonExceptionObject(e)
-            gevent.sleep(2)
+            yield gen.Task(self.loop.add_timeout, time.time() + 2)
+            # gevent.sleep(2)
 
     def _rebuildindex(self, namespace, categoryname, session=None):
         oi = self._doAuth(namespace, categoryname, session)

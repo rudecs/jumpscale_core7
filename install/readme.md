@@ -8,7 +8,29 @@ use these install scripts to make your life easy
 curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python34.sh | bash
 ```
 
-more examples
+to use
+------
+allways make sure you have set your env variables by
+```
+source /opt/jumpscale73/env.sh
+```
+
+to get shell
+```
+source /opt/jumpscale73/env.sh;python3 -c "from IPython import embed;embed()"
+```
+
+example through ipython
+```
+source /opt/jumpscale73/env.sh
+ipython3
+from JumpScale import j
+```
+use ipython or ipython3 depending python 2 or 3
+same for python
+
+more examples for installing 
+----------------------------
 
 ```
 #if ubuntu is in recent state & apt get update was done recently

@@ -67,4 +67,4 @@ if __name__ == '__main__':
     te.add("login", "kristof")
     te.add("passwd","root")
     text="This is a test file for {login} with a passwd:{passwd}"
-    print(te.replace(text))
+    print((te.replace(text)))
