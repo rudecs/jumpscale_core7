@@ -64,7 +64,7 @@ from .core.Console import Console
 j.console=Console()
 
 from .baselib import hrd
-j.application.config = j.core.hrd.getHRD(path="%s/hrd"%base)
+j.application.config = j.core.hrd.getHRD(path="%s/hrd/system"%base)
 
 from .core.Dirs import Dirs
 j.dirs=Dirs()

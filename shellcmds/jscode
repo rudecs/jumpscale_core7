@@ -81,14 +81,14 @@ def getRepos():
 repos=getRepos()
 
 if opts.action == "status":
-    print "\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev"
-    print "========================================================================================================================="
+    print("\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev")
+    print("=========================================================================================================================")
 
 
 for provider,account,reponame,branch,client,path in repos:
 
     if opts.action == "update" and opts.deletechanges:
-        print "force update %s/%s/%s"%(provider,account,reponame)
+        print("force update %s/%s/%s"%(provider,account,reponame))
         client.pull()
         client.update(force=True)
         continue
@@ -107,16 +107,16 @@ for provider,account,reponame,branch,client,path in repos:
 
         if opts.branch != None:
             if branch != opts.branch:
-                print "set branch:%s"%opts.branch
+                print("set branch:%s"%opts.branch)
                 from IPython import embed
-                print "DEBUG NOW not suported yet"
+                print("DEBUG NOW not suported yet")
                 embed()
                 
                 cmd="cd %s;hg branch %s"%(path,opts.branch)
                 j.system.process.execute(cmd,dieOnNonZeroExitCode=False, outputToStdout=True, useShell=True, ignoreErrorOutput=False)                
                 cmd="cd %s;hg update %s"%(path,opts.branch)
                 j.system.process.execute(cmd)
-                print "updated to branch:%s"%opts.branch
+                print("updated to branch:%s"%opts.branch)
                 lrev,lid,ttype,branch,user,msg,ddate=client.client.tip()
                 branch=client.getbranchname()
 
@@ -148,14 +148,14 @@ for provider,account,reponame,branch,client,path in repos:
             reposync="N"            
 
 
-        print "%-15s %-25s %-10s n%-3s:m%-3s:d%-3s:r%-6s reposync:%-9s  lrev:%-9s rrev:%-5s" %(account,reponame,client.branchName,\
+        print("%-15s %-25s %-10s n%-3s:m%-3s:d%-3s:r%-6s reposync:%-9s  lrev:%-9s rrev:%-5s" %(account,reponame,client.branchName,\
             len(mods["N"]),len(mods["M"]),len(mods["D"]),len(mods["R"]),\
             reposync,\
-            lrev,remotelastrevision)
+            lrev,remotelastrevision))
 
     if opts.action in ['commit']:
         if nrmods==0:
-            print "no need to commit is in sync"
+            print("no need to commit is in sync")
             continue
 
     # if opts.action in ['update']:
@@ -165,16 +165,16 @@ for provider,account,reponame,branch,client,path in repos:
 
     if opts.action in ['commit']:        
         if nrmods==0:
-            print "no need to commit, no mods"
+            print("no need to commit, no mods")
             continue
 
     if nrmods>0:
-        print "MODS:"
-        for key,item in mods.iteritems():
+        print("MODS:")
+        for key,item in mods.items():
             if len(item)>0:
-                print " %s"%key
+                print(" %s"%key)
                 for subitem in item:
-                    print "    - %s"%(subitem)
+                    print("    - %s"%(subitem))
 
 
     if opts.action in ['commit','push','update']:
@@ -185,15 +185,15 @@ for provider,account,reponame,branch,client,path in repos:
             else:
                 message=opts.message
 
-            print "ADD/REMOVE/COMMIT"
+            print("ADD/REMOVE/COMMIT")
             client.commit(message=message, addremove=True)
 
     if opts.update or opts.action =='update' or opts.action =='push':
-        print "PULL"
+        print("PULL")
         client.pull()
     
     if opts.action =='push':        
-        print "PUSH"
+        print("PUSH")
         client.push()
 
 

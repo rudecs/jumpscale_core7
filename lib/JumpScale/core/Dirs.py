@@ -35,14 +35,12 @@ class Dirs(object):
         self.tmpDir = j.application.config.get("system.paths.tmp")
         self.cfgdir = "%s/%s"%(self.baseDir,"cfg")
         self.libDir = j.application.config.get("system.paths.lib")
-        self.jsLibDir = "%s/JumpScale/"%j.application.config.get("system.paths.lib")
+        self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
         self.logDir = j.application.config.get("system.paths.log")
         self.pidDir = j.application.config.get("system.paths.pid")
         self.codeDir = j.application.config.get("system.paths.code")
-        self.libExtDir = j.application.config.get("system.paths.python_libext")
+        self.libExtDir = j.application.config.get("system.paths.python.lib.ext")
 
-
-        self.libExtDir = os.path.join(self.baseDir,"libext")
         self._createDir(os.path.join(self.baseDir,"libext"))
 
         if self.libDir in sys.path:

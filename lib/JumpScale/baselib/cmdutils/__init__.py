@@ -1,6 +1,6 @@
 from JumpScale import j
 
-import JumpScale.baselib.jpackages #load jpackages
+# import JumpScale.baselib.jpackages #load jpackages
 
 import argparse
 import sys
