@@ -13,7 +13,8 @@ class HRDItem():
         self.name=name
         self.data=data
         self.value=None
-        self.comments=comments        
+        self.comments=comments 
+        self.temp=False       
 
     def get(self):
         if self.value==None:
@@ -30,7 +31,7 @@ class HRDItem():
             return data        
 
         if self.value!=None:
-            data=j.tools.text.pythonObjToStr(self.value)
+            data=str(j.tools.text.pythonObjToStr(self.value))
 
         if self.ttype=="dict":
             data=data.strip(":")
@@ -40,10 +41,9 @@ class HRDItem():
             data=data.strip(",")
             if data.find("\n")==-1:
                 data+=","
-            
         return data.strip()
 
-    def set(self,value,persistent=True,comments=""):
+    def set(self,value,persistent=True,comments="",temp=False):
         """
         @persistency always happens when format is kept
         """
@@ -57,9 +57,13 @@ class HRDItem():
         if comments!="":
             self.comments=comments
 
+        if temp:
+            self.temp=True
+            return
+        
         self.hrd._markChanged()
 
-        if self.hrd.keepformat:
+        if self.hrd.keepformat and persistent:
             state="start"
             out=""
             found=False
@@ -88,9 +92,8 @@ class HRDItem():
 
             j.system.fs.writeFile(filename=self.hrd.path,contents=out)
 
-        else:
-            if persistent:
-                self.hrd.save()
+        elif persistent:
+            self.hrd.save()
 
     def _process(self):
 
@@ -105,12 +108,12 @@ class HRDItem():
 
                     if self.hrd.exists(item2):
                         replacewith=j.tools.text.pythonObjToStr(self.hrd.get(item2),multiline=False)
-                        value2=value2.replace(item,replacewith)
-                        value2=value2.replace("//","/")
-                    elif self.hrd.prefixWithName and self.hrd.tree.exists("%s.%s"%(self.hrd.name,item2)):
+                        value2=value2.replace(item,replacewith)                            
+                        # value2=value2.replace("//","/")
+                    elif self.hrd.prefixWithName and self.hrd.tree!=None and self.hrd.tree.exists("%s.%s"%(self.hrd.name,item2)):
                         replacewith=j.tools.text.pythonObjToStr(self.hrd.get("%s.%s"%(self.hrd.name,item2)),multiline=False)
                         value2=value2.replace(item,replacewith)                    
-                        value2=value2.replace("//","/")
+                        # value2=value2.replace("//","/")
         else:
             value2=j.tools.text.ask(self.data,self.name)
             if self.data.find("@ASK")!=-1:
@@ -125,7 +128,11 @@ class HRDItem():
                 self.value={}
             else:
                 for item in self.value.split(","):
-                    key,post2=item.split(":",1)                                    
+                    item=item.strip()                    
+                    if item=="":
+                        continue
+                    key,post2=item.split(":",1)
+                        
                     currentobj[key.strip()]=post2.strip()
                 self.value=j.tools.text.str2var(currentobj)
         elif self.ttype=="list":
@@ -168,13 +175,13 @@ class HRD(HRDBase):
         else:
             self.read()
 
-    def set(self,key,value,persistent=True,comments=""):
+    def set(self,key,value,persistent=True,comments="",temp=False):
         """
         """
         key=key.lower()
         if key not in self.items:
             self.items[key]=HRDItem(name=key,hrd=self,ttype="base",data=value,comments="")    
-        self.items[key].set(value,persistent=persistent,comments=comments)
+        self.items[key].set(value,persistent=persistent,comments=comments,temp=temp)
 
     def get(self,key,default=None,):
         key=key.lower()
@@ -259,11 +266,15 @@ class HRD(HRDBase):
         else:
             return "base"
 
-    def applytemplate(self,path=""):
+    def applyTemplate(self,path="",hrd=None):
+
         if path=="":
             path=self.template
-        if path!="":
-            hrdtemplate=HRD(path=path)
+        if path!="" or hrd!=None:
+            if hrd!=None:
+                hrdtemplate=hrd
+            else:
+                hrdtemplate=HRD(path=path)
             for key in list(hrdtemplate.items.keys()):
                 if key not in self.items:
                     hrdtemplateitem=hrdtemplate.items[key]
@@ -370,14 +381,14 @@ class HRD(HRDBase):
                     vartype="base" #ask was temporary type, is really a string
                 
                 if self.prefixWithName:
-                    name="%s.%s"%(self.name,name)
+                    name2="%s.%s"%(self.name,name)
                 self.items[name]=HRDItem(name,self,vartype,post,comments)
                 if self.tree!=None:
-                    self.tree.items[name]=self.items[name]
+                    self.tree.items[name2]=self.items[name]
                     
                 state="look4var"
                 comments=""
                 vartype="unknown"
 
-        self.applytemplate()
+        self.applyTemplate()
 

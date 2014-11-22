@@ -493,12 +493,12 @@ class ProcessDef:
 
     def disable(self):
         self.stop()
-        hrd=j.core.hrd.getHRD(self.path)
+        hrd=j.core.hrd.get(self.path)
         hrd.set("process.autostart",0)
         self.autostart=False
 
     def enable(self):
-        hrd=j.core.hrd.getHRD(self.path)
+        hrd=j.core.hrd.get(self.path)
         hrd.set("process.autostart",1)
         self.autostart=True
 
@@ -732,7 +732,7 @@ exec $cmd >>/var/log/$name.log 2>&1
         for path in j.system.fs.listFilesInDir(self._configpath , recursive=False,filter="*.hrd"):
             domain,name=j.system.fs.getBaseName(path).replace(".hrd","").split("__")
             key=self._getKey(domain,name)
-            self.processdefs[key]=ProcessDef(j.core.hrd.getHRD(path),path=path)
+            self.processdefs[key]=ProcessDef(j.core.hrd.get(path),path=path)
 
     def getProcessDef(self,domain,name, fromkey=False):
         if domain and name and fromkey:

@@ -86,7 +86,7 @@ blobstor.disk.size=100
             cfigpath=j.system.fs.joinPaths(item,"main.hrd")
             if not j.system.fs.exists(path=cfigpath):
                 j.system.fs.writeFile(filename=cfigpath,contents=C)
-            hrd=j.core.hrd.getHRD(path=cfigpath)
+            hrd=j.core.hrd.get(path=cfigpath)
             if hrd.get("blobstor.disk.id")=="0":
                 sizeGB=j.console.askInteger("please give datasize (GB) for this blobstor mount path:%s"%item)
                 diskid=self.master.registerDisk(nid=nid,bsnodeid=bsnid, path=item, sizeGB=sizeGB)
@@ -134,7 +134,7 @@ blobstor.disk.size=100
             cfigpath=j.system.fs.joinPaths(item,"main.hrd")
             if not j.system.fs.exists(path=cfigpath):
                 raise RuntimeError("there should be main.hrd file.")
-            hrd=j.core.hrd.getHRD(path=cfigpath)
+            hrd=j.core.hrd.get(path=cfigpath)
             if hrd.get("blobstor.disk.id")=="0":
                 raise RuntimeError("cfg file on %s not filled in properly"%cfigpath)
             else:

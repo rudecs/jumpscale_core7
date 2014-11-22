@@ -89,7 +89,7 @@ class Lxc():
 ipaddr=
 """
             j.system.fs.writeFile(configpath,contents=content)
-        return j.core.hrd.getHRD( path=configpath)
+        return j.core.hrd.get( path=configpath)
 
     def getPid(self,name,fail=True):
         out=self.execute("lxc-info -n %s%s -p"%(self._prefix,name))

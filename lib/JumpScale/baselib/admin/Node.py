@@ -211,25 +211,25 @@ class Node():
 
         return self.ssh
 
-    def uploadFromCfgDir(self,ttype,dest,additionalArgs={}):
+    def uploadFromcfgDir(self,ttype,dest,additionalArgs={}):
         dest=j.dirs.replaceTxtDirVars(dest)
-        cfgdir=j.system.fs.joinPaths(self._basepath, "cfgs/%s/%s"%(j.admin.args.cfgname,ttype))
+        cfgDir=j.system.fs.joinPaths(self._basepath, "cfgs/%s/%s"%(j.admin.args.cfgname,ttype))
 
         additionalArgs["hostname"]=self.name
 
         cuapi=self.ssh
-        if j.system.fs.exists(path=cfgdir):
+        if j.system.fs.exists(path=cfgDir):
             self.log("uploadcfg","upload from %s to %s"%(ttype,dest))
 
-            tmpcfgdir=j.system.fs.getTmpDirPath()
-            j.system.fs.copyDirTree(cfgdir,tmpcfgdir)
-            j.dirs.replaceFilesDirVars(tmpcfgdir)
-            j.application.config.applyOnDir(tmpcfgdir,additionalArgs=additionalArgs)
+            tmpcfgDir=j.system.fs.getTmpDirPath()
+            j.system.fs.copyDirTree(cfgDir,tmpcfgDir)
+            j.dirs.replaceFilesDirVars(tmpcfgDir)
+            j.application.config.applyOnDir(tmpcfgDir,additionalArgs=additionalArgs)
 
-            items=j.system.fs.listFilesInDir(tmpcfgdir,True)
+            items=j.system.fs.listFilesInDir(tmpcfgDir,True)
             done=[]
             for item in items:
-                partpath=j.system.fs.pathRemoveDirPart(item,tmpcfgdir)
+                partpath=j.system.fs.pathRemoveDirPart(item,tmpcfgDir)
                 partpathdir=j.system.fs.getDirName(partpath).rstrip("/")
                 if partpathdir not in done:
                     cuapi.dir_ensure("%s/%s"%(dest,partpathdir), True)
@@ -237,9 +237,9 @@ class Node():
                 try:            
                     cuapi.file_upload("%s/%s"%(dest,partpath),item)#,True,True)  
                 except Exception as e:
-                    j.system.fs.removeDirTree(tmpcfgdir)
+                    j.system.fs.removeDirTree(tmpcfgDir)
                     self.raiseError("uploadcfg","could not upload file %s to %s"%(ttype,dest))
-            j.system.fs.removeDirTree(tmpcfgdir)
+            j.system.fs.removeDirTree(tmpcfgDir)
 
     def upload(self,source,dest):
         args=j.admin.args
@@ -251,7 +251,7 @@ class Node():
         # embed()
     
         for item in items:
-            partpath=j.system.fs.pathRemoveDirPart(item,cfgdir)
+            partpath=j.system.fs.pathRemoveDirPart(item,cfgDir)
             partpathdir=j.system.fs.getDirName(partpath).rstrip("/")
             if partpathdir not in done:
                 print(cuapi.dir_ensure("%s/%s"%(dest,partpathdir), True))

@@ -60,7 +60,7 @@ class Admin():
     def load(self):
         j.system.fs.copyDirTree("%s/jumpscripts"%self.root,"%s/jumpscripts"%self.tmpdir)
 
-        self.hrd=j.core.hrd.getHRD(self.startdir,prefixWithName=True)
+        self.hrd=j.core.hrd.get(self.startdir,prefixWithName=True)
         self.hrd.applyOnDir(self.tmpdir)
 
         from IPython import embed

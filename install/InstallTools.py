@@ -925,7 +925,7 @@ class InstallTools():
             pre="http://"
             url2=url[len(pre):]
         else:
-            raise RuntimeError("Url needs to start with 'https://'")
+            raise RuntimeError("Url needs to start with 'http(s)://'")
 
         if login!=None:            
             url="%s%s:%s@%s"%(pre,login,passwd,url2)
@@ -961,6 +961,8 @@ class InstallTools():
             if depth!=None:
                 cmd+=" --depth %s"%depth        
             self.executeInteractive(cmd)
+
+        return dest
 
     def getGitReposListLocal(self,ttype="",account="",name="",errorIfNone=True):
         repos={}
@@ -1123,6 +1125,8 @@ python3 "$@"
         #make sure all configured paths are created
         for item in j.application.config.getListFromPrefix("system.paths"):
             self.createDir(item)
+
+        self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
 
         print ("install was successfull")
         print ("to use do 'source %s/env.sh;ipython3'"%base)

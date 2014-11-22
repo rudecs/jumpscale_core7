@@ -38,7 +38,7 @@ def main(j, args, params, tags, tasklet):
 			font-size: 18px;
 		}
 	 ''')
-	hrd = j.core.hrd.getHRD(content=args.cmdstr)
+	hrd = j.core.hrd.get(content=args.cmdstr)
 	bigpicture = {}
 	bigpicture['picturePath'] = ""
 	bigpicture['titleText'] = hrd.get('title.text', '')

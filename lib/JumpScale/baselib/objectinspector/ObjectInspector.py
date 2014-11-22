@@ -152,7 +152,7 @@ class ObjectInspector():
 
     def inspect(self, objectLocationPath="j"):
         """
-        walk over objects in memory and create code completion api in jumpscale cfgdir under codecompletionapi
+        walk over objects in memory and create code completion api in jumpscale cfgDir under codecompletionapi
         @param object is start object
         @param objectLocationPath is full location name in object tree e.g. j.system.fs , no need to fill in
         """

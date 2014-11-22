@@ -195,7 +195,7 @@ if opts.action.find('sync2sb')==0 and checkcat("jpackages"):
 
             dpath=j.system.fs.joinPaths(opts.sbpath,"jpackages",dom)
             for path in j.system.fs.listFilesInDir(dpath,True,"main.hrd"):
-                hrd=j.core.hrd.getHRD(path)
+                hrd=j.core.hrd.get(path)
                 hrd.set("jp.debug",0)
                 
 #COPY FROM SYSTEM TO SANDBOX for LIBS
@@ -233,11 +233,11 @@ if opts.action.find('sync2sb')==0 and checkcat("cfg",True):
     if opts.branch=="":
         raise RuntimeError("branch name needs to be specified")
     print("cfg to sandbox")
-    cfgdir="%s_data/cfg/"%opts.sbpath
-    j.system.fs.removeDirTree(cfgdir)
-    j.system.fs.createDir(cfgdir)
+    cfgDir="%s_data/cfg/"%opts.sbpath
+    j.system.fs.removeDirTree(cfgDir)
+    j.system.fs.createDir(cfgDir)
 
-    sync("/opt/code/jumpscale/%s__jumpscale_core/jsbox/cfg/"%opts.branch,cfgdir,delete=False)
+    sync("/opt/code/jumpscale/%s__jumpscale_core/jsbox/cfg/"%opts.branch,cfgDir,delete=False)
 
 if opts.action.find('sync2sb')==0 and checkcat("base"):
     # cmd='jpackage download -n base'

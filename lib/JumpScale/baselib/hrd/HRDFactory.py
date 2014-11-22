@@ -14,7 +14,7 @@ class HRDFactory:
         elif level<self.loglevel+1 and self.logenable:
             j.logger.log(msg,category="hrd.%s"%category,level=level)
 
-    def getHRD(self,path=None,content="",prefixWithName=True,keepformat=True):
+    def get(self,path=None,content="",prefixWithName=True,keepformat=False):
         """
         @param path
         """        

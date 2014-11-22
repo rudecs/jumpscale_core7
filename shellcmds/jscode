@@ -9,9 +9,6 @@ import sys,time
 
 j.application.start("jscode2")
 
-if j.application.sandbox:
-    raise RuntimeError("Cannot use jscode in sandboxed mode, is not supported, install in development mode.")
-
 parser = cmdutils.ArgumentParser()
 parser.add_argument("action", choices=['commit','push','update','status'], help='Command to perform')
 

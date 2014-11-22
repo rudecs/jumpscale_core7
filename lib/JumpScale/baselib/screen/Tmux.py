@@ -19,9 +19,11 @@ class Tmux:
         env = os.environ.copy()
         env.pop('TMUX', None)
         cmd="%s new-session -d -s %s -n %s" % (self.screencmd, sessionname, screens[0])
+        print (cmd)
         if user!=None:
             cmd = "sudo -u %s -i %s"%(user,cmd)
-        j.system.process.run(cmd, env=env)
+        # j.system.process.run(cmd, env=env)  #@todo does not work in python3
+        j.system.process.execute(cmd)
         # now add the other screens to it
         if len(screens) > 1:
             for screen in screens[1:]:
@@ -75,7 +77,8 @@ class Tmux:
             print(cmd2)
         if tmuxuser!=None:
             cmd2 = "sudo -u %s -i %s"%(tmuxuser,cmd2)
-        j.system.process.run(cmd2, env=env)
+        # j.system.process.run(cmd2, env=env)
+        j.system.process.execute(cmd2)
 
         time.sleep(wait)
         if wait and j.system.fs.exists(ppath):

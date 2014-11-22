@@ -34,7 +34,7 @@ def main(j, args, params, *other_args):
     page.addCSS('/jslib/titledcontentslideshow/css/component.css')
     page.addJS('/jslib/titledcontentslideshow/js/modernizr.custom.js')
     page.addJS('/jslib/titledcontentslideshow/js/tiltSlider.js')
-    hrd = j.core.hrd.getHRD(content=args.cmdstr)
+    hrd = j.core.hrd.get(content=args.cmdstr)
     
     space = j.core.portal.active.spacesloader.spaces[args.doc.getSpaceName()]
     imagedir = j.system.fs.joinPaths(space.model.path, '.files', 'img/')

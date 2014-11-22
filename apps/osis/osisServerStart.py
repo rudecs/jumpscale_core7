@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # osisjp=osisjp.load(osis_instance)
 
     # argstag=" ".join(args[2:])
-    osishrd = j.core.hrd.getHRD('/opt/jumpscale7/hrd/jumpscale/osis/%s/osis.hrd' % osis_instance)
+    osishrd = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/osis/%s/osis.hrd' % osis_instance)
     connectionsconfig = osishrd.get('osis.connection')
     #j.core.tags.getObject(argstag).getDict()
     connections = {}
@@ -40,7 +40,7 @@ if __name__ == '__main__':
         # if hrd==None:
         #     j.events.opserror_critical("cannot start osis, db connection %s was not available, please install & configure properly, did not find active hrd."%dbname)
         # return hrd
-        hrd = j.core.hrd.getHRD('/opt/jumpscale7/hrd/%s/%s_client/%s' % (domain, dbname, instancename))
+        hrd = j.core.hrd.get('/opt/jumpscale7/hrd/%s/%s_client/%s' % (domain, dbname, instancename))
         return hrd
 
     for dbname, instancename in connectionsconfig.items():

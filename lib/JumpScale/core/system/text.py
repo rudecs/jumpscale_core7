@@ -392,9 +392,9 @@ class Text:
             return ""
         elif j.basetype.boolean.check(text):
             if text==True:
-                text=1
+                text="true"
             else:
-                text=0
+                text="false"
             return text
         elif j.basetype.string.check(text):
             if text.find("\n")!=-1 and multiline:

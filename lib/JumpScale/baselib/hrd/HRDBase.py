@@ -191,14 +191,16 @@ class HRDBase():
         for key in keys:
             keynew=key.split(".")
             
+            hrditem=self.items[key]   
+            if hrditem.temp:
+                continue
+
             #see how many newlines in between
             if keylast!=[] and keynew[0]!=keylast[0]:
                 out.append("")
             else:
                 if len(keynew)>1 and len(keylast)>1 and len(keylast[1])>0 and j.tools.text.isNumeric(keylast[1][-1]) and keynew[1]!=keylast[1]:
-                    out.append("")   
-
-            hrditem=self.items[key]   
+                    out.append("")
 
             if hrditem.comments!="":
                 out.append("")
