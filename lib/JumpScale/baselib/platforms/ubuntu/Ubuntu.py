@@ -177,7 +177,7 @@ stop on runlevel [016]
         if pwd:
             C += "chdir %s\n" % pwd
         if env!=None:
-            for key,value in env.items():
+            for key,value in list(env.items()):
                 C+="env %s=%s\n"%(key,value)
         C+="exec %s %s\n"%(daemonpath,args)
 

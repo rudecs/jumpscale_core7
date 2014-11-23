@@ -1799,7 +1799,7 @@ class SystemFS:
                 f = open(filename, 'r')
                 for line in f:
                     if re.match(lineregex, line):
-                        print("%s: %s" % (filename, line))
+                        print(("%s: %s" % (filename, line)))
 
     cleanupString = staticmethod(cleanupString)
 

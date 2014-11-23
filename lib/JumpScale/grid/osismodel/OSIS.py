@@ -54,7 +54,7 @@ class OSIS:
         for o in objects:
             o.destroy()
             fullname = "%s_%s_%s" % (o.appname, o.actorname, o.modelname)
-            print("destroy model: %s" % fullname)
+            print(("destroy model: %s" % fullname))
 
     def rebuildindex(self, appname, actorname="*", modelname="*"):
         """

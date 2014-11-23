@@ -110,12 +110,12 @@ class Docker():
             mem+=mem0
             cpu+=cpu0
             if stdout:
-                print("%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0))
+                print(("%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0)))
             result.append([child.name,child.pid,mem0,child.parent.name])
         cpu=children[0].get_cpu_percent()
         result.append([mem,cpu])
         if stdout:
-            print("TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu))
+            print(("TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu)))
         return result
 
     def exportRsync(self,name,backupname,key="pub"):
@@ -253,7 +253,7 @@ class Docker():
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
         """
         name=name.lower().strip()
-        print("create:%s"%name)
+        print(("create:%s"%name))
         running=self.list()
         running=list(running.keys())
         if not replace:
@@ -286,7 +286,7 @@ class Docker():
             for port in range(9022,9190):
                 if not j.system.net.tcpPortConnectionTest("localhost", port):
                     portsdict[22]=port
-                    print("SSH PORT WILL BE ON:%s"%port)
+                    print(("SSH PORT WILL BE ON:%s"%port))
                     break                
 
         volsdict={}
@@ -317,12 +317,12 @@ class Docker():
         binds={}
         volskeys=[] #is location in docker
 
-        for key,path in volsdict.items():
+        for key,path in list(volsdict.items()):
             j.system.fs.createDir(path) #create the path on hostname
             binds[path]={"bind":key,"ro":False}
             volskeys.append(key)
 
-        for key,path in volsdictro.items():
+        for key,path in list(volsdictro.items()):
             j.system.fs.createDir(path) #create the path on hostname
             binds[path]={"bind":key,"ro":True}
             volskeys.append(key)
@@ -341,7 +341,7 @@ class Docker():
         # cmd="sh -c \"exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
 
         # mem=1000000
-        print("install docker with name '%s'"%base)     
+        print(("install docker with name '%s'"%base))     
 
         res=self.client.create_container(image=base, command=cmd, hostname=name, user="root", \
                 detach=False, stdin_open=False, tty=True, mem_limit=mem, ports=list(portsdict.keys()), environment=None, volumes=volskeys,  \
@@ -356,9 +356,9 @@ class Docker():
             publish_all_ports=False, links=None, privileged=False, dns=nameserver, dns_search=None, volumes_from=None, network_mode=None)
 
         portfound=0
-        for internalport,extport in portsdict.items():
+        for internalport,extport in list(portsdict.items()):
             if internalport==22:
-                print("test docker internal port:22 on ext port:%s"%extport)
+                print(("test docker internal port:22 on ext port:%s"%extport))
                 portfound=extport
                 if j.system.net.waitConnectionTest("localhost",extport,timeout=2)==False:
                     cmd="docker logs %s"%name

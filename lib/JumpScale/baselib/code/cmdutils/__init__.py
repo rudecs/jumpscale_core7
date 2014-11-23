@@ -78,15 +78,15 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
 
     if len(packages) == 0:
         if args.installed==True:
-            print("Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s' which is installed." % (args.name, args.domain, args.version,args.instance))
+            print(("Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s' which is installed." % (args.name, args.domain, args.version,args.instance)))
         else:
-            print("Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s'" % (args.name, args.domain, args.version,args.instance))
+            print(("Could not find package with name '%s' in domain '%s' with version '%s' and instance '%s'" % (args.name, args.domain, args.version,args.instance)))
         j.application.stop(1)
     elif len(packages) > 1 and args.name.find("*")!=-1:
         pass #no need to ask interactive
     elif len(packages) > 1:
         if not j.application.interactive:
-            print("Found multiple packages %s" % (packages))
+            print(("Found multiple packages %s" % (packages)))
             j.application.stop(1)
         else:
             packages = j.console.askChoiceMultiple(packages, "Multiple packages found. Select:")

@@ -154,7 +154,7 @@ class OSISCMDS(object):
 
     def getStatus(self, session=None):
         status = dict()
-        for conntype, conn in self.dbconnections.items():
+        for conntype, conn in list(self.dbconnections.items()):
             if conntype.startswith('mongodb'):
                 status['mongodb'] = conn.alive()
             elif conntype.startswith('influxdb'):

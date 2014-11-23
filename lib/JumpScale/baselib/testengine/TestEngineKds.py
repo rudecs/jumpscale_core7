@@ -25,16 +25,16 @@ class Test():
 
         def testDebug(code):
             return self.db.source[name].find("import ipdb")!=-1 or self.db.source[name].find("import embed")!=-1
-        print("\n##TEST:%s %s"%(self.db.organization,self.db.name))
+        print(("\n##TEST:%s %s"%(self.db.organization,self.db.name)))
         self.testclass.setUp()
         print("setup")
         
-        print(self.db.path)
+        print((self.db.path))
         for test in inspect.getmembers(self.testclass):
             if str(test[0]).find("test_")==0:
                 #found test
                 name=test[0][5:]
-                print("execute test:%-30s"%name)
+                print(("execute test:%-30s"%name))
 
                 out=FileLikeStreamObject()
 
@@ -49,7 +49,7 @@ class Test():
                     sys.stdout =j.tools.testengineKds.sysstdout
                     sys.stderr =j.tools.testengineKds.sysstderr  
                     print("ERROR IN TEST:")
-                    print(out.out)
+                    print((out.out))
                     eco=j.errorconditionhandler.parsePythonErrorObject(e)
                     eco.tags="testrunner testrun:%s org:%s testgroup:%s testname:%s testpath:%s" % (self.db.testrun,\
                             self.db.organization, self.db.name,name,self.db.path)
@@ -67,7 +67,7 @@ class Test():
 
     def __str__(self):
         out=""
-        for key,val in self.db.__dict__.items():
+        for key,val in list(self.db.__dict__.items()):
             if key[0]!="_" and key not in ["source","output"]:
                 out+="%-35s :  %s\n"%(key,val)
         items=out.split("\n")
@@ -98,7 +98,7 @@ class TestEngineKds():
             testrunname=j.base.time.getLocalTimeHRForFilesystem()
 
         for path in self.paths:
-            print("scan dir: %s"%path)
+            print(("scan dir: %s"%path))
             for item in j.system.fs.listFilesInDir(path,filter="*__test.py",recursive=True):
                 testdb=self.osis.new()
                 name=j.system.fs.getBaseName(item).replace("__test.py","").lower()

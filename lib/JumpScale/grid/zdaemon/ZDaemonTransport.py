@@ -72,7 +72,7 @@ class ZDaemonTransport(Transport):
         #     print "IPC channel opened to client daemon"
         # else:
         self._cmdchannel.connect("tcp://%s:%s" % (self._addr, self._port))
-        print("TCP channel open to %s:%s with id:%s" % (self._addr, self._port,self._id))
+        print(("TCP channel open to %s:%s with id:%s" % (self._addr, self._port,self._id)))
 
         self._poll = self.zmq.Poller()
         self._poll.register(self._cmdchannel, self.zmq.POLLIN)

@@ -29,7 +29,7 @@ class Netconfig:
         for nic in j.system.net.getNics():
             if nic not in excludes:
                 cmd="ifdown %s --force"%nic
-                print("shutdown:%s"%nic)
+                print(("shutdown:%s"%nic))
                 j.system.process.execute(cmd)
         
     def _getInterfacePath(self):
@@ -77,7 +77,7 @@ iface eth0 inet manual
         ed.setSection(dev,C)
         if start and dhcp==False:
             cmd="ifup %s"%dev
-            print("up:%s"%dev)
+            print(("up:%s"%dev))
             print(cmd)
             j.system.process.execute(cmd)     
 
@@ -222,7 +222,7 @@ iface $int:$aliasnr inet static
         ed.setSection(devToApplyTo,C)
 
         if start:
-            print("up:%s"%devToApplyTo)
+            print(("up:%s"%devToApplyTo))
             cmd="ifdown %s"%devToApplyTo
             j.system.process.execute(cmd) 
             cmd="ifup %s"%devToApplyTo

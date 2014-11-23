@@ -155,7 +155,7 @@ class OSISInstance(OSISInstanceNoDB):
             # did not find object, will create
             obj = self.new(guid, id)
             self.set(obj)
-            print("get object did not exist:%s %s %s " % (self.modelname, guid, id))
+            print(("get object did not exist:%s %s %s " % (self.modelname, guid, id)))
             return obj
 
         id = self._getId(guid, id)

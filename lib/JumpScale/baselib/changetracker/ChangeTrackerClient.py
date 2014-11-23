@@ -39,7 +39,7 @@ class ChangeTrackerClient():
     def action_link(self, src, dest):
         #DO NOT IMPLEMENT YET
         j.system.fs.createDir(j.system.fs.getDirName(dest))
-        print("link:%s %s"%(src, dest))
+        print(("link:%s %s"%(src, dest)))
 
         if j.system.fs.exists(path=dest):
             stat=j.system.fs.statPath(dest)
@@ -148,7 +148,7 @@ class ChangeTrackerClient():
                 mdchange=True                
 
         if mdchange:
-            print("MD:%s CHANGE"%path)
+            print(("MD:%s CHANGE"%path))
 
             # print "MDCHANGE"
             item.mode=int(stat.st_mode)
@@ -205,7 +205,7 @@ class ChangeTrackerClient():
 
     def restore1file(self, src, dest, namespace):
 
-        print("restore: %s %s" % (src, dest))
+        print(("restore: %s %s" % (src, dest)))
 
         itemObj=self.getMDObjectFromFs(src)
 
@@ -218,7 +218,7 @@ class ChangeTrackerClient():
         blob_path = self._getBlobPath(namespace, itemObj.hash)
         if j.system.fs.exists(blob_path):
             # Blob exists in cache, we can get it from there!
-            print("Blob FOUND in cache: %s" % blob_path)
+            print(("Blob FOUND in cache: %s" % blob_path))
             j.system.fs.copyFile(blob_path, dest)
             return
 
@@ -239,7 +239,7 @@ class ChangeTrackerClient():
         check="##HASHLIST##"
         if blob.find(check)==0:
             # found hashlist
-            print("FOUND HASHLIST %s" % blob)
+            print(("FOUND HASHLIST %s" % blob))
             hashlist = blob[len(check) + 1:]
             j.system.fs.writeFile(dest,"")
             for hashitem in hashlist.split("\n"):
@@ -264,7 +264,7 @@ class ChangeTrackerClient():
         for src,md5 in batch:
             key2paths[md5]=(src,md5)
 
-        print("batch nr:%s check"%batchnr)
+        print(("batch nr:%s check"%batchnr))
         notexist=self.client.existsBatch(keys=list(key2paths.keys())) 
         print("batch checked on unique data")
 
@@ -275,7 +275,7 @@ class ChangeTrackerClient():
             if md5 in notexist:
                 hashes=[]
                 if j.system.fs.statPath(src).st_size>self._MB4:
-                    print("%s/%s:upload file (>4MB) %s"%(nr,total,src))
+                    print(("%s/%s:upload file (>4MB) %s"%(nr,total,src)))
                     for data in self._read_file(src):
                         hashes.append(self._dump2stor(data))
                     if len(hashes)>1:
@@ -287,11 +287,11 @@ class ChangeTrackerClient():
                     else:
                         raise RuntimeError("hashist needs to be more than 1.")
                 else:
-                    print("%s/%s:upload file (<4MB) %s"%(nr,total,src))
+                    print(("%s/%s:upload file (<4MB) %s"%(nr,total,src)))
                     for data in self._read_file(src):
                         hashes.append(self._dump2stor(data,key=md5))
             else:
-                print("%s/%s:no need to upload, exists: %s"%(nr,total,src))
+                print(("%s/%s:no need to upload, exists: %s"%(nr,total,src)))
 
     def backup(self,path,destination="", pathRegexIncludes={},pathRegexExcludes={".*\\.pyc"},childrenRegexExcludes=[".*/dev/.*",".*/proc/.*"],fullcheck=False):
 
@@ -302,7 +302,7 @@ class ChangeTrackerClient():
         #tar xzvf testDev.tgz -C testd
         self._createExistsList(destination)
 
-        print("SCAN MD:%s"%path)
+        print(("SCAN MD:%s"%path))
         
         self.errors=[]
 
@@ -408,7 +408,7 @@ class ChangeTrackerClient():
             dest=j.system.fs.joinPaths(self.MDPath,"LINKS",path)
             j.system.fs.removeDirTree(dest)
         f.close()
-        print("SCAN DONE MD:%s"%path)
+        print(("SCAN DONE MD:%s"%path))
 
         print("START UPLOAD FILES.")
         #count lines

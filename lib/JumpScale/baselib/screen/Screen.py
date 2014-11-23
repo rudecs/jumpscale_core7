@@ -106,7 +106,7 @@ rm -f %s
     def listSessions(self):
         sessions=self.getSessions()
         for pid,name in sessions:
-            print("%s %s" % (pid,name))
+            print(("%s %s" % (pid,name)))
 
     def _do(self, session, cmd, window=None):
         scrcmd = [self.screencmd, '-S', session]

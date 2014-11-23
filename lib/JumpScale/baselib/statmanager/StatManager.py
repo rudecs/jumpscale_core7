@@ -78,7 +78,7 @@ class StatManager():
                 if key in self.historyObjsMod and self.historyObjsMod[key]:
                     obj = self.historyObjs[key]
                     nrItemsIn5MinRow, nrItemsInHourRow = self.getNrItemsRow(key)
-                    print("save: %s" % (obj.guid))
+                    print(("save: %s" % (obj.guid)))
                     # trim values out of range
                     if nrItemsIn5MinRow != 0:
                         test = now5min - nrItemsIn5MinRow

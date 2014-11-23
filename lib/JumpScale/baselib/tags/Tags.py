@@ -4,7 +4,7 @@ from JumpScale import j
 try:
     from urllib.parse import unquote, quote
 except:
-    from urllib import unquote, quote
+    from urllib.parse import unquote, quote
 import re
 matchquote = re.compile(r'\'[^\']*\'')
 
@@ -64,7 +64,7 @@ class Tags():
         @rtype: string                
         """
         labelsString = " ".join([quote(label) for label in self.labels])
-        tagsString = " ".join(["%s:%s" % (quote(k), quote(v)) for k, v in self.tags.items()])
+        tagsString = " ".join(["%s:%s" % (quote(k), quote(v)) for k, v in list(self.tags.items())])
         
         self.tagstring = " ".join((labelsString, tagsString)).strip()
         self.tagstring=self.tagstring.replace("%2C", ",")

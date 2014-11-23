@@ -45,7 +45,7 @@ class TCPHATransport(Transport):
                         self._client = client
                         return
                 except Exception as e:
-                    print("Error occured %s" % e)
+                    print(("Error occured %s" % e))
                     pass # invalidate the client
                 if self._client:
                     self._client.close()

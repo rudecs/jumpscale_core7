@@ -167,7 +167,7 @@ class RouterOS(object):
     def do(self,cmd,args={}):
         cmds=[]
         cmds.append(cmd)
-        for key,value in args.items():
+        for key,value in list(args.items()):
             arg="=%s=%s"%(key,value)
             cmds.append(arg)
         if args!={}:
@@ -205,7 +205,7 @@ class RouterOS(object):
             if rc=="!re" or rc=="!trap":
                 #return
                 result2={}
-                for key,value in result.items():
+                for key,value in list(result.items()):
                     key=key.lstrip("=")
                     if value=="false":
                         value=False
@@ -292,7 +292,7 @@ class RouterOS(object):
         if single:
             for item in self.ipaddr_getall():
                 if item["interface"]==interfacename:
-                    print("found other addr already on interface, will remove.:%s"%item["ip"])
+                    print(("found other addr already on interface, will remove.:%s"%item["ip"]))
                     self.ipaddr_remove(item["ip"])
         return self.do("/ip/address/add", args=arg)
 
@@ -370,7 +370,7 @@ class RouterOS(object):
             self.ftp.retrbinary('RETR %s'%path, open(dest, 'wb').write)
         else:
             try:
-                print("download '%s'"%path)
+                print(("download '%s'"%path))
                 self.ftp.retrbinary('RETR %s'%path, open(dest, 'wb').write)
                 print()
             except Exception as e:
@@ -378,7 +378,7 @@ class RouterOS(object):
                 pass
 
     def upload(self,path,dest):
-        print("upload: '%s' to '%s'"%(path,dest))
+        print(("upload: '%s' to '%s'"%(path,dest)))
         self._getFtp()
         if not j.system.fs.exists(path=path):
             raise RuntimeError("Cannot find %s"%path)
@@ -394,14 +394,14 @@ class RouterOS(object):
 
     def uploadExecuteScript(self,name,removeAfter=True,vars={},srcpath=""):
         if srcpath=="":
-            print("EXECUTE SCRIPT:%s"%name)
+            print(("EXECUTE SCRIPT:%s"%name))
             name=name+".rsc"
             src=j.system.fs.joinPaths(self.configpath,name)
         else:
             src=srcpath
 
         content=j.system.fs.fileGetContents(src)
-        for key,val in vars.items():
+        for key,val in list(vars.items()):
             content=content.replace(key,val)
         src=j.system.fs.joinPaths(j.dirs.tmpDir,j.system.fs.getTempFileName())
         j.system.fs.writeFile(src,content)

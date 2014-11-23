@@ -402,7 +402,7 @@ class RegexTools:
 if __name__ == '__main__':
     content=j.system.fs.fileGetContents("examplecontent1.txt")
     rt=RegexTools()
-    print(rt.getClassName("class iets(test):"))
+    print((rt.getClassName("class iets(test):")))
     #content="class iets(test):"
     regexmatches=rt.getRegexMatches(r"(?m)(?<=^class )[ A-Za-z0-9_\-]*\b",content)  #find all occurences of class and find positions
     

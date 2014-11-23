@@ -10,10 +10,10 @@ class JPackageFactory():
             login=j.application.config.get("whoami.git.login").strip()
             passwd=j.application.config.get("whoami.git.passwd").strip()
             items=j.application.config.getDictFromPrefix("jpackage.metadata")
-            for domain in items.keys():
+            for domain in list(items.keys()):
                 url=items[domain]
                 domain=domain.rpartition(".url")[0]
-                if not url.rpartition("/")[-1] in j.do.getGitReposListLocal().keys():
+                if not url.rpartition("/")[-1] in list(j.do.getGitReposListLocal().keys()):
                     #means git has not been pulled yet
                     if login!="":
                         j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch="master")
@@ -24,7 +24,7 @@ class JPackageFactory():
     def getdomains(self):
         items=j.application.config.getDictFromPrefix("jpackage.metadata")
         res=[]
-        for domain in items.keys():
+        for domain in list(items.keys()):
             domain=domain.rpartition(".url")[0]
             res.append(domain.strip())
         return res
@@ -32,7 +32,7 @@ class JPackageFactory():
     def find(self,domain="",name="",instance="",maxnr=None):
         self._doinit()
         from IPython import embed
-        print(10)
+        print((10))
         embed()
         
 

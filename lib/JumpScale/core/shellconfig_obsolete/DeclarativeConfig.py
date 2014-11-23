@@ -33,7 +33,7 @@ class ConfigSection(BaseType):
             self._config.addSection(self._section_name)
             self._config.write()
 
-        for attrName, config in self.pm_property_metadata.items():
+        for attrName, config in list(self.pm_property_metadata.items()):
             self._setProperty(attrName, config['self'], config['default'])
             self._config.setParam(self._section_name, attrName, getattr(self, attrName))
 

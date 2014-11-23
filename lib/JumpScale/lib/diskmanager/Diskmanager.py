@@ -174,7 +174,7 @@ class Diskmanager():
                         disko.path=partition.path if disk.type != 'loop' else disk.device.path
                         disko.size=round(partition.getSize(unit="mb"),2)
                         disko.free = 0
-                        print("partition:%s %s"%(disko.path,disko.size))
+                        print(("partition:%s %s"%(disko.path,disko.size)))
                         try:
                             fs = self.parted.probeFileSystem(partition.geometry)
                         except:
@@ -207,7 +207,7 @@ class Diskmanager():
                         result.append(disko)
 
                         if mountpoint!=None:
-                            print("mountpoint:%s"%mountpoint)
+                            print(("mountpoint:%s"%mountpoint))
                             size, used, free, percent=psutil.disk_usage(mountpoint)
                             disko.free=disko.size*float(1-percent/100)
 
@@ -247,7 +247,7 @@ diskinfo.description=
                                         client_disk=j.core.osis.getClientForCategory(client,"system","disk")
 
                                         disk=client_disk.new()
-                                        for key,val in disko.__dict__.items():
+                                        for key,val in list(disko.__dict__.items()):
                                             disk.__dict__[key]=val
 
                                         disk.description=hrd.get("diskinfo.description")
@@ -267,7 +267,7 @@ diskinfo.description=
                                         disko.type=hrd.get("diskinfo.type").split(",")
                                         disko.type.sort()
                                         disko.description=hrd.get("diskinfo.description")
-                                        print("found disk:\n%s"%(disko))
+                                        print(("found disk:\n%s"%(disko)))
                                     cmd="umount /mnt/tmp"
                                     j.system.process.execute(cmd,dieOnNonZeroExitCode=False)
                                     if os.path.ismount("/mnt/tmp")==True:

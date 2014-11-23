@@ -72,7 +72,7 @@ Some interesting links:
  * http://users.rcn.com/python/download/Descriptor.htm
  * http://gulopine.gamemusic.org/2007/nov/23/python-descriptors-part-1-of-2/
 '''
-import collections
+from . import collections
 
 class BaseDescriptor(property):
     '''Base class for pmtypes descriptors

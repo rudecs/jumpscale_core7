@@ -7,7 +7,7 @@ class ConfiguredItemGroup(object):
     def __init__(self):
        allParamsDict = j.config.getConfig(self._CONFIGTYPE)
        self.__allItemsDict = {}
-       for itemname, paramsDict in allParamsDict.items():
+       for itemname, paramsDict in list(allParamsDict.items()):
            self._pushParamsToItem(itemname, paramsDict)
 
     def _pushParamsToItem(self, itemname, params, reconfigure=True):
@@ -41,13 +41,13 @@ class ConfiguredItemGroup(object):
         return list(self.__allItemsDict.items())
 
     def iteritems(self):
-        return iter(self.__allItemsDict.items())
+        return iter(list(self.__allItemsDict.items()))
 
     def iterkeys(self):
-        return iter(self.__allItemsDict.keys())
+        return iter(list(self.__allItemsDict.keys()))
 
     def itervalues(self):
-        return iter(self.__allItemsDict.values())
+        return iter(list(self.__allItemsDict.values()))
 
     def keys(self):
         return list(self.__allItemsDict.keys())

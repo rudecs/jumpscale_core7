@@ -3,7 +3,7 @@ from JumpScale import j
 from .Daemon import Daemon
 import time
 import struct
-
+import ujson as json
 
 class ServerBaseFactory():
 
@@ -98,17 +98,16 @@ class ServerBaseFactory():
         lenreturnformat = len(returnformat)
         lensendformat = len(sendformat)
         lensessionid = len(sessionid)
-        return struct.pack("<IIIIIIssssss", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid, 
-            bytearray(category, 'ascii'), bytearray(cmd, 'ascii'), bytearray(data, 'ascii'), bytearray(sendformat, 'ascii'), 
-            bytearray(returnformat, 'ascii'), bytearray(sessionid, 'ascii'))
+        packed = struct.pack("<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid).decode('utf-8')
+        return packed + category + cmd + data + sendformat + returnformat + sessionid
 
     def _unserializeBinSend(self, data):
         """
         return cmd,data,sendformat,returnformat,sessionid
         """
-        fformat = "<IIIIIIssssss"
+        fformat = "<IIIIII"
         size = struct.calcsize(fformat)
-        datasizes = struct.unpack(fformat, data[0:size])
+        datasizes = struct.unpack(fformat, bytearray(data[0:size], 'utf-8'))
         data = data[size:]
         for size in datasizes:
             res = data[0:size]
@@ -121,12 +120,12 @@ class ServerBaseFactory():
             resultcode = '\x00'
         lenreturnformat = len(returnformat)
         packed = struct.pack("<II", lenreturnformat, lendata)
-        return bytes(resultcode, 'utf-8') + packed + bytes(returnformat, 'utf-8') if returnformat else returnformat + bytes(result, 'utf-8')
+        return resultcode + packed.decode('utf-8') + returnformat + result
 
     def _unserializeBinReturn(self, data):
         """
         return resultcode,returnformat,result
         """
-        resultcode=data.decode('utf-8')[0]
-        lenreturnformat, lendata = struct.unpack("<II", data[1:9])
+        resultcode=data[0]
+        lenreturnformat, lendata = struct.unpack("<II", bytearray(data[1:9], 'utf-8'))
         return (resultcode, data[9:lenreturnformat + 9], data[lenreturnformat + 9:])

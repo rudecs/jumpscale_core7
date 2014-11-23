@@ -322,4 +322,4 @@ class EasyDialogWin32(EasyDialogGeneric):
 
 if __name__=='__main__':
     #print EasyDialog().askFilePath()
-    print(EasyDialogWin32().askString("something"))
+    print((EasyDialogWin32().askString("something")))

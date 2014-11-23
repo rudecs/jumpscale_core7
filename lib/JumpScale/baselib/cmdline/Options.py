@@ -242,4 +242,4 @@ if __name__=="__main__":
     for key,value in list(optdict.items()):
          # Use the option and the value in
          # your program
-         print("%s -> %s" %(key,value))
+         print(("%s -> %s" %(key,value)))

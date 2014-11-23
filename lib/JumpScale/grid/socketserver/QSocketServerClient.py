@@ -35,7 +35,7 @@ class SocketServerClient():
         try:
             self.socket.sendall(data)
         except Exception as e:
-            print("sendata error: %s" % e)
+            print(("sendata error: %s" % e))
             self.reinitclient()
             return self.senddata(data)
 
@@ -56,7 +56,7 @@ class SocketServerClient():
         raise RuntimeError("Connection timed out to server %s" % self.addr)
 
     def _initclient(self):
-        print("try to connect to %s:%s" % (self.addr, self.port))
+        print(("try to connect to %s:%s" % (self.addr, self.port)))
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # self.sender.settimeout(2)
         data = '**connect** whoami:%s key:%s' % (j.application.whoAmI, self.key)
@@ -65,14 +65,14 @@ class SocketServerClient():
             self.senddata(data)
         except Exception as e:
             try:
-                print("connection error to %s %s" % (self.addr, self.port))
+                print(("connection error to %s %s" % (self.addr, self.port)))
             except:
                 pass
             try:
                 self.socket.close()
             except:
                 pass
-            print("initclient error:%s, sleep 1 sec." % e)
+            print(("initclient error:%s, sleep 1 sec." % e))
             sleep(1)
             return False
 

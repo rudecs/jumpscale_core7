@@ -56,7 +56,7 @@ class PortApp(j.code.classGetBase()):
                         try:
                             j.system.process.kill(pid)
                         except Exception as e:
-                            print("could not kill %s %s" % (pid,name))
+                            print(("could not kill %s %s" % (pid,name)))
                             print(e)
         
     def start(self,args="",agent=False,kill=True):
@@ -71,7 +71,7 @@ class PortApp(j.code.classGetBase()):
         cmd=dest            
         if args!="":
             cmd=cmd+" "+args
-        print("Execute %s" % cmd)
+        print(("Execute %s" % cmd))
         j.system.process.execute(dest)
 
 class PortApps(j.code.classGetBase()):
@@ -147,7 +147,7 @@ class PortApps(j.code.classGetBase()):
             toTgz="portappexpanded.tgz"
         else:
             toTgz=to
-        print('Downloading %s \n to %s' % (url,to))
+        print(('Downloading %s \n to %s' % (url,to)))
         handle = urllib.request.urlopen(url)
         progress=0
         with open(toTgz, 'wb') as out:
@@ -252,9 +252,9 @@ class PortApps(j.code.classGetBase()):
                     j.system.fs.createDir(to)
                     paActive.installed=False
                 if paActive.installed==False or int(paActive.build)<int(pa.build):
-                    print("download portapp %s, this can take a while please wait." % name)
+                    print(("download portapp %s, this can take a while please wait." % name))
                     self._download(pa.url,to)
-                    print("download done for %s" %name)
+                    print(("download done for %s" %name))
                 
                 #remember downloaded app
                 paActive.installed=True

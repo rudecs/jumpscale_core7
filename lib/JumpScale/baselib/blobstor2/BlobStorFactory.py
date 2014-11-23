@@ -182,7 +182,7 @@ class BlobStorFactory:
     def _setNodesDisks(self):
         rkey="blobstormaster:nodes"
         todelete=[]
-        for key,obj in self.nodes.items():
+        for key,obj in list(self.nodes.items()):
             if obj["size"]<obj["free"]:
                 obj["free"]=obj["size"]
             if obj["free"]==0:

@@ -754,7 +754,7 @@ class SpecParserFactory():
             for key2 in list(self.specs.keys()):
                 type,app,item,remaining=key2.split("_",3)
                 if app==appname and item.find(actorname)==0:
-                    print("remove specs %s from memory" % key)
+                    print(("remove specs %s from memory" % key))
                     self.specs.pop(key2)
             i=self.actornames.index(key)
             self.actornames.pop(i)
