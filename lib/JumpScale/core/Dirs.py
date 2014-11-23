@@ -33,7 +33,8 @@ class Dirs(object):
         self.appDir = j.application.config.get("system.paths.app")
         self.varDir = j.application.config.get("system.paths.var")
         self.tmpDir = j.application.config.get("system.paths.tmp")
-        self.cfgdir = "%s/%s"%(self.baseDir,"cfg")
+        self.cfgDir = j.application.config.get("system.paths.cfg")
+        self.hrdDir = j.application.config.get("system.paths.hrd")
         self.libDir = j.application.config.get("system.paths.lib")
         self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
         self.logDir = j.application.config.get("system.paths.log")
@@ -65,37 +66,38 @@ class Dirs(object):
         else:
             self.binDir = j.application.config.get("system.paths.bin")
 
-    def replaceTxtDirVars(self,txt,additionalArgs={}):
-        """
-        replace $base,$vardir,$cfgdir,$bindir,$codedir,$tmpdir,$logdir,$appdir with props of this class
-        """
-        txt=txt.replace("$base",self.baseDir)
-        txt=txt.replace("$appdir",self.appDir)
-        txt=txt.replace("$codedir",self.codeDir)
-        txt=txt.replace("$vardir",self.varDir)
-        txt=txt.replace("$cfgdir",self.cfgDir)
-        txt=txt.replace("$bindir",self.binDir)
-        txt=txt.replace("$logdir",self.logDir)
-        txt=txt.replace("$tmpdir",self.tmpDir)
-        txt=txt.replace("$libdir",self.libDir)
-        txt=txt.replace("$jslibextdir",self.libExtDir)
-        txt=txt.replace("$jsbindir",self.binDir)
-        txt=txt.replace("$nodeid",str(j.application.whoAmI.nid))
-        for key,value in additionalArgs.items():
-            txt=txt.replace("$%s"%key,str(value))
-        return txt
+    # def replaceTxtDirVars(self,txt,additionalArgs={}):
+    #     """
+    #     replace $base,$vardir,$cfgDir,$bindir,$codedir,$tmpdir,$logdir,$appdir with props of this class
+    #     """
+    #     txt=txt.replace("$base",self.baseDir)
+    #     txt=txt.replace("$appdir",self.appDir)
+    #     txt=txt.replace("$codedir",self.codeDir)
+    #     txt=txt.replace("$vardir",self.varDir)
+    #     txt=txt.replace("$cfgDir",self.cfgDir)
+    #     txt=txt.replace("$hrdDir",self.hrdDir)
+    #     txt=txt.replace("$bindir",self.binDir)
+    #     txt=txt.replace("$logdir",self.logDir)
+    #     txt=txt.replace("$tmpdir",self.tmpDir)
+    #     txt=txt.replace("$libdir",self.libDir)
+    #     txt=txt.replace("$jslibextdir",self.libExtDir)
+    #     txt=txt.replace("$jsbindir",self.binDir)
+    #     txt=txt.replace("$nodeid",str(j.application.whoAmI.nid))
+    #     for key,value in additionalArgs.items():
+    #         txt=txt.replace("$%s"%key,str(value))
+    #     return txt
 
-    def replaceFilesDirVars(self,path,recursive=True, filter=None,additionalArgs={}):
-        if j.system.fs.isFile(path):
-            paths=[path]
-        else:
-            paths=j.system.fs.listFilesInDir(path,recursive,filter)
+    # def replaceFilesDirVars(self,path,recursive=True, filter=None,additionalArgs={}):
+    #     if j.system.fs.isFile(path):
+    #         paths=[path]
+    #     else:
+    #         paths=j.system.fs.listFilesInDir(path,recursive,filter)
             
-        for path in paths:
-            content=j.system.fs.fileGetContents(path)
-            content2=self.replaceTxtDirVars(content,additionalArgs)
-            if content2!=content:
-                j.system.fs.writeFile(filename=path,contents=content2)
+    #     for path in paths:
+    #         content=j.system.fs.fileGetContents(path)
+    #         content2=self.replaceTxtDirVars(content,additionalArgs)
+    #         if content2!=content:
+    #             j.system.fs.writeFile(filename=path,contents=content2)
 
     def _createDir(self,path):
         if not os.path.exists(path):

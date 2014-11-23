@@ -16,7 +16,7 @@ class MongoDBClient:
         # jp=j.packages.findNewest(name="mongodb_client",domain='jumpscale')
         # jp=jp.load(instancename)
         # hrd = jp.hrd_instance
-        hrd = j.core.hrd.getHRD('/opt/jumpscale7/hrd/jumpscale/mongodb_client/%s/mongodb.client.hrd' % instancename)
+        hrd = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/mongodb_client/%s/mongodb.client.hrd' % instancename)
         if hrd is None:
             j.events.opserror_critical("Could not find mongodb_client for instance %s" % instancename)
         ipaddr = hrd.get("mongodb.client.addr")

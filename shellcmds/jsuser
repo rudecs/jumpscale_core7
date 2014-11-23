@@ -90,7 +90,7 @@ if opts.action =='add' or opts.action =='set':
         groups=groups.split(",")
         emails=emails.split(",")
     elif opts.hrd != None:
-        hrd=j.core.hrd.getHRD(content=opts.hrd.replace("#","\n"))
+        hrd=j.core.hrd.get(content=opts.hrd.replace("#","\n"))
         if hrd.exists("user.name"):
             name=hrd.get("user.name")
         if hrd.exists("user.domain"):

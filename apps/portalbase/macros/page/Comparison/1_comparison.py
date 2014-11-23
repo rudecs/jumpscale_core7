@@ -76,7 +76,7 @@ def main(j, args, params, tags, tasklet):
 			font-size: 60%;
 		}
 	 ''')
-	hrd = j.core.hrd.getHRD(content=args.cmdstr)
+	hrd = j.core.hrd.get(content=args.cmdstr)
 
 	currency = hrd.getStr('currency', '')
 

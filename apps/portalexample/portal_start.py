@@ -26,7 +26,7 @@ portal_ipaddr:localhost
 portal_name:main
 portal_port:82
     """
-    j.application.instanceconfig = j.core.hrd.getHRD('/opt/jumpscale7/hrd/jumpscale')
+    j.application.instanceconfig = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale')
 
     j.application.start("portal")
 
