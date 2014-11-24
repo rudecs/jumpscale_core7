@@ -266,7 +266,7 @@ class Code():
     def object2json(self,obj,pretty=False,skiperrors=False,ignoreKeys=[],ignoreUnderscoreKeys=False):
         obj=self.object2dict(obj,dieOnUnknown=not skiperrors,ignoreKeys=ignoreKeys,ignoreUnderscoreKeys=ignoreUnderscoreKeys)
         if pretty:            
-            return json.dumps(obj, skipkeys=skiperrors, ensure_ascii=False, check_circular=True, indent=2, separators=(", ",": "),encoding='utf-8', default=None, sort_keys=True)
+            return json.dumps(obj, skipkeys=skiperrors, ensure_ascii=False, check_circular=True, indent=2, separators=(", ",": "), default=None, sort_keys=True)
         else:
             return json.dumps(obj)
 

@@ -187,6 +187,7 @@ class PMExtension(BasePMExtension):
         """
         cleanedPath = os.path.abspath(self.extensionPath)
         extensionName = os.path.basename(self.extensionPath)
+        cleanedPath = cleanedPath.encode('utf-8')
         pathHash = hashlib.md5(cleanedPath).hexdigest()
         shortHashPath = pathHash[:6]
         return '_pm_%s_%s_%s' % (extensionName, self.moduleName, shortHashPath)

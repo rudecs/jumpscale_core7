@@ -713,60 +713,60 @@ class SystemFS:
                         raise RuntimeError("%s"%e)
 
 
-    # def parsePath(self,path, baseDir="",existCheck=True, checkIsFile=False):
-    #     """
-    #     parse paths of form /root/tmp/33_adoc.doc into the path, priority which is numbers before _ at beginning of path
-    #     also returns filename
-    #     checks if path can be found, if not will fail
-    #     when filename="" then is directory which has been parsed
-    #     if basedir specified that part of path will be removed
+    def parsePath(self,path, baseDir="",existCheck=True, checkIsFile=False):
+        """
+        parse paths of form /root/tmp/33_adoc.doc into the path, priority which is numbers before _ at beginning of path
+        also returns filename
+        checks if path can be found, if not will fail
+        when filename="" then is directory which has been parsed
+        if basedir specified that part of path will be removed
 
-    #     example:
-    #     j.system.fs.parsePath("/opt/qbase3/apps/specs/myspecs/definitions/cloud/datacenter.txt","/opt/qbase3/apps/specs/myspecs/",existCheck=False)
-    #     @param path is existing path to a file
-    #     @param baseDir, is the absolute part of the path not required
-    #     @return list of dirpath,filename,extension,priority
-    #          priority = 0 if not specified
-    #     """
-    #     #make sure only clean path is left and the filename is out
-    #     if existCheck and not self.exists(path):
-    #         raise RuntimeError("Cannot find file %s when importing" % path)
-    #     if checkIsFile and not self.isFile(path):
-    #         raise RuntimeError("Path %s should be a file (not e.g. a dir), error when importing" % path)
-    #     extension=""
-    #     if self.isDir(path):
-    #         name=""
-    #         path=self.pathClean(path)
-    #     else:
-    #         name=self.getBaseName(path)
-    #         path=self.pathClean(path)
-    #         #make sure only clean path is left and the filename is out
-    #         path=self.getDirName(path)
-    #         #find extension
-    #         regexToFindExt="\.\w*$"
-    #         if j.codetools.regex.match(regexToFindExt,name):
-    #             extension=j.codetools.regex.findOne(regexToFindExt,name).replace(".","")
-    #             #remove extension from name
-    #             name=j.codetools.regex.replace(regexToFindExt,regexFindsubsetToReplace=regexToFindExt, replaceWith="", text=name)
+        example:
+        j.system.fs.parsePath("/opt/qbase3/apps/specs/myspecs/definitions/cloud/datacenter.txt","/opt/qbase3/apps/specs/myspecs/",existCheck=False)
+        @param path is existing path to a file
+        @param baseDir, is the absolute part of the path not required
+        @return list of dirpath,filename,extension,priority
+             priority = 0 if not specified
+        """
+        #make sure only clean path is left and the filename is out
+        if existCheck and not self.exists(path):
+            raise RuntimeError("Cannot find file %s when importing" % path)
+        if checkIsFile and not self.isFile(path):
+            raise RuntimeError("Path %s should be a file (not e.g. a dir), error when importing" % path)
+        extension=""
+        if self.isDir(path):
+            name=""
+            path=self.pathClean(path)
+        else:
+            name=self.getBaseName(path)
+            path=self.pathClean(path)
+            #make sure only clean path is left and the filename is out
+            path=self.getDirName(path)
+            #find extension
+            regexToFindExt="\.\w*$"
+            if j.codetools.regex.match(regexToFindExt,name):
+                extension=j.codetools.regex.findOne(regexToFindExt,name).replace(".","")
+                #remove extension from name
+                name=j.codetools.regex.replace(regexToFindExt,regexFindsubsetToReplace=regexToFindExt, replaceWith="", text=name)
 
-    #     if baseDir!="":
-    #         path=self.pathRemoveDirPart(path,baseDir)
+        if baseDir!="":
+            path=self.pathRemoveDirPart(path,baseDir)
 
-    #     if name=="":
-    #         dirOrFilename=j.system.fs.getDirName(path,lastOnly=True)
-    #     else:
-    #         dirOrFilename=name
-    #     #check for priority
-    #     regexToFindPriority="^\d*_"
-    #     if j.codetools.regex.match(regexToFindPriority,dirOrFilename):
-    #         #found priority in path
-    #         priority=j.codetools.regex.findOne(regexToFindPriority,dirOrFilename).replace("_","")
-    #         #remove priority from path
-    #         name=j.codetools.regex.replace(regexToFindPriority,regexFindsubsetToReplace=regexToFindPriority, replaceWith="", text=name)
-    #     else:
-    #         priority=0
+        if name=="":
+            dirOrFilename=j.system.fs.getDirName(path,lastOnly=True)
+        else:
+            dirOrFilename=name
+        #check for priority
+        regexToFindPriority="^\d*_"
+        if j.codetools.regex.match(regexToFindPriority,dirOrFilename):
+            #found priority in path
+            priority=j.codetools.regex.findOne(regexToFindPriority,dirOrFilename).replace("_","")
+            #remove priority from path
+            name=j.codetools.regex.replace(regexToFindPriority,regexFindsubsetToReplace=regexToFindPriority, replaceWith="", text=name)
+        else:
+            priority=0
 
-    #     return path,name,extension,priority            #if name =="" then is dir
+        return path,name,extension,priority            #if name =="" then is dir
 
 
     def getcwd(self):
@@ -1318,7 +1318,8 @@ class SystemFS:
         with open(filename) as f:
             s = f.read()
 
-        for bom in [codecs.BOM_UTF8]:  # we can add more BOMs later:
+        boms = [codecs.BOM_UTF8.decode()]
+        for bom in boms:  # we can add more BOMs later:
             if s.startswith(bom):
                 s = s.replace(bom, '', 1)
                 break

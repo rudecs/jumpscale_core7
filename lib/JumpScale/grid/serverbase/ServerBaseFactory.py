@@ -4,6 +4,7 @@ from .Daemon import Daemon
 import time
 import struct
 import ujson as json
+import codecs
 
 class ServerBaseFactory():
 
@@ -98,20 +99,23 @@ class ServerBaseFactory():
         lenreturnformat = len(returnformat)
         lensendformat = len(sendformat)
         lensessionid = len(sessionid)
-        packed = struct.pack("<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid).decode('utf-8')
+        # packed = struct.pack("<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid).decode('utf-32')
+        packed = '%s:%s:%s:%s:%s:%s:' % (lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid)
         return packed + category + cmd + data + sendformat + returnformat + sessionid
 
     def _unserializeBinSend(self, data):
         """
         return cmd,data,sendformat,returnformat,sessionid
         """
-        fformat = "<IIIIII"
-        size = struct.calcsize(fformat)
-        datasizes = struct.unpack(fformat, bytearray(data[0:size], 'utf-8'))
-        data = data[size:]
-        for size in datasizes:
-            res = data[0:size]
-            data = data[size:]
+        # fformat = "<IIIIII"
+        # size = struct.calcsize(fformat)
+        # datasizes = struct.unpack(fformat, bytearray(data[0:size], 'utf-32'))
+        data = data.split(':', maxsplit=6)
+        lengths, data = data[:-1], data[-1]
+        lengths = [int(length) for length in lengths]
+        for length in lengths:
+            res = data[0:length]
+            data = data[length:]
             yield res
 
     def _serializeBinReturn(self, resultcode, returnformat, result):
@@ -119,13 +123,13 @@ class ServerBaseFactory():
         if resultcode == None:
             resultcode = '\x00'
         lenreturnformat = len(returnformat)
-        packed = struct.pack("<II", lenreturnformat, lendata)
-        return resultcode + packed.decode('utf-8') + returnformat + result
+        # packed = struct.pack("<II", lenreturnformat, lendata)
+        packed = ':%s:%s:' % (lenreturnformat, lendata)
+        return resultcode + packed + returnformat + result
 
     def _unserializeBinReturn(self, data):
         """
         return resultcode,returnformat,result
         """
-        resultcode=data[0]
-        lenreturnformat, lendata = struct.unpack("<II", bytearray(data[1:9], 'utf-8'))
-        return (resultcode, data[9:lenreturnformat + 9], data[lenreturnformat + 9:])
+        resultcode, lenreturnformat, lendata, restofdata = data.split(':', maxsplit=3)
+        return (resultcode, restofdata[:int(lenreturnformat)], restofdata[int(lenreturnformat):])
