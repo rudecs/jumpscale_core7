@@ -1649,23 +1649,21 @@ class SystemProcess:
         return result
 
 
-    def checkProcess(self, process, min=1):
+    def checkProcessRunning(self, process, min=1):
         """
         Check if a certain process is running on the system.
         you can specify minimal running processes needed.
         @param process: String with the name of the process we
             are trying to check
         @param min: (int) minimal threads that should run.
-        @return status: (int) when ok, 1 when not ok.
-
-        @TODO: The process matching on strings is incorrect, it will match a partial match (e.g.: apache will match a process using apache2)
+        @return True if ok
         """
         j.logger.log('Checking whether at least %d processes %s are running' % (min, process), 8)
         if j.system.platformtype.isUnix():
             pids = self.getProcessPid(process)
             if len(pids) >= min:
-                return 0
-            return 1
+                return True
+            return False
 
         # Windows platform
         elif j.system.platformtype.isWindows():

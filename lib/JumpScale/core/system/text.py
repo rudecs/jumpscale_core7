@@ -392,9 +392,9 @@ class Text:
             return ""
         elif j.basetype.boolean.check(text):
             if text==True:
-                text="true"
+                text="True"
             else:
-                text="false"
+                text="False"
             return text
         elif j.basetype.string.check(text):
             if text.find("\n")!=-1 and multiline:
@@ -428,7 +428,7 @@ class Text:
                 for key in keys:
                     val=text[key]
                     resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
-                resout=resout.rstrip().strip(",")+"\n"
+                resout=resout.rstrip().rstrip(",")+"\n"            
             return resout
         else:
             raise RuntimeError("Could not convert %s to string"%text)

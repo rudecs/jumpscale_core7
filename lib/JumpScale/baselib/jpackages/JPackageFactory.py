@@ -1,7 +1,7 @@
 from JumpScale import j
 from .JPackage import JPackage
 
-from .ActionsTemplate import ActionsTemplate
+from .ActionsBase import ActionsBase
 
 class JPackageFactory():
 
@@ -33,7 +33,7 @@ class JPackageFactory():
             self_init=True
 
     def getActionsBaseClass(self):
-        return ActionsTemplate
+        return ActionsBase
 
     def getDomains(self):
         return self.domains.keys()
@@ -89,6 +89,7 @@ class JPackageFactory():
         if self.hrd==None or reload:
             source="%s/apps/"%j.dirs.hrdDir
             self.hrd=j.core.hrd.get(source)
+        
         return self.hrd
 
     def __str__(self):

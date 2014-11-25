@@ -32,16 +32,17 @@ class HRDItem():
 
         if self.value!=None:
             data=str(j.tools.text.pythonObjToStr(self.value))
-
         if self.ttype=="dict":
             data=data.strip(":")
             if data.find("\n")==-1:
                 data+=":"
-        if self.ttype=="list":
+        elif self.ttype=="list":
             data=data.strip(",")
             if data.find("\n")==-1:
                 data+=","
-        return data.strip()
+        else:
+            data=data.strip()
+        return data
 
     def set(self,value,persistent=True,comments="",temp=False):
         """
@@ -323,6 +324,7 @@ class HRD(HRDBase):
                         x=x-1
                     #end of multiline var needs to be processed
                     state="var"
+                    # print ("varnew:%s"%(line))
 
             #look for comments at start of content
             if state=="start":
@@ -341,6 +343,7 @@ class HRD(HRDBase):
                     name=pre.strip()
                     if post.strip()=="" or post.strip().lower()=="@ask,":
                         state="multiline"
+                        # print ("multilinenew:%s"%(line))
                         if  post.lower().strip().startswith("@ask"):
                             vartype="ask"                            
                         post=post.strip()+" " #make sure there is space trailing
@@ -377,6 +380,7 @@ class HRD(HRDBase):
 
             if state=="var":
                 #now we have 1 liners and we know type
+                # print ("%s:%s"%(state,line))
                 if vartype=="ask":
                     vartype="base" #ask was temporary type, is really a string
                 
