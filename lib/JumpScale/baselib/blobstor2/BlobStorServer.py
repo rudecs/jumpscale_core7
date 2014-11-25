@@ -241,7 +241,7 @@ blobstor.disk.size=100
         return jobguid
 
     def rememberResult(self,sessionkey,jid,rcode,result,cmd,sync):
-        print("remember:%s %s %s (%s)"%(cmd,jid,rcode,sync))
+        print(("remember:%s %s %s (%s)"%(cmd,jid,rcode,sync)))
         if sessionkey not in self.results:
             self.results[sessionkey]={}
             self.resultsSize[sessionkey]=0
@@ -551,7 +551,7 @@ blobstor.disk.size=100
         # print "starting %s"%self.name
         self.schedule("cmdGreenlet", self.cmdGreenlet)
         # self.startClock()
-        print("blobserver started on port:%s"%(self.port))
+        print(("blobserver started on port:%s"%(self.port)))
         if mainloop != None:
             mainloop()
         else:

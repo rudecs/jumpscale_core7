@@ -188,7 +188,7 @@ class ProcessDef:
         return "g%s.n%s.%s"%(j.application.whoAmI.gid,j.application.whoAmI.nid,self.name)
 
     def log(self,msg):
-        print("%s: %s"%(self._nameLong,msg))
+        print(("%s: %s"%(self._nameLong,msg)))
 
     def registerToRedis(self):
         if j.application.redis==None and self.name=="redis_system":
@@ -250,7 +250,7 @@ class ProcessDef:
 
             for i in range(1, self.numprocesses+1):
                 name="%s_%s"%(self.name,i)
-                for tmuxkey,tmuxname in j.system.platform.screen.getWindows(self.domain).items():
+                for tmuxkey,tmuxname in list(j.system.platform.screen.getWindows(self.domain).items()):
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(self.domain,name)
                 tcmd = cmd.replace("$numprocess", str(i))
@@ -316,7 +316,7 @@ class ProcessDef:
         if j.system.fs.exists(self.logfile):
             j.system.process.executeWithoutPipe("%s %s" % (command, self.logfile))
         else:
-            print("No logs found for %s" % self)
+            print(("No logs found for %s" % self))
 
     def getProcessObjects(self):
         pids=self.getPids(ifNoPidFail=False,wait=False)
@@ -443,7 +443,7 @@ class ProcessDef:
         for pid in pids:
             if pid!=0 and j.system.process.isPidAlive(pid):
                 if self.stopcmd=="":
-                    print("kill:%s"%pid)
+                    print(("kill:%s"%pid))
                     j.system.process.kill(pid, signal.SIGTERM)
                 else:
                     j.system.process.execute(self.stopcmd)
@@ -764,7 +764,7 @@ exec $cmd >>/var/log/$name.log 2>&1
 
             names=[item.procname for item in processes]
 
-            for sname,spids in j.system.process.appsGet().items():
+            for sname,spids in list(j.system.process.appsGet().items()):
                 if sname not in names:
                     processes.append(ProcessDefEmpty(sname))
 
@@ -779,7 +779,7 @@ exec $cmd >>/var/log/$name.log 2>&1
 
     def getDomains(self):
         result=[]
-        for pd in self.processdefs.values():
+        for pd in list(self.processdefs.values()):
             if pd.domain not in result:
                 result.append(pd.domain)
         return result
@@ -790,7 +790,7 @@ exec $cmd >>/var/log/$name.log 2>&1
 
     def stopJPackage(self,jpackage):        
         for pd in self.getProcessDefs4JPackage(jpackage):
-            print("stop:%s"%pd)
+            print(("stop:%s"%pd))
             pd.stop()
 
     def existsJPackage(self,jpackage):
@@ -816,7 +816,7 @@ exec $cmd >>/var/log/$name.log 2>&1
     def startAll(self):
         l=self.getProcessDefs()
         for item in l:
-            print("will start: %s %s"%(item.priority,item.name))
+            print(("will start: %s %s"%(item.priority,item.name)))
         
         for pd in self.getProcessDefs():
             # pd.start()
@@ -830,7 +830,7 @@ exec $cmd >>/var/log/$name.log 2>&1
 
         if len(errors)>0:
             print("COULD NOT START:")
-            print("\n".join(errors))
+            print(("\n".join(errors)))
 
     def restartAll(self):
         for pd in self.getProcessDefs():

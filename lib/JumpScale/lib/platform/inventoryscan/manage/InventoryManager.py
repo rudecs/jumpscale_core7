@@ -104,7 +104,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
         """
         If a scan is already done, just pretty prints the resources, otherwise print empty section headers and log an error
         """
-        print(self.cmdb)
+        print((self.cmdb))
 
     def getDisks(self):
         """
@@ -115,7 +115,7 @@ class InventoryManager(ManagementConfiguration, CMDBLockMixin):
         """
         disks = j.cloud.cmdtools.inventoryScan.getDisks()
         currentAvailableDisks = list()
-        for name, value in disks.items():
+        for name, value in list(disks.items()):
             size = int(float(value['size']) * 1024) if value['unit'] == 'GB' else int(float(value['size']))
             partitions = value['partitions']
             currentAvailableDisks.append(name)

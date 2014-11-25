@@ -332,7 +332,7 @@ class EasyDialogConsole(EasyDialogGeneric):
         #@todo implement is simple input, show format [day]/[month]/[year]  year is 09 or 2009, day is 2 or 02
         j.console.echo("%s\n"%question)
         j.console.echo("Enter a date with format YYYY/MM/DD, where year can be 09 or 2009, day is 2 or 02:")
-        userInput = input()
+        userInput = eval(input())
         #@todo validate date is in correct format
         yearPrefix = "20"
         if minValue:

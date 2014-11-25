@@ -99,7 +99,7 @@ class Connection(object):
         url = self._updateUrlParams(url, **kwargs)
         request = urllib.request.Request(url, data=data)
         if headers:
-            for key, value in headers.items():
+            for key, value in list(headers.items()):
                 request.add_header(key, value)
         if not method:
             method = 'POST' if data else 'GET'

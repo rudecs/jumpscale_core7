@@ -99,10 +99,10 @@ class QSocketServerHandler(socketserver.BaseRequestHandler):
                 try:
                     self.senddata("ok")
                     # print data
-                    print("new client connected: %s,%s" % self.client_address)
+                    print(("new client connected: %s,%s" % self.client_address))
 
                 except Exception as e:
-                    print("send error during connect:%s, will close socket" % e)
+                    print(("send error during connect:%s, will close socket" % e))
                     self.socket.close()
                     return
             else:
@@ -111,7 +111,7 @@ class QSocketServerHandler(socketserver.BaseRequestHandler):
                     try:
                         self.senddata(result)
                     except Exception as e:
-                        print("send error:%s, will close socket" % e)
+                        print(("send error:%s, will close socket" % e))
                         self.socket.close()
                         return
 
@@ -131,7 +131,7 @@ class QSocketServer():
         self.server = socketserver.TCPServer((self.addr, self.port), QSocketServerHandler)
 
     def start(self):
-        print("started on %s" % self.port)
+        print(("started on %s" % self.port))
         self.server.serve_forever()
 
 

@@ -109,6 +109,7 @@ class BlobStorClientFake:
         #not sure what this is
 
     def delete(self,key, repoid=0,force=False):
+        pass
         #mark in table in ledis
         ##as hset: bloblstor:todelete:$repoid:$key and inside the webdisk key
         ##this will allow us to delete later

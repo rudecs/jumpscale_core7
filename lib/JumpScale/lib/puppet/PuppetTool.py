@@ -22,7 +22,7 @@ class PuppetTool():
         do.symlink("/usr/lib/ruby/vendor_ruby/puppet/", "/opt/puppet")
 
     def findmodule(self, name):
-        print(self.do.execute("puppet module search %s" % name))
+        print((self.do.execute("puppet module search %s" % name)))
 
     def install(self, name, version=None):
         if version != None:

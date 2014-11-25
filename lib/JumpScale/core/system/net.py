@@ -19,7 +19,7 @@ def parseBlock(block):
             result.update(match.groupdict())
     for mrec in (IPIP, ):
         for m in mrec.finditer(block):
-            for key, value in m.groupdict().items():
+            for key, value in list(m.groupdict().items()):
                 result[key].append(value)
     return result
 
@@ -826,8 +826,8 @@ class SystemNet:
             else:
                 raise ValueError('Local path is an invalid path')
         j.logger.log('Downloading url %s to local path %s'%(url, filename), 4)
-        from urllib import FancyURLopener
-        from urllib import splittype
+        from urllib.request import FancyURLopener
+        from urllib.parse import splittype
         class myURLOpener(FancyURLopener):
             # read a URL, with automatic HTTP authentication
             def __init__(self, user, passwd):

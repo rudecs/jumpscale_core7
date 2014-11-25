@@ -272,7 +272,7 @@ class OSISStoreMongo(OSISStore):
                 fields=[item.strip() for item in fields.split(",") if item.strip()!=""]
 
             params=tags.getDict()
-            for key, value in params.copy().items():
+            for key, value in list(params.copy().items()):
                 if value.startswith('>'):
                     if 'm' in value or 'd' in value or 'h' in value:
                         new_value = j.base.time.getEpochAgo(value[1:])
@@ -302,25 +302,25 @@ class OSISStoreMongo(OSISStore):
                 query['query']['bool'].setdefault('must', {})
                 for queryitem in query['query']['bool']['must']:
                     if 'term' in queryitem:
-                        for k, v in queryitem['term'].items():
+                        for k, v in list(queryitem['term'].items()):
                             mongoquery[k] = v
                     if 'range' in queryitem:
-                        for k, v in queryitem['range'].items():
+                        for k, v in list(queryitem['range'].items()):
                             operatormap = {'from':'$gte', 'to':'$lte', 'gt': '$gt', 'gte': '$gte'}
-                            for operator, val in v.items():
+                            for operator, val in list(v.items()):
                                 mongoquery[k] = {operatormap[operator]: val}
                     if 'wildcard' in queryitem:
-                        for k, v in queryitem['wildcard'].items():
+                        for k, v in list(queryitem['wildcard'].items()):
                             mongoquery[k] = {'$regex': '.*%s.*' % str(v).replace('*', ''), '$options':'i'}
                     if 'terms' in queryitem:
-                        for k, v in queryitem['terms'].items():
+                        for k, v in list(queryitem['terms'].items()):
                             mongoquery[k] = {'$in': v}
 
                 wilds = dict()
                 mongoquery['$or'] = list()
                 for queryitem in query['query']['bool']['should']:
                     if 'wildcard' in queryitem:
-                        for k, v in queryitem['wildcard'].items():
+                        for k, v in list(queryitem['wildcard'].items()):
                             wilds[k] = {'$regex': '.*%s.*' % str(v).replace('*', '')}
                             mongoquery['$or'].append(wilds)
 

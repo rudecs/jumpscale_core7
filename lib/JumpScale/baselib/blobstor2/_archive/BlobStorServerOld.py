@@ -20,7 +20,7 @@ class BlobserverCMDS():
         # self.STORpath = "/opt/STOR"  # hardcoded for now needs to come from HRD
         self.name = j.application.appname
 
-        print("APP NAME: %s" % self.name)
+        print(("APP NAME: %s" % self.name))
 
         # Just for the sake of running two blobservers on the same node
         # This is how we can distinguish `child` blobserver from `parent` one!

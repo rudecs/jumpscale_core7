@@ -130,7 +130,7 @@ class Row(j.code.classGetBase()):
         try:
             interpolated = j.tools.numtools.interpolateList(tointerpolate, floatnr=self.nrfloat)
         except Exception as e:
-            print("could not interpolate row %s" % self.name)
+            print(("could not interpolate row %s" % self.name))
             from JumpScale.core.Shell import ipshellDebug, ipshell
             print("DEBUG NOW cannot interpolate, explore self & tointerpolate")
             ipshell()
@@ -187,7 +187,7 @@ class Row(j.code.classGetBase()):
         if maxvalue != None and value > maxvalue:
             value = maxvalue
         if posx > self.nrcols - 1:
-            print("out of range: x:%s y:%s" % (posx, value))
+            print(("out of range: x:%s y:%s" % (posx, value)))
             return None, None
         self.cells[posx] = value
         # print "x:%s y:%s" % (posx,value)
@@ -368,10 +368,10 @@ class Row(j.code.classGetBase()):
                         try:
                             value = j.tools.numtools.text2val(value)
                         except Exception as e:
-                            print("error: %s " % e)
-                            print("error in parsing input data for %s" % datas)
-                            print("error in element %s" % data)
-                            print("row:%s" % self.name)
+                            print(("error: %s " % e))
+                            print(("error in parsing input data for %s" % datas))
+                            print(("error in element %s" % data))
+                            print(("row:%s" % self.name))
                         if value > maxval:
                             maxval = value
                         self.cells[pos - 1] = value

@@ -166,10 +166,10 @@ if __name__ == "__main__":
     print(cache)
     cache[46] = '46'
     print(cache)
-    print(len(cache))
+    print((len(cache)))
     for c in cache:
         print(c)
     print(cache)
-    print(cache.mtime(46))
+    print((cache.mtime(46)))
     for c in cache:
         print(c)

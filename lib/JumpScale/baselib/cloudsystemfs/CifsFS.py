@@ -57,9 +57,9 @@ class CifsFS(object):
         self.mntpoint = '/'.join(['/mnt',j.base.idgenerator.generateGUID()])
         self.path     = '/'.join(self.path_components)
 
-        print('self.sharename:'       + str(self.sharename))
-        print('self.path_components:' + str(self.path_components))
-        print('self.path:'            + str(self.path))
+        print(('self.sharename:'       + str(self.sharename)))
+        print(('self.path_components:' + str(self.path_components)))
+        print(('self.path:'            + str(self.path)))
 
     def _connect(self, suppressErrors=False):
         j.system.fs.createDir(self.mntpoint)

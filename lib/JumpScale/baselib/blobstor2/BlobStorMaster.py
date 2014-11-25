@@ -91,7 +91,7 @@ class BlobstorMasterCMDS():
             while len(iint)<8:
                 iint="0%s"%iint
             return iint
-        for key,node in self.nodes.items():
+        for key,node in list(self.nodes.items()):
             tosort.append("%s_%s"%(tostr(node["free"]),key))
         tosort.sort()
         tosort.reverse()

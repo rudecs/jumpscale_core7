@@ -320,7 +320,7 @@ def main():
         R1 = Router(hostname, logfile='C:\\Barik\\MyPythonWinProject\\SyslogAutomation\\TEST\\Log1.log')
         password = Localhost1.get_rsa_token()
         out = R1.login(login_cmd, username, password, login_expect)
-        print(repr(R1.exec_cmd('show clock')))
+        print((repr(R1.exec_cmd('show clock'))))
     R1.logout()
 
 if __name__ == '__main__':

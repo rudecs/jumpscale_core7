@@ -87,11 +87,11 @@ list = no
 
 """
         users=""
-        for name,secret in self.users.items():
+        for name,secret in list(self.users.items()):
             users+="%s,"%name
         users.rstrip(",")
 
-        for name,secret in self.secrets.items():
+        for name,secret in list(self.secrets.items()):
             path="%s/root/%s"%(self.root,name)            
             j.system.fs.createDir(path)
             D2=D.replace("$secret",secret)
@@ -106,7 +106,7 @@ list = no
 
         path="/etc/rsync/users"
         out=""
-        for name,secret in self.users.items():
+        for name,secret in list(self.users.items()):
             out+="%s:%s\n"%(name,secret)
 
         j.system.fs.writeFile(filename=path,contents=out)
@@ -167,7 +167,7 @@ list = no
                     roles=[item.strip() for item in roles.split(",")]
                     for role in roles:
                         destdir=j.system.fs.joinPaths(self.rolesdir,role,category,relpath)
-                        print("link: %s->%s"%(path,destdir))
+                        print(("link: %s->%s"%(path,destdir)))
                         j.system.fs.symlink(path,destdir, overwriteTarget=True)
                         # j.system.fs.createDir(destdir)
                         # for item in j.system.fs.listFilesInDir(path, recursive=False, exclude=["*.pyc",".roles"], followSymlinks=False, listSymlinks=False):

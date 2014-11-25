@@ -205,7 +205,7 @@ class ConfigManagementItem(object):
         errors = []
         if not isValidInifileSectionName(self.itemname):
             errors.append("Invalid item name [%s]\n" % self.itemname)
-        for k, v in self.params.items():
+        for k, v in list(self.params.items()):
             if not isValidInifileKeyName(k):
                 errors.append("Invalid key name item [%s] / key [%s]\n" % (self.itemname, k))
             if not isValidInifileValue(v):
@@ -215,7 +215,7 @@ class ConfigManagementItem(object):
         file = j.config.getInifile(self.configtype)
         if not file.checkSection(self.itemname):
             file.addSection(self.itemname)
-        for k, v in self.params.items():
+        for k, v in list(self.params.items()):
             file.setParam(self.itemname, k, v)
         file.write()
 
@@ -227,7 +227,7 @@ class ConfigManagementItem(object):
 
     def show(self):
         lines = [self.itemname]
-        for k, v in self.params.items():
+        for k, v in list(self.params.items()):
             lines.append("  - " + k.ljust(12) + " = " + str(v))
         j.gui.dialog.message("\n%s\n" % "\n".join(lines))
 
@@ -471,7 +471,7 @@ def generateGroupConfigManagementMethods(**kwargs):
             return   # Nothing changed.
         else:
             item = self._ITEMCLASS(self._CONFIGTYPE, itemname, load=True)
-            for (key, value) in newparams.items():
+            for (key, value) in list(newparams.items()):
                 item.params[key] = value
             item.validate()
             item.save()
@@ -605,7 +605,7 @@ def generateSingleConfigManagementMethods(**kwargs):
         else:
             # Existing [main] section which we potentially modify
             item = self._ITEMCLASS(self._CONFIGTYPE, SINGLE_ITEM_SECTION_NAME, load=True)
-            for (key, value) in newparams.items():
+            for (key, value) in list(newparams.items()):
                 item.params[key] = value
             item.validate()
 

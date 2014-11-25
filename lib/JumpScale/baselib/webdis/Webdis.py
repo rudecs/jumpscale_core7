@@ -107,7 +107,7 @@ class Webdis(object):
             elif r.status_code==503:
                 raise RuntimeError("Webdis not available for url:'%s',please restart webdis on server."%url2)                
             elif r.status_code!=200:
-                print("Unknown status code webdis:%s"%r.status_code)
+                print(("Unknown status code webdis:%s"%r.status_code))
                 raise RuntimeError("Webdis not available for url:'%s',unknown status code:'%s'."%(url2,r.status_code))
             else:
                 # from IPython import embed

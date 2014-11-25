@@ -157,7 +157,7 @@ class Node():
         for line in msg.split("\n"):
             toadd="%-10s: %s\n" % (action,line)
             scriptRun.error+=toadd
-            print("**ERROR** %-10s:%s"%(self.name,toadd))
+            print(("**ERROR** %-10s:%s"%(self.name,toadd)))
         self.lastcheck=0
         j.admin.setNode(self)
         j.admin.setNode(self)
@@ -167,7 +167,7 @@ class Node():
         out=""
         for line in msg.split("\n"):
             toadd="%-10s: %s\n" % (action,line)
-            print("%-10s:%s"%(self.name,toadd))
+            print(("%-10s:%s"%(self.name,toadd)))
             out+=toadd
 
     def setpasswd(self,passwd):
@@ -254,7 +254,7 @@ class Node():
             partpath=j.system.fs.pathRemoveDirPart(item,cfgDir)
             partpathdir=j.system.fs.getDirName(partpath).rstrip("/")
             if partpathdir not in done:
-                print(cuapi.dir_ensure("%s/%s"%(dest,partpathdir), True))
+                print((cuapi.dir_ensure("%s/%s"%(dest,partpathdir), True)))
                 done.append(partpathdir)            
             cuapi.file_upload("%s/%s"%(dest,partpath),item)#,True,True)                       
 

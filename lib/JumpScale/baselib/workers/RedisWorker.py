@@ -227,7 +227,7 @@ class RedisWorkerFactory(object):
                     self.redis.hdel("workers:inqueuetest",jumpscript.getKey())
                     self.checkQueue()                
                     return False
-                print("%s is already scheduled"%jumpscript.name)
+                print(("%s is already scheduled"%jumpscript.name))
                 return True                
         return False
 
@@ -257,7 +257,7 @@ class RedisWorkerFactory(object):
         return job   
 
     def execJobAsync(self,job):
-        print("execJobAsync:%s"%job["id"])
+        print(("execJobAsync:%s"%job["id"]))
         job=Job(ddict=job)
         self._scheduleJob(job)
         return job
@@ -387,12 +387,12 @@ class RedisWorkerFactory(object):
             jobsjson = self.redis.hgetall('queues:workers:work:%s' % q)
             if jobsjson:
                 jobs.update(json.loads(jobsjson))
-                for k, job in jobs.items():
+                for k, job in list(jobs.items()):
                     if job['timeStart'] >= epochago:
                         jobs.pop(k)
 
                 if not failed:
-                    for k, job in jobs.items():
+                    for k, job in list(jobs.items()):
                         if job['state'] in ('ERROR', 'TIMEOUT'):
                             jobs.pop(k)
 

@@ -117,7 +117,7 @@ class HRDBase():
                 self.set(hrdtemplateitem.name,data,comments=hrdtemplateitem.comments)
 
     def processall(self):
-        for key,hrditem in self.items.items():
+        for key,hrditem in list(self.items.items()):
             hrditem._process()
 
     def pop(self,key):

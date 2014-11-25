@@ -1172,7 +1172,7 @@ def calculateEnvironment(values, source=None):
 
     result.update(values)
 
-    result = dict((k, v) for (k, v) in result.items() if v is not UNSET)
+    result = dict((k, v) for (k, v) in list(result.items()) if v is not UNSET)
 
     return result
 
@@ -1224,7 +1224,7 @@ class SystemProcess:
 
         j.logger.log("system.process.executeAsync [%s]" % command, 6)
         if printCommandToStdout:
-            print("system.process.executeAsync [%s]" % command)
+            print(("system.process.executeAsync [%s]" % command))
 
         if j.system.platformtype.isWindows():
             if argsInCommand:                
@@ -1493,7 +1493,7 @@ class SystemProcess:
         #try to load the code
         # execContext = {}
         try:
-            exec(code2) in globals(), locals()
+            exec((code2), globals(), locals())
         except Exception as e:
             raise RuntimeError("Could not import code, code submitted was \n%s" % code)
 

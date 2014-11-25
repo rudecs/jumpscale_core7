@@ -32,7 +32,7 @@ class RedisDict(dict):
     def copy(self):
         result = dict()
         allkeys = self._client.hgetalldict(self._key)
-        for key, value in allkeys.items():
+        for key, value in list(allkeys.items()):
             result[key] = json.loads(value)
         return result
 
@@ -46,7 +46,7 @@ class RedisDict(dict):
 
     def iteritems(self):
         allkeys = self._client.hgetalldict(self._key)
-        for key, value in allkeys.items():
+        for key, value in list(allkeys.items()):
             yield key, json.loads(value)
 
 class Redis(redis.Redis):
@@ -132,7 +132,7 @@ class RedisFactory:
                 continue #nothing to do
             pd.stop()
             path=j.system.fs.joinPaths(j.dirs.varDir,"redis",pd.name,"db")
-            print("remove:%s"%path)
+            print(("remove:%s"%path))
             j.system.fs.removeDirTree(path)
             j.system.fs.createDir(path)
             path=j.system.fs.joinPaths(j.dirs.varDir,"redis",pd.name,"redis.log")

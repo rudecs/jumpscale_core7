@@ -161,7 +161,7 @@ class ErrorConditionHandler():
         if j.application.debug:
             msg=str(eco)
 
-        print("\n#########   Operational Critical Error    #################\n%s\n###########################################################\n"% msg)
+        print(("\n#########   Operational Critical Error    #################\n%s\n###########################################################\n"% msg))
         print() 
         if die:
             self.halt(msg,eco)
@@ -201,7 +201,7 @@ class ErrorConditionHandler():
         else:
             print("***INPUT ERROR***")
             if category!=None:
-                print("category:%s"%category)     
+                print(("category:%s"%category))     
             print(message)
 
         if die:
@@ -349,7 +349,7 @@ class ErrorConditionHandler():
             import builtins as mod
         Klass = getattr(mod, eco.exceptionclassname, RuntimeError)
         exc = Klass(eco.errormessage)
-        for key, value in json.loads(eco.exceptioninfo).items():
+        for key, value in list(json.loads(eco.exceptioninfo).items()):
             setattr(exc, key, value)
         raise exc
 

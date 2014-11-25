@@ -113,7 +113,7 @@ class EnumerateResourcesCommand(CommandWrapper):
                                 if not name.startswith('/dev/md'):
                                     partionName += partition['number']
                                 if partionName in partionInfo:
-                                    for key, value in partionParams.items():
+                                    for key, value in list(partionParams.items()):
                                         if key in partionInfo[partionName]:
                                             partition[value] = partionInfo[partionName][key]
                                     if 'devices' in partition:

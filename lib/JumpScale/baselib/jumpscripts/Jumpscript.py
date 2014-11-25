@@ -90,7 +90,7 @@ class Jumpscript(object):
         return out,result
 
     def load(self,path):
-        print("load jumpscript: %s"%path)
+        print(("load jumpscript: %s"%path))
         source = j.system.fs.fileGetContents(path)
         out,tags=self._preprocess(source)        
         md5sum=j.tools.hash.md5_string(out)
@@ -111,7 +111,7 @@ class Jumpscript(object):
         #identifies the actions & tags linked to it
         self.tags=tags
 
-        for name,val in tags.items():
+        for name,val in list(tags.items()):
             self.actions[name]=eval("self.module.%s"%name)
 
     def getDict(self):
@@ -188,6 +188,6 @@ class Jumpscript(object):
 
         self.lastrun = time.time()
         if result!=None:
-            print("ok:%s"%self.name)
+            print(("ok:%s"%self.name))
         return result
 

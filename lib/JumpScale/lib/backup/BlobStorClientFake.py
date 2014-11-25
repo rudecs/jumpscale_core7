@@ -132,7 +132,7 @@ class BlobStorClientFake:
         if not self._exists(key, parent):
             file_id = self.set(key=key, data=data,repoid=repoid,serialization=serialization,sync=False)
         else:
-            print('Chunk %s already exists on weedfs' % key)
+            print(('Chunk %s already exists on weedfs' % key))
         if parent and file_id:
             self.redis.rpush('files:%s' % parent, file_id)
         return key
@@ -176,7 +176,7 @@ class BlobStorClientFake:
             for data in self._read_file(path):
                 self._dump2stor(data,repoid=repoid,compress=compress,parent=key)
         else:
-            print('Key: %s already exists' % key)
+            print(('Key: %s already exists' % key))
         return key
 
     def downloadFile(self,key,dest,link=False,repoid=0, chmod=0,chownuid=0,chowngid=0,sync=False,size=0):

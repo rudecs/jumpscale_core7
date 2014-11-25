@@ -38,7 +38,7 @@ class TornadoTransport(Transport):
             2= method not found
             2+ any other error
         """
-        headers = {'content-type': 'application/raw'}
+        headers = {'content-type': 'application/text'}
         data2 = j.servers.base._serializeBinSend(category, cmd, data, sendformat, returnformat, self._id)
         start=j.base.time.getTimeEpoch()
         if self.timeout:
@@ -53,7 +53,7 @@ class TornadoTransport(Transport):
                     rcv = requests.post(self.url, data=data2, headers=headers) #, timeout=timeout)
                 except Exception as e:
                     if str(e).find("Connection refused")!=-1:
-                        print("retry connection to %s"%self.url)
+                        print(("retry connection to %s"%self.url))
                         time.sleep(0.1)
                     else:
                         raise RuntimeError("error to send msg to %s,error was %s"%(self.url,e))
@@ -62,15 +62,17 @@ class TornadoTransport(Transport):
             print("NO RETRY ON REQUEST TORNADO TRANSPORT")
             rcv = requests.post(self.url, data=data2, headers=headers,timeout=timeout)
 
-
         if rcv==None:
             eco=j.errorconditionhandler.getErrorConditionObject(msg='timeout on request to %s'%self.url, msgpub='', \
                 category='tornado.transport')
-            return "4","m",j.db.serializers.msgpack.dumps(eco.__dict__)
+            s = j.db.serializers.get('j')
+            return "4","j",s.dumps(eco.__dict__)
                     
         if rcv.ok==False:
             eco=j.errorconditionhandler.getErrorConditionObject(msg='error 500 from webserver on %s'%self.url, msgpub='', \
                 category='tornado.transport')
-            return "6","m",j.db.serializers.msgpack.dumps(eco.__dict__)
+            s = j.db.serializers.get('j')
+            return "6","j",s.dumps(eco.__dict__)
 
-        return j.servers.base._unserializeBinReturn(rcv.content)
+        content = rcv.content.decode('utf-8')
+        return j.servers.base._unserializeBinReturn(content)

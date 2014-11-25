@@ -106,7 +106,7 @@ class GeventWSServer():
     #     ctx.params = self._getParamsFromEnv(environ, ctx)
 
     def start(self):
-        print("started on %s" % self.port)
+        print(("started on %s" % self.port))
         self.server.serve_forever()
 
     def addCMDsInterface(self, MyCommands, category="",proxy=False):

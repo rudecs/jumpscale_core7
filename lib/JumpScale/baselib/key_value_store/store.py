@@ -37,7 +37,7 @@ class KeyValueStoreBase(object, metaclass=ABCMeta):
         Copies the doc strings (when available) from the base implementation
         '''
 
-        attrs = iter(cls.__dict__.items())
+        attrs = iter(list(cls.__dict__.items()))
 
         for attrName, attr in attrs:
             if not attr.__doc__ and\

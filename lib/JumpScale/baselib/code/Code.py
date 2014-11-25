@@ -29,7 +29,7 @@ class Code():
         print info like source code of class
         """
         filepath,linenr,sourcecode=self.classInfoGet(classs)
-        print("line:%s in path:%s" % (linenr,filepath))
+        print(("line:%s in path:%s" % (linenr,filepath)))
         print(sourcecode)
 
     def classInfoGet(self,classs):
@@ -78,7 +78,7 @@ class Code():
         if hasattr(obj,"_dict2obj"):
             return obj._dict2obj(data)
         if isinstance(data, dict):
-            for key, value in data.items():
+            for key, value in list(data.items()):
                 #is for new obj functionname
                 objpropname="%s"%key
 
@@ -88,7 +88,7 @@ class Code():
                     if not isprimtype:
                         raise RuntimeError("not supported")
                     else:
-                        for valkey, valval in value.items():
+                        for valkey, valval in list(value.items()):
                             attr = getattr(obj, key)
                             attr[valkey] = valval
 
@@ -116,7 +116,7 @@ class Code():
 
     def dict2JSModelobject(self,obj,data):
         if isinstance(data, dict):
-            for key, value in data.items():
+            for key, value in list(data.items()):
                 #is for new obj functionname
                 objpropname="_P_%s"%key
 
@@ -125,11 +125,11 @@ class Code():
                     isprimtype, funcprop = isPrimAttribute(obj, key)
                     if not isprimtype:
                         method = getattr(obj, funcprop)
-                        for valkey, valval in value.items():
+                        for valkey, valval in list(value.items()):
                             newobj = method(valkey)
                             self.dict2JSModelobject(newobj,valval)
                     else:
-                        for valkey, valval in value.items():
+                        for valkey, valval in list(value.items()):
                             attr = getattr(obj, key)
                             attr[valkey] = valval
 
@@ -192,7 +192,7 @@ class Code():
                 return r
             return ""
         if isinstance(obj, ClassBase):
-            for key, value in obj.__dict__.items():
+            for key, value in list(obj.__dict__.items()):
                 if key[0:3]=="_P_":
                     key=key[3:]
                 elif key[0]=="_":
@@ -235,7 +235,7 @@ class Code():
                 if hasattr(obj,"_obj2dict"):
                     return obj._obj2dict()
                 else:
-                    for key, value in obj.__dict__.items():
+                    for key, value in list(obj.__dict__.items()):
                         if key[0:3]=="_P_":
                             key=key[3:]
                         if key in ignoreKeys:
@@ -266,7 +266,7 @@ class Code():
     def object2json(self,obj,pretty=False,skiperrors=False,ignoreKeys=[],ignoreUnderscoreKeys=False):
         obj=self.object2dict(obj,dieOnUnknown=not skiperrors,ignoreKeys=ignoreKeys,ignoreUnderscoreKeys=ignoreUnderscoreKeys)
         if pretty:            
-            return json.dumps(obj, skipkeys=skiperrors, ensure_ascii=False, check_circular=True, indent=2, separators=(", ",": "),encoding='utf-8', default=None, sort_keys=True)
+            return json.dumps(obj, skipkeys=skiperrors, ensure_ascii=False, check_circular=True, indent=2, separators=(", ",": "), default=None, sort_keys=True)
         else:
             return json.dumps(obj)
 

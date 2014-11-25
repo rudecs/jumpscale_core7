@@ -199,7 +199,7 @@ class StatAggregator():
         for key in list(self.stats.keys()):
             if key.startswith(prefix):
                 self.stats.pop(key)
-                print("DELETE:%s"%key)
+                print(("DELETE:%s"%key))
                 
 
     def list(self,prefix="",memonly=False,avgmax=False):

@@ -321,24 +321,24 @@ class Text:
             elif j.basetype.dictionary.check(string):
                 ttypes=[]
                 result={}
-                for key,item in string.items():
+                for key,item in list(string.items()):
                     ttype,val=Text._str2var(item)
                     if ttype not in ttypes:
                         ttypes.append(ttype)
                 if "s" in ttypes:                        
-                    for key,item in string.items():
+                    for key,item in list(string.items()):
                         result[key]=str(Text.machinetext2hrd(item)) 
                 elif "f" in ttypes and "b" not in ttypes:
-                    for key,item in string.items():
+                    for key,item in list(string.items()):
                         result[key]=Text.getFloat(item)
                 elif "i" in ttypes and "b" not in ttypes:
-                    for key,item in string.items():
+                    for key,item in list(string.items()):
                         result[key]=Text.getInt(item)
                 elif "b" == ttypes:
-                    for key,item in string.items():
+                    for key,item in list(string.items()):
                         result[key]=Text.getBool(item)
                 else:
-                    for key,item in string.items():
+                    for key,item in list(string.items()):
                         result[key]=str(Text.machinetext2hrd(item)) 
             else:
                 ttype,result=Text._str2var(string)

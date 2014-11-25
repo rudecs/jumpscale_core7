@@ -49,7 +49,7 @@ class Tmux:
         """
         env = env or dict()
         envstr = ""
-        for name, value in env.items():
+        for name, value in list(env.items()):
             envstr += "export %s=%s\n" % (name, value)
 
         self.createWindow(sessionname, screenname,user=tmuxuser)
@@ -151,7 +151,7 @@ class Tmux:
 
     def _getPane(self, session, name,user=None):
         windows = self.getWindows(session,user=user)
-        remap = dict([ (win, idx) for idx, win in windows.items() ])
+        remap = dict([ (win, idx) for idx, win in list(windows.items()) ])
         result = "%s:%s" % (session, remap[name])
         return result
 

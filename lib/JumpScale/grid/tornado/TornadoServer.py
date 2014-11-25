@@ -16,8 +16,13 @@ class MainHandlerRPC(tornado.web.RequestHandler):
     def initialize(self, server):
         self.server = server
 
+    def responseRaw(self,data,start_response):
+        start_response('200 OK', [('Content-Type', 'text/plain')])
+        return [data]
+
     def post(self):
         data = self.request.body
+        data = data.decode('utf-8')
         
         category, cmd, data2, informat, returnformat, sessionid = j.servers.base._unserializeBinSend(data)
         resultcode, returnformat, result = self.server.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
@@ -72,7 +77,7 @@ class TornadoServer():
         self.type = "tornado"
 
     def start(self):
-        print("started on %s" % self.port)
+        print(("started on %s" % self.port))
         self.application.listen(self.port)
 
         self.ioloop = tornado.ioloop.IOLoop.instance()

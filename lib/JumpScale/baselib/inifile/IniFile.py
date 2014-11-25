@@ -148,7 +148,7 @@ class IniFile(object):
         if default!=None and not self.checkParam(sectionName,paramName):
             return default
         try:
-            result=self.__configParser.get(sectionName, paramName, raw)
+            result=self.__configParser.get(sectionName, paramName, raw=raw)
             j.logger.log("Inifile: get %s:%s from %s, result:%s" % (sectionName,paramName,self.__inifilepath,result),7)
             return result
         except Exception as err:
