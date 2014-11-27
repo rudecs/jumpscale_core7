@@ -215,6 +215,8 @@ class Code():
         data={}
 
         def todict(obj,data,ignoreKeys):
+            if hasattr(obj, '__dict__'):
+                return todict(obj.__dict__, {}, ignoreKeys)
             if isinstance(obj, dict):
                 value={}
                 for key in list(obj.keys()):
@@ -231,6 +233,8 @@ class Code():
                 return value
             elif isinstance(obj, (int,str,float,bool)) or obj==None:
                 return obj
+            elif isinstance(obj, bytes) or obj==None:
+                return obj.decode('utf-8', 'ignore')
             elif isinstance(obj, ClassBase):
                 if hasattr(obj,"_obj2dict"):
                     return obj._obj2dict()
