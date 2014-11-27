@@ -109,7 +109,7 @@ class GridHealthChecker(object):
 
     def _checkRunningNIDsFromPing(self):
         self._runningnids = self._nids[:]
-        for nid, error in self._errors.items():
+        for nid, error in list(self._errors.items()):
             for category in error:
                 if category == 'processmanagerping':
                     self._runningnids.remove(nid)
@@ -146,7 +146,7 @@ class GridHealthChecker(object):
         self._clean()
         self.checkHeartbeatsAllNodes(clean=False)
         self.checkProcessManagerAllNodes(clean=False)
-        print('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids)))
+        print(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
         self.checkDBs(clean=False)
         if self._runningnids:
             self.pingAllNodesAsync(clean=False)
@@ -170,18 +170,18 @@ class GridHealthChecker(object):
 
     def _printResults(self):
         form = '%(gid)-8s %(nid)-8s %(name)-10s %(status)-8s %(issues)s'
-        print(form % {'gid': 'Grid ID', 'nid': 'NODE ID', 'name': 'NAME', 'status': 'STATUS', 'issues':'ISSUES'})
-        print('=' * 80)
+        print((form % {'gid': 'Grid ID', 'nid': 'NODE ID', 'name': 'NAME', 'status': 'STATUS', 'issues':'ISSUES'}))
+        print(('=' * 80))
         print('')
-        for nid, checks in self._status.items():
+        for nid, checks in list(self._status.items()):
             if nid not in self._errors:
                 nodedata={'gid': self.getGID(nid), 'nid': nid, 'name': self.getName(nid), 'status': 'OK', 'issues': ''}
-                print(form % nodedata)
+                print((form % nodedata))
 
-        for nid, checks in self._errors.items():
+        for nid, checks in list(self._errors.items()):
             nodedata={'gid': self.getGID(nid), 'nid': nid, 'name': self.getName(nid), 'status': 'ERROR', 'issues': ''}
-            print(form % nodedata)
-            for category, errors in checks.items():
+            print((form % nodedata))
+            for category, errors in list(checks.items()):
                 for error in errors:
                     defaultvalue = 'processmanager is unreachable by ping' if category == 'processmanager' else None
                     errormessage = error.get('errormessage', defaultvalue)
@@ -189,7 +189,7 @@ class GridHealthChecker(object):
                         continue
                     for message in errormessage.split(','):
                         nodedata={'gid': '', 'nid': '', 'name': '', 'status': '', 'issues': '- %s' % message}
-                        print(form % nodedata)
+                        print((form % nodedata))
 
 
     def checkElasticSearch(self, clean=True):
@@ -244,7 +244,7 @@ class GridHealthChecker(object):
             self._addError(nid, {'state': 'UNKNOWN'}, 'databases')
             errormessage = 'Database statuses UNKNOWN'
         else:
-            for dbname, status in dbhealth.items():
+            for dbname, status in list(dbhealth.items()):
                 if status:
                     self._addResult(nid, status, dbname)
                 else:
@@ -261,7 +261,7 @@ class GridHealthChecker(object):
             self._clean()
         if self._nids==[]:
             self.getNodes()
-        print("CHECKING REDIS ON %s NODE(S)..." % len(self._runningnids))
+        print(("CHECKING REDIS ON %s NODE(S)..." % len(self._runningnids)))
         if clean:
             self._clean()
         self._parallelize(self.checkRedis, False, 'redis')
@@ -286,7 +286,7 @@ class GridHealthChecker(object):
             errormessage.append('Redis state UNKNOWN')
             redis = dict()
 
-        for port, result in redis.items():
+        for port, result in list(redis.items()):
             size, unit = j.tools.units.bytes.converToBestUnit(result['memory_usage'])
             result['memory_usage'] = '%.2f %sB' % (size, unit)
             result['port'] = port
@@ -305,7 +305,7 @@ class GridHealthChecker(object):
             self.getNodes()
         if clean:
             self._clean()
-        print("CHECKING WORKERS ON %s NODE(S)..." % len(self._runningnids))
+        print(("CHECKING WORKERS ON %s NODE(S)..." % len(self._runningnids)))
         self._parallelize(self.checkWorkers, False, 'workers')
         if clean:
             return self._status, self._errors
@@ -323,7 +323,7 @@ class GridHealthChecker(object):
             errormessage.append('Workers status UNKNOWN')
             workers = dict()
 
-        for worker, stats in workers.items():
+        for worker, stats in list(workers.items()):
             stats['name'] = worker
             if stats['state'] == 'RUNNING':
                 results.append((nid, stats, 'workers'))
@@ -402,7 +402,7 @@ class GridHealthChecker(object):
             self._clean()
         if self._nids==[]:
             self.getNodes()
-        print("CHECKING DISKS ON %s NODE(S)..." % len(self._runningnids))
+        print(("CHECKING DISKS ON %s NODE(S)..." % len(self._runningnids)))
         self._parallelize(self.checkDisks, False, 'disks')
         if clean:
             return self._status, self._errors
@@ -412,7 +412,7 @@ class GridHealthChecker(object):
             self._clean()
         if self._nids==[]:
             self.getNodes()
-        print("PROCESS MANAGER PING TO ALL (%s) NODES..." % len(self._nids))
+        print(("PROCESS MANAGER PING TO ALL (%s) NODES..." % len(self._nids)))
         self._parallelize(self.ping, False, 'processmanagerping')
         return self._status, self._errors
 
@@ -421,7 +421,7 @@ class GridHealthChecker(object):
             self.getNodes()
         if clean:
             self._clean()
-        print("WORKER PING TO %s NODE(S)..." % len(self._runningnids))
+        print(("WORKER PING TO %s NODE(S)..." % len(self._runningnids)))
         self._parallelize(self.pingasync, False, 'workerping')
         return self._status, self._errors        
 
@@ -464,7 +464,7 @@ class GridHealthChecker(object):
         else:
             if not disks:
                 disks = dict()
-        for path, disk in disks.items():
+        for path, disk in list(disks.items()):
             disk['path'] = path
             if (disk['free'] and disk['size']) and (disk['free'] / float(disk['size'])) * 100 < 10:
                 disk['message'] = 'FREE SPACE LESS THAN 10%% on disk %s' % path

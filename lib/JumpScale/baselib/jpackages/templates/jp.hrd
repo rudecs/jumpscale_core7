@@ -1,0 +1,46 @@
+base='/opt/mariadb'
+
+process.cmd='./mysqld --basedir=$(base) --datadir=$(base)/data --plugin-dir=$(base)/lib/plugin/ --user=root --console --verbose'
+process.args=
+process.env=:
+#is prio between 0 and 10, 0 is not urgent , 10 is most urgent, so first all packages with prio 10 are installed then going down to 0
+process.prio=10
+#path where process needs to be started
+process.cwd='$(base)/bin'
+process.start.timeout=10
+process.stop.timeout=10
+process.ports=,
+#can be upstart,jsagent or tmux
+process.startupmanager=upstart
+#string which identifies process in memory
+process.filterstr='mysqld'
+
+
+#base of repo where code or files are e.g. http://git.aydo.com/binary/base
+git.url='http://git.aydo.com/binary/mariadb_linux64'
+#dict where key is source in repo, 
+#known var's are: $root,$base,$cfg,$jslib,$pylib,$lib  
+git.export.1=
+    url:$(git.url),
+    source:'mariadb/bin',
+    dest:'$(base)/bin',
+    link:True,
+
+git.export.2=
+    url:$(git.url),
+    source:'mariadb/cfg',
+    dest:'$(base)/cfg',
+    overwrite:False,
+    link:False,
+
+#name of packages which need to be installed locally
+dependencies=,
+
+platform.supported=linux64,
+
+#how many instances can be installed of this package, if 1 the instance name is always 'main'
+instances.maxnr=1
+
+#a way to describe where to backup to
+#backup.location=
+

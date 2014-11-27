@@ -205,7 +205,9 @@ class HRDBase():
             if hrditem.comments!="":
                 out.append("")
                 out.append("%s" % (hrditem.comments.strip()))
-            out.append("%-30s = %s" % (key, hrditem.getAsString()))
+            val=hrditem.getAsString()
+            out.append("%-30s = %s" % (key, val))
+            # print("'''%s'''"%val)
             keylast=key.split(".")
         out=out[1:]
         out="\n".join(out).replace("\n\n\n","\n\n")
