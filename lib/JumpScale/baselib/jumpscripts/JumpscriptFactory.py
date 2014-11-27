@@ -35,7 +35,3 @@ class JumpscriptFactory:
             j.events.inputerror_critical("Cannot find jumpscript:'%s/%s'"%(organization,actor))
         js= self.jumpscripts[key]
         js.execute(action, **args)
-
-
-
-        

@@ -54,7 +54,7 @@ class OSIS:
         for o in objects:
             o.destroy()
             fullname = "%s_%s_%s" % (o.appname, o.actorname, o.modelname)
-            print("destroy model: %s" % fullname)
+            print(("destroy model: %s" % fullname))
 
     def rebuildindex(self, appname, actorname="*", modelname="*"):
         """
@@ -107,7 +107,7 @@ class OSIS:
 
 
         # if modelSpec in ["int","str","float","bool"]:
-            # if str(obj)<>"":
+            # if str(obj) != "":
                 # if path[-1]==".":
                     # path=path[:-1]
                 # result+="%s:%s\n" % (path,obj)
@@ -119,7 +119,7 @@ class OSIS:
                     # val=normalize(item)
                 # else:
                     # val=str(item)
-                # if val<>"" and root<>True:
+                # if val != "" and root != True:
                     # result+="%s:%s\n" % (path+prop.name,val)
             # else:
                 # ttype,specsub=j.core.specparser.getSpecFromTypeStr(modelSpec.appname,modelSpec.actorname,prop.type)

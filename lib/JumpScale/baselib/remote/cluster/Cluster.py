@@ -34,13 +34,13 @@ class Executor(object):
 
         method = args.pop("method")
         exec("method2=node.%s" % method)
-        print("execute method:%s" % method)
-        print("args:%s" % args)
+        print(("execute method:%s" % method))
+        print(("args:%s" % args))
 
         try:
             self.result[node.hostname] = method2(**args)
         except Exception as e:
-            print("ERROR:%s" % e)
+            print(("ERROR:%s" % e))
             from JumpScale.core.Shell import ipshellDebug, ipshell
             print("DEBUG NOW in cluster executor in thread")
             ipshell()

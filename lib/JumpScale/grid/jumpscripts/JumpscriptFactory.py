@@ -144,7 +144,7 @@ from JumpScale import j
 
         self.lastrun = time.time()
         if result!=None:
-            print("ok:%s"%self.name)
+            print(("ok:%s"%self.name))
         return result
 
 
@@ -207,7 +207,7 @@ class JumpscriptFactory:
 
         for tarinfo in tar:
             if tarinfo.isfile():
-                print(tarinfo.name)
+                print((tarinfo.name))
                 if tarinfo.name.find("processmanager/")==0:
                     # dest=tarinfo.name.replace("processmanager/","")           
                     tar.extract(tarinfo.name, j.system.fs.getParent(self.basedir))

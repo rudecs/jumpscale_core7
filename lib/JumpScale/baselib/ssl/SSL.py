@@ -126,13 +126,13 @@ class KeyStor():
         print("signature")
         print(signature)
         print("decrypt")
-        print(self.decrypt(org,"alice","bob",msg,signature))
+        print((self.decrypt(org,"alice","bob",msg,signature)))
 
 
     def perftest(self,nrrounds=1000,sign=True):
         j.base.timer.start()
         org="myorg.com"
-        print("\n\nstart perftest for encryption, nrrounds:%s"%nrrounds)
+        print(("\n\nstart perftest for encryption, nrrounds:%s"%nrrounds))
         for i in range(nrrounds):
             msg,signature= self.encrypt(org,"alice","bob","this is a test message.",sign=sign)
             self.decrypt(org,"alice","bob",msg,signature)

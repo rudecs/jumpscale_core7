@@ -76,7 +76,7 @@ class LogUtils(object):
                 @functools.wraps(func)
                 def wrappedFunc(*args, **kwargs):
                     argiter = itertools.chain(args, ["%s=%s" % (k, v) for k, v in
-                                                     kwargs.items()])
+                                                     list(kwargs.items())])
                     descr = "%s(%s)" % (func.__name__, ", ".join(argiter))
                     j.logger.log("Calling " + descr, level)
                     try:

@@ -25,12 +25,12 @@ opts = parser.parse_args()
 
 
 if opts.action == "hrdset":
-    hrd=j.core.hrd.getHRD("%s/hrd"%j.dirs.cfgDir)
+    hrd=j.core.hrd.get("%s/hrd"%j.dirs.cfgDir)
     hrd.set(opts.name,opts.value)
 
 if opts.action == "hrdget":
-    hrd=j.core.hrd.getHRD("%s/hrd"%j.dirs.cfgDir)
-    print hrd.get(opts.name)
+    hrd=j.core.hrd.get("%s/hrd"%j.dirs.cfgDir)
+    print(hrd.get(opts.name))
 
 if opts.action == "configset":
     config=j.config.getInifile(opts.configname)

@@ -63,7 +63,7 @@ class KVM():
 ipaddr=
 """
             j.system.fs.writeFile(configpath,contents=content)
-        return j.core.hrd.getHRD( path=configpath)
+        return j.core.hrd.get( path=configpath)
 
     def getPid(self,name,fail=True):
         resultcode,out=j.system.process.execute("lxc-info -n %s%s -p"%(self._prefix,name))
@@ -102,19 +102,19 @@ ipaddr=
             mem+=mem0
             cpu+=cpu0
             if stdout:
-                print("%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0))
+                print(("%s%-35s %-5s mem:%-8s" % (pre,child.name, child.pid, mem0)))
             result.append([child.name,child.pid,mem0,child.parent.name])
         cpu=children[0].get_cpu_percent()
         result.append([mem,cpu])
         if stdout:
-            print("TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu))
+            print(("TOTAL: mem:%-8s cpu:%-8s" % (mem, cpu)))
         return result
 
     def create(self,name="",stdout=True,base="base",start=False,nameserver="8.8.8.8",replace=True):
         """
         @param name if "" then will be an incremental nr
         """
-        print("create:%s"%name)
+        print(("create:%s"%name))
         if replace:
             if j.system.fs.exists(self._getMachinePath(name)):
                 self.destroy(name)        
@@ -152,7 +152,7 @@ ipaddr=
             #find free ip addr
             import netaddr
             
-            existing=[netaddr.ip.IPAddress(item).value for item in  ipaddrs.values() if item.strip()!=""]
+            existing=[netaddr.ip.IPAddress(item).value for item in  list(ipaddrs.values()) if item.strip()!=""]
             ip = netaddr.IPNetwork(j.application.config.get("lxc.management.iprange"))
             for i in range(ip.first+2,ip.last-2):
                 if i not in existing:
@@ -194,7 +194,7 @@ ipaddr=
         resultcode,out=j.system.process.execute(cmd)
 
     def start(self,name,stdout=True,test=True):
-        print("start:%s"%name)
+        print(("start:%s"%name))
         cmd="lxc-start -d -n %s%s"%(self._prefix,name)
         resultcode,out=j.system.process.execute(cmd)
         start=time.time()
@@ -215,7 +215,7 @@ ipaddr=
             raise RuntimeError(msg)
     
         ipaddr=self.getIp(name)
-        print("test ssh access to %s"%ipaddr)
+        print(("test ssh access to %s"%ipaddr))
         timeout=time.time()+10        
         while time.time()<timeout:  
             if j.system.net.tcpPortConnectionTest(ipaddr,22):
@@ -224,7 +224,7 @@ ipaddr=
         raise RuntimeError("Could not connect to machine %s over port 22 (ssh)"%ipaddr)
 
     def networkSetPublic(self, machinename,netname="pub0",pubips=[],bridge=None,gateway=None):
-        print("set pub network %s on %s" %(pubips,machinename))
+        print(("set pub network %s on %s" %(pubips,machinename)))
         machine_cfg_file = j.system.fs.joinPaths('/var', 'lib', 'lxc', '%s%s' % (self._prefix, machinename), 'config')
         
         if not bridge:
@@ -269,7 +269,7 @@ lxc.network.name = %s
         return base
 
     def networkSetPrivateOnBridge(self, machinename,netname="dmz0", bridge=None, ipaddresses=["192.168.30.20/24"]):
-        print("set private network %s on %s" %(ipaddresses,machinename))
+        print(("set private network %s on %s" %(ipaddresses,machinename)))
         machine_cfg_file = self._getMachinePath(machinename,'config')
         
         config = '''

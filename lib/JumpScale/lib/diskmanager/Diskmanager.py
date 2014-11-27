@@ -174,7 +174,7 @@ class Diskmanager():
                         disko.path=partition.path if disk.type != 'loop' else disk.device.path
                         disko.size=round(partition.getSize(unit="mb"),2)
                         disko.free = 0
-                        print("partition:%s %s"%(disko.path,disko.size))
+                        print(("partition:%s %s"%(disko.path,disko.size)))
                         try:
                             fs = self.parted.probeFileSystem(partition.geometry)
                         except:
@@ -207,7 +207,7 @@ class Diskmanager():
                         result.append(disko)
 
                         if mountpoint!=None:
-                            print("mountpoint:%s"%mountpoint)
+                            print(("mountpoint:%s"%mountpoint))
                             size, used, free, percent=psutil.disk_usage(mountpoint)
                             disko.free=disko.size*float(1-percent/100)
 
@@ -220,7 +220,7 @@ class Diskmanager():
                                     hrdpath="%s/disk.hrd"%mountpoint
 
                                     if j.system.fs.exists(hrdpath):
-                                        hrd=j.core.hrd.getHRD(hrdpath)
+                                        hrd=j.core.hrd.get(hrdpath)
                                         partnr=hrd.getInt("diskinfo.partnr")
                                         if partnr==0 or forceinitialize:
                                             j.system.fs.remove(hrdpath)
@@ -235,7 +235,7 @@ diskinfo.epoch=
 diskinfo.description=
 """
                                         j.system.fs.writeFile(filename=hrdpath,contents=C)
-                                        hrd=j.core.hrd.getHRD(hrdpath)
+                                        hrd=j.core.hrd.get(hrdpath)
                                         hrd.set("diskinfo.description",j.console.askString("please give description for disk"))
                                         hrd.set("diskinfo.type",",".join(j.console.askChoiceMultiple(["BOOT","CACHE","TMP","DATA","OTHER"])))
                                         hrd.set("diskinfo.gid",j.application.whoAmI.gid)
@@ -247,7 +247,7 @@ diskinfo.description=
                                         client_disk=j.core.osis.getClientForCategory(client,"system","disk")
 
                                         disk=client_disk.new()
-                                        for key,val in disko.__dict__.items():
+                                        for key,val in list(disko.__dict__.items()):
                                             disk.__dict__[key]=val
 
                                         disk.description=hrd.get("diskinfo.description")
@@ -262,12 +262,12 @@ diskinfo.description=
                                         diskid=disk.id
                                         hrd.set("diskinfo.partnr",diskid)
                                     if j.system.fs.exists(hrdpath):
-                                        # hrd=j.core.hrd.getHRD(hrdpath)
+                                        # hrd=j.core.hrd.get(hrdpath)
                                         disko.id=hrd.get("diskinfo.partnr")
                                         disko.type=hrd.get("diskinfo.type").split(",")
                                         disko.type.sort()
                                         disko.description=hrd.get("diskinfo.description")
-                                        print("found disk:\n%s"%(disko))
+                                        print(("found disk:\n%s"%(disko)))
                                     cmd="umount /mnt/tmp"
                                     j.system.process.execute(cmd,dieOnNonZeroExitCode=False)
                                     if os.path.ismount("/mnt/tmp")==True:

@@ -42,7 +42,7 @@ def main(j, args, params, tags, tasklet):
         params.result = (result, params.doc)
         return params
 
-    hrd = j.core.hrd.getHRDFromOsisObject(model, True)
+    hrd = j.core.hrd.getFromOsisObject(model, True)
 
     content = j.core.hrd.replaceVarsInText(params.content, hrd)
 

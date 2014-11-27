@@ -5,7 +5,7 @@ def main(j, args, params, tags, tasklet):
     page = args.page
 
     page._addChartJS()
-    hrd = j.core.hrd.getHRD(content=args.cmdstr)
+    hrd = j.core.hrd.get(content=args.cmdstr)
     title = hrd.title
     height = hrd.getInt('height')
     width = hrd.getInt('width')

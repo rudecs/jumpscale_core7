@@ -15,9 +15,9 @@ FORMAT = "%-20s %-20s %-10s %-12s %-10s %-1s %-2s %-15s %s"
 
 opts = parser.parse_args()
 if opts.action in ('list', 'status'):
-    print FORMAT % ('DOMAIN', 'NAME', 'PRIORITY', 'STATUS', 'AUTOSTART','S','#','PIDS','PORTS')
-    print '-'* 100
-    print
+    print(FORMAT % ('DOMAIN', 'NAME', 'PRIORITY', 'STATUS', 'AUTOSTART','S','#','PIDS','PORTS'))
+    print('-'* 100)
+    print()
 
 if opts.domain==None and  opts.name==None and  opts.action=="start" and not opts.carefull:
     j.tools.startupmanager.startAll()
@@ -49,7 +49,7 @@ pds = sorted(pds, key=lambda x: x.priority, reverse=False)
 if opts.action == 'disable':
     #make sure is stopped first
     for pd in pds_rev:
-        print "disable: %s"%pd
+        print("disable: %s"%pd)
         j.tools.startupmanager.stopProcess(pd.domain, pd.name)
         j.tools.startupmanager.disableProcess(pd.domain, pd.name)            
     j.application.stop(0)
@@ -57,7 +57,7 @@ if opts.action == 'disable':
 
 if opts.action == 'enable':
     for pd in pds:
-        print "enable: %s"%pd
+        print("enable: %s"%pd)
         j.tools.startupmanager.enableProcess(pd.domain, pd.name)
         # j.tools.startupmanager.startProcess(pd.domain, pd.name)
     j.application.stop(0)
@@ -65,7 +65,7 @@ if opts.action == 'enable':
 # single process commands
 if opts.action in ('attach', 'logs'):
     if len(pds) != 1:
-        print 'Could not find exactly one running process %s %s' % (opts.domain, opts.name)
+        print('Could not find exactly one running process %s %s' % (opts.domain, opts.name))
         j.application.stop(1)
     elif opts.action == 'attach':
         j.system.platform.screen.attachSession(pds[0].domain, pds[0].name)
@@ -79,7 +79,7 @@ if opts.action == 'restart':
     pds_rev = sorted(pds, key=lambda x: x.priority, reverse=True)
     for pd in pds_rev:
         if pd.system==False:
-            print "restart: %s"%pd
+            print("restart: %s"%pd)
             pd.stop()
     pds_sort = sorted(pds, key=lambda x: x.priority)
     for pd in pds_sort:
@@ -92,7 +92,7 @@ if opts.action == 'stop':
     pds_rev = sorted(pds, key=lambda x: x.priority, reverse=True)
     for pd in pds_rev:
         if pd.system==False:
-            print "stop: %s"%pd
+            print("stop: %s"%pd)
             pd.stop()
     j.application.stop(0)
 
@@ -102,7 +102,7 @@ if opts.action == 'start':
     pds_rev = sorted(pds, key=lambda x: x.priority)
     for pd in pds_rev:
         if pd.system==False:
-            print "start: %s"%pd
+            print("start: %s"%pd)
             pd.start()
     j.application.stop(0)
 
@@ -115,7 +115,7 @@ for pd in pds:
         active = 'enabled' if pd.autostart else 'disabled'
         status = 'RUNNING' if pd.isRunning() else 'HALTED'
 
-        if len(pd.pids)>0 and pd.numprocesses<>len(pd.pids):
+        if len(pd.pids)>0 and pd.numprocesses != len(pd.pids):
             status = 'INCOMPLETE'
 
         if pd.pids==[]:
@@ -130,7 +130,7 @@ for pd in pds:
             syst=" "
 
         ports =",".join([ str(port) for port in pd.ports ])
-        print FORMAT % (pd.domain, pd.name, pd.priority, status, active,syst,pd.numprocesses,pids,ports)
+        print(FORMAT % (pd.domain, pd.name, pd.priority, status, active,syst,pd.numprocesses,pids,ports))
     else:
         getattr(pd, opts.action)()
 

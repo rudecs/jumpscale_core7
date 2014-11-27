@@ -144,12 +144,12 @@ class JobHandler(object):
             jobsjson = self._redis.hgetall('queues:workers:work:%s' % q)
             if jobsjson:
                 jobs.update(json.loads(jobsjson))
-                for k, job in jobs.items():
+                for k, job in list(jobs.items()):
                     if job['timeStart'] >= epochago:
                         jobs.pop(k)
 
                 if not failed:
-                    for k, job in jobs.items():
+                    for k, job in list(jobs.items()):
                         if job['state'] in ('ERROR', 'TIMEOUT'):
                             jobs.pop(k)
 

@@ -286,7 +286,7 @@ class RegexTools:
         for line in lines:
             if self.matchMultiple(includes,line) and not self.matchMultiple(excludes,line):
                 line=replaceFunction(arg,line)
-            #if line.strip()<>"":
+            #if line.strip() != "":
             if line!=False:
                 out="%s%s\n" % (out,line)
         if out[-2:]=="\n\n":
@@ -402,7 +402,7 @@ class RegexTools:
 if __name__ == '__main__':
     content=j.system.fs.fileGetContents("examplecontent1.txt")
     rt=RegexTools()
-    print(rt.getClassName("class iets(test):"))
+    print((rt.getClassName("class iets(test):")))
     #content="class iets(test):"
     regexmatches=rt.getRegexMatches(r"(?m)(?<=^class )[ A-Za-z0-9_\-]*\b",content)  #find all occurences of class and find positions
     

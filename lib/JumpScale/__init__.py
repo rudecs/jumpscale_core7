@@ -10,11 +10,10 @@ import sys
 import os
 
 if not 'JSBASE' in os.environ:
-    from IPython import embed
-    print ("DEBUG NOW jsbase in __init__ jumpscale")
-    embed()
-    
-    base="/opt/jumpscale7"
+    if sys.version.startswith("3"):
+        base="/opt/jumpscale73"
+    else:    
+        base="/opt/jumpscale7"
 else:
     base=os.environ['JSBASE']
 
@@ -65,7 +64,7 @@ from .core.Console import Console
 j.console=Console()
 
 from .baselib import hrd
-j.application.config = j.core.hrd.getHRD(path="%s/hrd"%base)
+j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
 
 from .core.Dirs import Dirs
 j.dirs=Dirs()
@@ -80,6 +79,8 @@ from .baselib import tags
 from .baselib import platforms
 # from .core import config
 from .baselib import hrd
+
+from .baselib import jpackages
 
 # import JumpScale.baselib.startupmanager
 # from . import shellconfig

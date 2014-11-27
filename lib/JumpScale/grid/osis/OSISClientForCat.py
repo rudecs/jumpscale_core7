@@ -152,7 +152,7 @@ class OSISClientForCat():
         else:
             query = {'query': {'bool': {'must': list()}}}
         myranges = {}
-        for k, v in params.items():
+        for k, v in list(params.items()):
             if isinstance(v, dict):
                 if not v['value']:
                     continue
@@ -165,13 +165,13 @@ class OSISClientForCat():
                     pass
                 term = {'term': {k: v}}
                 query['query']['bool']['must'].append(term)
-        for key, value in myranges.items():
+        for key, value in list(myranges.items()):
             query['query']['bool']['must'].append({'range': {key: value}})
         if partials:
             query['query']['bool']['must'].append({'wildcard': partials})
         boolq = query.get('query', {}).get('bool', {})
         def isEmpty(inputquery):
-            for key, value in inputquery.items():
+            for key, value in list(inputquery.items()):
                 if value:
                     return False
             return True
@@ -179,7 +179,7 @@ class OSISClientForCat():
         if isEmpty(boolq):
             query = nativequery or dict()
         if sort:
-            query['sort'] = [ {x:v} for x,v in sort.items() ]
+            query['sort'] = [ {x:v} for x,v in list(sort.items()) ]
 
         response = self.search(query, start, size)
 

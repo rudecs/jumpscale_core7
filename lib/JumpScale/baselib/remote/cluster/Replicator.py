@@ -41,7 +41,7 @@ class Replicator():
             self.recipe.append(RecipeLine(line))
 
         for recipeLine in self.recipe:
-            if j.system.fs.joinPaths("%s_%s" % (self.baseDir, recipeLine.sync2nodes), recipeLine.pathinqbase) not in iter(self.dirs2monitor.values()):
+            if j.system.fs.joinPaths("%s_%s" % (self.baseDir, recipeLine.sync2nodes), recipeLine.pathinqbase) not in iter(list(self.dirs2monitor.values())):
                 if recipeLine.sync2nodes in self.dirs2monitor:
                     self.dirs2monitor[recipeLine.sync2nodes].append(j.system.fs.joinPaths(
                         "%s_%s" % (self.baseDir, recipeLine.sync2nodes), recipeLine.pathinqbase))
@@ -59,10 +59,10 @@ class Replicator():
         if j.codetools.regex.matchMultiple(self.replicationIncludeRegexes, path):
             # print "PATH:%s" % path
             # if event==1:
-            print("copy %s to cluster .... \n" % (path))
+            print(("copy %s to cluster .... \n" % (path)))
             #@todo call cluster to push changed file
             if not type:
-                for nodetype, dirs in self.dirs.items():
+                for nodetype, dirs in list(self.dirs.items()):
                     if j.system.fs.getDirName(path).rstrip('/') in dirs:
                         type = nodetype
                         break
@@ -73,7 +73,7 @@ class Replicator():
             cluster.sendfile(path, destpath, hostnames=cluster.listnodes(type=type))
             taskletDir = [x for x in self.taskletDirs if re.search(x, destpath)]
             for dir in taskletDir:
-                print("Touching %s/%s" % (dir, 'tasklets_updated'))
+                print(("Touching %s/%s" % (dir, 'tasklets_updated')))
                 cluster.execute('touch %s' % j.system.fs.joinPaths(j.dirs.baseDir, dir, 'tasklets_updated'), hostnames=cluster.listnodes(type=type))
 
     def start(self, clustername="", copyFiles=True):
@@ -122,15 +122,15 @@ class Replicator():
                 # print "Delete: %s/%s" % (data,path)
                 pass
             elif event == 5:
-                print("Added: %s/%s" % (data, path))
+                print(("Added: %s/%s" % (data, path)))
                 if j.system.fs.isDir("%s/%s" % (data, path)):
-                    for type, typedirs in self.dirs.items():
+                    for type, typedirs in list(self.dirs.items()):
                         if data in typedirs:
                             self.dirs[type].append("%s/%s" % (data, path))
                             self.monitors[-1].watch_directory("%s/%s" % (data, path), callback, "%s/%s" % (data, path))
                 pass
             else:
-                print("??? %s, %s/%s" % (event, data, path))
+                print(("??? %s, %s/%s" % (event, data, path)))
             path = "%s/%s" % (data, path)
             path = path.strip()
             if j.system.fs.exists(path) and start and (event == 1 or event == 2):
@@ -144,7 +144,7 @@ class Replicator():
         self.dirs = {}
 
         starttime = j.base.time.getTimeEpoch()
-        for nodetype, directoryList in self.dirs2monitor.items():
+        for nodetype, directoryList in list(self.dirs2monitor.items()):
             for basedir in directoryList:
                 if not j.system.fs.exists(basedir):
                     raise RuntimeError(
@@ -168,7 +168,7 @@ Directory not found is %s
 
         # make sure dirs are unique
         alluniquedirs = []
-        for nodetype, dirlist in self.dirs.items():
+        for nodetype, dirlist in list(self.dirs.items()):
             uniquedirs = []
             for item in dirlist:
                 if item not in uniquedirs and item not in alluniquedirs:
@@ -176,7 +176,7 @@ Directory not found is %s
                     uniquedirs.append(item)
             alluniquedirs += uniquedirs
             self.dirs[nodetype] = uniquedirs
-        nrofdirs = sum([len(l) for l in iter(self.dirs.values())])
+        nrofdirs = sum([len(l) for l in iter(list(self.dirs.values()))])
         if nrofdirs > 5000:
             raise RuntimeError("Dir Monitor System max supports 5000 dirs, found %s" % len(dirs))
         self.monitors = []
@@ -184,7 +184,7 @@ Directory not found is %s
 
         counter = 0
         localcounter = 0
-        for nodetype, dirlist in self.dirs.items():
+        for nodetype, dirlist in list(self.dirs.items()):
             for item in dirlist:
                 # If we need to copy do it here
                 # if copyFiles:

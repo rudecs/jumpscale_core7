@@ -71,7 +71,7 @@ class BlobStor:
 
         try:
             if self.config["type"] != "local":
-                print("exists %s: "%key)
+                print(("exists %s: "%key))
             
             resultGz = j.cloud.system.fs.sourcePathExists(j.system.fs.joinPaths(targetDirPath, '%(key)s.tgz' % {'key': key})) or \
                        j.cloud.system.fs.sourcePathExists(j.system.fs.joinPaths(targetDirPath, '%(key)s.gz' % {'key': key}))
@@ -179,7 +179,7 @@ class BlobStor:
             else:
                 j.clients.blobstor.log("No need to download '%s' to blobstor, because is already there" % key, "download")
         else:
-            print("COULD NOT FIND %s on %s"%(key,blobstor))
+            print(("COULD NOT FIND %s on %s"%(key,blobstor)))
 
     def _put(self, blobstor, metadata, tmpfile):
         # print "put:%s"%tmpfile
@@ -272,7 +272,7 @@ class BlobStor:
             #    j.system.fs.gzip(path, tmpfile)
             pass
         else:
-            print("compress:%s"%path)
+            print(("compress:%s"%path))
             j.system.fs.targzCompress(path, tmpfile, followlinks=False)
             print("ok.")            
 

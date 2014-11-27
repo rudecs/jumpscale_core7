@@ -90,11 +90,11 @@ class ZDaemon(GeventLoop):
                 frontend.send_multipart(parts[1:])  # @todo dont understand why I need to remove first part of parts?
 
     def start(self, mainloop=None):
-        print("starting %s"%self.name)
+        print(("starting %s"%self.name))
         self.schedule("cmdGreenlet", self.cmdGreenlet)
         self.startClock()
 
-        print("start %s on port:%s"%(self.name,self.port))
+        print(("start %s on port:%s"%(self.name,self.port)))
         if mainloop != None:
             mainloop()
         else:

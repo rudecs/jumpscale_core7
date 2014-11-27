@@ -70,7 +70,7 @@ class BlobStorClient:
         if sync or len(self.queue)>200 or self.queuedatasize>self.maxqueuedatasize:
             full,res=self._send(sync,timeout)
             
-            for jid,val in res.items():
+            for jid,val in list(res.items()):
                 self.results[jid]=val
 
             if full:
@@ -87,7 +87,7 @@ class BlobStorClient:
 
     def _send(self,sync=False,timeout=60):
         if self.queuedatasize>0:
-            print("send: %s KB nr cmds:%s"%(int(self.queuedatasize/1024),len(self.queue)))
+            print(("send: %s KB nr cmds:%s"%(int(self.queuedatasize/1024),len(self.queue))))
         if len(self.queue)>0:
             full,res=self.blobstor.sendCmds(self.queue,sync=sync,timeout=timeout)
             return full,res
@@ -233,7 +233,7 @@ class BlobStorClient:
             blob_path = self._getBlobCachePath(key)
             if j.system.fs.exists(blob_path):
                 # Blob exists in cache, we can get it from there!
-                print("Blob FOUND in cache: %s" % blob_path)
+                print(("Blob FOUND in cache: %s" % blob_path))
                 if link:
                     self._link(blob_path,dest)
                 else:

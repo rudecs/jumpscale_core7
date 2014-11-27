@@ -200,7 +200,7 @@ class TextFileEditor:
                 #found right line
                 line=j.codetools.regex.replace(ignoreRegex, ignoreRegex, "", line).rstrip()
                 line=line+add
-                print("CH:%s" % line)
+                print(("CH:%s" % line))
                 done=True
             if done==False and line.find(tofind)!=-1 and  \
                (ignoreRegex!=None and not j.codetools.regex.match(ignoreRegex,line)):

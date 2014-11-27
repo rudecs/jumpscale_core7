@@ -8,14 +8,14 @@ def main(j, args, params, tags, tasklet):
     space = args.paramsExtra.get('space')
     if space:
         space = j.core.portal.active.getSpace(space)
-        path = os.path.join(j.core.portal.active.cfgdir.rpartition('/')[0], 'wiki', space.model.id)
+        path = os.path.join(j.core.portal.active.cfgDir.rpartition('/')[0], 'wiki', space.model.id)
 
     if args.tags.tagExists("ppath"):
         path = args.tags.tagGet("ppath").replace("+", ":").replace("___", ":").replace("\\", "/")
         if not j.system.fs.exists(path):
             page.addMessage("ERROR:could not find file %s" % path)
 
-        apppath = j.core.portal.active.cfgdir.rpartition('/')[0]
+        apppath = j.core.portal.active.cfgDir.rpartition('/')[0]
         codepath = os.getcwd()
         if path.startswith('/') and not (path.startswith(apppath) or path.startswith(codepath)):
             path = ''

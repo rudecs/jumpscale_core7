@@ -37,8 +37,8 @@ class LogHandlerDB:
 
     def _flushFileHandlers(self):
         while True:
-            for period, logFiles in self._fileHandlers.items():
-                for logFile, logFileHandler in logFiles.items():
+            for period, logFiles in list(self._fileHandlers.items()):
+                for logFile, logFileHandler in list(logFiles.items()):
                     logFileHandler.flush()
 
             gevent.sleep(self.FILEHANDLER_FLUSH_INTERVAL)

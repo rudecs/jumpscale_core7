@@ -1,10 +1,10 @@
 #this must be in the beginning so things are patched before ever imported by other libraries
-from gevent import monkey
-#monkey.patch_all()
-monkey.patch_socket()
-monkey.patch_ssl()
-monkey.patch_thread()
-monkey.patch_time()
+# from gevent import monkey
+# #monkey.patch_all()
+# monkey.patch_socket()
+# monkey.patch_ssl()
+# monkey.patch_thread()
+# monkey.patch_time()
 
 
 from JumpScale import j
@@ -19,24 +19,28 @@ if __name__ == '__main__':
     args=sys.argv
     osis_instance=args[1]
 
-    osisjp=j.packages.findNewest(name="osis",domain="jumpscale")
-    osisjp=osisjp.load(osis_instance)
+    # osisjp=j.packages.findNewest(name="osis",domain="jumpscale")
+    # osisjp=osisjp.load(osis_instance)
 
-    argstag=" ".join(args[2:])
-    connectionsconfig = j.core.tags.getObject(argstag).getDict()
+    # argstag=" ".join(args[2:])
+    osishrd = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/osis/%s/osis.hrd' % osis_instance)
+    connectionsconfig = osishrd.get('osis.connection')
+    #j.core.tags.getObject(argstag).getDict()
     connections = {}
 
     #example to start osis : 
     #cd /opt/jsbox/apps/osis;python osisServerStart.py elasticsearch:main mongodb:main
 
     def getConnectionHRD(dbname, instancename, domain):
-        jp=j.packages.findNewest(name="%s_client"%dbname,domain=domain)
-        jp=jp.load(instancename)
-        if not jp.isInstalled():
-            j.events.opserror_critical("cannot start osis, db connection %s was not available, please install."%dbname)
-        hrd=jp.hrd_instance
-        if hrd==None:
-            j.events.opserror_critical("cannot start osis, db connection %s was not available, please install & configure properly, did not find active hrd."%dbname)
+        # jp=j.packages.findNewest(name="%s_client"%dbname,domain=domain)
+        # jp=jp.load(instancename)
+        # if not jp.isInstalled():
+        #     j.events.opserror_critical("cannot start osis, db connection %s was not available, please install."%dbname)
+        # hrd=jp.hrd_instance
+        # if hrd==None:
+        #     j.events.opserror_critical("cannot start osis, db connection %s was not available, please install & configure properly, did not find active hrd."%dbname)
+        # return hrd
+        hrd = j.core.hrd.get('/opt/jumpscale7/hrd/%s/%s_client/%s' % (domain, dbname, instancename))
         return hrd
 
     for dbname, instancename in connectionsconfig.items():
@@ -86,8 +90,8 @@ if __name__ == '__main__':
         #client.hrd=hrd #remember hrd as well
         connections["%s_%s"%(dbname,instancename)]=client
 
-    superadminpasswd=osisjp.hrd_instance.get("osis.superadmin.passwd")
+    superadminpasswd = osishrd.get("osis.superadmin.passwd")
 
-    j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="",port=5544,superadminpasswd=superadminpasswd,dbconnections=connections,hrd=osisjp.hrd_instance)
+    j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=osishrd)
 
     j.application.stop()

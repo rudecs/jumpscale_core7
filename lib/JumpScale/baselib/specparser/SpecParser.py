@@ -191,9 +191,9 @@ class SpecBlock():
         self.content=""
         self.name=""
         self.comment,self.tags,line=parser.getTagsComment(line) #get @ out of the block
-        #if line.find("@")<>-1:
+        #if line.find("@") != -1:
             #line=line.split("@")[0]
-        #if line.find("#")<>-1:
+        #if line.find("#") != -1:
             #line=line.split("#")[0]
         line=line.replace("[","")
         if line.find("]")==-1:
@@ -450,9 +450,9 @@ class SpecFileParser():
                 self.contentout+="%s\n" % line
                 continue
 
-            #if state=="blockfound" and self._checkIdentation(line,linenr,1,1) and line.strip().find("@")<>-1:
+            #if state=="blockfound" and self._checkIdentation(line,linenr,1,1) and line.strip().find("@") != -1:
                 ##found labels tags on right level
-                #if currentblock<>None:
+                #if currentblock != None:
                     #comments,currentblock.tags,tmp=self.getTagsComment(line)
                     #currentblock.startline=linenr
                 #else:
@@ -615,7 +615,7 @@ class SpecParserFactory():
 
         if spec.type=="actor" and specname!="":
             from JumpScale.core.Shell import ipshell
-            print("DEBUG NOW addSpec in specparser, cannot have actor with specname<>empty")
+            print("DEBUG NOW addSpec in specparser, cannot have actor with specname != empty")
             ipshell()
 
         key="%s_%s_%s_%s"%(spec.type,spec.appname,spec.actorname,specname)
@@ -754,7 +754,7 @@ class SpecParserFactory():
             for key2 in list(self.specs.keys()):
                 type,app,item,remaining=key2.split("_",3)
                 if app==appname and item.find(actorname)==0:
-                    print("remove specs %s from memory" % key)
+                    print(("remove specs %s from memory" % key))
                     self.specs.pop(key2)
             i=self.actornames.index(key)
             self.actornames.pop(i)

@@ -247,7 +247,7 @@ def safename(filename):
 
 NORMALIZE_SPACE = re.compile(r'(?:\r\n)?[ \t]+')
 def _normalize_headers(headers):
-    return dict([ (key.lower(), NORMALIZE_SPACE.sub(value, ' ').strip())  for (key, value) in headers.items()])
+    return dict([ (key.lower(), NORMALIZE_SPACE.sub(value, ' ').strip())  for (key, value) in list(headers.items())])
 
 def _parse_cache_control(headers):
     retval = {}
@@ -265,11 +265,11 @@ def _parse_cache_control(headers):
 USE_WWW_AUTH_STRICT_PARSING = 0
 
 # In regex below:
-#    [^\0-\x1f\x7f-\xff()<>@,;:\\\"/[\]?={} \t]+             matches a "token" as defined by HTTP
+#    [^\0-\x1f\x7f-\xff() != @,;:\\\"/[\]?={} \t]+             matches a "token" as defined by HTTP
 #    "(?:[^\0-\x08\x0A-\x1f\x7f-\xff\\\"]|\\[\0-\x7f])*?"    matches a "quoted-string" as defined by HTTP, when LWS have already been replaced by a single space
 # Actually, as an auth-param value can be either a token or a quoted-string, they are combined in a single pattern which matches both:
-#    \"?((?<=\")(?:[^\0-\x1f\x7f-\xff\\\"]|\\[\0-\x7f])*?(?=\")|(?<!\")[^\0-\x08\x0A-\x1f\x7f-\xff()<>@,;:\\\"/[\]?={} \t]+(?!\"))\"?
-WWW_AUTH_STRICT = re.compile(r"^(?:\s*(?:,\s*)?([^\0-\x1f\x7f-\xff()<>@,;:\\\"/[\]?={} \t]+)\s*=\s*\"?((?<=\")(?:[^\0-\x08\x0A-\x1f\x7f-\xff\\\"]|\\[\0-\x7f])*?(?=\")|(?<!\")[^\0-\x1f\x7f-\xff()<>@,;:\\\"/[\]?={} \t]+(?!\"))\"?)(.*)$")
+#    \"?((?<=\")(?:[^\0-\x1f\x7f-\xff\\\"]|\\[\0-\x7f])*?(?=\")|(?<!\")[^\0-\x08\x0A-\x1f\x7f-\xff() != @,;:\\\"/[\]?={} \t]+(?!\"))\"?
+WWW_AUTH_STRICT = re.compile(r"^(?:\s*(?:,\s*)?([^\0-\x1f\x7f-\xff() != @,;:\\\"/[\]?={} \t]+)\s*=\s*\"?((?<=\")(?:[^\0-\x08\x0A-\x1f\x7f-\xff\\\"]|\\[\0-\x7f])*?(?=\")|(?<!\")[^\0-\x1f\x7f-\xff() != @,;:\\\"/[\]?={} \t]+(?!\"))\"?)(.*)$")
 WWW_AUTH_RELAXED = re.compile(r"^(?:\s*(?:,\s*)?([^ \t\r\n=]+)\s*=\s*\"?((?<=\")(?:[^\\\"]|\\.)*?(?=\")|(?<!\")[^ \t\r\n,]+(?!\"))\"?)(.*)$")
 UNQUOTE_PAIRS = re.compile(r'\\(.)')
 def _parse_www_authenticate(headers, headername='www-authenticate'):
@@ -402,7 +402,7 @@ def _updateCache(request_headers, response_headers, content, cache, cachekey):
             cache.delete(cachekey)
         else:
             info = email.Message.Message()
-            for key, value in response_headers.items():
+            for key, value in list(response_headers.items()):
                 if key not in ['status','content-encoding','transfer-encoding']:
                     info[key] = value
 
@@ -784,12 +784,12 @@ class HTTPConnectionWithTimeout(http.client.HTTPConnection):
                     self.sock.settimeout(self.timeout)
                     # End of difference from httplib.
                 if self.debuglevel > 0:
-                    print("connect: (%s, %s)" % (self.host, self.port))
+                    print(("connect: (%s, %s)" % (self.host, self.port)))
 
                 self.sock.connect(sa)
             except socket.error as msg:
                 if self.debuglevel > 0:
-                    print('connect fail:', (self.host, self.port))
+                    print(('connect fail:', (self.host, self.port)))
                 if self.sock:
                     self.sock.close()
                 self.sock = None
@@ -892,7 +892,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
                     sock, self.key_file, self.cert_file,
                     self.disable_ssl_certificate_validation, self.ca_certs)
                 if self.debuglevel > 0:
-                    print("connect: (%s, %s)" % (self.host, self.port))
+                    print(("connect: (%s, %s)" % (self.host, self.port)))
                 if not self.disable_ssl_certificate_validation:
                     cert = self.sock.getpeercert()
                     hostname = self.host.split(':', 0)[0]
@@ -918,7 +918,7 @@ class HTTPSConnectionWithTimeout(http.client.HTTPSConnection):
               raise
             except socket.error as msg:
               if self.debuglevel > 0:
-                  print('connect fail:', (self.host, self.port))
+                  print(('connect fail:', (self.host, self.port)))
               if self.sock:
                   self.sock.close()
               self.sock = None
@@ -1506,7 +1506,7 @@ class Response(dict):
                 self[key] = value
             self.status = int(self['status'])
         else:
-            for key, value in info.items():
+            for key, value in list(info.items()):
                 self[key] = value
             self.status = int(self.get('status', self.status))
 

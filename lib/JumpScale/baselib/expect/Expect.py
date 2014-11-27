@@ -454,7 +454,7 @@ class Expect:
     #     returnval=returnval.replace("\\n","\n")
     #     returnval=returnval.replace("\\r","\r")
     #     returnval=self._cleanStr(returnval)
-    #     if returnval<>"" and checkError:
+    #     if returnval != "" and checkError:
     #         self.error=True
     #     return returnval
 
@@ -550,7 +550,7 @@ class Expect:
     # def read(self):
     #     o=self.pexpect.read_nonblocking()
     #     out=""
-    #     while o<>"":
+    #     while o != "":
     #         print o,
     #         o=self.pexpect.read_nonblocking()
     #         out+=o

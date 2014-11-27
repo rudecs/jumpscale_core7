@@ -30,17 +30,17 @@ def printdelta():
     global LASTTIME, DELTATIME_INITIALIZED
     currenttime = time.time()
     if DELTATIME_INITIALIZED:
-        print("... TIME DELTA: " + str(currenttime - LASTTIME))
+        print(("... TIME DELTA: " + str(currenttime - LASTTIME)))
         LASTTIME = currenttime
     else:
         print("... STARTING TIME MEASUREMENTS")
         LASTTIME = currenttime
         DELTATIME_INITIALIZED = True
-    print(" @ Source file [" + \
+    print((" @ Source file [" + \
         traceback.extract_stack()[-2][0] + \
         "] line [" + \
         str(traceback.extract_stack()[-2][1]) + \
-        "]")
+        "]"))
 
 def getabstime():
     """ Get string representation of absolute time in milliseconds """

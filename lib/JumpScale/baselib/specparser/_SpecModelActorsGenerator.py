@@ -104,7 +104,7 @@ class SpecModelActorsGenerator():
      
 
         for specname in specnames:
-            print("##generate %s" % specname)
+            print(("##generate %s" % specname))
 
 
             spec=j.core.specparser.specs[specname]

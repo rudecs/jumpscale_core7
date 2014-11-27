@@ -158,7 +158,7 @@ class TextCharEditor():
         if blocknr==None and blockname=="":
             blocknr=0
         if blocknr!=None and blockname=="":
-            raise RuntimeError("Cannot have a blockname <>\"\" with blocknr>0")
+            raise RuntimeError("Cannot have a blockname != \"\" with blocknr>0")
         if len(text)==0:
             raise RuntimeError("Cannot insert empty block of text.")
         counter=start
@@ -212,9 +212,9 @@ class TextCharEditor():
             if self.chars[pos][0]=="\n":
                 print(line)
                 #print blocknames
-                print(string.join(["%s"%self.chars[pos][1] for pos in linepositions]))
+                print((string.join(["%s"%self.chars[pos][1] for pos in linepositions])))
                 #print blocknrs
-                print(string.join(["%s"%self.chars[pos][2] for pos in linepositions]))
+                print((string.join(["%s"%self.chars[pos][2] for pos in linepositions])))
                 line=""
                 linepositions=[]
         

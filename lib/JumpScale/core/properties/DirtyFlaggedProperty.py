@@ -1,4 +1,4 @@
-import collections
+from . import collections
 # <License type="Sun Cloud BSD" version="2.2">
 #
 # Copyright (c) 2005-2009, Sun Microsystems, Inc.

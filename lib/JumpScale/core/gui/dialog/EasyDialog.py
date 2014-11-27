@@ -272,4 +272,4 @@ class EasyDialog():
 
 if __name__=='__main__':
     #print EasyDialog().askFilePath()
-    print(EasyDialog().askString("something"))
+    print((EasyDialog().askString("something")))

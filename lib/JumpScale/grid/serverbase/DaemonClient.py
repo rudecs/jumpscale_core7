@@ -34,7 +34,7 @@ class SimpleClient(object):
 class DaemonClient(object):
 
     def __init__(self, org="myorg", user="root", passwd="passwd", ssl=False, encrkey="", reset=False, roles=[], \
-        transport=None, defaultSerialization="m",id=None):
+        transport=None, defaultSerialization="j",id=None):
         """
         @param encrkey (use for simple blowfish shared key encryption, better to use SSL though, will do the same but dynamically exchange the keys)
         """
@@ -46,7 +46,7 @@ class DaemonClient(object):
             #     1, end), j.base.idgenerator.generateRandomInt(1, end), j.base.idgenerator.generateRandomInt(1, end))
             random = uuid.uuid4()
             self._id="%s_%s_%s_%s"%(j.application.whoAmI.gid,j.application.whoAmI.nid,j.application.whoAmI.pid, random)
-        print("ZMQ ID:%s"%self._id)
+        print(("ZMQ ID:%s"%self._id))
 
         self.retry = True
         self.blocksize = 8 * 1024 * 1024
@@ -145,7 +145,6 @@ class DaemonClient(object):
         return is always multipart message [$resultcode(0=no error,1=autherror),$formatstr,$data]
 
         """
-
         ##LOGGING FOR DEBUG
         # try:
         #     dest=self.transport.url
@@ -157,12 +156,12 @@ class DaemonClient(object):
             sendformat = self.defaultSerialization
         if returnformat == None:
             returnformat = self.defaultSerialization
-
         rawdata = data
         if sendformat != "":
             ser = j.db.serializers.get(sendformat, key=self.key)
             data = ser.dumps(data)
-
+        
+        # data = data.decode('utf-8', 'replace')
         # self.cmdchannel.send_multipart([cmd,sendformat,returnformat,data])
         returncode, rreturnformat, returndata = self.transport.sendMsg(category, cmd, data, sendformat, returnformat,timeout=transporttimeout)
         # print "return:%s"%returncode
@@ -179,17 +178,27 @@ class DaemonClient(object):
             msg = "Execution error on %s.\n Could not find method:%s\n" % (self.transport, cmd)
             raise MethodNotFoundException(msg)
         if str(returncode) != returnCodes.OK:
-            # print "*** error in client to zdaemon ***"
+            # if isinstance(rreturnformat, bytes):
+            #     rreturnformat = rreturnformat.decode('utf-8', 'ignore')
             s = j.db.serializers.get(rreturnformat)
+            # print "*** error in client to zdaemon ***"
             ecodict = s.loads(returndata)
             if cmd == "logeco":
                 raise RuntimeError("Could not forward errorcondition object to logserver, error was %s" % ecodict)
-
-            if ecodict["errormessage"].find("Authentication error")!=-1:
+            # for k, v in list(ecodict.items()):
+            #     if isinstance(k, bytes):
+            #         ecodict.pop(k)
+            #         k = k.decode('utf-8', 'ignore')
+            #     if isinstance(v, bytes):
+            #         v = v.decode('utf-8', 'ignore')
+            #     ecodict[k] = v
+            if ecodict.get("errormessage").find("Authentication error")!=-1:
                 raise AuthenticationError("Could not authenticate to %s for user:%s"%(self.transport,self.user), ecodict)
             raise RemoteException("Cannot execute cmd:%s/%s on server:'%s:%s' error:'%s' ((ECOID:%s))" %(category,cmd,ecodict["gid"],ecodict["nid"],ecodict["errormessage"],ecodict["guid"]), ecodict)
 
         if returnformat != "":
+            # if isinstance(rreturnformat, bytes):
+            #     rreturnformat = rreturnformat.decode('utf-8', 'ignore')
             ser = j.db.serializers.get(rreturnformat, key=self.key)
             res = self.decrypt(returndata)
             result = ser.loads(res)
@@ -204,7 +213,7 @@ class DaemonClient(object):
         self.transport.connect(self._id)
 
 
-    def getCmdClient(self, category,sendformat="m", returnformat="m"):
+    def getCmdClient(self, category,sendformat="j", returnformat="j"):
         if category == "*":
             categories = self.sendcmd(category='core', cmd='listCategories')
             cl = SimpleClient(self)
@@ -215,11 +224,19 @@ class DaemonClient(object):
             return self._getCmdClient(category,sendformat,returnformat)
 
 
-    def _getCmdClient(self, category,sendformat="m", returnformat="m"):
+    def _getCmdClient(self, category,sendformat="j", returnformat="j"):
         client = SimpleClient(self)
         methodspecs = self.sendcmd(category='core', cmd='introspect', cat=category)
         for key, spec in methodspecs.items():
+        #     for k, v in list(spec.items()):
+        #         if isinstance(k, bytes):
+        #             spec.pop(k)
+        #             k = k.decode('utf-8', 'ignore')
+        #         if isinstance(v, bytes):
+        #             v = v.decode('utf-8', 'ignore')
+        #         spec[k] = v
             # print "key:%s spec:%s"%(key,spec)
+        
             strmethod = """
 class Klass(object):
     def __init__(self, client, category):
@@ -229,10 +246,9 @@ class Klass(object):
     def method(%s):
         '''%s'''
         return self._client.sendcmd(cmd="%s", category=self._category, %s,sendformat="${sendformat}",returnformat="${returnformat}",transporttimeout=transporttimeout)
-"""
+    """
             strmethod=strmethod.replace("${sendformat}",sendformat)
             strmethod=strmethod.replace("${returnformat}",returnformat)
-            Klass = None
             args = ["%s=%s" % (x, x) for x in spec['args'][0][1:]]
             params_spec = spec['args'][0]
             if spec['args'][3]:
@@ -246,13 +262,14 @@ class Klass(object):
             params += ",_agentid=0"
             strmethod = strmethod % (params, spec['doc'], key, ", ".join(args), )
             strmethod=strmethod.replace(", ,",",")
-            try:
-                exec(strmethod)
-            except Exception as e:
-                raise RuntimeError("could not exec the client method, error:%s, code was:%s"%(e,strmethod))
-            klass = Klass(self, category)
+            # try:
+            ns = dict()
+            exec(compile(strmethod, '<string>', 'exec'), ns)
+            # except Exception as e:
+                # raise RuntimeError("could not exec the client method, error:%s, code was:%s"%(e,strmethod))
+            klass = ns['Klass'](self, category)
             setattr(client, key, klass.method)
-            # print strmethod
+                # print strmethod
         return client
 
     def sendcmd(self, cmd, sendformat=None, returnformat=None, category=None,transporttimeout=5,**args):
@@ -269,20 +286,20 @@ class Klass(object):
     def perftest(self):
         start = time.time()
         nr = 10000
-        print("start perftest for %s for ping cmd" % nr)
+        print(("start perftest for %s for ping cmd" % nr))
         for i in range(nr):
             if not self.sendcmd("ping") == "pong":
                 raise RuntimeError("ping did not return pong.")
         stop = time.time()
         nritems = nr / (stop - start)
-        print("nr items per sec: %s" % nritems)
-        print("start perftest for %s for cmd ping" % nr)
+        print(("nr items per sec: %s" % nritems))
+        print(("start perftest for %s for cmd ping" % nr))
         for i in range(nr):
             if not self.sendcmd("pingcmd") == "pong":
                 raise RuntimeError("ping did not return pong.")
         stop = time.time()
         nritems = nr / (stop - start)
-        print("nr items per sec: %s" % nritems)
+        print(("nr items per sec: %s" % nritems))
 
 class Transport(object):
 
@@ -298,7 +315,7 @@ class Transport(object):
         """
         raise RuntimeError("not implemented")
 
-    def sendMsg(self, category, cmd, data, sendformat="m", returnformat="m"):
+    def sendMsg(self, category, cmd, data, sendformat="j", returnformat="j"):
         """
         overwrite this class in implementation to send & retrieve info from the server (implement the transport layer)
 

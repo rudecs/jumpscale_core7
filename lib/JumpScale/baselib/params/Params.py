@@ -172,7 +172,7 @@ class Params():
 
     def __repr__(self):
         parts = ["PARAMS:"]
-        for key, value in self.__dict__.items():
+        for key, value in list(self.__dict__.items()):
             parts.append(" %s:%s" % (key, value))
         return "\n".join(parts)
 

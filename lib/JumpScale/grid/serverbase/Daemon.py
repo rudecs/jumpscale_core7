@@ -43,7 +43,14 @@ class DaemonCMDS(object):
         """
         # ser=j.db.serializers.getMessagePack()
         # sessiondictstr=ser.loads(data)
-        print("register session:%s "%session)
+        print(("register session:%s "%session))
+        # for k, v in list(sessiondata.items()):
+        #     if isinstance(k, bytes):
+        #         sessiondata.pop(k)
+        #         k = k.decode('utf-8', 'ignore')
+        #     if isinstance(v, bytes):
+        #         v = v.decode('utf-8', 'ignore')
+        #     sessiondata[k] = v
         session = Session(sessiondata)
 
         if ssl:
@@ -52,7 +59,6 @@ class DaemonCMDS(object):
 
         if not self.authenticate(session):
             raise RuntimeError("Cannot Authenticate User:%s" % session.user)
-
         self.daemon.sessions[session.id] = session
         print("OK")
 
@@ -100,7 +106,7 @@ class Daemon(object):
         self._now = 0
         self.sessions = {}
         self.key = ""
-        self.errorconditionserializer = j.db.serializers.getSerializerType("m")
+        self.errorconditionserializer = j.db.serializers.getSerializerType("j")
         self.addCMDsInterface(DaemonCMDS, "core")
 
     def getTime(self):
@@ -144,6 +150,10 @@ class Daemon(object):
             2= method not found
             2+ any other error
         """
+        # if isinstance(category, bytes):
+        #     category = category.decode('utf-8', 'ignore')
+        # if isinstance(cmd, bytes):
+        #     cmd = cmd.decode('utf-8', 'ignore')
         inputisdict = isinstance(data, dict)
 
         # print "process rpc:\n%s"%data
@@ -166,6 +176,14 @@ class Daemon(object):
 
         try:
             if inputisdict:
+                # for k, v in list(data.items()):
+                #     if isinstance(k, bytes):
+                #         data.pop(k)
+                #         k = k.decode('utf-8', 'ignore')
+                #     if isinstance(v, bytes):
+                #         v = v.decode('utf-8', 'ignore')
+                #     data[k] = v
+
                 if "_agentid" in data:
                     if data["_agentid"]!=0:
                         cmds=self.cmdsInterfaces["agent"]
@@ -229,29 +247,36 @@ class Daemon(object):
             2= method not found
             2+ any other error
         """
+        # if isinstance(sessionid, bytes):
+        #     sessionid = sessionid.decode('utf-8', 'ignore')
         if sessionid in self.sessions:
             session = self.sessions[sessionid]
             encrkey = session.encrkey
         else:
+            # if isinstance(cmd, bytes):
+            #     cmd = cmd.decode('utf-8', 'ignore')
             if cmd in ["registerpubkey", "getpubkeyserver", "registersession"]:
                 session = None
                 encrkey = ""
             else:
                 error = "Authentication  or Session error, session not known with id:%s" % sessionid
                 eco = j.errorconditionhandler.getErrorConditionObject(msg=error)
-                return returnCodes.AUTHERROR, "m", self.errorconditionserializer.dumps(eco.__dict__)
+                return returnCodes.AUTHERROR, "j", self.errorconditionserializer.dumps(eco.__dict__)
         try:
             if informat != "":
+                # if isinstance(informat, bytes):
+                #     informat = informat.decode('utf-8', 'ignore')
                 ser = j.db.serializers.get(informat, key=self.key)
                 data = ser.loads(data)
         except Exception as e:
             eco=j.errorconditionhandler.parsePythonErrorObject(e)
             eco.tb=""
-            return returnCodes.SERIALIZATIONERRORIN, "m", self.errorconditionserializer.dumps(eco.__dict__)
-
+            return returnCodes.SERIALIZATIONERRORIN, "j", self.errorconditionserializer.dumps(eco.__dict__)
 
         parts = self.processRPC(cmd, data, returnformat=returnformat, session=session, category=category)
         returnformat = parts[1]  # return format as comes back from processRPC
+        # if isinstance(returnformat, bytes):
+        #     returnformat = returnformat.decode('utf-8', 'ignore')
         if returnformat != "":  # is
             returnser = j.db.serializers.get(returnformat, key=encrkey)
             error=0
@@ -264,7 +289,7 @@ class Daemon(object):
                     data = self.encrypt(returnser.dumps(parts[2].__dict__), session)
                 except:
                     eco = j.errorconditionhandler.getErrorConditionObject(msg="could not serialize result from %s"%cmd)
-                    return returnCodes.SERIALIZATIONERROROUT, "m", self.errorconditionserializer.dumps(eco.__dict__)
+                    return returnCodes.SERIALIZATIONERROROUT, "j", self.errorconditionserializer.dumps(eco.__dict__)
         else:
             data = parts[2]
 

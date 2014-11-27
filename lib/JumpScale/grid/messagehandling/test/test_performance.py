@@ -16,7 +16,7 @@ def logtest(total, interval, message, format=False):
         if n % interval == 0:
             t = time.time()
             delta = t - start
-            print("Did %d of %d logs in %ss" % (n, total, delta))
+            print(("Did %d of %d logs in %ss" % (n, total, delta)))
             result.append({
                 "done": n,
                 "time": delta
@@ -33,8 +33,8 @@ def logtest(total, interval, message, format=False):
 
     totalTime = time.time() - start
     average = total / float(totalTime)
-    print("Logged %d messages at %f messages per second on average" % (total,
-                                                                       average))
+    print(("Logged %d messages at %f messages per second on average" % (total,
+                                                                       average)))
     return result
 
 if __name__ == "__main__":

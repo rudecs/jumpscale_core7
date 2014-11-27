@@ -40,9 +40,9 @@ groupclient=j.core.osis.getClientForCategory(osis,"system","group")
 
 ############ADD
 if opts.action =='add':
-    if opts.data<>None:
+    if opts.data != None:
         splitted=opts.data.split(":")
-        if len(splitted)<>2:
+        if len(splitted) != 2:
             raise RuntimeError("error, format for param data needs to be: groupname:domain")
         name,domain=splitted
     else:
@@ -60,20 +60,20 @@ if opts.action =='add':
 
     group=groupclient.get(guid)
 
-    print group
+    print(group)
 
 
 if opts.action =='list':
     out=""
-    print "\n%-20s %-25s %s"%("name","domain","users")
-    print "="*80,
+    print("\n%-20s %-25s %s"%("name","domain","users"))
+    print("="*80, end=' ')
     for item in groupclient.simpleSearch({"domain":opts.domain}):
         out+="%-20s %-25s %s\n"%(item["id"],item["domain"],",".join(item["users"]))
     out=out.split("\n")
     out.sort()
     out="\n".join(out)
-    print out
-    print
+    print(out)
+    print()
             
 if opts.action =='delete':
     if opts.group==None:

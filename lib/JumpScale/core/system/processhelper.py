@@ -252,11 +252,11 @@ def daemonize(stdout, stderr, chdir='/', umask=0):
                 os.chdir(chdir)
         else:
             #First child is useless now
-            print('CHILDPID=%d' % pid)
+            print(('CHILDPID=%d' % pid))
             if hasattr(os, 'getuid'):
-                print('UID=%d' % os.getuid())
+                print(('UID=%d' % os.getuid()))
             if hasattr(os, 'getgid'):
-                print('GID=%d' % os.getgid())
+                print(('GID=%d' % os.getgid()))
             sys.exit()
     else:
         return False, os.getpid()

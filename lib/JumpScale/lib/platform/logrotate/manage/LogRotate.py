@@ -62,7 +62,7 @@ class Services(object):
         '''
         Saves all loaded services
         '''
-        list(map(lambda service: service.save(), list(self._services.values())))
+        list([service.save() for service in list(self._services.values())])
 
 
 class ServiceLogConfig(object):
@@ -138,7 +138,7 @@ class ServiceLogConfig(object):
         '''
         Saves this service
         '''
-        list(map(lambda sec: sec.save(), list(self.sections.values())))
+        list([sec.save() for sec in list(self.sections.values())])
         self._editor.save()
 
     def listSections(self):
@@ -201,7 +201,7 @@ class LogConfigSection(object):
 
     def _categorizeOptions(self, optionsList):
         def categorize(option):
-            for k, v in self._OPTION_GROUPS.items():
+            for k, v in list(self._OPTION_GROUPS.items()):
                 if option[0] in v:
                     return k
             return 'unknown'
@@ -468,7 +468,7 @@ class LogRotate(object):
                                                                        'prerotate'     : "tar czf /opt/qbase3/var/log/monitoring/monitoring_archive.tgz /opt/qbase3/var/log/monitoring/*.log",
                                                                        'sharedScript'  : True}}],}"""
         global _services
-        for key, value in configurationparams.items():
+        for key, value in list(configurationparams.items()):
             if not key in self.listServices():
                 j.logger.log("Logrotate - Initialise logrotate: Adding service: %s" % key, 1)
                 self.addService(key)

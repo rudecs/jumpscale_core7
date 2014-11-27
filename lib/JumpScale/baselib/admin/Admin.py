@@ -60,7 +60,7 @@ class Admin():
     def load(self):
         j.system.fs.copyDirTree("%s/jumpscripts"%self.root,"%s/jumpscripts"%self.tmpdir)
 
-        self.hrd=j.core.hrd.getHRD(self.startdir,prefixWithName=True)
+        self.hrd=j.core.hrd.get(self.startdir,prefixWithName=True)
         self.hrd.applyOnDir(self.tmpdir)
 
         from IPython import embed
@@ -297,7 +297,7 @@ class Admin():
             if rc>0:
                 if out.find("device is busy")!=-1:
                     res=[]
-                    print("MOUNTPOINT %s IS BUSY WILL TRY TO FIND WHAT IS KEEPING IT BUSY"%mntpath)
+                    print(("MOUNTPOINT %s IS BUSY WILL TRY TO FIND WHAT IS KEEPING IT BUSY"%mntpath))
                     cmd ="lsof -bn -u 0|grep '%s'"%mntpath  #only search for root processes
                     print(cmd)
                     rc,out=j.system.process.execute(cmd,False)
@@ -311,13 +311,13 @@ class Admin():
                             if key not in res:
                                 res.append(key)
                     print("PROCESSES WHICH KEEP MOUNT BUSY:")
-                    print("\n".join(res))                    
+                    print(("\n".join(res)))                    
                     return
                 raise RuntimeError("could not umount:%s\n%s"%(mntpath,out))
 
         if gridname=="" and name=="":
             for mntpath in getMntPaths():
-                print("UMOUNT:%s"%mntpath)
+                print(("UMOUNT:%s"%mntpath))
                 do(mntpath)
             
         else:
@@ -425,7 +425,7 @@ ff02::2      ip6-allrouters
                 if g2!=g:
                     newHostnames["%s.%s"%(n,g2)]=node.ip
 
-        for hostname,ipaddr in existingHostnames.items():
+        for hostname,ipaddr in list(existingHostnames.items()):
             if hostname.lower() not in list(newHostnames.keys()):
                 out+="%-18s %s\n"%(ipaddr,hostname)
 
@@ -496,7 +496,7 @@ ff02::2      ip6-allrouters
                     result+="%s\n\n"%sr.result
             else:
                 nok.append("%-10s %-15s"%(sr.gridname,sr.nodename))
-                for key,value in sr.__dict__.items():
+                for key,value in list(sr.__dict__.items()):
                     error+="%-15s: %s"%(key,value)
                 error+="#######################################################################\n\n"
 
@@ -520,11 +520,11 @@ ff02::2      ip6-allrouters
 
         print("\n######################## OK #####################################")
         ok.sort()
-        print("\n".join(ok))
+        print(("\n".join(ok)))
         if len(nok)>0:
             print("######################## ERROR ###################################")
             nok.sort()
-            print("\n".join(nok))
+            print(("\n".join(nok)))
 
         return exitcode
 

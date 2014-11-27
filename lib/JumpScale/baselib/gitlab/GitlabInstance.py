@@ -44,7 +44,7 @@ class GitlabInstance(Gitlab):
             self.login(login, passwd)
             self.load()
         # for item in dir(self._gitlab):
-        #     if item[0]<>"_":
+        #     if item[0] != "_":
         #         setattr(self,item,getattr(self._gitlab,item))
         self.gitclients={}
             
@@ -70,7 +70,7 @@ class GitlabInstance(Gitlab):
         # else:
         #     url = 'http://%s:%s@%s' % (self.loginName,self.passwd,self.addr)
         #     # url = 'http://%s' % (self.addr)
-        #     if url[-1]<>"/":
+        #     if url[-1] != "/":
         #         url=url+"/"
 
         url += "%s/%s.git" % (accountName, repoName)

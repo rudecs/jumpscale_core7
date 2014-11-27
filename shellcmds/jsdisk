@@ -17,16 +17,16 @@ import JumpScale.lib.diskmanager
 
 if opts.action =='list':
     disks=j.system.platform.diskmanager.partitionsFind()
-    print "%-25s %-15s %-6s %-6s %-4s %-30s %-30s %s"%("descr","path","size","free","ssd","mountpoint","type","model")
+    print("%-25s %-15s %-6s %-6s %-4s %-30s %-30s %s"%("descr","path","size","free","ssd","mountpoint","type","model"))
     for disk in disks:
         if disk.ssd:
             ssd=1 
         else: 
             ssd=0
         
-        print "%-25s %-15s %-6s %-6s %-4s %-30s %-30s %s"%(disk.description,disk.path,\
+        print("%-25s %-15s %-6s %-6s %-4s %-30s %-30s %s"%(disk.description,disk.path,\
             round(float(disk.size)/1024/1024,1),round(float(disk.free)/1024/1024,1),\
-            ssd ,disk.mountpoint,",".join(disk.type),disk.model)
+            ssd ,disk.mountpoint,",".join(disk.type),disk.model))
 
 if opts.action =='listmirrors':
     disks=j.system.platform.diskmanager.mirrorsFind()

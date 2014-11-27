@@ -28,7 +28,7 @@ class SerializerHRD():
         dictified = ''
         if not dictdata:
             dictified += self._formatPrepends(prepend, '{}')
-        for k, v in dictdata.items():
+        for k, v in list(dictdata.items()):
             if isinstance(k, str) and '..' in k:
                 k = k.replace('..', self.__escape)
             if not (isinstance(v, self._primitiveTypes)):

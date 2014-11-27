@@ -1172,7 +1172,7 @@ def calculateEnvironment(values, source=None):
 
     result.update(values)
 
-    result = dict((k, v) for (k, v) in result.items() if v is not UNSET)
+    result = dict((k, v) for (k, v) in list(result.items()) if v is not UNSET)
 
     return result
 
@@ -1224,7 +1224,7 @@ class SystemProcess:
 
         j.logger.log("system.process.executeAsync [%s]" % command, 6)
         if printCommandToStdout:
-            print("system.process.executeAsync [%s]" % command)
+            print(("system.process.executeAsync [%s]" % command))
 
         if j.system.platformtype.isWindows():
             if argsInCommand:                
@@ -1406,6 +1406,9 @@ class SystemProcess:
         except Exception as e:
             raise
 
+        output=output.decode('ascii')
+        error=error.decode('ascii')
+
         if exitcode!=0 or error!="":
             j.logger.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)
             if ignoreErrorOutput!=True:
@@ -1415,8 +1418,7 @@ class SystemProcess:
             j.logger.log("command: [%s]\nexitcode:%s\noutput:%s\nerror:%s" % (command, exitcode, output, error), 3)
             raise RuntimeError("Error during execution! (system.process.execute())\n\nCommand: [%s]\n\nExitcode: %s\n\nProgram output:\n%s\n\nErrormessage:\n%s\n" % (command, exitcode, output, error))
 
-        output=output.replace("\\n","\n")
-        output=output.replace("\\t","    ")
+
         return exitcode, output
 
     def executeIndependant(self,cmd):
@@ -1491,7 +1493,7 @@ class SystemProcess:
         #try to load the code
         # execContext = {}
         try:
-            exec(code2) in globals(), locals()
+            exec((code2), globals(), locals())
         except Exception as e:
             raise RuntimeError("Could not import code, code submitted was \n%s" % code)
 

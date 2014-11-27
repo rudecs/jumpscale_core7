@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env jspython
 from JumpScale import j
 
 j.application.appname = "jumpscale:jsexec"
@@ -67,12 +67,12 @@ def doRemote(args,hostkey,cmd):
         sr.state="ERROR"
         if args.sync==False:
             sr.out+="\nSTDOUT:\n%s"%r.out            
-        if sr.out<>"":
-            print "ERROR: COULD NOT EXECUTE: STDOUT:"
-            print sr.out
-        if sr.error<>"":
-            print "ERROR: COULD NOT EXECUTE: ERROR:"
-        print "ERROR: could not execute:%s on \n%s"%(cmd,node)
+        if sr.out != "":
+            print("ERROR: COULD NOT EXECUTE: STDOUT:")
+            print(sr.out)
+        if sr.error != "":
+            print("ERROR: COULD NOT EXECUTE: ERROR:")
+        print("ERROR: could not execute:%s on \n%s"%(cmd,node))
         j.admin.setNode(node)
         if args.sync:
             j.application.stop(1)
@@ -80,32 +80,32 @@ def doRemote(args,hostkey,cmd):
     gridname,name=hostkey.split("__")
     node=j.admin.getNode(gridname,name)
     sr=node.getScriptRun()
-    if cmd<>"":        
+    if cmd != "":        
         error=False
         r=RedirectSTDOUT(hostkey)
-        print "EXECCMD:%s:%s:"%(hostkey,cmd)
+        print("EXECCMD:%s:%s:"%(hostkey,cmd))
         if args.sync==False:            
             sys.stdout=r
         try:
             node.executeCmds(cmd)
-        except BaseException,e:
+        except BaseException as e:
             sys.stdout=r.oldstdout            
-            print "ERROR  :%s:%s:"%(hostkey,cmd)            
+            print("ERROR  :%s:%s:"%(hostkey,cmd))            
             error=True
             report(node,args)
         sys.stdout=r.oldstdout
-        if sr.state<>"OK":
-            print "ERROR  :%s:%s:"%(hostkey,cmd)
+        if sr.state != "OK":
+            print("ERROR  :%s:%s:"%(hostkey,cmd))
             report(node,args)
         elif not error:
-            print "OK     :%s:%s:"%(hostkey,cmd)
+            print("OK     :%s:%s:"%(hostkey,cmd))
     else:
         for cmd in args.name.split(","):  #name is name of jumpscript
             cmd=cmd.lower().strip()
             key="%s_%s"%(hostkey,cmd.strip())
             
             r=RedirectSTDOUT(key)            
-            print "EXEC   :%s:%s:"%(hostkey,cmd)
+            print("EXEC   :%s:%s:"%(hostkey,cmd))
             if args.sync==False:                                
                 sys.stdout=r
 
@@ -114,11 +114,11 @@ def doRemote(args,hostkey,cmd):
                 once=False
             j.admin.executeForNode(node,jsname=cmd,once=once)
             sys.stdout=r.oldstdout
-            if sr.state<>"OK":
-                print "ERROR  :%s:%s:"%(hostkey,cmd)
+            if sr.state != "OK":
+                print("ERROR  :%s:%s:"%(hostkey,cmd))
                 report(node,args)
             else:
-                print "OK     :%s:%s:"%(hostkey,cmd)  
+                print("OK     :%s:%s:"%(hostkey,cmd))  
 
 import JumpScale.baselib.admin
 
@@ -148,7 +148,7 @@ if __name__ == '__main__':
             done=j.admin.getScriptRunInfo()
             nr=len(j.admin.hostKeys)
             while len(done)<nr:
-                print "Still Running: %s/%s"%(nr-len(done),nr)
+                print("Still Running: %s/%s"%(nr-len(done),nr))
                 time.sleep(2)
                 done=j.admin.getScriptRunInfo()
 

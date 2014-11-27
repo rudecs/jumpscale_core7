@@ -49,7 +49,7 @@ def getUserGUID(username):
     results = userclient.simpleSearch({'id': username}, withguid=True)
     if results:
         return results[0]['guid']
-    print "Could not find user with name %s" % username
+    print("Could not find user with name %s" % username)
     j.application.stop(1)
 
 ############ADD
@@ -60,8 +60,8 @@ if opts.action =='auth':
         opts.userpasswd=j.console.askString("passwd for user to check")
 
     result=userclient.authenticate(name=opts.userlogin,passwd=opts.userpasswd)
-    for key,val in result.iteritems():
-        print "%-20s %s"%(key,val)
+    for key,val in result.items():
+        print("%-20s %s"%(key,val))
 
 if opts.action =='passwd':
     if opts.userlogin==None:
@@ -82,15 +82,15 @@ if opts.action =='delete':
     userclient.delete(user.guid)
 
 if opts.action =='add' or opts.action =='set':
-    if opts.data<>None:
+    if opts.data != None:
         splitted=opts.data.split(":")
-        if len(splitted)<>5:
+        if len(splitted) != 5:
             raise RuntimeError("error, format for param data needs to be: username:passwd:group1,group2:email1,email2:domain")
         name,passwd,groups,emails,domain=splitted
         groups=groups.split(",")
         emails=emails.split(",")
-    elif opts.hrd<>None:
-        hrd=j.core.hrd.getHRD(content=opts.hrd.replace("#","\n"))
+    elif opts.hrd != None:
+        hrd=j.core.hrd.get(content=opts.hrd.replace("#","\n"))
         if hrd.exists("user.name"):
             name=hrd.get("user.name")
         if hrd.exists("user.domain"):
@@ -146,11 +146,11 @@ if opts.action =='add' or opts.action =='set':
 
     user=userclient.get(guid)
 
-    print user
+    print(user)
 
 if opts.action =='addgroup' or opts.action =='delgroup':
     if not opts.groupuser or not opts.groupgroup:
-        print "To manipulate a usergroup you need to provide -gu and -gg options"
+        print("To manipulate a usergroup you need to provide -gu and -gg options")
         j.application.stop(1)
     userguid = getUserGUID(opts.groupuser)
     if not userguid:
@@ -158,13 +158,13 @@ if opts.action =='addgroup' or opts.action =='delgroup':
     user=userclient.get(userguid)
 
     if opts.action =='delgroup':
-        print "del group:%s from %s"%(opts.groupgroup,opts.groupuser)
+        print("del group:%s from %s"%(opts.groupgroup,opts.groupuser))
 
         if opts.groupgroup in user.groups:
             user.groups.pop(user.groups.index(opts.groupgroup))
 
     if opts.action =='addgroup':
-        print "add group:%s from %s"%(opts.groupgroup,opts.groupuser)
+        print("add group:%s from %s"%(opts.groupgroup,opts.groupuser))
         if not opts.groupgroup in user.groups:
             user.groups.append(opts.groupgroup)
 
@@ -172,20 +172,20 @@ if opts.action =='addgroup' or opts.action =='delgroup':
 
     user=userclient.get(guid)
 
-    print user
+    print(user)
 
 
 if opts.action =='list':
     out=""
-    print "\n%-20s %-25s %s"%("name","domain","groups")
-    print "="*80,
+    print("\n%-20s %-25s %s"%("name","domain","groups"))
+    print("="*80, end=' ')
     for item in userclient.simpleSearch({"domain":opts.domain}):
         out+="%-20s %-25s %s\n"%(item["id"],item["domain"],",".join(item["groups"]))
     out=out.split("\n")
     out.sort()
     out="\n".join(out)
-    print out
-    print
+    print(out)
+    print()
             
 
 

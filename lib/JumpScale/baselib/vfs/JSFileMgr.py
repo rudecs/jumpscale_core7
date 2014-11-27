@@ -26,7 +26,7 @@ class Item():
 
     def __repr__(self):
         out=""
-        for key,value in self.__dict__.items():
+        for key,value in list(self.__dict__.items()):
             if key!="text":
                 out+="%s:%s\n"%(key,value)
         out+="####\n"
@@ -150,7 +150,7 @@ class JSFileMgr():
                 mdchange=True                
 
         if mdchange:
-            print("MD:%s CHANGE"%path)
+            print(("MD:%s CHANGE"%path))
 
             # print "MDCHANGE"
             item.mode=int(stat.st_mode)
@@ -254,7 +254,7 @@ class JSFileMgr():
         """
         """
 
-        print("restore file: %s" % (dest))
+        print(("restore file: %s" % (dest)))
 
         if j.system.fs.getBaseName(src).find("__dev")==0:
             #restore device files
@@ -278,7 +278,7 @@ class JSFileMgr():
                ,sync=sync,size=itemObj.size)      
 
     def restore1dir(self,src,dest):
-        print("restore dir: %s %s" % (src, dest))
+        print(("restore dir: %s %s" % (src, dest)))
 
         itemObj=self.getMDObjectFromFs(src)
         j.system.fs.createDir(dest)
@@ -296,7 +296,7 @@ class JSFileMgr():
             if md5!="":
                 key2paths[md5]=(src,md5)
 
-        print("batch nr:%s check"%batchnr)
+        print(("batch nr:%s check"%batchnr))
         exists=self.blobstor.existsBatch(keys=list(key2paths.keys())) 
 
         nr=batchnr*1000 #for print purposes, so we see which file is uploading
@@ -309,7 +309,7 @@ class JSFileMgr():
                 self.blobstor.uploadFile(src,key=md5,repoid=self.repoid)
 
         self.blobstor.sync() #to make sure all is send because batching is being used
-        print("uploaded batch:%s %s/%s"%(batchnr,nr,total))
+        print(("uploaded batch:%s %s/%s"%(batchnr,nr,total)))
 
     def backup(self,path,destination="", pathRegexIncludes={},pathRegexExcludes={"F":"*\\.pyc"},childrenRegexExcludes=[".*/dev/.*",".*/proc/.*"]):
 
@@ -337,7 +337,7 @@ class JSFileMgr():
         arg={}
         w.walk(path,callbackFunctions,arg=arg,callbackMatchFunctions=callbackMatchFunctions,childrenRegexExcludes=childrenRegexExcludes)
 
-        print("SCAN MD:%s"%path)
+        print(("SCAN MD:%s"%path))
         
         self.errors=[]
 
@@ -439,7 +439,7 @@ class JSFileMgr():
             dest=j.system.fs.joinPaths(self.MDPath,"LINKS",path0)
             j.system.fs.removeDirTree(dest)
         f.close()
-        print("SCAN DONE MD:%s"%path)
+        print(("SCAN DONE MD:%s"%path))
 
         print("START UPLOAD FILES.")
         #count lines

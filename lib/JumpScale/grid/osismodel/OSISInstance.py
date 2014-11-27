@@ -155,7 +155,7 @@ class OSISInstance(OSISInstanceNoDB):
             # did not find object, will create
             obj = self.new(guid, id)
             self.set(obj)
-            print("get object did not exist:%s %s %s " % (self.modelname, guid, id))
+            print(("get object did not exist:%s %s %s " % (self.modelname, guid, id)))
             return obj
 
         id = self._getId(guid, id)
@@ -273,7 +273,7 @@ class OSISInstance(OSISInstanceNoDB):
     #             # create true means we will overwrite the db
     #             obj = self.ini2object(cfgpath, section=name, overwriteInDB=create, manipulator=manipulator, manipulatorargs=manipulatorargs,
     #                                   limitVars=limitVars, writeIni=writeIni)
-    #             if obj <> None:
+    #             if obj != None:
     #                 result.append(obj)
     #         return result
     #     else:
@@ -301,7 +301,7 @@ class OSISInstance(OSISInstanceNoDB):
     #         ini = j.tools.inifile.open(cfgpath)
     #     else:
     #         ini = j.tools.inifile.new(cfgpath)
-    #     if section <> "main":
+    #     if section != "main":
     #         id = section
     #     else:
     #         if ini.checkParam(section, "id"):
@@ -316,7 +316,7 @@ class OSISInstance(OSISInstanceNoDB):
     #             guid = None
 
     #     ini.setParam(section, "id", id)
-    #     if section == "main" and not ini.checkParam(section, "id") and id <> None:
+    #     if section == "main" and not ini.checkParam(section, "id") and id != None:
     #         ini.write()
 
     #     if ini.checkParam(section, "reset"):
@@ -329,7 +329,7 @@ class OSISInstance(OSISInstanceNoDB):
 
     #     obj = self.get(guid, id, createIfNeeded=True, ignoreError=True)
 
-    #     if obj.guid <> guid and guid <> None:
+    #     if obj.guid != guid and guid != None:
     #         # found object but guid is not correct
     #         if overwriteInDB:
     #             obj.guid = guid
@@ -353,7 +353,7 @@ class OSISInstance(OSISInstanceNoDB):
     #     def check2process(name):
     #         if name in ["create", "reset"]:
     #             return False
-    #         if limitVars <> [] and name not in limitVars:
+    #         if limitVars != [] and name not in limitVars:
     #             return False
     #         return True
 
@@ -368,7 +368,7 @@ class OSISInstance(OSISInstanceNoDB):
     #             ttype = prop.type
     #             name = prop.name
     #             params.append(name)
-    #             if name <> "id" or section == "main":
+    #             if name != "id" or section == "main":
     #                 if not ini.checkParam(section, name):
     #                     ini.setParam(section, name, "")
     #                     if writeIni:
@@ -382,7 +382,7 @@ class OSISInstance(OSISInstanceNoDB):
     #                             ini.write()
     #                     else:
     #                         value = int(value)
-    #                     if value == 0 and str(default) <> "":
+    #                     if value == 0 and str(default) != "":
     #                         value = int(default)
     #                 elif ttype == "str":
     #                     value = str(ini.getValue(section, name))
@@ -407,12 +407,12 @@ class OSISInstance(OSISInstanceNoDB):
     #             # print "objnew: %s %s" %(prop.name,value)
     #             if prop.name == "guid" and value == "":
     #                 continue
-    #             if value <> None:
+    #             if value != None:
     #                 objnew.__dict__[key] = value
 
-    #     if manipulator <> None:
+    #     if manipulator != None:
     #         ini2, obj, objnew, skip = manipulator(ini, section, existsInDb, obj, objnew, manipulatorargs)
-    #         if ini2 <> ini and ini2 <> None:
+    #         if ini2 != ini and ini2 != None:
     #             ini.write()
 
     #         if skip:

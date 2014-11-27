@@ -192,7 +192,7 @@ class RemoteSystemProcess(_remoteSystemObject):
                 tmp = (channelFileStdOut.channel.recv(1024))
                 j.logger.log("ssh %s out:%s" % (self._ipaddress, tmp), 3)
                 if tostdout:
-                    print(tmp.strip())
+                    print((tmp.strip()))
                 myOut += tmp
             if channelFileStdErr.channel.recv_stderr_ready():
                 tmp = (channelFileStdErr.channel.recv_stderr(1024))

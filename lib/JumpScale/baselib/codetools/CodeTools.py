@@ -1,5 +1,5 @@
 
-from .RegexTools import RegexTools
+from JumpScale.baselib.regextools.RegexTools import RegexTools
 from .TemplateEngineWrapper import TemplateEngineWrapper
 from .WordReplacer import WordReplacer
 from .TextFileEditor import TextFileEditor

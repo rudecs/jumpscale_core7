@@ -131,7 +131,7 @@ class ObjectInspector():
                     try:
                         exec(toexec)
                     except Exception as e:
-                        print("COULD NOT IMPORT %s"%toexec)
+                        print(("COULD NOT IMPORT %s"%toexec))
                         errors+="**%s**\n\n"%toexec
                         errors+="%s\n\n"%e
         return errors
@@ -152,7 +152,7 @@ class ObjectInspector():
 
     def inspect(self, objectLocationPath="j"):
         """
-        walk over objects in memory and create code completion api in jumpscale cfgdir under codecompletionapi
+        walk over objects in memory and create code completion api in jumpscale cfgDir under codecompletionapi
         @param object is start object
         @param objectLocationPath is full location name in object tree e.g. j.system.fs , no need to fill in
         """
@@ -175,7 +175,7 @@ class ObjectInspector():
                     getChildObjectsExamples = eval("%s" % objectLocationPath2)
                     res=getChildObjectsExamples()
                     
-                    for objectLocationPath2,obj2 in res.items():
+                    for objectLocationPath2,obj2 in list(res.items()):
                         self.processObject(obj2,objectLocationPath2)
                 
             if len(dictitem)>1 and dictitem[0] != "_":
@@ -185,7 +185,7 @@ class ObjectInspector():
                     # objectNew = eval("%s" % objectLocationPath2)
                     objectNew= eval("obj.%s"%(dictitem))
                 except:                    
-                    print("COULD NOT EVAL %s" % objectLocationPath2)
+                    print(("COULD NOT EVAL %s" % objectLocationPath2))
                 if objectNew == None:
                     pass
                 elif dictitem.upper() == dictitem:
@@ -212,10 +212,10 @@ class ObjectInspector():
                     # print "property: %s" % objectLocationPath2
                     j.system.fs.writeFile(self.apiFileLocation, "%s?8\n" % objectLocationPath2, True)
                 else:
-                    print(str(type(objectNew)) + " " + objectLocationPath2)
+                    print((str(type(objectNew)) + " " + objectLocationPath2))
 
     def writeDocs(self,path):
-        for key,doc in self.classDocs.items():
+        for key,doc in list(self.classDocs.items()):
             doc.write(path)
 
         C="""

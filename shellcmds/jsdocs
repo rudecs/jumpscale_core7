@@ -1,7 +1,7 @@
 #!/usr/bin/env jspython
 from JumpScale.baselib import cmdutils
 from JumpScale import j
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 from xml.etree import cElementTree as etree
 import JumpScale.baselib.git
 j.application.start('jsdocs')
@@ -34,24 +34,24 @@ class Parser(HTMLParser):
 
 args = parser.parse_args()
 if args.action == 'generate':
-    print "UPDATING CORE..."
+    print("UPDATING CORE...")
     corecl = j.clients.git.getClient('/opt/code/github/jumpscale/jumpscale_core/')
     corecl.pull()
-    print "UPDATED"
+    print("UPDATED")
 
-    print "\nUPDATING DOCS..."
+    print("\nUPDATING DOCS...")
     doccl = j.clients.git.getClient('/opt/code/github/jumpscale/jumpscale_docs/')
     doccl.pull()
-    print "UPDATED"
+    print("UPDATED")
 
-    print "\nUPDATING GENERATED DOCS..."
+    print("\nUPDATING GENERATED DOCS...")
     gencl = j.clients.git.getClient('/opt/code/github/jumpscale/generated_docs/')
     gencl.pull()
-    print "UPDATED"
+    print("UPDATED")
 
-    print "\nConverting Confluence to RST..."
+    print("\nConverting Confluence to RST...")
     j.system.process.execute("""cd /opt/code/github/jumpscale/jumpscale_prototypes/prototypes/confluence2rst; python confluence2rst.py""")
-    print "Converted"
+    print("Converted")
 
     gencl.addRemoveFiles()
     gencl.commit('auto generated docs')

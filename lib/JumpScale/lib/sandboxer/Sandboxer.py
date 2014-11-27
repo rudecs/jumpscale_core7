@@ -45,7 +45,7 @@ class Sandboxer():
         if j.system.fs.getFileExtension(path) in ["py","pyc","cfg","hrd"]:
             return result
 
-        print ("check:%s"%path)
+        print(("check:%s"%path))
 
         cmd="ldd %s"%path
         rc,out=j.system.process.execute(cmd,dieOnNonZeroExitCode=False)
@@ -73,7 +73,7 @@ class Sandboxer():
                     if name.find(toexeclude)==0:
                         excl=True 
                 if not excl:
-                    print("found:%s"%name)
+                    print(("found:%s"%name))
                     result[name]=Dep(name,lpath)
                     self._done.append(name)
                     result=self._ldd(lpath,result)
@@ -92,7 +92,7 @@ class Sandboxer():
                     self.copyLibsTo(item,dest,recursive=recursive)                
         else:     
             result=self.findLibs(path)
-            for name,deb in result.items():
+            for name,deb in list(result.items()):
                 deb.copyTo(dest)
         
 

@@ -156,7 +156,7 @@ class MS1(object):
     #     ssh_rule_id = [rule['id'] for rule in cloudspace_forward_rules if rule['publicPort'] == ssh_port][0]
     #     portforwarding_actor.delete(machine['cloudspaceid'], ssh_rule_id)
     #     if config:
-    #         hrd = j.core.hrd.getHRD(content=config)
+    #         hrd = j.core.hrd.get(content=config)
     #         if hrd.exists('services_ports'):
     #             ports = hrd.getList('services_ports')
     #             for port in ports:
@@ -401,7 +401,7 @@ class MS1(object):
 
         for item in portforwarding_actor.list(cloudspace_id):
             if int(item["publicPort"])==int(pubipport) and item['publicIp']==pubip:
-                print("delete portforward: %s "%item["id"])
+                print(("delete portforward: %s "%item["id"]))
                 portforwarding_actor.delete(cloudspace_id,item["id"])
 
         return "OK"        
@@ -472,7 +472,7 @@ class MS1(object):
         api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
         
         mkey="%s_%s"%(cloudspace_id,machine_id)
-        print("check ssh connection:%s"%mkey)
+        print(("check ssh connection:%s"%mkey))
         if self.redis_cl.hexists("ms1_iaas:machine:sshpub",mkey):
             print("in cache")
             pub_ipaddr,pub_port=self.redis_cl.hget("ms1_iaas:machine:sshpub",mkey).split(",")

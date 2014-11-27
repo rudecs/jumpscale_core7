@@ -30,7 +30,7 @@ if opts.key=="":
     if not j.application.config.exists("jssync_key_default"):
         cmd="jpackage install -n jssync"
         j.system.process.executeWithoutPipe(cmd)
-        print "PLEASE DO JSSYNC AGAIN."
+        print("PLEASE DO JSSYNC AGAIN.")
         j.application.stop()
         
     opts.key=j.application.config.get("jssync_key_default")    
@@ -41,7 +41,7 @@ def getkey():
     return opts.key
 
 def sync(src,dest,delete=True):
-    print "SYNC: %s %s"%(src,dest)
+    print("SYNC: %s %s"%(src,dest))
     if delete:
         d="--delete-after "
     else:
@@ -49,13 +49,13 @@ def sync(src,dest,delete=True):
     cmd="rsync -Lrpo %s%s %s"%(d,src,dest)
 
     if not j.system.fs.exists(path="%s"%(src)):
-        print "ERROR:could not find dir:%s"%(src)
+        print("ERROR:could not find dir:%s"%(src))
         j.application.stop(1)
 
     j.system.process.executeWithoutPipe(cmd)
 
 def download(category,path="",data=False,deleteFirst=False):
-    print "DOWNLOAD: %s %s"%(category,path)
+    print("DOWNLOAD: %s %s"%(category,path))
     key=getkey()
     category=category.strip("/")
     path=path.strip("/")
@@ -76,7 +76,7 @@ def download(category,path="",data=False,deleteFirst=False):
         key,category,path,pathfs)
     if opts.delete:
         cmd+=" --delete-after"
-    print cmd
+    print(cmd)
     j.system.process.executeWithoutPipe(cmd)    
 
 def createdir(path):
@@ -84,7 +84,7 @@ def createdir(path):
     
     order=[]
     order.insert(0,path)
-    while path[-7:]<>":upload":
+    while path[-7:] != ":upload":
         path=j.system.fs.getParent(path)
         order.insert(0,path)
 
@@ -93,7 +93,7 @@ def createdir(path):
 
     order.pop(0)
     for item in order:
-        if item[-1]<>"/":
+        if item[-1] != "/":
             item+="/"
         cmd="rsync /tmp/empty/ %s"%item
         j.system.process.execute(cmd)
@@ -102,7 +102,7 @@ def getUserPasswd():
     return j.application.config.get("jssync.login"),j.application.config.get("jssync.passwd")    
 
 def uploadfile(category,path="",data=False):
-    print "UPLOAD: %s %s"%(category,path)
+    print("UPLOAD: %s %s"%(category,path))
     key=getkey()
 
     path=path.strip("/")
@@ -113,11 +113,11 @@ def uploadfile(category,path="",data=False):
     user,passwd=getUserPasswd()
     cmd="export RSYNC_PASSWORD=%s;rsync -azvPh %s %s@%s::upload/%s/%s/%s --delete-after --modify-window=60 --progress  "%(passwd,pathfs,user,\
         ipaddr,key,category,path)
-    print cmd
+    print(cmd)
     j.system.process.execute(cmd)    
     
 def upload(category,path="",data=False):
-    print "UPLOAD: %s %s"%(category,path)
+    print("UPLOAD: %s %s"%(category,path))
     key=getkey()
 
     category=category.strip("/")
@@ -140,20 +140,20 @@ def upload(category,path="",data=False):
         ipaddr,key,category,path)
     for i in range(100):
         try:
-            print cmd
+            print(cmd)
             j.system.process.execute(cmd)    
             return
-        except Exception,e:
-            if str(e).find("No such file or directory")<>-1:
+        except Exception as e:
+            if str(e).find("No such file or directory") != -1:
                 createdir("%s::upload/%s/%s%s"%(ipaddr,key,category,path))            
-            print "error in sync:%s"%e
-            print "RETRY"
+            print("error in sync:%s"%e)
+            print("RETRY")
 
 def finddomain(name):
     for provider in j.system.fs.listDirsInDir("/opt/code/"):
         for cat in j.system.fs.listDirsInDir(provider, recursive=False, findDirectorySymlinks=True):
             for dname in j.system.fs.listDirsInDir(cat, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                if dname.find("jp_")<>-1:
+                if dname.find("jp_") != -1:
                     dname2=dname.split("jp_",1)[1]
                     if dname2.lower().strip()==name.lower().strip():
                         return "%s/%s"%(cat,dname)
@@ -183,19 +183,19 @@ if opts.action.find('sync2sb')==0 and checkcat("jpackages"):
 
     doms=opts.jpdomains.split(",")
     for item in ["jumpscale","serverapps","desktop"]:
-        if item<>None or item.strip()<>"":
+        if item != None or item.strip() != "":
             if item not in doms:
                 doms.append(item)
 
     for dom in doms:
-        if dom.strip()<>"":
+        if dom.strip() != "":
             path=finddomain(dom)
             # print "JPACKAGEDOM:%s"%path
             sync("%s/%s/"%(path,opts.qualitylevel),"%s/jpackages/%s/"%(opts.sbpath,dom))
 
             dpath=j.system.fs.joinPaths(opts.sbpath,"jpackages",dom)
             for path in j.system.fs.listFilesInDir(dpath,True,"main.hrd"):
-                hrd=j.core.hrd.getHRD(path)
+                hrd=j.core.hrd.get(path)
                 hrd.set("jp.debug",0)
                 
 #COPY FROM SYSTEM TO SANDBOX for LIBS
@@ -232,12 +232,12 @@ if opts.action.find('sync2sb')==0 and checkcat("libs"):
 if opts.action.find('sync2sb')==0 and checkcat("cfg",True):
     if opts.branch=="":
         raise RuntimeError("branch name needs to be specified")
-    print "cfg to sandbox"
-    cfgdir="%s_data/cfg/"%opts.sbpath
-    j.system.fs.removeDirTree(cfgdir)
-    j.system.fs.createDir(cfgdir)
+    print("cfg to sandbox")
+    cfgDir="%s_data/cfg/"%opts.sbpath
+    j.system.fs.removeDirTree(cfgDir)
+    j.system.fs.createDir(cfgDir)
 
-    sync("/opt/code/jumpscale/%s__jumpscale_core/jsbox/cfg/"%opts.branch,cfgdir,delete=False)
+    sync("/opt/code/jumpscale/%s__jumpscale_core/jsbox/cfg/"%opts.branch,cfgDir,delete=False)
 
 if opts.action.find('sync2sb')==0 and checkcat("base"):
     # cmd='jpackage download -n base'
@@ -250,7 +250,7 @@ if opts.action.find('sync2sb')==0 and checkcat("base"):
 
 
 #cleanup
-if opts.action.find("upload")<>-1:
+if opts.action.find("upload") != -1:
     j.system.fs.removeDirTree("%s/apps/redis"%(opts.sbpath))
     j.system.fs.removeDirTree("%s/libext/raven"%(opts.sbpath))
     j.system.fs.removeDirTree("%s/libext/raven-4.0.3.egg-info"%(opts.sbpath))
@@ -259,20 +259,20 @@ if opts.action.find("upload")<>-1:
         j.system.fs.removeDirTree("%s/libjs/lib/%s/"%(opts.sbpath,item))
 
 #UPLOAD JPACKAGES
-if opts.action.find("upload")<>-1 and checkcat("jpackages"):
+if opts.action.find("upload") != -1 and checkcat("jpackages"):
     upload("jsbox","jpackages")
 
-if opts.action.find("upload")<>-1 and checkcat("cfg",True):
+if opts.action.find("upload") != -1 and checkcat("cfg",True):
     upload("jsbox","cfg",data=True)
 
 if opts.action=="upload" and checkcat("installer"):    
     path="/opt/code/github/jumpscale/jumpscale_core/jsbox/installers/"
     user,passwd=getUserPasswd()
     cmd="export RSYNC_PASSWORD=%s;rsync -azvPh %s %s@%s::www/cmds/ --modify-window=60 --progress  "%(passwd,path,user,ipaddr)
-    print cmd
+    print(cmd)
     j.system.process.executeWithoutPipe(cmd)   
 
-if opts.action.find("upload")<>-1 and checkcat("libs"):
+if opts.action.find("upload") != -1 and checkcat("libs"):
     uploadfile("jsbox","activate")
     upload("jsbox","libjs")
     # upload("jsbox","libjs/JumpScale/base")
@@ -287,7 +287,7 @@ if opts.action.find("upload")<>-1 and checkcat("libs"):
     # upload("jsbox","apps/processmanager")
     upload("jsbox","tools")
 
-if opts.action.find("upload")<>-1 and checkcat("base"):  
+if opts.action.find("upload") != -1 and checkcat("base"):  
     # upload("jsbox","apps/redis")
     upload("jsbox","lib")
     upload("jsbox","bin")
