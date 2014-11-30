@@ -116,7 +116,7 @@ class Text:
         return re_nondigit.search(txt)==None
 
     @staticmethod
-    def ask(content,name=None):
+    def ask(content,name=None,args={}):
         """
         look for @ASK statements in text, where found replace with input from user
 
@@ -162,6 +162,11 @@ class Text:
                         name=line.split("=")[0].strip()
                     else:
                         name=""
+            
+            if name in args:
+                result=args[name]
+                out+="%s%s\n"%(prefix,result)
+                continue
 
             if tags.tagExists("type"):
                 ttype=tags.tagGet("type").strip().lower()

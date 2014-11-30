@@ -213,11 +213,11 @@ class SystemFS:
     exceptions = Exceptions
 
     def __init__(self):
-        self.logenable=True
+        self.logenable=False
         self.loglevel=5
 
     def log(self,msg,level=5,category=""):
-        # print msg
+        # print (msg)
         if level<self.loglevel+1 and self.logenable:
             j.logger.log(msg,category="system.fs.%s"%category,level=level)
 

@@ -203,6 +203,13 @@ class Application:
         if not self._calledexit:
             self.stop(1)
 
+    def getAppInstanceHRD(self,name,instance,domain="jumpscale"):
+        """
+        returns hrd for specific appname & instance name (default domain=jumpscale)
+        """
+        return j.core.hrd.get('%s/hrd/apps/%s.%s.%s.hrd' % (j.dirs.baseDir,domain,name,instance))
+        
+
     def getCPUUsage(self):
         """
         try to get cpu usage, if it doesn't work will return 0

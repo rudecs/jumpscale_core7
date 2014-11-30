@@ -87,10 +87,16 @@ class JPackageInstance():
             args["jp.domain"]=self.jp.domain
             args["jp.instance"]=self.instance
 
+
             # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
-            self.hrd=j.core.hrd.get(self.hrdpath)
+            self.hrd=j.core.hrd.get(self.hrdpath,args=args)
 
             self.hrd.applyTemplate(self.jp.hrdpath_main)
+
+            self.hrd.set("jp.name",self.jp.name)
+            self.hrd.set("jp.domain",self.jp.domain)
+            self.hrd.set("jp.instance",self.instance)
+
             self.hrd.save()
 
             self.hrd=j.core.hrd.get(self.hrdpath)
@@ -124,6 +130,7 @@ class JPackageInstance():
 
 
     def install(self,args={},start=True):
+        
         self._load(args=args)
         self.actions.prepare(hrd=j.packages.hrd)
         #download
@@ -131,21 +138,45 @@ class JPackageInstance():
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             
             #pull the required repo
-            dest=self._getRepo(recipeitem['url'])
-
-            src="%s/%s/"%(dest,recipeitem['source'])
+            dest0=self._getRepo(recipeitem['url'])
+            src="%s/%s"%(dest0,recipeitem['source'])
             src=src.replace("//","/")
-            dest=recipeitem['dest']            
-            if recipeitem['link'].lower()=="true":
-                j.system.fs.createDir(j.do.getParent(dest))
-                j.do.symlink(src, dest)
+
+            dest=recipeitem['dest']          
+
+            if "link" in recipeitem and str(recipeitem["link"]).lower()=='true':
+                #means we need to only list files & one by one link them
+                link=True
             else:
-                if j.system.fs.exists(path=dest):
-                    if "overwrite" in recipeitem and recipeitem["overwrite"].lower()=="false":
-                        continue
+                link=False
+
+            if src[-1]=="*":
+                src=src.replace("*","")
+                if "nodirs" in recipeitem and str(recipeitem["nodirs"]).lower()=='true':
+                    #means we need to only list files & one by one link them
+                    nodirs=True
                 else:
-                    j.system.fs.createDir(dest)
-                j.do.copyTree(src,dest)
+                    nodirs=False
+
+                items=j.do.listFilesInDir( path=src, recursive=False, followSymlinks=False, listSymlinks=False)
+                if nodirs==False:
+                    items+=j.do.listDirsInDir(path=src, recursive=False, dirNameOnly=False, findDirectorySymlinks=False)
+
+                items=[(item,"%s/%s"%(dest,j.do.getBaseName(item)),link) for item in items]
+            else:
+                items=[(src,dest,link)]
+
+            for src,dest,link in items:
+                if link:
+                    j.system.fs.createDir(j.do.getParent(dest))
+                    j.do.symlink(src, dest)
+                else:
+                    if j.system.fs.exists(path=dest):
+                        if "overwrite" in recipeitem and recipeitem["overwrite"].lower()=="false":
+                            continue
+                    else:
+                        j.system.fs.createDir(dest)
+                    j.do.copyTree(src,dest)
 
         self.actions.configure(hrd=j.packages.hrd)
 

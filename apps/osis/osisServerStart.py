@@ -23,10 +23,14 @@ if __name__ == '__main__':
     # osisjp=osisjp.load(osis_instance)
 
     # argstag=" ".join(args[2:])
-    osishrd = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/osis/%s/osis.hrd' % osis_instance)
+    osishrd = j.application.getAppInstanceHRD(name="osis",instance=osis_instance)    
     connectionsconfig = osishrd.get('osis.connection')
     #j.core.tags.getObject(argstag).getDict()
     connections = {}
+
+    from IPython import embed
+    embed()
+    
 
     #example to start osis : 
     #cd /opt/jsbox/apps/osis;python osisServerStart.py elasticsearch:main mongodb:main

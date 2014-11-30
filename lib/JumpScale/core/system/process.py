@@ -1406,8 +1406,8 @@ class SystemProcess:
         except Exception as e:
             raise
 
-        output=output.decode('ascii')
-        error=error.decode('ascii')
+        output=output.decode()#'ascii')            
+        error=error.decode()#'ascii')
 
         if exitcode!=0 or error!="":
             j.logger.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)

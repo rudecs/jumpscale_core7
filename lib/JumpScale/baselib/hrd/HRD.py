@@ -116,7 +116,7 @@ class HRDItem():
                         value2=value2.replace(item,replacewith)                    
                         # value2=value2.replace("//","/")
         else:
-            value2=j.tools.text.ask(self.data,self.name)
+            value2=j.tools.text.ask(self.data,self.name,args=self.hrd.args)
             if self.data.find("@ASK")!=-1:
                 # print ("CHANGED")
                 self.hrd.changed=True
@@ -157,7 +157,7 @@ class HRDItem():
     __repr__=__str__
 
 class HRD(HRDBase):
-    def __init__(self,path=None,tree=None,content="",prefixWithName=False,keepformat=True):
+    def __init__(self,path=None,tree=None,content="",prefixWithName=False,keepformat=True,args={}):
         self.path=path
         if self.path is not None:
             self.name=".".join(j.system.fs.getBaseName(self.path).split(".")[:-1])
@@ -169,7 +169,8 @@ class HRD(HRDBase):
         self.commentblock=""  #at top of file
         self.keepformat=keepformat
         self.prefixWithName=prefixWithName
-        self.template=""        
+        self.template=""     
+        self.args=args   
 
         if content!="":
             self.process(content)
