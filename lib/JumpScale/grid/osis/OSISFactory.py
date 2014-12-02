@@ -178,7 +178,7 @@ class OSISFactory:
         # osisjp=j.packages.findNewest(name="osis_client",domain="jumpscale")
         # osisjp.load(instance=instance)
         # if osisjp.isInstalled():
-        hrdinstance = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/osis_client/%s' % instance)
+        hrdinstance = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/osis_client/%s.hrd' % instance)
         if hrdinstance:
             ipaddr=hrdinstance.get("osis.client.addr")
             port=int(hrdinstance.get("osis.client.port"))
