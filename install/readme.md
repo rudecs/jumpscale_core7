@@ -5,6 +5,8 @@ use these install scripts to make your life easy
 
 ```
 #if ubuntu is in recent state & apt get update was done recently
+curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python.sh | bash
+#or (note gevent & fabric not working on python 3.4)
 curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python34.sh | bash
 ```
 
