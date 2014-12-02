@@ -97,7 +97,7 @@ class ActionsBase():
             msg=""
 
             if self.jp_instance.getTCPPorts()!=[]:
-                ports=",".join(self.jp_instance.getTCPPorts())
+                ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
                 msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
                 j.events.opserror_critical(msg,"jp.start.failed.ports")
             else:

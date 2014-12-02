@@ -7,7 +7,10 @@ class mainclass(OSISStore):
 
     def __init__(self, dbconnections):
         self.elasticsearch = None
-        self.dbclient = dbconnections['influxdb_main']
+        if 'influxdb_main' in dbconnections:
+            self.dbclient = dbconnections['influxdb_main']
+        else:
+            self.dbclient=None
 
     def set(self, key, value, waitIndex=False, session=None):
         stats = value

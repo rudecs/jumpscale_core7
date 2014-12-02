@@ -69,7 +69,9 @@ class HRDBase():
             return lst
         lst=str(lst)
         if j.basetype.string.check(lst):
-            return [item.strip() for item in lst.split(",")]        
+            items=[item.strip() for item in lst.split(",")]        
+            items=[item for item in items if item!=""]
+            return items
         raise RuntimeError("no list for %s"%key)
 
     def getDict(self,key):

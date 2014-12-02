@@ -1,4 +1,5 @@
 #!/bin/bash
+# set -ex
 if [ -z "$JSBASE" ]; then
     export JSBASE=/opt/jumpscale7
     export PYTHONPATH=/usr/local/lib/python3.4/dist-packages:$JSBASE/lib:$JSBASE/lib/python.zip:$JSBASE/libjs
@@ -6,6 +7,7 @@ if [ -z "$JSBASE" ]; then
 else
     export PYTHONPATH=$JSBASE/lib:$JSBASE/python.zip:$JSBASE/libjs
     echo sandbox:$JSBASE
+    # echo $JSBASE/bin/python3 "$@"
     $JSBASE/bin/python3 "$@"
 fi
 

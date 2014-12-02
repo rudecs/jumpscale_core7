@@ -207,7 +207,10 @@ class Application:
         """
         returns hrd for specific appname & instance name (default domain=jumpscale)
         """
-        return j.core.hrd.get('%s/hrd/apps/%s.%s.%s.hrd' % (j.dirs.baseDir,domain,name,instance))
+        path='%s/hrd/apps/jpackage.%s.%s.%s.hrd' % (j.dirs.baseDir,domain,name,instance)
+        if not j.system.fs.exists(path=path):
+            j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
+        return j.core.hrd.get(path)
         
 
     def getCPUUsage(self):

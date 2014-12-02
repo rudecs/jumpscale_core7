@@ -77,7 +77,7 @@ class JPackageInstance():
             self.actionspath="%s/jpackage_actions/%s__%s__%s.py"%(j.dirs.baseDir,self.jp.domain,self.jp.name,self.instance)
 
             source="%s/instance.hrd"%self.jp.metapath
-            if not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source):
+            if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
                 j.do.copyFile(source,self.hrdpath)
 
             source="%s/actions.py"%self.jp.metapath
@@ -129,9 +129,24 @@ class JPackageInstance():
         return dest      
 
 
+    def getDependencies(self):
+        res=[]
+        for item in self.hrd.getList("dependencies"): 
+            jp=j.packages.get(name=item)
+            jp=jp.getInstance("main")
+            res.append(jp) 
+        return res
+
     def install(self,args={},start=True):
         
         self._load(args=args)
+
+        for dep in self.getDependencies():
+            if dep.jp.name not in j.packages._justinstalled:
+                dep.install()
+                j.packages._justinstalled.append(dep.jp.name)
+
+
         self.actions.prepare(hrd=j.packages.hrd)
         #download
 

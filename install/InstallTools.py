@@ -35,6 +35,28 @@ class InstallTools():
         self.debug=debug
         self._extratools=False
 
+        if str(sys.excepthook).find("apport_excepthook")!=-1:
+            #if we get here it means is std python excepthook (I hope)
+            # print ("OUR OWN EXCEPTHOOK")
+            sys.excepthook = self.excepthook
+
+    def excepthook(self, ttype, pythonExceptionObject, tb):
+
+        if isinstance(pythonExceptionObject, HaltException):
+            sys.exit(1)
+
+        # print "jumpscale EXCEPTIONHOOK"
+        # if self.inException:
+        #     print("ERROR IN EXCEPTION HANDLING ROUTINES, which causes recursive errorhandling behaviour.")
+        #     print(pythonExceptionObject)
+        #     return
+
+        print ("WE ARE IN EXCEPTHOOL OF INSTALLTOOLS, DEVELOP THIS FURTHER")
+        from IPython import embed
+        print(44)
+        embed()
+        #@todo not working yet                
+
     def log(self,msg):
         if self.debug:
             print(msg)
@@ -830,18 +852,14 @@ class InstallTools():
             print("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
             raise
         
-        output=output.decode('ascii')
-        error=error.decode('ascii')
+        output=output.decode()#'ascii')
+        error=error.decode()#'ascii')
 
-        if int(exitcode)!=0 or str(error)!="":            
-            self.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)
-            if ignoreErrorOutput!=True:
-                output="%s\n***ERROR***\n%s\n" % (output,error)
-
-        if int(exitcode) !=0 and dieOnNonZeroExitCode:
-            self.log("command: [%s]\nexitcode:%s\noutput:%s\nerror:%s" % (command, exitcode, output, error), 3)
-            raise RuntimeError("Error during execution! (system.process.execute())\n\nCommand: [%s]\n\nExitcode: %s\n\nProgram output:\n%s\n\nErrormessage:\n%s\n" % (command, exitcode, output, error))
-
+        if (int(exitcode)!=0 or str(error)!="") and dieOnNonZeroExitCode and ignoreErrorOutput!=True:
+            errmsg="**ERROR**: execute cmd '%s' exitcode(%s)\nOutput:%s\nError:%s\n" % (command,exitcode, output, error)  
+            # self.log(errmsg, 5)     
+            print (errmsg)
+            raise RuntimeError(errmsg)
         return output        
 
     def executeInteractive(self,command):

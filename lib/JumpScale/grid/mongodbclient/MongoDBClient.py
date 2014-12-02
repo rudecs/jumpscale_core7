@@ -16,17 +16,18 @@ class MongoDBClient:
         # jp=j.packages.findNewest(name="mongodb_client",domain='jumpscale')
         # jp=jp.load(instancename)
         # hrd = jp.hrd_instance
-        hrd = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/mongodb_client/%s/mongodb.client.hrd' % instancename)
+        hrd = j.application.getAppInstanceHRD(name="mongodb_client",instance=instancename)
+        # hrd = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/mongodb_client/%s/hrd' % instancename)
         if hrd is None:
             j.events.opserror_critical("Could not find mongodb_client for instance %s" % instancename)
-        ipaddr = hrd.get("mongodb.client.addr")
-        port = hrd.getInt("mongodb.client.port")    
+        ipaddr = hrd.get("addr")
+        port = hrd.getInt("port")    
         ssl = False
-        if j.application.config.exists('mongodb.client.ssl'):
-            ssl = j.application.config.getBool('mongodb.client.ssl')
+        if j.application.config.exists('ssl'):
+            ssl = j.application.config.getBool('ssl')
         replicaset = ""
-        if j.application.config.exists('mongodb.client.replicaset'):
-            replicaset = j.application.config.get('mongodb.client.replicaset')
+        if j.application.config.exists('replicaset'):
+            replicaset = j.application.config.get('replicaset')
         if replicaset == "":
             return MongoClient(host=ipaddr, port=port, ssl=ssl)
         else:

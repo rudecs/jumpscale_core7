@@ -81,7 +81,7 @@ class ErrorConditionHandler():
         self.inException=False
 
 
-    def _handleRaise(self, type, level, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags=""):
+    def _handleRaise(self, type, level, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags=""):        
         if pythonExceptionObject!=None:
             eco=self.parsePythonErrorObject(pythonExceptionObject,level=level,message=message)            
             eco.category=category

@@ -9,6 +9,7 @@ class JPackageFactory():
         self._init=False
         self.domains={}
         self.hrd=None
+        self._justinstalled=[]
 
     def _doinit(self):
         if self._init==False:
