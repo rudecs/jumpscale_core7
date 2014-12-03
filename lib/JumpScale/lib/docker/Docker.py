@@ -385,11 +385,9 @@ class Docker():
         # return self.getIp(name)
 
     def installJumpscale(self,name):
+        print "Install jumpscale7 on python 2"
         c=self.getSSH(name)
-        from IPython import embed
-        print "DEBUG NOW cccc"
-        embed()
-
+        c.run("cd /opt/code/github/jumpscale/jumpscale_core7/install/ssh/;python install.py")
 
     def getImages(self):
         images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images()]
