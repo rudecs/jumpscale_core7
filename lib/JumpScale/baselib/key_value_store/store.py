@@ -24,7 +24,7 @@ class KeyValueStoreType(BaseEnumeration):
         cls.finishItemRegistration()
 
 
-class KeyValueStoreBase(object, metaclass=ABCMeta):
+class KeyValueStoreBase(object):#, metaclass=ABCMeta):
     '''KeyValueStoreBase defines a store interface.'''
 
     def __init__(self, serializers=[]):

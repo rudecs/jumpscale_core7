@@ -33,7 +33,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property id input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property id input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_id=value
@@ -52,7 +52,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property partnr input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property partnr input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_partnr=value
@@ -71,7 +71,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property gid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property gid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_gid=value
@@ -90,7 +90,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property nid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property nid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_nid=value
@@ -109,7 +109,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property path input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property path input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_path=value
@@ -128,7 +128,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property size input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property size input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_size=value
@@ -147,7 +147,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property free input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property free input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_free=value
@@ -166,7 +166,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property ssd input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property ssd input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_ssd=value
@@ -185,7 +185,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property fs input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property fs input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_fs=value
@@ -204,7 +204,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.boolean.checkString(value):
                 value = j.basetype.boolean.fromString(value)
             else:
-                msg="property mounted input error, needs to be bool, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property mounted input error, needs to be bool, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_mounted=value
@@ -223,7 +223,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property mountpoint input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property mountpoint input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_mountpoint=value
@@ -242,7 +242,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.boolean.checkString(value):
                 value = j.basetype.boolean.fromString(value)
             else:
-                msg="property active input error, needs to be bool, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property active input error, needs to be bool, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_active=value
@@ -261,7 +261,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property model input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property model input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_model=value
@@ -280,7 +280,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property description input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property description input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_description=value
@@ -299,7 +299,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property type input error, needs to be list, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property type input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_type=value
@@ -318,7 +318,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property lastcheck input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property lastcheck input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_lastcheck=value
@@ -337,7 +337,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property guid input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property guid input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_guid=value
@@ -356,7 +356,7 @@ class system_disk_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
+                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: disk, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P__meta=value

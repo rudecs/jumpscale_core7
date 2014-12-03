@@ -28,7 +28,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property id input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property id input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_id=value
@@ -47,7 +47,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property gid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property gid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_gid=value
@@ -66,7 +66,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property nid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property nid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_nid=value
@@ -85,7 +85,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property name input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property name input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_name=value
@@ -104,7 +104,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property mac input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property mac input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_mac=value
@@ -123,7 +123,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property ipaddr input error, needs to be list, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property ipaddr input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_ipaddr=value
@@ -142,7 +142,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.boolean.checkString(value):
                 value = j.basetype.boolean.fromString(value)
             else:
-                msg="property active input error, needs to be bool, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property active input error, needs to be bool, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_active=value
@@ -161,7 +161,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property lastcheck input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property lastcheck input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_lastcheck=value
@@ -180,7 +180,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property guid input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property guid input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_guid=value
@@ -199,7 +199,7 @@ class system_nic_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
+                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: nic, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P__meta=value

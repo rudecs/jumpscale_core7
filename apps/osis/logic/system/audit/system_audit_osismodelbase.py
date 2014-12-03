@@ -25,7 +25,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property id input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property id input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_id=value
@@ -44,7 +44,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property user input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property user input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_user=value
@@ -63,7 +63,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property result input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property result input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_result=value
@@ -82,7 +82,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property call input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property call input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_call=value
@@ -101,7 +101,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property statuscode input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property statuscode input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_statuscode=value
@@ -120,7 +120,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property args input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property args input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_args=value
@@ -139,7 +139,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property kwargs input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property kwargs input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_kwargs=value
@@ -158,7 +158,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property timestamp input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property timestamp input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_timestamp=value
@@ -177,7 +177,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property guid input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property guid input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_guid=value
@@ -196,7 +196,7 @@ class system_audit_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
+                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: audit, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P__meta=value

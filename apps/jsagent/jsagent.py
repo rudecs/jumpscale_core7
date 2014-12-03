@@ -130,7 +130,7 @@ class ProcessManager():
 
 
         if j.system.net.tcpPortConnectionTest("localhost",9999)==False:
-            jp=j.packages.findNewest("jumpscale","redis")
+            jp=j.packages.find("redis")
             if not jp.isInstalled(instance="mem") and not j.system.net.tcpPortConnectionTest("localhost",9999):
                 jp.install(hrddata={"redis.name":"mem","redis.port":9999,"redis.disk":"0","redis.mem":40},instance="mem")
             for name in ["mem"]:

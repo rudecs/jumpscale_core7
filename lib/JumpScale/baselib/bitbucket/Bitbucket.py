@@ -7,7 +7,12 @@ from JumpScale import j
 from JumpScale.core.baseclasses import BaseEnumeration
 
 from .BitbucketConfigManagement import *
-import urllib.request, urllib.parse, urllib.error
+# import urllib.request, urllib.parse, urllib.error
+
+# try:
+#     import urllib
+# except:
+#     import urllib.parse as urllib
 
 import requests
 from requests.auth import HTTPBasicAuth

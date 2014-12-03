@@ -1,5 +1,11 @@
 from JumpScale import j
-import urllib.request, urllib.error, urllib.parse
+# import urllib.request, urllib.error, urllib.parse
+
+# try:
+#     import urllib
+# except:
+#     import urllib.parse as urllib
+
 import http.client
 
 CHUNKSIZE=8192

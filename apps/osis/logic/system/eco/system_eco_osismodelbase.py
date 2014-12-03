@@ -46,7 +46,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property id input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property id input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_id=value
@@ -65,7 +65,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property gid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property gid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_gid=value
@@ -84,7 +84,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property nid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property nid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_nid=value
@@ -103,7 +103,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property aid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property aid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_aid=value
@@ -122,7 +122,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property pid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property pid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_pid=value
@@ -141,7 +141,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property jid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property jid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_jid=value
@@ -160,7 +160,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property masterjid input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property masterjid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_masterjid=value
@@ -179,7 +179,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property epoch input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property epoch input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_epoch=value
@@ -198,7 +198,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property appname input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property appname input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_appname=value
@@ -217,7 +217,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property level input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property level input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_level=value
@@ -236,7 +236,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property type input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property type input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_type=value
@@ -255,7 +255,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property state input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property state input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_state=value
@@ -274,7 +274,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property errormessage input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property errormessage input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_errormessage=value
@@ -293,7 +293,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property errormessagePub input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property errormessagePub input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_errormessagePub=value
@@ -312,7 +312,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property category input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property category input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_category=value
@@ -331,7 +331,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property tags input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property tags input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_tags=value
@@ -350,7 +350,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property code input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property code input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_code=value
@@ -369,7 +369,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property funcname input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property funcname input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_funcname=value
@@ -388,7 +388,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property funcfilename input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property funcfilename input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_funcfilename=value
@@ -407,7 +407,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property funclinenr input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property funclinenr input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_funclinenr=value
@@ -426,7 +426,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property backtrace input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property backtrace input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_backtrace=value
@@ -445,7 +445,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property backtraceDetailed input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property backtraceDetailed input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_backtraceDetailed=value
@@ -464,7 +464,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property extra input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property extra input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_extra=value
@@ -483,7 +483,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property lasttime input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property lasttime input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_lasttime=value
@@ -502,7 +502,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property closetime input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property closetime input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_closetime=value
@@ -521,7 +521,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.integer.checkString(value):
                 value = j.basetype.integer.fromString(value)
             else:
-                msg="property occurrences input error, needs to be int, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property occurrences input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_occurrences=value
@@ -540,7 +540,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property guid input error, needs to be str, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property guid input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P_guid=value
@@ -559,7 +559,7 @@ class system_eco_osismodelbase(j.code.classGetJSRootModelBase()):
             if isinstance(value, basestring) and j.basetype.list.checkString(value):
                 value = j.basetype.list.fromString(value)
             else:
-                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale73/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
+                msg="property _meta input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: eco, value was:" + str(value)
                 raise TypeError(msg)
 
         self._P__meta=value

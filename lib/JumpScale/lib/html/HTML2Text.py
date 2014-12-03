@@ -19,17 +19,19 @@ def has_key(x, y):
     else: return y in x
 
 try:
-    import html.entities
-    import urllib.parse
-    import html.parser
+    import html.entities as htmlentitydefs
+    import urllib as urlparse
+    import html.parser as HTMLParser
 except ImportError: #Python3
     import html.entities as htmlentitydefs
     import urllib.parse as urlparse
     import html.parser as HTMLParser
+
 try: #Python3
     import urllib.request as urllib
 except:
     import urllib.request, urllib.parse, urllib.error
+    
 import optparse, re, sys, codecs, types
 
 try: from textwrap import wrap

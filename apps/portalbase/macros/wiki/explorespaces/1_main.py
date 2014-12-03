@@ -1,6 +1,10 @@
 import os
-import urllib.request, urllib.parse, urllib.error
+# import urllib.request, urllib.parse, urllib.error
 
+try:
+    import urllib
+except:
+    import urllib.parse as urllib
 
 def main(j, args, params, tags, tasklet):
     params.merge(args)
@@ -12,7 +16,7 @@ def main(j, args, params, tags, tasklet):
     for spacename in sorted(spaces.keys()):
         model = spaces[spacename].model  # @todo security breach
         path = os.path.abspath(model.path)
-        querystr = urllib.parse.urlencode({'ppath': path})
+        querystr = urllib.urlencode({'ppath': path})
 
         out += "| [%s | /system/Explorer?%s] | [Reload | /system/ReloadSpace?name=%s]|\n" % \
             (model.id, querystr, model.id)
