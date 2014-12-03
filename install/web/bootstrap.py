@@ -13,6 +13,7 @@ exec(handle.read())
 
 #there are many more functions available in jumpscale
 
+print "install jumpscale7"
 do.installJS(base="/opt/jumpscale7",clean=False)
 
 from JumpScale import j

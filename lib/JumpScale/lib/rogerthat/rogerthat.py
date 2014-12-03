@@ -1,6 +1,12 @@
 from JumpScale import j
 import ujson
-import urllib.request, urllib.error, urllib.parse
+# import urllib.request, urllib.error, urllib.parse
+
+try:
+    import urllib
+except:
+    import urllib.parse as urllib
+
 
 class RogerthatFactory(object):
 

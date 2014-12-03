@@ -1,4 +1,10 @@
-import urllib.parse
+# import urllib.parse
+try:
+    import urllib
+except:
+    import urllib.parse as urllib
+
+
 from .CifsFS import *
 from .FtpFS import *
 from .FileFS import *
@@ -109,7 +115,7 @@ class CloudSystemFS:
         if(src_proto == "cifs" or src_proto == "smb"):
             src_elements = self._parseCifsURL(sourcepath)
         else:
-            src_elements = urllib.parse.urlparse(sourcepath)
+            src_elements = urllib.urlparse(sourcepath)
 
         j.logger.log('PARSING SRC RETURNED %s' %str(src_elements))
 
@@ -142,7 +148,7 @@ class CloudSystemFS:
         if(dst_proto == "cifs" or dst_proto == "smb"):
             dst_elements = self._parseCifsURL(destinationpath)
         else:
-            dst_elements = urllib.parse.urlparse(destinationpath)
+            dst_elements = urllib.urlparse(destinationpath)
         j.logger.log('PARSING DEST RETURNED %s' %str(dst_elements))
 
         # Determine the object we need to call
@@ -166,7 +172,7 @@ class CloudSystemFS:
         """
         Determine the protocol to be used e.g ftp,cifs,rsync,...
         """
-        elements = urllib.parse.urlparse(url)
+        elements = urllib.urlparse(url)
         j.logger.log('Determined protocol: %s' %str(elements.scheme))
         return elements.scheme
 
@@ -179,7 +185,7 @@ class CloudSystemFS:
         durl = durl.replace("cifs://","ftp://")
         durl = durl.replace("smb://","ftp://")
 
-        elements = urllib.parse.urlparse(durl)
+        elements = urllib.urlparse(durl)
         ret_elements = {}
         j.logger.log('_parseCifsURL returned %s' %elements.hostname)
         return elements
@@ -300,7 +306,7 @@ class CloudSystemFS:
 
         protocol = self._determineProtocol(sourcepath)
         if  protocol == "file":
-            elements = urllib.parse.urlparse(sourcepath)
+            elements = urllib.urlparse(sourcepath)
             j.logger.log("Source is a local file:// not running copyFile... for %s" % elements.path)
             tmp_inputFileName = elements.path
         elif protocol == "smb" or protocol == "cifs":
@@ -333,7 +339,7 @@ class CloudSystemFS:
             path_elements = self._parseCifsURL(path)
             j.logger.log('CIFS LISTDIR path_elements: %s' %str(path_elements))
         else:
-            path_elements = urllib.parse.urlparse(path)
+            path_elements = urllib.urlparse(path)
 
         # Determine the object we need to call
         j.logger.log("listDir: protocol [%s]" % proto )

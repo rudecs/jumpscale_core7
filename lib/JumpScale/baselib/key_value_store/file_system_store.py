@@ -1,7 +1,12 @@
 from .store import KeyValueStoreBase
 from JumpScale import j
 import os
-import urllib.request, urllib.parse, urllib.error
+# import urllib.request, urllib.parse, urllib.error
+
+try:
+    import urlparse as urllibparse
+except:
+    import urllib.parse as urllibparse
 
 SAFECHARS = " "
 
@@ -94,7 +99,7 @@ class FileSystemKeyValueStore(KeyValueStoreBase):
         categoryDir = self._getCategoryDir(category)
         filePaths = j.system.fs.listFilesInDir(categoryDir, recursive=True)
         fileNames = [j.system.fs.getBaseName(path) for path in filePaths]
-        fileNames = [ urllib.parse.unquote(name) for name in fileNames ]
+        fileNames = [ urllibparse.unquote(name) for name in fileNames ]
 
         if prefix:
             fileNames = [name for name in fileNames if name.startswith(prefix)]
@@ -113,7 +118,7 @@ class FileSystemKeyValueStore(KeyValueStoreBase):
 
     def _getStorePath(self, category, key,createIfNeeded=True):
         key = j.tools.text.toStr(key)
-        key = urllib.parse.quote(key, SAFECHARS)
+        key = urllibparse.quote(key, SAFECHARS)
         origkey = key
         if len(key)<4:
             key = key + (4 - len(key)) * '_'

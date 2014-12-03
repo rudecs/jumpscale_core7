@@ -67,7 +67,7 @@ class MS1(object):
         space=self.getCloudspaceObj(space_secret)
         return space["id"]
 
-    def getClouspaceSecret(self, login, password, cloudspace_name, location, spacesecret=None,**args):
+    def getCloudspaceSecret(self, login, password, cloudspace_name, location, spacesecret=None,**args):
         """
         @param location ca1 (canada),us2 (us)
         """

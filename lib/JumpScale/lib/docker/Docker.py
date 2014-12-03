@@ -247,7 +247,7 @@ class Docker():
         cmd="cd %s;tar xzvf %s -C ."%(path,bpath)        
         j.system.process.executeWithoutPipe(cmd)
 
-    def create(self,name="",ports="",vols="",volsro="",stdout=True,base="despiegk/mc",nameserver="8.8.8.8",replace=True,cpu=None,mem=0):
+    def create(self,name="",ports="",vols="",volsro="",stdout=True,base="despiegk/mc",nameserver="8.8.8.8",replace=True,cpu=None,mem=0,jumpscale=False):
         """
         @param ports in format as follows  "22:8022 80:8080"  the first arg e.g. 22 is the port in the container
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
@@ -296,13 +296,17 @@ class Docker():
                 key,val=item.split(":",1)
                 volsdict[str(key).strip()]=str(val).strip()
 
-        if j.system.fs.exists(path="/var/jumpscale/"):
-            if "/var/jumpscale" not in volsdict:
-                volsdict["/var/jumpscale"]="/var/jumpscale"
+        # if j.system.fs.exists(path="/var/jumpscale/"):
+        #     if "/var/jumpscale" not in volsdict:
+        #         volsdict["/var/jumpscale"]="/var/jumpscale"
 
         tmppath="/tmp/dockertmp/%s"%name
         j.system.fs.createDir(tmppath)
         volsdict[tmppath]="/tmp"
+
+        if j.system.fs.exists(path="/opt/code"):
+            if "/opt/code" not in volsdict:
+                volsdict["/opt/code"]="/opt/code"
 
         volsdictro={}
         if len(volsro)>0:
@@ -313,6 +317,10 @@ class Docker():
                 
         # volsdict["/var/js/%s/"%name]="/opt/jsbox_data/var/data/"
         # volsdict["/var/js/all/jpfiles/"]="/opt/jsbox_data/var/jpackages/files/"
+
+        print "MAP:"
+        for src1,dest1 in volsdict.items():
+            print " %-20s %s"%(src1,dest1)
 
         binds={}
         volskeys=[] #is location in docker
@@ -369,9 +377,17 @@ class Docker():
 
         self.pushSSHKey(name)
 
+        if jumpscale:
+            self.installJumpscale(name)            
+
         return portfound
 
         # return self.getIp(name)
+
+    def installJumpscale(self,name):
+        print "Install jumpscale7 on python 2"
+        c=self.getSSH(name)
+        c.run("cd /opt/code/github/jumpscale/jumpscale_core7/install/ssh/;python install.py")
 
     def getImages(self):
         images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images()]
@@ -412,6 +428,9 @@ class Docker():
         c=j.remote.cuisine.api
         c.fabric.api.env['password'] = "rooter"
         c.fabric.api.env['connection_attempts'] = 5
+        
+        c.fabric.state.output["running"]=False
+        c.fabric.state.output["stdout"]=False
 
         ssh_port=self.getPubPortForInternalPort(name,22)
         if ssh_port==None:
@@ -426,6 +445,8 @@ class Docker():
         ssh_port=self.getPubPortForInternalPort(name,22)        
         c=j.remote.cuisine.api
         c.fabric.api.env['connection_attempts'] = 2
+        c.fabric.state.output["running"]=False
+        c.fabric.state.output["stdout"]=False
         c.connect('%s:%s' % ("localhost", ssh_port), "root")
         return c
 

@@ -1,7 +1,15 @@
 # from JumpScale.core.System import System
 from JumpScale import j
 # import urllib.request, urllib.parse, urllib.error
-from urllib import parse
+
+
+try:
+    # import urllib
+    import urlparse as urllib
+
+except:
+    import urllib.parse as urllib
+    # from urllib import parse
 
 class TemplateEngine(object):
     def __init__(self):

@@ -35,6 +35,28 @@ class InstallTools():
         self.debug=debug
         self._extratools=False
 
+        if str(sys.excepthook).find("apport_excepthook")!=-1:
+            #if we get here it means is std python excepthook (I hope)
+            # print ("OUR OWN EXCEPTHOOK")
+            sys.excepthook = self.excepthook
+
+    def excepthook(self, ttype, pythonExceptionObject, tb):
+
+        if isinstance(pythonExceptionObject, HaltException):
+            sys.exit(1)
+
+        # print "jumpscale EXCEPTIONHOOK"
+        # if self.inException:
+        #     print("ERROR IN EXCEPTION HANDLING ROUTINES, which causes recursive errorhandling behaviour.")
+        #     print(pythonExceptionObject)
+        #     return
+
+        print ("WE ARE IN EXCEPTHOOL OF INSTALLTOOLS, DEVELOP THIS FURTHER")
+        from IPython import embed
+        print(44)
+        embed()
+        #@todo not working yet                
+
     def log(self,msg):
         if self.debug:
             print(msg)
@@ -97,6 +119,7 @@ class InstallTools():
                 dest+="/"
             if source[-1]!="/":
                 source+="/"
+            self.createDir(dest)
             cmd="rsync -aW --no-compress %s %s %s"%(excl,source,dest)           
             self.execute(cmd,outputToStdout=False)
             return()
@@ -830,18 +853,15 @@ class InstallTools():
             print("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
             raise
         
-        output=output.decode('ascii')
-        error=error.decode('ascii')
+        output=output.decode('utf8')#'ascii')            
+        error=error.decode('utf8')#'ascii')
 
-        if int(exitcode)!=0 or str(error)!="":            
-            self.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)
-            if ignoreErrorOutput!=True:
-                output="%s\n***ERROR***\n%s\n" % (output,error)
-
-        if int(exitcode) !=0 and dieOnNonZeroExitCode:
-            self.log("command: [%s]\nexitcode:%s\noutput:%s\nerror:%s" % (command, exitcode, output, error), 3)
-            raise RuntimeError("Error during execution! (system.process.execute())\n\nCommand: [%s]\n\nExitcode: %s\n\nProgram output:\n%s\n\nErrormessage:\n%s\n" % (command, exitcode, output, error))
-
+        if (int(exitcode)!=0 or str(error)!="") and dieOnNonZeroExitCode and ignoreErrorOutput!=True:
+            errmsg="**ERROR**: execute cmd '%s' exitcode(%s)\nOutput:%s\nError:%s\n" % (command,exitcode, output, error)  
+            # self.log(errmsg, 5)     
+            print (errmsg)
+            raise RuntimeError(errmsg)
+            
         return output        
 
     def executeInteractive(self,command):
@@ -1033,10 +1053,10 @@ class InstallTools():
 
 ############# package installation
 
-    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False,pythonversion=2,web=False):
+    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False,pythonversion=2,web=False,copybinary=True):
         """
         @param pythonversion is 2 or 3
-        if 3 and base not specified then base becaomes /opt/jumpscale73
+        if 3 and base not specified then base becomes /opt/jumpscale73
         """
         print(("Install Jumpscale in %s"%base))
         if clean:
@@ -1048,7 +1068,7 @@ class InstallTools():
         self.debug=True
 
         if pythonversion==2:
-            gitbase="base"
+            gitbase="base_python"
         else:
             gitbase="base_python3"
         
@@ -1057,10 +1077,11 @@ class InstallTools():
 
         print ("copy binaries")
         # self.createDir(base)        
-        self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
+        if copybinary:
+            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
         print ("pull core")
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)    
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         if pythonversion==2:
@@ -1070,7 +1091,13 @@ class InstallTools():
         if insystem or not self.exists(dest):            
             self.symlink(src, dest)
 
+        self.createDir("%s/lib"%base)
+        self.createDir("%s/bin"%base)
+        self.createDir("%s/hrd/system"%base)
+        self.createDir("%s/hrd/apps"%base)
+
         dest="%s/lib/JumpScale"%base
+        print ("link: '%s' -> '%s'"%(src,dest))
         self.symlink(src, dest)
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
         desttest="/usr/local/bin/js"
@@ -1087,39 +1114,30 @@ class InstallTools():
         for item in ["InstallTools","ExtraTools"]:
             src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
             dest="%s/lib/%s.py"%(base,item)
-            self.symlink(src, dest)  
-
-        
+            self.symlink(src, dest) 
+            if insystem:      
+                dest="/usr/local/lib/python2.7/dist-packages/%s.py"%(item)
+                self.symlink(src, dest) 
 
         if web:
             if pythonversion==2:
-                gitbase="web"
+                gitbase="web_python"
             else:
                 gitbase="web_python3"
             self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)  
             self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base) 
 
-        C="""
-#!/bin/bash
-#export JSBASE=/opt/jumpscale$version
-#export PATH=$PATH/bin:$PATH
-#export PYTHONPATH=$PATH/lib:$PATH/lib/lib-dynload/:$PATH/bin:$PATH/lib/python.zip:$PATH/lib/plat-x86_64-linux-gnu
-#export PYTHONHOME=$PATH/lib
-#export LD_LIBRARY_PATH=$PATH/bin
-python3 "$@"
-"""
+
         if pythonversion==2:
-            C=C.replace("$version","7")
-            C=C.replace("python3","python")            
+            basedir="/opt/jumpscale7"
         else:
-            C=C.replace("$version","73")
+            basedir="/opt/jumpscale73"
 
-        self.removesymlink("%s/bin/jspython"%base)
-        self.writeFile("%s/bin/jspython"%base,C)
-        self.chmod("%s/bin/jspython"%base,0o770)        
+        self._writeenv(basedir=basedir,insystem=insystem)
 
-        sys.path=[]
-        sys.path.insert(0,"%s/lib"%base)
+        if not insystem:
+            sys.path=[]
+        sys.path.insert(0,"%s/lib"%basedir)
 
         from JumpScale import j
 
@@ -1129,8 +1147,96 @@ python3 "$@"
 
         self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
 
+        print("Get jpackages metadata.")
+        self.pullGitRepo("https://github.com/Jumpscale/jp_jumpscale7",depth=1)
+
         print ("install was successfull")
-        print ("to use do 'source %s/env.sh;ipython3'"%base)
+        if pythonversion==2:
+            print ("to use do 'source %s/env.sh;ipython'"%base)
+        else:
+            print ("to use do 'source %s/env.sh;ipython3'"%base)
+
+
+    def _writeenv(self,basedir,insystem=False):
+
+
+        C="""
+paths.base=$base
+paths.bin=$(paths.base)/bin
+paths.tmp=/tmp/jumpscale
+paths.code=/opt/code
+paths.lib=$(paths.base)/lib
+
+paths.python.lib.js=$(paths.lib)/JumpScale
+paths.python.lib.ext=$(paths.base)/libext
+paths.app=$(paths.base)/app
+paths.var=$(paths.base)/var
+paths.log=$(paths.var)/log
+paths.pid=$(paths.var)/pid
+
+paths.cfg=$(paths.base)/cfg
+paths.hrd=$(paths.base)/hrd
+"""
+        C=C.replace("$base",basedir.rstrip("/"))
+        self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
+
+        C="""
+export PATH=$base/bin:$PATH
+export JSBASE=$base
+export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
+export PYTHONHOME=$base/lib
+export LD_LIBRARY_PATH=$base/bin    
+"""
+        C=C.replace("$base",basedir)
+        self.writeFile("%s/env.sh"%basedir,C)
+
+        C2="""
+#!/bin/bash
+set -x
+$ENV
+echo sandbox:$base
+# echo $base/bin/python "$@"
+$base/bin/python "$@"
+"""
+        C2=C2.replace("$ENV",C)
+        C2=C2.replace("$base",basedir)
+        dest="%s/bin/jspython"%basedir
+        self.delete(dest)
+        self.writeFile(dest,C2)
+        self.chmod(dest, 0o770)
+
+        if insystem:
+            C2="""
+#!/bin/bash
+set -ex
+#export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu:$PYTHONPATH
+/usr/bin/python "$@"
+"""            
+            C2=C2.replace("$base",basedir)
+            dest="/usr/local/bin/jspython"
+            self.delete(dest)
+            self.writeFile(dest,C2)
+            self.chmod(dest, 0o770)
+
+        #change site.py file        
+        def changesite(path):
+            if self.exists(path=path):
+                C=self.readFile(path)
+                out=""
+                for line in C.split("\n"):
+                    if line.find("ENABLE_USER_SITE")==0:
+                        line="ENABLE_USER_SITE = False"
+                    if line.find("USER_SITE")==0:
+                        line="USER_SITE = False"
+                    if line.find("USER_BASE")==0:
+                        line="USER_BASE = False"
+
+                    out+="%s\n"%line
+                self.writeFile(path,out)
+        changesite("%s/lib/site.py"%basedir)
+        # if insystem:
+        #     changesite("/usr/local/lib/python2.7/dist-packages/site.py"%basedir)
+
 
     def loadScript(self,path):
         print(("load jumpscript: %s"%path))

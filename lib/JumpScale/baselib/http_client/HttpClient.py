@@ -2,7 +2,16 @@ import urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse,
 import base64
 import mimetypes
 import mimetools
-from urllib.parse import urlencode
+
+
+try:
+    from urllib import urlencode
+    import urllib
+except:
+    import urllib.parse as urllib
+    from urllib.parse import urlencode
+
+
 try:
     import ujson as json
 except:

@@ -34,7 +34,13 @@ import io
 import gzip
 import zlib
 import http.client
-import urllib.parse
+# import urllib.parse
+try:
+    import urllib
+except:
+    import urllib.parse as urllib
+
+
 import base64
 import os
 import copy
@@ -638,7 +644,7 @@ class WsseAuthentication(Authentication):
 
 class GoogleLoginAuthentication(Authentication):
     def __init__(self, credentials, host, request_uri, headers, response, content, http):
-        from urllib.parse import urlencode
+        from urllib import urlencode
         Authentication.__init__(self, credentials, host, request_uri, headers, response, content, http)
         challenge = _parse_www_authenticate(response, 'www-authenticate')
         service = challenge['googlelogin'].get('service', 'xapi')
@@ -1223,7 +1229,7 @@ and more.
                         location = response['location']
                         (scheme, authority, path, query, fragment) = parse_uri(location)
                         if authority == None:
-                            response['location'] = urllib.parse.urljoin(absolute_uri, location)
+                            response['location'] = urllib.urljoin(absolute_uri, location)
                     if response.status == 301 and method in ["GET", "HEAD"]:
                         response['-x-permanent-redirect-url'] = response['location']
                         if 'content-location' not in response:

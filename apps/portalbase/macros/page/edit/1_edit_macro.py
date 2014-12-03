@@ -1,14 +1,19 @@
 
 def main(j, args, params, tags, tasklet):
-    import urllib.parse
-    import urllib.request, urllib.parse, urllib.error
+
+    try:
+        import urllib
+    except:
+        import urllib.parse as urllib
+
+    # import urllib.request, urllib.error
 
     querystr = args.requestContext.env['QUERY_STRING']
-    querytuples = urllib.parse.parse_qsl(querystr)
+    querytuples = urllib.parse_qsl(querystr)
     for item in querytuples[:]:
         if item[0] in ['space', 'page']:
             querytuples.remove(item)
-    querystr = urllib.parse.urlencode(querytuples)
+    querystr = urllib.urlencode(querytuples)
 
     page = args.page
 

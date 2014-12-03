@@ -2,7 +2,7 @@
 
 from JumpScale import j
 try:
-    from urllib.parse import unquote, quote
+    from urllib import unquote, quote
 except:
     from urllib.parse import unquote, quote
 import re

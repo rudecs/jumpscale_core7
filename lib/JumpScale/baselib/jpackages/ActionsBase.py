@@ -33,9 +33,15 @@ class ActionsBase():
         return True
 
     def start(self,hrd,**args):
-        
+        if not self.jp_instance.hrd.exists("process.cwd"):
+            return
         cwd=self.jp_instance.hrd.get("process.cwd")
+        if cwd.strip()=="":
+            return
         tcmd=self.jp_instance.hrd.get("process.cmd")
+        if tcmd=="jspython":
+            tcmd="source %s/env.sh;jspython"%(j.dirs.baseDir)
+            
 
         targs=self.jp_instance.hrd.get("process.args")
         tuser=self.jp_instance.hrd.get("process.user",default="root")
@@ -52,12 +58,13 @@ class ActionsBase():
 
         
         if startupmethod=="upstart":
+            raise RuntimeError("not implemented")
             spath="/etc/init/%s.conf"%name
             if j.system.fs.exists(path=spath):
                 j.system.platform.ubuntu.stopService(self.name)
                 if j.tools.startupmanager.upstart==False:
                     j.system.fs.remove(spath)  
-            cmd2="%s %s"%(cmd,args)  #@todo no support for working dir yet
+            cmd2="%s %s"%(tcmd,targs)  #@todo no support for working dir yet
             j.system.fs.writeFile(self.logfile,"start cmd:\n%s\n"%cmd2,True)#append
             j.system.process.executeIndependant(cmd2)            
 
@@ -67,7 +74,7 @@ class ActionsBase():
                 if tmuxname==name:
                     j.system.platform.screen.killWindow(domain,name)
 
-            #@todo need to do env
+            #@todo need to do env            
             j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env={},user=tuser)#, newscr=True)
 
             if tlog:
@@ -91,7 +98,7 @@ class ActionsBase():
             msg=""
 
             if self.jp_instance.getTCPPorts()!=[]:
-                ports=",".join(self.ports)
+                ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
                 msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
                 j.events.opserror_critical(msg,"jp.start.failed.ports")
             else:

@@ -90,7 +90,12 @@ class SystemNet:
         raise operational critical if unreachable
         return True if reachable
         """
-        import urllib.request, urllib.parse, urllib.error
+        # import urllib.request, urllib.parse, urllib.error
+        try:
+            import urllib
+        except:
+            import urllib.parse as urllib
+
         try:
             code = urllib.request.urlopen(url).getcode()
         except Exception:

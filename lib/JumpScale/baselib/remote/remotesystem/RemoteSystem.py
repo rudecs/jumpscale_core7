@@ -17,7 +17,10 @@ import socket
 from JumpScale import j
 
 import signal
-import socketserver
+try:
+    import SocketServer as socketserver
+except:
+    import socketserver
 import select
 import threading
 import re

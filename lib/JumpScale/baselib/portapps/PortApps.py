@@ -1,6 +1,11 @@
 from JumpScale import j
 import platform
-import urllib.request, urllib.error, urllib.parse
+
+try:
+    import urllib
+except:
+    import urllib.parse as urllib
+
 import gzip
 import os
 import tarfile
