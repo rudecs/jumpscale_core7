@@ -247,7 +247,7 @@ class Docker():
         cmd="cd %s;tar xzvf %s -C ."%(path,bpath)        
         j.system.process.executeWithoutPipe(cmd)
 
-    def create(self,name="",ports="",vols="",volsro="",stdout=True,base="despiegk/mc",nameserver="8.8.8.8",replace=True,cpu=None,mem=0):
+    def create(self,name="",ports="",vols="",volsro="",stdout=True,base="despiegk/mc",nameserver="8.8.8.8",replace=True,cpu=None,mem=0,jumpscale=False):
         """
         @param ports in format as follows  "22:8022 80:8080"  the first arg e.g. 22 is the port in the container
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
@@ -377,9 +377,19 @@ class Docker():
 
         self.pushSSHKey(name)
 
+        if jumpscale:
+            self.installJumpscale(name)            
+
         return portfound
 
         # return self.getIp(name)
+
+    def installJumpscale(self,name):
+        c=self.getSSH(name)
+        from IPython import embed
+        print "DEBUG NOW cccc"
+        embed()
+
 
     def getImages(self):
         images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images()]
@@ -437,6 +447,8 @@ class Docker():
         ssh_port=self.getPubPortForInternalPort(name,22)        
         c=j.remote.cuisine.api
         c.fabric.api.env['connection_attempts'] = 2
+        c.fabric.state.output["running"]=False
+        c.fabric.state.output["stdout"]=False
         c.connect('%s:%s' % ("localhost", ssh_port), "root")
         return c
 
