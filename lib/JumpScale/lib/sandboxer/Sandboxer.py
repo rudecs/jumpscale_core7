@@ -38,11 +38,11 @@ class Sandboxer():
 
     def __init__(self):
         self._done=[]
-        self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so","libz.so","libgcc","librt","libstdc++"]
+        self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so","libz.so","libgcc","librt","libstdc++","libapt","libdbus","libselinux"]
 
     def _ldd(self,path,result={}):
 
-        if j.system.fs.getFileExtension(path) in ["py","pyc","cfg","hrd"]:
+        if j.system.fs.getFileExtension(path) in ["py","pyc","cfg","hrd","bak","txt","png","gif","css","js","wiki","spec","sh","jar"]:
             return result
 
         print(("check:%s"%path))
@@ -70,7 +70,7 @@ class Sandboxer():
                 and name.find("libdl.so")!=0:
                 excl=False
                 for toexeclude in self.exclude:
-                    if name.find(toexeclude)==0:
+                    if name.lower().find(toexeclude.lower())!=-1:
                         excl=True 
                 if not excl:
                     print(("found:%s"%name))

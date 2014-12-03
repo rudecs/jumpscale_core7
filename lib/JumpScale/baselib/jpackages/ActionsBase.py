@@ -33,7 +33,8 @@ class ActionsBase():
         return True
 
     def start(self,hrd,**args):
-        
+        if not self.jp_instance.hrd.exists("process.cwd"):
+            return
         cwd=self.jp_instance.hrd.get("process.cwd")
         if cwd.strip()=="":
             return

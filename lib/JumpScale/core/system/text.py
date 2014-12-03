@@ -1,4 +1,3 @@
-CODEC='utf-8'
 import time
 from JumpScale import j
 import re
@@ -6,33 +5,30 @@ matchquote = re.compile(r'\'[^\']*\'')
 re_nondigit= re.compile(r'\D')
 re_float = re.compile(r'[0-9]*\.[0-9]+')
 re_digit = re.compile(r'[0-9]*')
-
+import unicodedata
 
 class Text:
     @staticmethod
-    def toStr(value, codec=CODEC):
-        if isinstance(value, str):
-            return value
-        elif isinstance(value, str):
-            return value.encode(codec)
-        else:
-            return str(value)
+    def toStr(value, codec='utf-8'):
+        if isinstance(value, unicode):
+            value=unicodedata.normalize('NFKD',value)
+        return value.encode(codec)
 
     @staticmethod
     def toAscii(value,maxlen=0):
-
-        out=""
-        for item in value:
-            if ord(item)>255:
-                continue
-            out+=item
+        value=value.encode('ascii','ignore')
+        # out=""
+        # for item in value:
+        #     if ord(item)>255:
+        #         continue
+        #     out+=item
         if maxlen>0 and len(out)>maxlen:
             out=out[0:maxlen]
         out=out.replace("\r","")        
         return out
 
     @staticmethod
-    def toUnicode(value, codec=CODEC):
+    def toUnicode(value, codec='utf-8'):
         if isinstance(value, str):
             return value.decode(codec)
         elif isinstance(value, str):

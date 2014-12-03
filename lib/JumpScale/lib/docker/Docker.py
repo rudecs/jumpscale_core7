@@ -296,13 +296,17 @@ class Docker():
                 key,val=item.split(":",1)
                 volsdict[str(key).strip()]=str(val).strip()
 
-        if j.system.fs.exists(path="/var/jumpscale/"):
-            if "/var/jumpscale" not in volsdict:
-                volsdict["/var/jumpscale"]="/var/jumpscale"
+        # if j.system.fs.exists(path="/var/jumpscale/"):
+        #     if "/var/jumpscale" not in volsdict:
+        #         volsdict["/var/jumpscale"]="/var/jumpscale"
 
         tmppath="/tmp/dockertmp/%s"%name
         j.system.fs.createDir(tmppath)
         volsdict[tmppath]="/tmp"
+
+        if j.system.fs.exists(path="/opt/code"):
+            if "/opt/code" not in volsdict:
+                volsdict["/opt/code"]="/opt/code"
 
         volsdictro={}
         if len(volsro)>0:
@@ -313,6 +317,10 @@ class Docker():
                 
         # volsdict["/var/js/%s/"%name]="/opt/jsbox_data/var/data/"
         # volsdict["/var/js/all/jpfiles/"]="/opt/jsbox_data/var/jpackages/files/"
+
+        print "MAP:"
+        for src1,dest1 in volsdict.items():
+            print " %-20s %s"%(src1,dest1)
 
         binds={}
         volskeys=[] #is location in docker
@@ -412,6 +420,9 @@ class Docker():
         c=j.remote.cuisine.api
         c.fabric.api.env['password'] = "rooter"
         c.fabric.api.env['connection_attempts'] = 5
+        
+        c.fabric.state.output["running"]=False
+        c.fabric.state.output["stdout"]=False
 
         ssh_port=self.getPubPortForInternalPort(name,22)
         if ssh_port==None:

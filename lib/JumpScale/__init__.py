@@ -17,6 +17,7 @@ if not 'JSBASE' in os.environ:
 else:
     base=os.environ['JSBASE']
 
+
 class JumpScale():
 	def __init__(self):
 		pass

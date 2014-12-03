@@ -1491,9 +1491,10 @@ class SystemProcess:
             code2+="%s\n" % line
 
         #try to load the code
-        # execContext = {}
+        print code2
+        execContext = {}
         try:
-            exec((code2), globals(), locals())
+            exec(code2, globals(), locals()) in execContext
         except Exception as e:
             raise RuntimeError("Could not import code, code submitted was \n%s" % code)
 

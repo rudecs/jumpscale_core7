@@ -74,8 +74,6 @@ class ErrorConditionObject():
             self.occurrences=1 #nr of times this error condition happened
 
             self.uniquekey=""
-            
-    
 
     def getUniqueKey(self):
         """
@@ -91,9 +89,11 @@ class ErrorConditionObject():
     def toAscii(self):
         def _toAscii(s):
             try:
-                return unicodedata.normalize('NFKD', str(s)).encode('ascii','ignore') 
+                if isinstance(s, unicode):
+                    s=unicodedata.normalize('NFKD',s)
+                return s.encode('utf-8')
             except Exception as e:
-                print("BUG")
+                print("BUG in toascii in ErrorConditionObject")
                 import ipdb
                 ipdb.set_trace()
                                                 

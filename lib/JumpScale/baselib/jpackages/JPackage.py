@@ -79,6 +79,9 @@ class JPackageInstance():
             source="%s/instance.hrd"%self.jp.metapath
             if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
                 j.do.copyFile(source,self.hrdpath)
+            else:
+                if not j.system.fs.exists(path=source):
+                    j.do.writeFile(self.hrdpath,"")                
 
             source="%s/actions.py"%self.jp.metapath
             j.do.copyFile(source,self.actionspath)

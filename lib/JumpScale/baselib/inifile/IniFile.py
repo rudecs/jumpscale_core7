@@ -1,6 +1,10 @@
 from JumpScale import j
 import JumpScale as jumpscale
-from configparser import ConfigParser
+
+try:
+    from configparser import ConfigParser
+except:
+    from ConfigParser import ConfigParser
 
 #@todo UGLY, validation should not happen on object (file) where you read from but on file where you populate values (kds)
 
