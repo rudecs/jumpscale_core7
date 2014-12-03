@@ -201,7 +201,10 @@ class Console:
         question += ": "
         retryCount = retry
         while retryCount != 0:
-            response = input(question).rstrip()
+            if sys.version.startswith("2"):
+                response = raw_input(question).rstrip()
+            else:
+                response = input(question).rstrip()
             if response == "" and not defaultparam == "" and defaultparam:
                 return defaultparam
             if (not regex or re.match(regex,response)) and (not validate or validate(response)):
@@ -287,7 +290,10 @@ class Console:
         retryCount = retry
 
         while retryCount != 0:
-            response = input(question).rstrip(chr(13))
+            if sys.version.startswith("2"):
+                response = raw_input(question).rstrip(chr(13))
+            else:
+                response = input(question).rstrip(chr(13))
             if response == "" and not defaultValue == None:
                 return defaultValue
             if (re.match("^-?[0-9]+$",response.strip())) and (not validate or validate(response)):
@@ -313,7 +319,10 @@ class Console:
             j.events.inputerror_critical ("Cannot ask a yes/no question in a non interactive mode.","console.askyesno.notinteractive")
         
         while True:
-            result = input(str(message) + " (y/n):").rstrip(chr(13))
+            if sys.version.startswith("2"):
+                result = raw_input(str(message) + " (y/n):").rstrip(chr(13))
+            else:
+                result = input(str(message) + " (y/n):").rstrip(chr(13))
             if result.lower() == 'y' or result.lower() == 'yes':
                 return True
             if result.lower() == 'n' or result.lower() == 'no':
@@ -545,10 +554,16 @@ class Console:
         self.echo("%s:" % question)
         self.echo("(Enter answer over multiple lines, end by typing '%s' (without the quotes) on an empty line)" % escapeString)
         lines = []
-        user_input = eval(input())
+        if sys.version.startswith("2"):
+            user_input = eval(raw_input())
+        else:
+            user_input = eval(input())
         while user_input != escapeString:
             lines.append(user_input)
-            user_input = eval(input())
+            if sys.version.startswith("2"):
+                user_input = eval(raw_input())
+            else:
+                user_input = eval(input())
         lines.append("") # Forces end with newline
         return '\n'.join(lines)
 
