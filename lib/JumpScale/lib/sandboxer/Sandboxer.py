@@ -18,7 +18,7 @@ class Dep():
         else:
             if j.system.fs.exists(self.path):
                 return
-        raise RuntimeError("could not find lib %s"%self.path)
+        raise RuntimeError("could not find lib (dep): '%s'"%self.path)
 
     def copyTo(self,path):
         dest=j.system.fs.joinPaths(path,self.name)
@@ -38,7 +38,7 @@ class Sandboxer():
 
     def __init__(self):
         self._done=[]
-        self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so","libz.so"]
+        self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so","libz.so","libgcc","librt","libstdc++"]
 
     def _ldd(self,path,result={}):
 
@@ -74,9 +74,12 @@ class Sandboxer():
                         excl=True 
                 if not excl:
                     print(("found:%s"%name))
-                    result[name]=Dep(name,lpath)
-                    self._done.append(name)
-                    result=self._ldd(lpath,result)
+                    try:
+                        result[name]=Dep(name,lpath)
+                        self._done.append(name)
+                        result=self._ldd(lpath,result)
+                    except Exception as e:
+                        print (e)
 
         return result
 

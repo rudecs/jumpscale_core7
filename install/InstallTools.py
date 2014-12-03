@@ -17,7 +17,7 @@ import fnmatch
 # from JumpScale import j
 
 class InstallTools():
-    def __init__(self,debug=True):
+    def __init__(self,debug=False):
         if platform.system().lower()=="windows":
             self.TYPE="WIN"
             self.BASE="%s/"%os.environ["JSBASE"].replace("\\","/")
@@ -36,7 +36,8 @@ class InstallTools():
         self._extratools=False
 
     def log(self,msg):
-        print(msg)
+        if self.debug:
+            print(msg)
 
     def readFile(self,filename): 
         """Read a file and get contents of that file
@@ -143,7 +144,7 @@ class InstallTools():
                         self.unlink( dstname )
 
                 if keepsymlinks and self.isLink(srcname):
-                    linkto = self.readlink(srcname)
+                    linkto = self.readLink(srcname)
                     # self.symlink(linkto, dstname)#, overwriteFiles)
                     try:
                         os.symlink(linkto,dstname)
@@ -214,13 +215,13 @@ class InstallTools():
          stat.S_IXUSR & statobj.st_mode
 
 
-    def readLink(self,path):
-        """Works only for unix
-        Return a string representing the path to which the symbolic link points.
-        """
-        while path[-1]=="/" or path[-1]=="\\":
-            path=path[:-1]
-        return os.readlink(path)
+    # def readLink(self,path):
+    #     """Works only for unix
+    #     Return a string representing the path to which the symbolic link points.
+    #     """
+    #     while path[-1]=="/" or path[-1]=="\\":
+    #         path=path[:-1]
+    #     return os.readLink(path)
     
     def isFile(self, path, followSoftlink = False):
         """Check if the specified file exists for the given path
@@ -362,7 +363,7 @@ class InstallTools():
         if not self.isLink(fullpath) and os.path.isdir(fullpath):
             return True
         if self.isLink(fullpath):
-            link=self.readlink(fullpath)
+            link=self.readLink(fullpath)
             if self.isDir(link):
                 return True
         return False
@@ -395,13 +396,13 @@ class InstallTools():
                 raise RuntimeError ("Cannot find part of dir %s levels up, path %s is not long enough" % (levelsUp,path))
         return dname+os.sep
 
-    def readlink(self, path):
+    def readLink(self, path):
         """Works only for unix
         Return a string representing the path to which the symbolic link points.
         """
         while path[-1]=="/" or path[-1]=="\\":
             path=path[:-1]
-        self.log('Read link with path: %s'%path,8)
+        # self.log('Read link with path: %s'%path,8)
         if path is None:
             raise TypeError('Path is not passed in system.fs.readLink')
         if self.isUnix():
@@ -545,7 +546,7 @@ class InstallTools():
 
             if followSymlinks:
                 if self.isLink(fullpath):
-                    fullpath=self.readlink(fullpath)
+                    fullpath=self.readLink(fullpath)
 
             if self.isFile(fullpath) and "f" in type:
                 includeFile = False

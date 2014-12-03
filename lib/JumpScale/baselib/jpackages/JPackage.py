@@ -124,6 +124,7 @@ class JPackageInstance():
 
 
     def install(self,args={},start=True):
+        
         self._load(args=args)
         self.actions.prepare(hrd=j.packages.hrd)
         #download
