@@ -46,7 +46,7 @@ class DaemonClient(object):
             #     1, end), j.base.idgenerator.generateRandomInt(1, end), j.base.idgenerator.generateRandomInt(1, end))
             random = uuid.uuid4()
             self._id="%s_%s_%s_%s"%(j.application.whoAmI.gid,j.application.whoAmI.nid,j.application.whoAmI.pid, random)
-        print(("ZMQ ID:%s"%self._id))
+        print("ZMQ ID:%s"%self._id)
 
         self.retry = True
         self.blocksize = 8 * 1024 * 1024
