@@ -1081,7 +1081,7 @@ class InstallTools():
             self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
         print ("pull core")
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)        
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)    
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         if pythonversion==2:
@@ -1147,11 +1147,15 @@ class InstallTools():
 
         self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
 
+        print("Get jpackages metadata.")
+        self.pullGitRepo("https://github.com/Jumpscale/jp_jumpscale7",depth=1)
+
         print ("install was successfull")
         if pythonversion==2:
             print ("to use do 'source %s/env.sh;ipython'"%base)
         else:
             print ("to use do 'source %s/env.sh;ipython3'"%base)
+
 
     def _writeenv(self,basedir,insystem=False):
 
