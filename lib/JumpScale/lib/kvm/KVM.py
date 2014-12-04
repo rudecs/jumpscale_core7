@@ -5,7 +5,7 @@ import JumpScale.lib.diskmanager
 import os
 import JumpScale.baselib.netconfig
 import netaddr
-from CloudscalerLibcloud.utils.libvirtutil import LibvirtUtil
+from libvirtutil import LibvirtUtil
 
 HRDIMAGE="""
 id=
