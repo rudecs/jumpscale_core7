@@ -52,7 +52,7 @@ class KVM():
         self.vmpath = "/mnt/vmstor/kvm"
         self.imagepath = "/mnt/vmstor/kvm/images"
         self.images = {}
-        self.loadImages()
+        #self.loadImages()
         self.ip_mgmt_range = "192.168.66.0/24" #used on brmgmt
         self.nameserver = "8.8.8.8"
         self.gateway = "192.168.1.1"
@@ -125,6 +125,19 @@ class KVM():
         """        
         find first ip addr which is free
         """
+        ips=self._getAllIp()
+        if name in ips:
+            return ips[name]
+        else:
+            addr=[]
+            for key,ip in ips.items():
+                addr.append(int(ip.split(".")[-1].strip()))
+            
+            for i in range(1,253):
+                if i not in addr:
+                    return i
+
+        j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
     def create(self,name="",baseimage="base",start=False,replace=True):
