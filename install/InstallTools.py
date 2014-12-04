@@ -1150,6 +1150,11 @@ class InstallTools():
         print("Get jpackages metadata.")
         self.pullGitRepo("https://github.com/Jumpscale/jp_jumpscale7",depth=1)
 
+        p="/opt/jumpscale7/hrd/system/_whoami_template.hrd"
+        p2="/opt/jumpscale7/hrd/system/whoami.hrd"
+        if not j.system.fs.exists(path=p2):
+            j.do.copyFile(p,p2)
+
         print ("install was successfull")
         if pythonversion==2:
             print ("to use do 'source %s/env.sh;ipython'"%base)
