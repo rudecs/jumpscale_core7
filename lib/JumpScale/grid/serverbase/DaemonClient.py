@@ -47,8 +47,6 @@ class DaemonClient(object):
             #     1, end), j.base).idgenerator.generateRandomInt(1, end), j.base.idgenerator.generateRandomInt(1, end))
             random = uuid.uuid4()
             self._id="%s_%s_%s_%s"%(j.application.whoAmI.gid,j.application.whoAmI.nid,j.application.whoAmI.pid, random)
-#        import ipdb;ipdb.set_trace()
-#        six.print_("ZMQ ID:%s"%self._id)
 
         self.retry = True
         self.blocksize = 8 * 1024 * 1024
@@ -78,7 +76,6 @@ class DaemonClient(object):
         self.transport = transport
         self.pubkeyserver = None
         self.defaultSerialization = defaultSerialization
-        #print("connect transport")
         self.transport.connect(self._id)
         #print("transport ok")
         self.initSession(reset, ssl)
@@ -98,7 +95,7 @@ class DaemonClient(object):
             return message
 
     def initSession(self, reset=False, ssl=False):
-        #print("initsession")
+        # print("initsession")
         if ssl:
             from JumpScale.baselib.ssl.SSL import SSL
             self.keystor = SSL().getSSLHandler()
