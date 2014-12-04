@@ -5,10 +5,10 @@ import JumpScale.lib.diskmanager
 import os
 import JumpScale.baselib.netconfig
 import netaddr
-
-raise RuntimeError("not implemented yet")
+from CloudscalerLibcloud.utils.libvirtutil import LibvirtUtil
 
 HRDIMAGE="""
+id=
 name=
 ostype = 
 architecture
@@ -49,26 +49,27 @@ class KVM():
         each image needs to have ssh agent installed and needs to be booted when machine starts & be configured using the params as specified
 
         """
-        self.vmpath="/mnt/vmstor/kvm"
-        self.imagepath="/mnt/vmstor/kvm/images"
-        self.images={}
+        self.vmpath = "/mnt/vmstor/kvm"
+        self.imagepath = "/mnt/vmstor/kvm/images"
+        self.images = {}
         self.loadImages()
-        self.ip_mgmt_range="192.168.66.0/24" #used on brmgmt
-        self.nameserver="8.8.8.8"
-        self.gateway="192.168.1.1"
+        self.ip_mgmt_range = "192.168.66.0/24" #used on brmgmt
+        self.nameserver = "8.8.8.8"
+        self.gateway = "192.168.1.1"
+        self.LibvirtUtil = LibvirtUtil()
+        self.LibvirtUtil.basepath = self.vmpath
 
 
-    def _get_rootpath(self,name):
-        rootpath=j.system.fs.joinPaths(self.vmpath, '%s' % (name))
-        return rootpath
+    def _getRootPath(self, name):
+        return j.system.fs.joinPaths(self.vmpath, name)
 
     def loadImages(self):
         """
         walk over images & remember so we can use to create & manipulate machines
         """
-        for item in j.system.fs.listFilesInDir(self.imagepath, recursive=False, filter="*.hrd", listSymlinks=True):
-            hrd=j.core.hrd.get(path)
-            self.images[hrd.get("name")]=hrd
+        for path in j.system.fs.listFilesInDir(self.imagepath, recursive=False, filter="*.hrd", listSymlinks=True):
+            hrd = j.core.hrd.get(path)
+            self.images[hrd.get("name")] = hrd
 
     def initbridges(self,baseinterface="eth0"):
         """
@@ -90,78 +91,44 @@ class KVM():
         names of running & stopped machines
         @return (running,stopped)
         """
-        cmd="lxc-ls --fancy"
-        resultcode,out=j.system.process.execute(cmd)
+        machines = self.LibvirtUtil.list_domains()
+        running = [machine for machine in machines if machine['state'] == 1]
+        stopped = [machine for machine in machines if machine['state'] == 5]
+        return (running, stopped)
 
-        stopped = []
-        running = []
-        current = None
-        for line in out.split("\n"):
-            line = line.strip()
-            if line.find('RUNNING')!=-1:
-                current = running
-            elif line.find('STOPPED')!=-1:
-                current = stopped
-            else:
-                continue
-            name=line.split(" ")[0]
-            if name.find(self._prefix)==0:
-                name=name.replace(self._prefix,"")
-                current.append(name)
-        running.sort()
-        stopped.sort()
-        return (running,stopped)
-
-    def getIp(self,name,fail=True):
+    def getIp(self, name):
         #info will be fetched from hrd in vm directory
-        hrd=self.getConfig(name)
+        hrd = self.getConfig(name)
         return hrd.get("ipaddr")
 
-    def getConfig(self,name):
-        configpath=j.system.fs.joinPaths(self.vmpath,name,"main.hrd")
+    def getConfig(self, name):
+        configpath = j.system.fs.joinPaths(self.vmpath, name, "main.hrd")
         if not j.system.fs.exists(path=configpath):
-            content="""
-ipaddr=
-"""
-            j.system.fs.writeFile(configpath,contents=content)
-        return j.core.hrd.get( path=configpath)
+            raise RuntimeError('Machine %s does not exist' % name)
+        return j.core.hrd.get(path=configpath)
 
-    def _getAllIp(self):
+    def _getAllMachinesIps(self):
         """
         walk over all vm's, get config & read ip addr
-        put them in dict        
+        put them in dict      
         """
-        ips={}
-        for name in self._getAllVM():
-            hrd=self.getConfig(name)
-            ips[name]=hrd.get("ipaddr")
+        ips = dict()
+        for name in self._getAllVMs():
+            hrd = self.getConfig(name)
+            ips[name] = hrd.get("ipaddr")
         return ips
 
-    def _getAllVM(self):
+    def _getAllVMs(self):
         return j.system.fs.listDirsInDir(self.vmpath, recursive=False, dirNameOnly=True, findDirectorySymlinks=True)
 
-    def _findFreeIP(self,name):
+    def _findFreeIP(self, name):
         """        
         find first ip addr which is free
         """
-        ips=self._getAllIp()
-        if name in ips:
-            return ips[name]
-        else:
-            addr=[]
-            for key,ip in ips.items():
-                addr.append(int(ip.split(".")[-1].strip()))
-            
-            for i in range(1,253):
-                if i not in addr:
-                    return i
-
-        j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
     def create(self,name="",baseimage="base",start=False,replace=True):
         """
-
         create a KVM machine which inherits from a qcow2 image (so no COPY)
 
         always create a 2nd & 3e & 4th disk
@@ -228,57 +195,27 @@ ipaddr=
             return self.start(name)
 
         return ipaddr
+
+    def _getIdFromConfig(self, name):
+        machine_hrd = self.getConfig(name)
+        return machine_hrd.get('id')
         
     def destroyAll(self):
-        running,stopped=self.list()
-        alll=running+stopped
-        for item in alll:
-            self.destroy(item)
+        running, stopped = self.list()
+        for item in running + stopped:
+            self.destroy(item['name'])
 
-    def destroy(self,name):
-        running,stopped=self.list()
-        alll=running+stopped
-        if name in alll:
-            cmd="lxc-destroy -n %s%s -f"%(self._prefix,name)
-            resultcode,out=j.system.process.execute(cmd)
-        #@todo put timeout in
-        while name in alll:
-            running,stopped=self.list()
-            alll=running+stopped
+    def destroy(self, name):
+        machine_id = self._getIdFromConfig(name)
+        self.LibvirtUtil.delete_machine(machine_id)
         
-    def stop(self,name):
-        cmd="lxc-stop -n %s%s"%(self._prefix,name)
-        resultcode,out=j.system.process.execute(cmd)
+    def stop(self, name):
+        machine_id = self._getIdFromConfig(name)
+        self.LibvirtUtil.shutdown(machine_id)
 
-    def start(self,name,stdout=True,test=True):
-        print(("start:%s"%name))
-        cmd="lxc-start -d -n %s%s"%(self._prefix,name)
-        resultcode,out=j.system.process.execute(cmd)
-        start=time.time()
-        now=start
-        found=False
-        while now<start+20:
-            running=self.list()[0]
-            if name in running:
-                found=True
-                break
-            time.sleep(0.2)
-            now=time.time()
-
-        if found==False:
-            msg= "could not start new machine, did not start in 20 sec."
-            if stdout:
-                print(msg)
-            raise RuntimeError(msg)
-    
-        ipaddr=self.getIp(name)
-        print(("test ssh access to %s"%ipaddr))
-        timeout=time.time()+10        
-        while time.time()<timeout:  
-            if j.system.net.tcpPortConnectionTest(ipaddr,22):
-                return
-            time.sleep(0.1)
-        raise RuntimeError("Could not connect to machine %s over port 22 (ssh)"%ipaddr)
+    def start(self, name):
+        machine_id = self._getIdFromConfig(name)
+        self.LibvirtUtil.create(machine_id, None)
 
     def networkSetPublic(self, machinename,netname="pub0",pubips=[],bridge=None,gateway=None):
         """
@@ -314,7 +251,7 @@ lxc.network.name = %s
         # for pubip in pubips:
         #     config += '''lxc.network.ipv4 = %s\n''' % pubip
 
-        j.system.netconfig.setRoot(self._get_rootpath(machinename)) #makes sure the network config is done on right spot
+        j.system.netconfig.setRoot(self._getRootPath(machinename)) #makes sure the network config is done on right spot
         for ipaddr in pubips:        
             j.system.netconfig.enableInterfaceStatic(dev=netname,ipaddr=ipaddr,gw=gateway,start=False)#do never start because is for lxc container, we only want to manipulate config
         j.system.netconfig.root=""#set back to normal
@@ -345,7 +282,7 @@ lxc.network.name = %s
         if not bridge:
             bridge = j.application.config.get('lxc.bridge.public')        
 
-        j.system.netconfig.setRoot(self._get_rootpath(machinename)) #makes sure the network config is done on right spot
+        j.system.netconfig.setRoot(self._getRootPath(machinename)) #makes sure the network config is done on right spot
         for ipaddr in ipaddresses:        
             j.system.netconfig.enableInterfaceStatic(dev=netname,ipaddr=ipaddr,gw=None,start=False)
         j.system.netconfig.root=""#set back to normal
