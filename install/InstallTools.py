@@ -1184,7 +1184,7 @@ paths.hrd=$(paths.base)/hrd
 export PATH=$base/bin:$PATH
 export JSBASE=$base
 export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
-export PYTHONHOME=$base/lib
+#export PYTHONHOME=$base
 export LD_LIBRARY_PATH=$base/bin    
 """
         C=C.replace("$base",basedir)

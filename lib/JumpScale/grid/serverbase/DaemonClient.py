@@ -5,6 +5,7 @@ from JumpScale.grid.serverbase import returnCodes
 import time
 import uuid
 from random import randrange
+import six
 
 class Session():
 
@@ -43,10 +44,11 @@ class DaemonClient(object):
         else:
             end = 4294967295  # 4bytes max nr
             # self._id = struct.pack("<III", j.base.idgenerator.generateRandomInt(
-            #     1, end), j.base.idgenerator.generateRandomInt(1, end), j.base.idgenerator.generateRandomInt(1, end))
+            #     1, end), j.base).idgenerator.generateRandomInt(1, end), j.base.idgenerator.generateRandomInt(1, end))
             random = uuid.uuid4()
             self._id="%s_%s_%s_%s"%(j.application.whoAmI.gid,j.application.whoAmI.nid,j.application.whoAmI.pid, random)
-        print("ZMQ ID:%s"%self._id)
+#        import ipdb;ipdb.set_trace()
+#        six.print_("ZMQ ID:%s"%self._id)
 
         self.retry = True
         self.blocksize = 8 * 1024 * 1024
@@ -76,11 +78,11 @@ class DaemonClient(object):
         self.transport = transport
         self.pubkeyserver = None
         self.defaultSerialization = defaultSerialization
-        print("connect transport")
+        #print("connect transport")
         self.transport.connect(self._id)
-        print("transport ok")
+        #print("transport ok")
         self.initSession(reset, ssl)
-        print("init session")
+        #print("init session")
 
     def encrypt(self, message):
         if self.ssl:
@@ -96,7 +98,7 @@ class DaemonClient(object):
             return message
 
     def initSession(self, reset=False, ssl=False):
-        print("initsession")
+        #print("initsession")
         if ssl:
             from JumpScale.baselib.ssl.SSL import SSL
             self.keystor = SSL().getSSLHandler()
@@ -131,7 +133,7 @@ class DaemonClient(object):
         # sessiondictstr=ser.dumps(session.__dict__)
         self.key = session.encrkey
         self.sendcmd(category="core", cmd="registersession", sessiondata=session.__dict__, ssl=ssl, returnformat="")
-        print("registered session")
+        #print("registered session")
 
     def sendMsgOverCMDChannel(self, cmd, data,sendformat=None, returnformat=None, retry=0, maxretry=2, \
         category=None,transporttimeout=5):
@@ -167,7 +169,7 @@ class DaemonClient(object):
         # print "return:%s"%returncode
         if returncode == returnCodes.AUTHERROR:
             if retry < maxretry:
-                print("session lost")
+                #print("session lost")
                 self.initSession()
                 retry += 1
                 return self.sendMsgOverCMDChannel(cmd, rawdata, sendformat=sendformat, returnformat=returnformat, retry=retry, maxretry=maxretry, category=category,transporttimeout=transporttimeout)
@@ -286,20 +288,20 @@ class Klass(object):
     def perftest(self):
         start = time.time()
         nr = 10000
-        print(("start perftest for %s for ping cmd" % nr))
+        #print(("start perftest for %s for ping cmd" % nr))
         for i in range(nr):
             if not self.sendcmd("ping") == "pong":
                 raise RuntimeError("ping did not return pong.")
         stop = time.time()
         nritems = nr / (stop - start)
-        print(("nr items per sec: %s" % nritems))
-        print(("start perftest for %s for cmd ping" % nr))
+        #print(("nr items per sec: %s" % nritems))
+        #print(("start perftest for %s for cmd ping" % nr))
         for i in range(nr):
             if not self.sendcmd("pingcmd") == "pong":
                 raise RuntimeError("ping did not return pong.")
         stop = time.time()
         nritems = nr / (stop - start)
-        print(("nr items per sec: %s" % nritems))
+        #print(("nr items per sec: %s" % nritems))
 
 class Transport(object):
 

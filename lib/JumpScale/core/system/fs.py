@@ -1318,7 +1318,7 @@ class SystemFS:
         with open(filename) as f:
             s = f.read()
 
-        boms = [codecs.BOM_UTF8.decode()]
+        boms = [codecs.BOM_UTF8]
         for bom in boms:  # we can add more BOMs later:
             if s.startswith(bom):
                 s = s.replace(bom, '', 1)
