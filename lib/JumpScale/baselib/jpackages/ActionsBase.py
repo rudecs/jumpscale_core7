@@ -56,8 +56,24 @@ class ActionsBase():
 
         j.do.delete(self.jp_instance.getLogPath())
 
+        if j.system.fs.exists(path="/etc/my_init.d"):
+            j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputToStdout=False, ignoreErrorOutput=True)
+
+            for port in [int(item) for item in self.jp_instance.hrd.getList("process.ports") if str(item).strip()<>""]:
+                print ("KILL: %s (%s)"%(name,port))
+                j.system.process.killProcessByPort(port)
+
+            cmd2="%s %s"%(tcmd,targs)
+            C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,cmd2,name)
+            j.do.delete("/var/log/%s.log"%name)
+            j.do.createDir("/etc/service/%s"%name)
+            path2="/etc/service/%s/run"%name
+            j.do.writeFile(path2,C)
+            j.do.chmod(path2,0o770)            
+            j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputToStdout=False, ignoreErrorOutput=True)
+            print "STARTED SUCCESFULLY:%s"%name
         
-        if startupmethod=="upstart":
+        elif startupmethod=="upstart":
             raise RuntimeError("not implemented")
             spath="/etc/init/%s.conf"%name
             if j.system.fs.exists(path=spath):

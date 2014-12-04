@@ -387,6 +387,12 @@ class Docker():
     def installJumpscale(self,name):
         print "Install jumpscale7 on python 2"
         c=self.getSSH(name)
+        hrdf="/opt/jumpscale7/hrd/system/whoami.hrd"
+        if j.system.fs.exists(path=hrdf):
+            c.dir_ensure("/opt/jumpscale7/hrd/system",True)
+            c.file_upload(hrdf,hrdf)
+        c.fabric.state.output["running"]=True
+        c.fabric.state.output["stdout"]=True        
         c.run("cd /opt/code/github/jumpscale/jumpscale_core7/install/ssh/;python install.py")
 
     def getImages(self):
@@ -439,6 +445,9 @@ class Docker():
         c.connect('%s:%s' % ("localhost", ssh_port), "root")
 
         c.ssh_authorize("root",key)
+        c.fabric.state.output["running"]=True
+        c.fabric.state.output["stdout"]=True
+
         return key
 
     def getSSH(self,name):

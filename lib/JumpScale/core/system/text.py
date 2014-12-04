@@ -163,10 +163,6 @@ class Text:
                 result=args[name]
                 out+="%s%s\n"%(prefix,result)
                 continue
-
-            from IPython import embed
-            print(2)
-            embed()
             
             if name in args:
                 result=args[name]

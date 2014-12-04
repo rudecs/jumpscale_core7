@@ -159,7 +159,8 @@ class JPackageInstance():
             dest0=self._getRepo(recipeitem['url'])
             src="%s/%s"%(dest0,recipeitem['source'])
             src=src.replace("//","/")
-
+            if "dest" not in recipeitem:
+                raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
             dest=recipeitem['dest']          
 
             if "link" in recipeitem and str(recipeitem["link"]).lower()=='true':
