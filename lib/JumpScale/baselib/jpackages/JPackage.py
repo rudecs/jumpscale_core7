@@ -140,6 +140,20 @@ class JPackageInstance():
             res.append(jp) 
         return res
 
+    def stop(self,args={}):
+        self._load(args=args)
+        self.actions.stop(**args)
+        if not self.actions.check_down_local(**args):
+            self.actions.halt(**args)
+
+    def start(self,args={}):
+        self._load(args=args)
+        self.actions.start(**args)
+
+    def restart(self,args={}):
+        self.stop(args)
+        self.start(args)
+
     def install(self,args={},start=True):
         
         self._load(args=args)
@@ -150,7 +164,7 @@ class JPackageInstance():
                 j.packages._justinstalled.append(dep.jp.name)
 
 
-        self.actions.prepare(hrd=j.packages.hrd)
+        self.actions.prepare()
         #download
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
@@ -191,16 +205,20 @@ class JPackageInstance():
                     j.do.symlink(src, dest)
                 else:
                     if j.system.fs.exists(path=dest):
-                        if "overwrite" in recipeitem and recipeitem["overwrite"].lower()=="false":
-                            continue
+                        if "overwrite" in recipeitem:
+                            if recipeitem["overwrite"].lower()=="false":
+                                continue
+                            else:
+                                j.do.delete(dest)
+                                j.system.fs.createDir(dest)
+                                j.do.copyTree(src,dest)
                     else:
-                        j.system.fs.createDir(dest)
-                    j.do.copyTree(src,dest)
+                        j.do.copyTree(src,dest)
 
-        self.actions.configure(hrd=j.packages.hrd)
+        self.actions.configure()
 
         if start:
-            self.actions.start(hrd=j.packages.hrd)
+            self.actions.start()
 
 
     def __repr__(self):

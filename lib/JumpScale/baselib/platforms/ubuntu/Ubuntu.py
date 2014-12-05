@@ -54,34 +54,59 @@ class Ubuntu:
         result=lsb_release.get_distro_information()        
         return result["CODENAME"].lower().strip(),result["DESCRIPTION"],result["ID"].lower().strip(),result["RELEASE"],
 
+    def existsUser(self,name):
+        cmd="getent passwd %s"%name
+        out=j.do.execute(cmd)
+        return not out.strip()==""
+
+    def existsGroup(self,name):
+        cmd="id -g %s"%name
+        out=j.do.execute(cmd)
+        return out.find("no such user")==-1
+
     def createUser(self,name,passwd,home=None,creategroup=True):
-        import JumpScale.baselib.remote.cuisine
-        c=j.remote.cuisine.api
+        # quietly add a user without password
+        if self.existsUser(name)==False:
+            cmd='adduser --quiet --disabled-password -shell /bin/bash --home /home/%s --gecos "User" %s'%(name,name)
+            j.do.execute(cmd)
 
-        if home==None:
-            homeexists=True
-        else:
-            homeexists=j.system.fs.exists(home)
+        # set password
+        cmd='echo "%s:%s" | chpasswd'%(name,passwd)
+        j.do.execute(cmd)
 
-        c.user_ensure(name, passwd=passwd, home=home, uid=None, gid=None, shell=None, fullname=None, encrypted_passwd=False)
-        if creategroup:
+        if creategroup and not self.existsGroup(name):
             self.createGroup(name)
             self.addUser2Group(name,name)
 
-        if home!=None and not homeexists:
-            c.dir_ensure(home,owner=name,group=name)
+        # import JumpScale.baselib.remote.cuisine
+        # c=j.remote.cuisine.api
 
-    def createGroup(self,name):
-        import JumpScale.baselib.remote.cuisine
-        c=j.remote.cuisine.api
-        c.group_ensure(name)
+        # if home==None:
+        #     homeexists=True
+        # else:
+        #     homeexists=j.system.fs.exists(home)
+
+        # c.user_ensure(name, passwd=passwd, home=home, uid=None, gid=None, shell=None, fullname=None, encrypted_passwd=False)
+        # if creategroup:
+        #     self.createGroup(name)
+        #     self.addUser2Group(name,name)
+
+        # if home!=None and not homeexists:
+        #     c.dir_ensure(home,owner=name,group=name)
+
+    def createGroup(self,groupname):
+        cmd='groupadd  %s'%groupname
+        j.do.execute(cmd)
+        # import JumpScale.baselib.remote.cuisine
+        # c=j.remote.cuisine.api
+        # c.group_ensure(name)
 
     def addUser2Group(self,group,user):
-        import JumpScale.baselib.remote.cuisine
-        c=j.remote.cuisine.api
-        c.group_user_ensure(group, user)
-
-            
+        cmd='useradd -G %s %s'%(group,user)
+        j.do.execute(cmd)
+        # import JumpScale.baselib.remote.cuisine
+        # c=j.remote.cuisine.api
+        # c.group_user_ensure(group, user)            
 
     def checkInstall(self, packagenames, cmdname):
         """

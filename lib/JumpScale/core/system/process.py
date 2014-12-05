@@ -1406,8 +1406,8 @@ class SystemProcess:
         except Exception as e:
             raise
 
-        output=output.decode()#'ascii')            
-        error=error.decode()#'ascii')
+        output=output.decode("utf8")#'ascii')            
+        error=error.decode("utf8")#'ascii')
 
         if exitcode!=0 or error!="":
             j.logger.log(" Exitcode:%s\nOutput:%s\nError:%s\n" % (exitcode, output, error), 5)
@@ -1734,7 +1734,7 @@ class SystemProcess:
 
     def killProcessByPort(self,port):
         for pid in self.getPidsByPort(port):
-            # print "kill:%s"%port
+            print "kill:%s"%port
             kill(pid)
 
 

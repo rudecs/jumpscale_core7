@@ -13,7 +13,7 @@ parser = cmdutils.ArgumentParser()
 #             'publish', 'repackage', 'restart', 'start', 'stop', 'mdupdate','addrepo', 'update', 'upload', 'mirror',
 #             'switchbranch', 'list','mdswitch','mddisabledebug','showdeps']
 
-commands = ['install','list']
+commands = ['install','list','stop','start','restart']
 
 parser.add_argument("action", choices=commands, help='Command to perform')
 
@@ -344,19 +344,19 @@ elif args.action == 'repackage':
             j.packages.publish(args.message, domain)
 
 elif args.action == 'restart':
-    packages= cmdutils.getJPackage(args,installed=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.restart(dependencies=args.deps)
+        package.restart(args=hrddata)
 
 elif args.action == 'start':
-    packages= cmdutils.getJPackage(args,installed=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.start(dependencies=args.deps)
+        package.start(args=hrddata)
 
 elif args.action == 'stop':
-    packages= cmdutils.getJPackage(args,installed=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.stop(dependencies=args.deps)
+        package.stop(args=hrddata)
 
 elif args.action == 'mdupdate':
     if j.application.sandbox:

@@ -296,9 +296,10 @@ class Docker():
                 key,val=item.split(":",1)
                 volsdict[str(key).strip()]=str(val).strip()
 
-        # if j.system.fs.exists(path="/var/jumpscale/"):
-        #     if "/var/jumpscale" not in volsdict:
-        #         volsdict["/var/jumpscale"]="/var/jumpscale"
+        j.system.fs.createDir("/var/jumpscale")
+        if "/var/jumpscale" not in volsdict:
+            volsdict["/var/jumpscale"]="/var/%s"%name
+        j.system.fs.createDir("/var/%s"%name)
 
         tmppath="/tmp/dockertmp/%s"%name
         j.system.fs.createDir(tmppath)

@@ -17,14 +17,14 @@ class ActionsBase():
     step7c: do monitor_remote to see if package healthy installed & running, but this time test is done from central location
     """
 
-    def prepare(self,hrd,**args):
+    def prepare(self,**args):
         """
         this gets executed before the files are downloaded & installed on approprate spots
         """
         return True
 
 
-    def configure(self,hrd,**args):
+    def configure(self,**args):
         """
         this gets executed when files are installed
         this step is used to do configuration steps to the platform
@@ -32,12 +32,15 @@ class ActionsBase():
         """
         return True
 
-    def start(self,hrd,**args):
+    def start(self,**args):
         if not self.jp_instance.hrd.exists("process.cwd"):
             return
         cwd=self.jp_instance.hrd.get("process.cwd")
         if cwd.strip()=="":
             return
+
+        self.stop(**args)
+
         tcmd=self.jp_instance.hrd.get("process.cmd")
         if tcmd=="jspython":
             tcmd="source %s/env.sh;jspython"%(j.dirs.baseDir)
@@ -103,7 +106,7 @@ class ActionsBase():
             else:
                 j.system.platform.ubuntu.startService(self.name)
 
-        isrunning=self.check_up_local(hrd)
+        isrunning=self.check_up_local()
 
         if isrunning==False:            
             if j.system.fs.exists(path=self.jp_instance.getLogPath()):
@@ -137,21 +140,25 @@ class ActionsBase():
             # self.raiseError(msg)
             # return
 
-    def stop(self,hrd,**args):
+    def stop(self,**args):
         """
-        if you want a gracefull shutdown implement this method
-        a uptime check will be done afterwards (local)
-        return True if stop was ok, if not this step will have failed & halt will be executed.
         """
         return True
 
-    def halt(self,hrd,**args):
+    def halt(self,**args):
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
         """
+        print "HARDKILL"
+        for port in self.jp_instance.getTCPPorts():
+            j.system.process.killProcessByPort(port)
+        if not self.check_down_local(**args):
+            j.system.process.killProcessByName(self.jp_instance.hrd.get("process.filterstr"))         
+        if not self.check_down_local(**args):
+            j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
         return True
 
-    def check_up_local(self,hrd,**args):
+    def check_up_local(self,**args):
         """
         do checks to see if process(es) is (are) running.
         this happens on system where process is
@@ -179,7 +186,7 @@ class ActionsBase():
             return False
         return False
 
-    def check_down_local(self,hrd,**args):
+    def check_down_local(self,**args):
         """
         do checks to see if process(es) are all down
         this happens on system where process is
@@ -201,35 +208,35 @@ class ActionsBase():
 
         return False        
 
-    def check_requirements(self,hrd,**args):
+    def check_requirements(self,**args):
         """
         do checks if requirements are met to install this app
         e.g. can we connect to database, is this the right platform, ...
         """
         return True
 
-    def monitor_local(self,hrd,**args):
+    def monitor_local(self,**args):
         """
         do checks to see if all is ok locally to do with this package
         this happens on system where process is
         """
         return True
 
-    def monitor_remote(self,hrd,**args):
+    def monitor_remote(self,**args):
         """
         do checks to see if all is ok from remote to do with this package
         this happens on system from which we install or monitor (unless if defined otherwise in hrd)
         """
         return True
 
-    def cleanup(self,hrd,**args):
+    def cleanup(self,**args):
         """
         regular cleanup of env e.g. remove logfiles, ...
         is just to keep the system healthy
         """
         return True
 
-    def data_export(self,hrd,**args):
+    def data_export(self,**args):
         """
         export data of app to a central location (configured in hrd under whatever chosen params)
         return the location where to restore from (so that the restore action knows how to restore)
@@ -237,14 +244,14 @@ class ActionsBase():
         """
         return False
 
-    def data_import(self,id,hrd,**args):
+    def data_import(self,id,**args):
         """
         import data of app to local location
         if specifies which retore to do, id corresponds with line item in the $name.export file
         """
         return False
 
-    def uninstall(self,hrd,**args):
+    def uninstall(self,**args):
         """
         uninstall the apps, remove relevant files
         """
