@@ -33,112 +33,116 @@ class ActionsBase():
         return True
 
     def start(self,**args):
-        if not self.jp_instance.hrd.exists("process.cwd"):
-            return
-        cwd=self.jp_instance.hrd.get("process.cwd")
-        if cwd.strip()=="":
-            return
 
-        self.stop(**args)
+        def start2(process):
+            cwd=process["cwd"]
+            self.stop(**args)
 
-        tcmd=self.jp_instance.hrd.get("process.cmd")
-        if tcmd=="jspython":
-            tcmd="source %s/env.sh;jspython"%(j.dirs.baseDir)
-            
+            tcmd=process["cmd"]
+            if tcmd=="jspython":
+                tcmd="source %s/env.sh;jspython"%(j.dirs.baseDir)                
 
-        targs=self.jp_instance.hrd.get("process.args")
-        tuser=self.jp_instance.hrd.get("process.user",default="root")
-        tlog=self.jp_instance.hrd.getBool("process.log",default=True)
-        env=self.jp_instance.hrd.get("process.env",default="")
-        domain=self.jp_instance.jp.domain
-        name=self.jp_instance.jp.name
-        if self.jp_instance.instance!="name":
-            name+="__%s"%self.jp_instance.instance
+            targs=process["args"]
+            tuser=process["user"]
+            if tuser=="":
+                tuser="root"
+            tlog=self.jp_instance.hrd.getBool("process.log",default=True)
+            env=process["env"]
+            domain=self.jp_instance.jp.domain
+            if process["name"]!="":
+                name=process["name"]
+            else:
+                name=self.jp_instance.jp.name
+                if self.jp_instance.instance!="main":
+                    name+="__%s"%self.jp_instance.instance
 
-        startupmethod=self.jp_instance.hrd.get("process.startupmanager",default="tmux")
+            startupmethod=process["startupmanager"]
 
-        j.do.delete(self.jp_instance.getLogPath())
+            j.do.delete(self.jp_instance.getLogPath())
 
-        if j.system.fs.exists(path="/etc/my_init.d"):
-            j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputToStdout=False, ignoreErrorOutput=True)
-
-            for port in [int(item) for item in self.jp_instance.hrd.getList("process.ports") if str(item).strip()<>""]:
-                print ("KILL: %s (%s)"%(name,port))
-                j.system.process.killProcessByPort(port)
-
-            cmd2="%s %s"%(tcmd,targs)
-            C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,cmd2,name)
-            j.do.delete("/var/log/%s.log"%name)
-            j.do.createDir("/etc/service/%s"%name)
-            path2="/etc/service/%s/run"%name
-            j.do.writeFile(path2,C)
-            j.do.chmod(path2,0o770)            
-            j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputToStdout=False, ignoreErrorOutput=True)
-            print "STARTED SUCCESFULLY:%s"%name
-        
-        elif startupmethod=="upstart":
-            raise RuntimeError("not implemented")
-            spath="/etc/init/%s.conf"%name
-            if j.system.fs.exists(path=spath):
-                j.system.platform.ubuntu.stopService(self.name)
-                if j.tools.startupmanager.upstart==False:
-                    j.system.fs.remove(spath)  
-            cmd2="%s %s"%(tcmd,targs)  #@todo no support for working dir yet
-            j.system.fs.writeFile(self.logfile,"start cmd:\n%s\n"%cmd2,True)#append
-            j.system.process.executeIndependant(cmd2)            
-
-        elif startupmethod=="tmux":
-
-            for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
-                if tmuxname==name:
-                    j.system.platform.screen.killWindow(domain,name)
-
-            #@todo need to do env            
-            j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env={},user=tuser)#, newscr=True)
-
-            if tlog:
-                j.system.platform.screen.logWindow(domain,name,self.jp_instance.getLogPath())
-
-        else:
             if j.system.fs.exists(path="/etc/my_init.d"):
-                #docker
-                pass
-            else:
-                j.system.platform.ubuntu.startService(self.name)
+                j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputToStdout=False, ignoreErrorOutput=True)
 
-        isrunning=self.check_up_local()
+                for port in [int(item) for item in self.jp_instance.hrd.getList("process.ports") if str(item).strip()<>""]:
+                    print ("KILL: %s (%s)"%(name,port))
+                    j.system.process.killProcessByPort(port)
 
-        if isrunning==False:            
-            if j.system.fs.exists(path=self.jp_instance.getLogPath()):
-                log=j.do.readFile(self.jp_instance.getLogPath()).strip()
-            else:
-                log=""
-
-            msg=""
-
-            if self.jp_instance.getTCPPorts()!=[]:
-                ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
-                msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
-                j.events.opserror_critical(msg,"jp.start.failed.ports")
-            else:
-                j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")
-
-            # if msg=="":
-            #     pids=self.getPids(ifNoPidFail=False,wait=False)
-            #     if len(pids) != self.numprocesses:
-            #         msg="Could not start, did not find enough running instances, needed %s, found %s"%(self.numprocesses,len(pids))
-
-            # if msg=="" and pids!=[]:
-            #     for pid in pids:
-            #         test=j.system.process.isPidAlive(pid)
-            #         if test==False:
-            #             msg="Could not start, pid:%s was not alive."%pid
+                cmd2="%s %s"%(tcmd,targs)
+                C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,cmd2,name)
+                j.do.delete("/var/log/%s.log"%name)
+                j.do.createDir("/etc/service/%s"%name)
+                path2="/etc/service/%s/run"%name
+                j.do.writeFile(path2,C)
+                j.do.chmod(path2,0o770)            
+                j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputToStdout=False, ignoreErrorOutput=True)
+                print "STARTED SUCCESFULLY:%s"%name
             
-            # if log!="":                
-            #     msg="%s\nlog:\n%s\n"%(msg,log)
+            elif startupmethod=="upstart":
+                raise RuntimeError("not implemented")
+                spath="/etc/init/%s.conf"%name
+                if j.system.fs.exists(path=spath):
+                    j.system.platform.ubuntu.stopService(self.name)
+                    if j.tools.startupmanager.upstart==False:
+                        j.system.fs.remove(spath)  
+                cmd2="%s %s"%(tcmd,targs)  #@todo no support for working dir yet
+                j.system.fs.writeFile(self.logfile,"start cmd:\n%s\n"%cmd2,True)#append
+                j.system.process.executeIndependant(cmd2)            
 
-            # self.raiseError(msg)
-            # return
+            elif startupmethod=="tmux":
+
+                for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
+                    if tmuxname==name:
+                        j.system.platform.screen.killWindow(domain,name)
+
+                j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
+
+                if tlog:
+                    j.system.platform.screen.logWindow(domain,name,self.jp_instance.getLogPath())
+
+            else:
+                raise RuntimeError("startup method not known:'%s'"%startupmethod)
+                if j.system.fs.exists(path="/etc/my_init.d"):
+                    #docker
+                    pass
+                else:
+                    j.system.platform.ubuntu.startService(name)
+
+            isrunning=self.check_up_local()
+
+            if isrunning==False:            
+                if j.system.fs.exists(path=self.jp_instance.getLogPath()):
+                    log=j.do.readFile(self.jp_instance.getLogPath()).strip()
+                else:
+                    log=""
+
+                msg=""
+
+                if self.jp_instance.getTCPPorts()!=[]:
+                    ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
+                    msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
+                    j.events.opserror_critical(msg,"jp.start.failed.ports")
+                else:
+                    j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")
+
+                # if msg=="":
+                #     pids=self.getPids(ifNoPidFail=False,wait=False)
+                #     if len(pids) != self.numprocesses:
+                #         msg="Could not start, did not find enough running instances, needed %s, found %s"%(self.numprocesses,len(pids))
+
+                # if msg=="" and pids!=[]:
+                #     for pid in pids:
+                #         test=j.system.process.isPidAlive(pid)
+                #         if test==False:
+                #             msg="Could not start, pid:%s was not alive."%pid
+                
+                # if log!="":                
+                #     msg="%s\nlog:\n%s\n"%(msg,log)
+
+                # self.raiseError(msg)
+                # return
+
+        for process in self.jp_instance.getProcessDicts():
+            start2(process)
 
     def stop(self,**args):
         """
@@ -149,42 +153,54 @@ class ActionsBase():
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
         """
-        print "HARDKILL"
-        for port in self.jp_instance.getTCPPorts():
-            j.system.process.killProcessByPort(port)
-        if not self.check_down_local(**args):
-            j.system.process.killProcessByName(self.jp_instance.hrd.get("process.filterstr"))         
-        if not self.check_down_local(**args):
-            j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
+        def do(process):
+            cwd=process["cwd"]
+            print "HARDKILL"
+            for port in self.jp_instance.getTCPPorts():
+                j.system.process.killProcessByPort(port)
+            if not self.check_down_local(**args):
+                j.system.process.killProcessByName(process["filterstr"])         
+            if not self.check_down_local(**args):
+                j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
+
+        for process in self.jp_instance.getProcessDicts():
+            do(process)
+
         return True
 
     def check_up_local(self,**args):
         """
         do checks to see if process(es) is (are) running.
         this happens on system where process is
-        """        
-        ports=self.jp_instance.getTCPPorts()
-        timeout=self.jp_instance.hrd.get("process.start.timeout",default=2)
-        if len(ports)>0:
-            
-            for port in ports:
-                #need to do port checks
-                if j.system.net.waitConnectionTest("localhost", port, timeout)==False:
-                    
-                    return False
-            return True
-        else:
-            #no ports defined 
-            filterstr=self.jp_instance.hrd.get("process.filterstr")
+        """      
+        def do(process):
+            if not self.jp_instance.hrd.exists("process.cwd"):
+                return
+            cwd=process["cwd"]
+            ports=self.jp_instance.getTCPPorts()
+            timeout=process["timeout_start"]
+            if timeout==0:
+                timeout=2
+            if len(ports)>0:
+                
+                for port in ports:
+                    #need to do port checks
+                    if j.system.net.waitConnectionTest("localhost", port, timeout)==False:                    
+                        return False            
+            else:
+                #no ports defined 
+                filterstr=process["filterstr"]
 
-            start=j.base.time.getTimeEpoch()
-            now=start
-            while now<start+timeout:
-                if j.system.process.checkProcessRunning(filterstr):
-                    return True
-                now=j.base.time.getTimeEpoch()
-            return False
-        return False
+                start=j.base.time.getTimeEpoch()
+                now=start
+                while now<start+timeout:
+                    if j.system.process.checkProcessRunning(filterstr):
+                        return True
+                    now=j.base.time.getTimeEpoch()
+                return False
+        for process in self.jp_instance.getProcessDicts():
+            do(process)
+        return True
 
     def check_down_local(self,**args):
         """
@@ -192,21 +208,31 @@ class ActionsBase():
         this happens on system where process is
         return True when down
         """        
-        ports=self.jp_instance.getTCPPorts()
+        def do(process):        
+            if not self.jp_instance.hrd.exists("process.cwd"):
+                return
+            cwd=process["cwd"]
+            if cwd.strip()=="":
+                return
 
-        if len(ports)>0:
-            timeout=self.jp_instance.hrd.get("process.start.timeout",default=2)
-            for port in ports:
-                #need to do port checks
-                if j.system.net.waitConnectionTestStopped("localhost", port, timeout)==False:
-                    return False
-            return True
-        else:
-            #no ports defined 
-            filterstr=self.jp_instance.hrd.get("process.filterstr")
-            return j.system.process.checkProcessRunning(filterstr)==False
+            ports=self.jp_instance.getTCPPorts()
 
-        return False        
+            if len(ports)>0:
+                timeout=process["timeout_stop"]
+                if timeout==0:
+                    timeout=2
+                for port in ports:
+                    #need to do port checks
+                    if j.system.net.waitConnectionTestStopped("localhost", port, timeout)==False:
+                        return False
+            else:
+                #no ports defined 
+                filterstr=process["filterstr"]
+                return j.system.process.checkProcessRunning(filterstr)==False
+
+        for process in self.jp_instance.getProcessDicts():
+            do(process)
+        return True        
 
     def check_requirements(self,**args):
         """

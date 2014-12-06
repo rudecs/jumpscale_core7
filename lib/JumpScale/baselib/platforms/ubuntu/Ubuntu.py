@@ -56,13 +56,17 @@ class Ubuntu:
 
     def existsUser(self,name):
         cmd="getent passwd %s"%name
-        out=j.do.execute(cmd)
-        return not out.strip()==""
+        rc,out=j.system.process.execute(cmd, dieOnNonZeroExitCode=False, outputToStdout=False, useShell=False, ignoreErrorOutput=True)
+        if rc==2:
+            return False
+        return True
 
     def existsGroup(self,name):
         cmd="id -g %s"%name
-        out=j.do.execute(cmd)
-        return out.find("no such user")==-1
+        rc,out=j.system.process.execute(cmd, dieOnNonZeroExitCode=False, outputToStdout=False, useShell=False, ignoreErrorOutput=True)
+        if rc==1:
+            return False
+        return True
 
     def createUser(self,name,passwd,home=None,creategroup=True):
         # quietly add a user without password

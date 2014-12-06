@@ -298,8 +298,8 @@ class Docker():
 
         j.system.fs.createDir("/var/jumpscale")
         if "/var/jumpscale" not in volsdict:
-            volsdict["/var/jumpscale"]="/var/%s"%name
-        j.system.fs.createDir("/var/%s"%name)
+            volsdict["/var/jumpscale"]="/var/docker/%s"%name
+        j.system.fs.createDir("/var/docker/%s"%name)
 
         tmppath="/tmp/dockertmp/%s"%name
         j.system.fs.createDir(tmppath)
@@ -399,6 +399,12 @@ class Docker():
     def getImages(self):
         images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images()]
         return images
+
+    def removeImages(self,tag="<none>:<none>"):
+        for item in self.client.images():
+            if tag in item["RepoTags"]:
+                self.client.remove_image(item["Id"])
+
 
     def setHostName(self,name):
         raise RuntimeError("not implemented")

@@ -1,5 +1,6 @@
 from JumpScale import j
 import imp
+import copy
 class JPackage():
 
     def __init__(self,domain="",name=""):
@@ -67,8 +68,11 @@ class JPackageInstance():
         return logpath
 
     def getTCPPorts(self):
-        ports=self.hrd.getList("process.ports")
-        ports=[int(item) for item in ports if str(item).strip()!=""]
+        ports=[]
+        for process in self.getProcessDicts():
+            for item in process["ports"]:
+                if item not in ports:
+                    ports.append(item)
         return ports        
 
     def _load(self,args={}):
@@ -154,9 +158,49 @@ class JPackageInstance():
         self.stop(args)
         self.start(args)
 
+    def getProcessDicts(self):
+        res=[]
+        counter=0
+
+        for process in self.hrd.getListFromPrefix("process"):
+            counter+=1
+
+                
+            process=copy.copy(process)
+            for item in ["args","cmd","cwd","env","filterstr","name","ports","prio","timeout_start","startupmanager","timeout_stop","user"]:
+                if item not in process:
+                    process[item]=""
+
+            if isinstance(process["ports"],str) and process["ports"].strip()=="":
+                process["ports"]=[]
+            elif isinstance(process["ports"],str):
+                process["ports"]=[int(item) for item in process["ports"].split(";") if item.strip()!=""]
+
+            if process["name"].strip()=="":
+                process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
+
+            if process["startupmanager"].strip()=="":
+                process["startupmanager"]="tmux"
+
+            if self.hrd.exists("env.process.%s"%counter):
+                process["env"]=self.hrd.getDict("env.process.%s"%counter)
+            elif process["env"].strip()=="":
+                process["env"]={}
+            else:
+                process["env"]==j.tools.text.getDict(process["env"])                
+
+            for item in ["prio","timeout_start","timeout_stop"]:
+                process[item]=j.tools.text.getInt(process[item])
+
+            res.append(process)
+
+        return res
+
     def install(self,args={},start=True):
         
         self._load(args=args)
+
+        self.stop()
 
         for dep in self.getDependencies():
             if dep.jp.name not in j.packages._justinstalled:
@@ -168,6 +212,7 @@ class JPackageInstance():
         #download
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
+            print recipeitem
             
             #pull the required repo
             dest0=self._getRepo(recipeitem['url'])
@@ -209,10 +254,12 @@ class JPackageInstance():
                             if recipeitem["overwrite"].lower()=="false":
                                 continue
                             else:
+                                print ("copy: %s->%s"%(src,dest))
                                 j.do.delete(dest)
                                 j.system.fs.createDir(dest)
                                 j.do.copyTree(src,dest)
                     else:
+                        print ("copy: %s->%s"%(src,dest))
                         j.do.copyTree(src,dest)
 
         self.actions.configure()

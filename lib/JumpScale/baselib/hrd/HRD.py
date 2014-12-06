@@ -132,6 +132,9 @@ class HRDItem():
                     item=item.strip()                    
                     if item=="":
                         continue
+                    if item.find(":")==-1:
+                        j.events.inputerror_critical("In %s/%s: cannot parse:'%s', need to find : to parse dict"%(self.hrd.name,self.name,item))
+                        
                     key,post2=item.split(":",1)
                         
                     currentobj[key.strip()]=post2.strip()
