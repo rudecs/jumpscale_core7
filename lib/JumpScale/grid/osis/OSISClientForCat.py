@@ -53,7 +53,7 @@ class OSISClientForCat():
     def authenticate(self, name,passwd,**args):
         """
         authenticates a user and returns the groups in which the user is
-        """        
+        """ 
         return  self.client.authenticate(namespace=self.namespace, categoryname=self.cat,name=name,passwd=passwd,**args)     
 
     def new(self,**args):
