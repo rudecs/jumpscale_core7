@@ -745,15 +745,15 @@ class InstallTools():
             return True
         return False
 
-    def executeCmds(self,cmdstr, dieOnNonZeroExitCode=True, outputToStdout=True, useShell = False, ignoreErrorOutput=False):        
+    def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):        
         for cmd in cmdstr.split("\n"):
             if cmd.strip()=="" or cmd[0]=="#":
                 continue
-            self.execute(cmd,dieOnNonZeroExitCode=dieOnNonZeroExitCode, outputToStdout=outputToStdout, useShell = useShell, ignoreErrorOutput=ignoreErrorOutput)
+            self.execute(cmd,dieOnNonZeroExitCode, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
 
 
 
-    def execute(self, command , dieOnNonZeroExitCode=True, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,die=True):
+    def execute(self, command , outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):
         """
         @param errors is array of statements if found then exit as error
         """
@@ -819,7 +819,9 @@ class InstallTools():
         err=""
         out=""
         rc=1000
-        while p.poll() is None:
+
+
+        while p.poll() is None or inp.empty()==False:
             # App still working
             # print p.poll()
             try:
@@ -862,7 +864,6 @@ class InstallTools():
                 rc=999
                 break
                             
-
         (output2,error2) = p.communicate()
         out+=output2
         err==error2
@@ -871,7 +872,7 @@ class InstallTools():
             if rc==0 and err<>"":
                 rc=998
 
-        if rc>0 and die:
+        if rc>0 and dieOnNonZeroExitCode:
             if err<>"":
                 raise RuntimeError("Could not execute cmd:\n'%s'\nerr:\n%s"%(command,err))
             else:

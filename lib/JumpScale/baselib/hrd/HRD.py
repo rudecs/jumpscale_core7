@@ -1,6 +1,7 @@
 from JumpScale import j
 import JumpScale.baselib.regextools
 from .HRDBase import HRDBase
+import binascii
 
 class HRDItem():
     def __init__(self,name,hrd,ttype,data,comments):
@@ -17,6 +18,8 @@ class HRDItem():
         self.temp=False       
 
     def get(self):
+        if self.ttype=="binary":
+            return self.data
         if self.value==None:
             self._process()
         return self.value
@@ -32,14 +35,8 @@ class HRDItem():
 
         if self.value!=None:
             data=str(j.tools.text.pythonObjToStr(self.value))
-        if self.ttype=="dict":
-            data=data.strip(":")
-            if data.find("\n")==-1:
-                data+=":"
-        elif self.ttype=="list":
-            data=data.strip(",")
-            if data.find("\n")==-1:
-                data+=","
+        if self.ttype=="dict" or self.ttype=="list":
+            pass
         else:
             data=data.strip()
         return data
@@ -122,7 +119,10 @@ class HRDItem():
                 self.hrd.changed=True
 
         self.value=j.tools.text.hrd2machinetext(value2)
-        if self.ttype=="dict":
+
+        if self.ttype=="str":
+            self.value=self.data.strip().strip("'")
+        elif self.ttype=="dict":
             currentobj={}
             self.value=self.value.strip(",")
             if self.value.strip()==":":
@@ -148,6 +148,8 @@ class HRDItem():
                 for item in self.value.split(","):
                     currentobj.append(item.strip())
                 self.value=j.tools.text.str2var(currentobj)
+        elif self.ttype=="binary":
+            self.value="BINARY"
         else:
             self.value=j.tools.text.str2var(self.value)
 
@@ -155,7 +157,10 @@ class HRDItem():
             self.hrd.save()
 
     def __str__(self):
-        return "%-15s|%-5s|'%s' -- '%s'"%(self.name,self.ttype,self.data,self.value)
+        if self.ttype!="binary":
+            return "%-15s|%-5s|'%s' -- '%s'"%(self.name,self.ttype,self.data,self.value)
+        else:
+            return "%-15s|%-5s|'%s' -- '%s'"%(self.name,self.ttype,"BINARY",self.value)
 
     __repr__=__str__
 
@@ -298,31 +303,43 @@ class HRD(HRDBase):
         splitted=content.split("\n")
         x=-1
         go=True
+        vartype="unknown"
         while go:
             x+=1
             if x==len(splitted):
                 go=False
                 continue
             line=splitted[x]
-            line2=line.strip()
 
-            if len(line)>0 and line.find("#")!=-1:
-                line,comment0=line.split("#",1)
-                line2=line.strip()
-                comments+="#%s\n"%comment0
+            # print ("%s:%s:%s"%(state,vartype,line))
             
-            if line2=="":
-                if state=="multiline":
-                    #end of multiline var needs to be processed
-                    state="var"
-                else:
-                    continue
+            if not vartype.startswith("binary"): 
+                line2=line.strip()
 
-            if line2.startswith("@"):
-                continue
+                if len(line)>0 and line.find("#")!=-1:
+                        line,comment0=line.split("#",1)
+                        line2=line.strip()
+                        comments+="#%s\n"%comment0
+            
+                if line2=="":
+                    if state=="multiline":
+                        #end of multiline var needs to be processed
+                        state="var"
+                    else:
+                        continue
+
+                if line2.startswith("@"):
+                    continue
+            else:
+                line2=line
 
             if state=="multiline":
-                if line[0]!=" ":
+                if vartype.startswith("binary"):
+                    if line2.startswith("#BINARYEND#########"):
+                        #found end of binary block
+                        post=post[:-1]
+                        state="var"
+                elif line[0]!=" ":
                     #if post was empty then we need to process current line again
                     if post.strip()=="":
                         x=x-1
@@ -345,12 +362,20 @@ class HRD(HRDBase):
                     pre,post=line2.split("=",1)                        
                     vartype="unknown"
                     name=pre.strip()
-                    if post.strip()=="" or post.strip().lower()=="@ask,":
+                    if post.strip()=="" or post.strip().startswith("b") or post.strip().lower()=="@ask,":
                         state="multiline"
                         # print ("multilinenew:%s"%(line))
                         if  post.lower().strip().startswith("@ask"):
-                            vartype="ask"                            
-                        post=post.strip()+" " #make sure there is space trailing
+                            vartype="ask"
+                            post=post.strip()+" " #make sure there is space trailing (WHY?)
+                        elif post.strip()=="b":
+                            post=""
+                            vartype="binary"
+                        elif post.strip()=="bqp":
+                            post=""
+                            vartype="binaryqp"                            
+                        else:
+                            post=post.strip()+" " #make sure there is space trailing (WHY?)
                         continue
                     else:
                         vartype=self._recognizeType(post)
@@ -377,6 +402,8 @@ class HRD(HRDBase):
 
                 if vartype=="base":
                     post+="%s\\n"%line2
+                elif vartype.startswith("binary"):
+                    post+="%s\n"%line2                    
                 elif vartype=="dict" or vartype=="list":
                     post+="%s "%line2
                 elif vartype=="ask":
@@ -387,9 +414,14 @@ class HRD(HRDBase):
                 # print ("%s:%s"%(state,line))
                 if vartype=="ask":
                     vartype="base" #ask was temporary type, is really a string
-                
+
                 if self.prefixWithName:
                     name2="%s.%s"%(self.name,name)
+
+                if vartype=="binaryqp":
+                    post=binascii.a2b_qp(post)
+                    vartype="binary"
+
                 self.items[name]=HRDItem(name,self,vartype,post,comments)
                 if self.tree!=None:
                     self.tree.items[name2]=self.items[name]

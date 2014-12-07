@@ -1,5 +1,5 @@
 from JumpScale import j
-
+import binascii
 class HRDBase():
 
     def prefix(self, key,depth=0):
@@ -197,18 +197,34 @@ class HRDBase():
             if hrditem.temp:
                 continue
 
-            #see how many newlines in between
-            if keylast!=[] and keynew[0]!=keylast[0]:
-                out.append("")
-            else:
-                if len(keynew)>1 and len(keylast)>1 and len(keylast[1])>0 and j.tools.text.isNumeric(keylast[1][-1]) and keynew[1]!=keylast[1]:
-                    out.append("")
+            # #see how many newlines in between
+            # if keylast!=[] and keynew[0]!=keylast[0]:
+            #     out.append("")
+            # else:
+            #     if len(keynew)>1 and len(keylast)>1 and len(keylast[1])>0 and j.tools.text.isNumeric(keylast[1][-1]) and keynew[1]!=keylast[1]:
+            #         out.append("")
 
             if hrditem.comments!="":
                 out.append("")
                 out.append("%s" % (hrditem.comments.strip()))
-            val=hrditem.getAsString()
-            out.append("%-30s = %s" % (key, val))
+
+            if hrditem.ttype =="string":
+                val=hrditem.getAsString()
+                if val.find("\n")!=-1:
+                    out.append("%-30s = '%s'" % (key, val.strip("'")))
+                else:
+                    out.append("%-30s = %s" % (key, val))
+            elif hrditem.ttype =="list" or hrditem.ttype =="dict":
+                val=hrditem.getAsString()
+                if val.find("\n")!=-1:
+                    out.append("%-30s = %s\n" % (key, val))
+                else:
+                    out.append("%-30s = %s" % (key, val))
+            elif hrditem.ttype !="binary":
+                val=hrditem.getAsString()
+                out.append("%-30s = %s" % (key, val))                
+            else:
+                out.append("%-30s = bqp\n%s\n#BINARYEND#########\n\n"%(key,binascii.b2a_qp(hrditem.data)))
             # print("'''%s'''"%val)
             keylast=key.split(".")
         out=out[1:]
