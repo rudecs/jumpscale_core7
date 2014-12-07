@@ -4,6 +4,7 @@ from jinja2 import Environment, PackageLoader, FileSystemLoader
 import os
 import time
 import shutil
+import random
 from qcow2 import Qcow2
 from JumpScale import j
 from JumpScale.lib.btrfs import *
@@ -16,12 +17,15 @@ LOCKEXIST = 4
 
 
 class LibvirtUtil(object):
-    def __init__(self):
-        self.connection = libvirt.open()
+    def __init__(self, host='localhost'):
+        if host != 'localhost':
+            self.connection = libvirt.open('qemu+ssh://%s/system' % host)
+        else:
+            self.connection = libvirt.open()
         self.readonly = libvirt.openReadOnly()
         self.basepath = '/mnt/vmstor/kvm'
         self.templatepath = '/mnt/vmstor/kvm/images'
-        self.env = Environment(loader=FileSystemLoader('templates'))
+        self.env = Environment(loader=FileSystemLoader(j.system.fs.joinPaths(j.system.fs.getParent(__file__), 'templates')))
 
     def _get_domain(self, id):
         try:
@@ -387,6 +391,7 @@ class LibvirtUtil(object):
         return snapshotfiles
 
     def _get_pool(self, poolname):
+        self.check_storagepool(poolname)
         storagepool = self.connection.storagePoolLookupByName(poolname)
         return storagepool
 
@@ -472,55 +477,33 @@ class LibvirtUtil(object):
         vmstor_snapshot_path = j.system.fs.joinPaths(self.basepath,'snapshots')
         return j.system.btrfs.subvolumeList(vmstor_snapshot_path)
 
-    def create_node(self, name, image, size=10, location=None, networkid=None):
-        metadata_iso = None
-        diskname = self._create_disk(name, size, image)
+    def _generateRandomMacAddress(self):
+        """Generate a random MAC Address using the VM OUI code"""
+        rand_mac_addr = [0x00, 0x50, 0x56, random.randint(0x00, 0x7f), random.randint(0x00, 0xff), random.randint(0x00, 0xff)]
+        return ':'.join(map(lambda x: "%02x" % x, rand_mac_addr))
+
+    def create_node(self, name, image, size=10, memory=512, cpu_count=1):
+        diskname = self._create_disk(name, image, size)
         if not diskname or diskname == -1:
             #not enough free capcity to create a disk on this node
             return -1
-        return self._create_node(name, diskname, size, metadata_iso, networkid)
+        return self._create_node(name, diskname, size, memory, cpu_count)
 
-    def _create_node(self, name, diskname, size, metadata_iso=None, networkid=None):
+    def _create_node(self, name, diskname, size, memory, cpucount):
         machinetemplate = self.env.get_template("machine.xml")
-        vxlan = '%04x' % networkid 
-        macaddress = None #dont know where to get this from#self.backendconnection.getMacAddress(self.gid)
+        macaddress = self._generateRandomMacAddress()
         POOLPATH = '%s/%s' % (self.basepath, name)
         
-        self.LibvirtUtil.createNetwork(networkid, 'eth0')
-        # result = self._execute_agent_job('createnetwork', queue='hypervisor', networkid=networkid)
-        # if not result or result == -1:
-        #     return -1
-        
-        if not metadata_iso:
-            machinexml = machinetemplate.render({'machinename': name, 'diskname': diskname, 'vxlan': vxlan,
-                                             'memory': size.ram, 'nrcpu': size.extra['vcpus'], 'macaddress': macaddress, 'network': networkid, 'poolpath': POOLPATH})
-        else:
-            machinetemplate = self.env.get_template("machine_iso.xml")
-            machinexml = machinetemplate.render({'machinename': name, 'diskname': diskname, 'isoname': metadata_iso, 'vxlan': vxlan,
-                                             'memory': size.ram, 'nrcpu': size.extra['vcpus'], 'macaddress': macaddress, 'network': networkid, 'poolpath': POOLPATH})
-
-
-        # 0 means default behaviour, e.g machine is auto started.
-
-        result = self._execute_agent_job('createmachine', queue='hypervisor', machinexml=machinexml)
-        if not result or result == -1:
-            #Agent is not registered to agentcontroller or we can't provision the machine(e.g not enough resources, delete machine)
-            if result == -1:
-                self._execute_agent_job('deletevolume', queue='hypervisor', path=os.path.join(POOLPATH, diskname))
-            return -1
-
-        vmid = result['id']
+        # TODO: create network
+        #self.createNetwork(networkid, 'eth0')
+        machinexml = machinetemplate.render({'machinename': name, 'diskname': diskname, 'memory': memory, 'nrcpu': cpucount, 'macaddress': macaddress, 'poolpath': POOLPATH})
+        self.create_machine(machinexml)
         #dnsmasq = DNSMasq()
         #nsid = '%04d' % networkid
         #namespace = 'ns-%s' % nsid
         #config_path = j.system.fs.joinPaths(j.dirs.varDir, 'vxlan',nsid)
         #dnsmasq.setConfigPath(nsid, config_path)
-        self.backendconnection.registerMachine(vmid, macaddress, networkid)
         #dnsmasq.addHost(macaddress, ipaddress,name)
-        ipaddress = 'Undefined'
-        node = self._from_agent_to_node(result, ipaddress)
-        self._set_persistent_xml(node, result['XMLDesc'])
-        return node
 
     def _create_disk(self, vm_id, image_name, size=10, disk_role='base'):
         disktemplate = self.env.get_template("disk.xml")
@@ -528,5 +511,5 @@ class LibvirtUtil(object):
         diskbasevolume = j.system.fs.joinPaths(self.templatepath, '%s.qcow2' % image_name)
         diskxml = disktemplate.render({'diskname': diskname, 'diskbasevolume':
                                        diskbasevolume, 'disksize': size})
-        self.LibvirtUtil.create_disk(diskxml, vm_id)
+        self.create_disk(diskxml, vm_id)
         return diskname

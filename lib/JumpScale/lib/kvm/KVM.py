@@ -140,7 +140,7 @@ class KVM():
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
-    def create(self,name="",baseimage="base",start=False,replace=True):
+    def create(self, name, baseimage, start=False, replace=True):
         """
         create a KVM machine which inherits from a qcow2 image (so no COPY)
 
@@ -167,13 +167,15 @@ class KVM():
         
         """
         print(("create:%s"%name))
-        if replace:
-            if j.system.fs.exists(self._getMachinePath(name)):
-                self.destroy(name)        
-        running,stopped=self.list()
-        machines=running+stopped
+        j.system.fs.createDir(self._getRootPath(name))
+        self.LibvirtUtil.create_node(name, baseimage)
+        # if replace:
+        #     if j.system.fs.exists(self._getMachinePath(name)):
+        #         self.destroy(name)        
+        # running,stopped=self.list()
+        # machines=running+stopped
 
-        ipaddr=self._findFreeIP(name)
+        # ipaddr=self._findFreeIP(name)
 
         # set the ip address inside the VM (NO DHCP !!!!)
         # use SSH to login to VM using info we know from image
@@ -201,13 +203,13 @@ class KVM():
         # self.networkSetPrivateOnBridge( name,netname="mgmt0", bridge="mgmt", ipaddresses=["%s/24"%ipaddr]) #@todo make sure other ranges also supported
 
         #set ipaddr in hrd file
-        hrd=self.getConfig(name)
-        hrd.set("ipaddr",ipaddr)
+        # hrd=self.getConfig(name)
+        # hrd.set("ipaddr",ipaddr)
 
-        if start:
-            return self.start(name)
+        # if start:
+        #     return self.start(name)
 
-        return ipaddr
+        # return ipaddr
 
     def _getIdFromConfig(self, name):
         machine_hrd = self.getConfig(name)
