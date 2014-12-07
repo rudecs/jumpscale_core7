@@ -752,8 +752,7 @@ class InstallTools():
             self.execute(cmd, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
 
 
-
-    def execute(self, command , outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):
+    def execute(self, command , outputStdout=True, outputStderr=True, useShell=True, log=True, cwd=None, timeout=60, errors=[], ok=[], captureout=True, dieOnNonZeroExitCode=True):
         """
         @param errors is array of statements if found then exit as error
         """
