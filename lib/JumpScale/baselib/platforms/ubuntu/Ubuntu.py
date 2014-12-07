@@ -318,3 +318,10 @@ stop on runlevel [016]
         for entry in src.list:
             entry.uri = newuri
         src.save()
+
+    def addSourceUri(self,url):
+        url=url.replace(";",":")
+        name=url.replace("\\","/").replace("http://","").split("/")[0]
+        path="/etc/apt/sources.list.d/%s.list"%name
+        j.do.writeFile(path,"deb %s\n"%url)
+        

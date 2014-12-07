@@ -1,6 +1,15 @@
 from JumpScale import j
 import imp
 import copy
+
+import JumpScale.baselib.remote.cuisine
+
+# import JumpScale.lib.docker
+try:
+    import JumpScale.lib.docker
+except:
+    pass
+
 class JPackage():
 
     def __init__(self,domain="",name=""):
@@ -13,8 +22,11 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
+
+
     def _load(self):
         if self._loaded==False:
+
             # self.hrdpath="%s/apps/%s__%s"%(j.dirs.hrdDir,self.jp.domain,self.jp.name)
             self.hrdpath="%s/apps/jpackage.%s.%s.hrd"%(j.dirs.hrdDir,self.domain,self.name)
             self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
@@ -138,10 +150,54 @@ class JPackageInstance():
 
     def getDependencies(self):
         res=[]
-        for item in self.hrd.getList("dependencies"): 
-            jp=j.packages.get(name=item)
-            jp=jp.getInstance("main")
+        for item in self.hrd.getListFromPrefix("dependencies"): 
+
+            if isinstance(item,str):
+                if item.strip()=="":
+                    continue
+                item2=item.strip()
+                args={}
+                item={}
+                item["name"]=item2
+                item["domain"]="jumpscale"
+
+            if "args" in item:
+                args=item["args"]
+                if self.hrd.exists(args):
+                    args=self.hrd.getDict(args)
+
+                    #dirty hack for now (hrd format has bug)
+                    args2={}
+                    for key,val in args.items():
+                        args2[key]=val.replace("\\n","").replace("\n","")
+                    args=args2
+            else:
+                args={}
+
+            item['args']=args
+
+            if "name" in item:
+                name=item["name"]
+
+            domain=""
+            if "domain" in item:
+                domain=item["domain"].strip()
+            if domain=="":
+                domain="jumpscale"
+
+            instance="main"
+            if "instance" in item:
+                instance=item["instance"].strip()
+            if instance=="":
+                instance="main"
+
+            jp=j.packages.get(name=name,domain=domain)            
+            jp=jp.getInstance(instance)
+
+            jp.args=args
+
             res.append(jp) 
+
         return res
 
     def stop(self,args={}):
@@ -199,73 +255,153 @@ class JPackageInstance():
     def install(self,args={},start=True):
         
         self._load(args=args)
+        
+        docker=self.hrd.exists("docker.enable") and self.hrd.getBool("docker.enable")
 
-        self.stop()
+        if j.packages.indocker or not docker:
 
-        for dep in self.getDependencies():
-            if dep.jp.name not in j.packages._justinstalled:
-                dep.install()
-                j.packages._justinstalled.append(dep.jp.name)
+            self.stop()
 
-
-        self.actions.prepare()
-        #download
-
-        for recipeitem in self.hrd.getListFromPrefix("git.export"):
-            print recipeitem
-            
-            #pull the required repo
-            dest0=self._getRepo(recipeitem['url'])
-            src="%s/%s"%(dest0,recipeitem['source'])
-            src=src.replace("//","/")
-            if "dest" not in recipeitem:
-                raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
-            dest=recipeitem['dest']          
-
-            if "link" in recipeitem and str(recipeitem["link"]).lower()=='true':
-                #means we need to only list files & one by one link them
-                link=True
-            else:
-                link=False
-
-            if src[-1]=="*":
-                src=src.replace("*","")
-                if "nodirs" in recipeitem and str(recipeitem["nodirs"]).lower()=='true':
-                    #means we need to only list files & one by one link them
-                    nodirs=True
-                else:
-                    nodirs=False
-
-                items=j.do.listFilesInDir( path=src, recursive=False, followSymlinks=False, listSymlinks=False)
-                if nodirs==False:
-                    items+=j.do.listDirsInDir(path=src, recursive=False, dirNameOnly=False, findDirectorySymlinks=False)
-
-                items=[(item,"%s/%s"%(dest,j.do.getBaseName(item)),link) for item in items]
-            else:
-                items=[(src,dest,link)]
-
-            for src,dest,link in items:
-                if link:
-                    j.system.fs.createDir(j.do.getParent(dest))
-                    j.do.symlink(src, dest)
-                else:
-                    if j.system.fs.exists(path=dest):
-                        if "overwrite" in recipeitem:
-                            if recipeitem["overwrite"].lower()=="false":
-                                continue
-                            else:
-                                print ("copy: %s->%s"%(src,dest))
-                                j.do.delete(dest)
-                                j.system.fs.createDir(dest)
-                                j.do.copyTree(src,dest)
+            for dep in self.getDependencies():
+                if dep.jp.name not in j.packages._justinstalled:
+                    if 'args' in dep.__dict__:
+                        dep.install(args=dep.args)
                     else:
-                        print ("copy: %s->%s"%(src,dest))
-                        j.do.copyTree(src,dest)
+                        dep.install()
+                    j.packages._justinstalled.append(dep.jp.name)
 
-        self.actions.configure()
+            
+            for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
+                src=src.replace(";",":")
+                if src.strip()!="":     
+                    j.system.platform.ubuntu.addSourceUri(src)                
 
-        if start:
-            self.actions.start()
+            for src in self.hrd.getListFromPrefix("ubuntu.apt.key.pub"):
+                src=src.replace(";",":")
+                if src.strip()!="":            
+                    cmd="wget -O - %s | apt-key add -"%src
+                    j.do.execute(cmd,dieOnNonZeroExitCode=False)
+
+            if self.hrd.getBool("ubuntu.apt.update",default=False):
+                print "apt update"
+                j.do.execute("apt-get update -y",dieOnNonZeroExitCode=False)
+
+            if self.hrd.getBool("ubuntu.apt.upgrade -y",default=False):
+                j.do.execute("apt-get upgrade -y",dieOnNonZeroExitCode=False)
+
+            if self.hrd.exists("ubuntu.packages"):
+                for jp in self.hrd.getList("ubuntu.packages"):
+                    if jp.strip()!="":
+                        j.do.execute("apt-get install %s -f"%jp,dieOnNonZeroExitCode=False)       
+
+            self.actions.prepare()
+            #download
+
+            for recipeitem in self.hrd.getListFromPrefix("git.export"):
+                print recipeitem
+                
+                #pull the required repo
+                dest0=self._getRepo(recipeitem['url'])
+                src="%s/%s"%(dest0,recipeitem['source'])
+                src=src.replace("//","/")
+                if "dest" not in recipeitem:
+                    raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
+                dest=recipeitem['dest']          
+
+                if "link" in recipeitem and str(recipeitem["link"]).lower()=='true':
+                    #means we need to only list files & one by one link them
+                    link=True
+                else:
+                    link=False
+
+                if src[-1]=="*":
+                    src=src.replace("*","")
+                    if "nodirs" in recipeitem and str(recipeitem["nodirs"]).lower()=='true':
+                        #means we need to only list files & one by one link them
+                        nodirs=True
+                    else:
+                        nodirs=False
+
+                    items=j.do.listFilesInDir( path=src, recursive=False, followSymlinks=False, listSymlinks=False)
+                    if nodirs==False:
+                        items+=j.do.listDirsInDir(path=src, recursive=False, dirNameOnly=False, findDirectorySymlinks=False)
+
+                    items=[(item,"%s/%s"%(dest,j.do.getBaseName(item)),link) for item in items]
+                else:
+                    items=[(src,dest,link)]
+
+                for src,dest,link in items:
+                    if link:
+                        j.system.fs.createDir(j.do.getParent(dest))
+                        j.do.symlink(src, dest)
+                    else:
+                        if j.system.fs.exists(path=dest):
+                            if "overwrite" in recipeitem:
+                                if recipeitem["overwrite"].lower()=="false":
+                                    continue
+                                else:
+                                    print ("copy: %s->%s"%(src,dest))
+                                    j.do.delete(dest)
+                                    j.system.fs.createDir(dest)
+                                    j.do.copyTree(src,dest)
+                        else:
+                            print ("copy: %s->%s"%(src,dest))
+                            j.do.copyTree(src,dest)
+
+            self.actions.configure()
+
+            if start:
+                self.actions.start()
+
+        else:
+            #now bootstrap docker
+            ports=""
+            tcpports=self.hrd.getDict("docker.ports.tcp")
+            for inn,outt in tcpports.items():
+                ports+="%s:%s "%(inn,outt)
+            ports=ports.strip()
+
+            volsdict=self.hrd.getDict("docker.vols")
+            vols=""
+            for inn,outt in volsdict.items():
+                vols+="%s:%s # "%(inn,outt)
+            vols=vols.strip().strip("#").strip()
+
+            if self.instance!="main":
+                name="%s_%s"%(self.jp.name,self.instance)
+            else:
+                name="%s"%(self.jp.name)
+
+            image=self.hrd.get("docker.base",default="despiegk/mc")
+
+            mem=self.hrd.get("docker.mem",default="0")
+            if mem.strip()=="":
+                mem=0
+
+            cpu=self.hrd.get("docker.cpu",default=None)
+            if cpu.strip()=="":
+                cpu=None
+
+            ssh=self.hrd.get("docker.ssh",default=True)
+            if ssh.strip()=="":
+                ssh=True
+
+            ns=self.hrd.get("docker.ns",default='8.8.8.8')
+            if ns.strip()=="":
+                ns='8.8.8.8'
+
+            port=   j.tools.docker.create(name=name, ports=ports, vols=vols, volsro='', stdout=True, base=image, nameserver=ns, \
+                replace=True, cpu=cpu, mem=0,jumpscale=True,ssh=ssh)
+
+            self.hrd.set("docker.ssh.port",port)
+            self.hrd.set("docker.name",name)
+            self.hrd.save()
+
+            hrdname="jpackage.%s.%s.%s.hrd"%(self.jp.domain,self.jp.name,self.instance)
+            src="/%s/hrd/apps/%s"%(j.dirs.baseDir,hrdname)
+            j.tools.docker.copy(name,src,src)
+            j.tools.docker.run(name,"jpackage install -n %s -d %s"%(self.jp.name,self.jp.domain))
+
 
 
     def __repr__(self):

@@ -749,7 +749,7 @@ class InstallTools():
         for cmd in cmdstr.split("\n"):
             if cmd.strip()=="" or cmd[0]=="#":
                 continue
-            self.execute(cmd,dieOnNonZeroExitCode, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
+            self.execute(cmd, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
 
 
 
@@ -862,11 +862,13 @@ class InstallTools():
             if time.time()>start+timeout:
                 print "TIMEOUT"
                 rc=999
+                p.kill()
+                
                 break
-                            
-        (output2,error2) = p.communicate()
-        out+=output2
-        err==error2
+        if rc<>999:
+            (output2,error2) = p.communicate()
+            out+=output2
+            err==error2
         if rc==1000:
             rc = p.returncode
             if rc==0 and err<>"":
@@ -1453,7 +1455,7 @@ sudo stop redisc
 killall redis-server
 rm -rf /opt/redis/
 """
-        self.executeCmds(CMDS,dieOnNonZeroExitCode=False, outputToStdout=False, useShell = False, ignoreErrorOutput=True)
+        self.executeCmds(CMDS,outputStdout=False, outputStderr=False,useShell = True,log=False,cwd=None,timeout=60,errors=[],ok=[],captureout=False,dieOnNonZeroExitCode=False)
 
     def prepareUbuntu14Development(self,js=False):
         self.cleanSystem()

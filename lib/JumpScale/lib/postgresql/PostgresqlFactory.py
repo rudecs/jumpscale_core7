@@ -101,7 +101,7 @@ class PostgresClient():
         base,session=self.initsqlalchemy()
 
         args["path"]="%s/_schema.sql"%(path)
-        cmd="cd /opt/postgresql/bin;./pg_dump -U %(login)s -h %(ipaddr)s -p %(port)s -s -c -C -d %(dbname)s -w > %(path)s"%(args)
+        cmd="cd /opt/postgresql/bin;./pg_dump -U %(login)s -h %(ipaddr)s -p %(port)s -s -O -d %(dbname)s -w > %(path)s"%(args)
         # print cmd
         j.do.execute(cmd,outputStdout=False)
 

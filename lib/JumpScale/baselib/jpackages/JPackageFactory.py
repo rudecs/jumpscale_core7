@@ -11,9 +11,15 @@ class JPackageFactory():
         self.hrd=None
         self._justinstalled=[]
 
+        self.indocker=False
+
     def _doinit(self):
         if self._init==False:
             j.do.debug=False
+
+            if j.system.fs.exists(path="/etc/my_init.d"):
+                self.indocker=True            
+
             login=j.application.config.get("whoami.git.login").strip()
             passwd=j.application.config.get("whoami.git.passwd").strip()
             items=j.application.config.getDictFromPrefix("jpackage.metadata")

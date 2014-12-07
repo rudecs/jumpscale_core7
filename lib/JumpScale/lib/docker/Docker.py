@@ -19,13 +19,35 @@ class Docker():
                   # version='1.12',
                   timeout=10)
 
-    def execute(self, command):
+    def _execute(self, command):
         env = os.environ.copy()
         env.pop('PYTHONPATH', None)
         (exitcode, stdout, stderr) = j.system.process.run(command, showOutput=False, captureOutput=True, stopOnError=False, env=env)
         if exitcode != 0:
             raise RuntimeError("Failed to execute %s: Error: %s, %s" % (command, stdout, stderr))
         return stdout
+
+    def run(self,name,cmd):
+        cmd2="docker exec -i -t %s %s"%(name,cmd)
+        j.do.executeInteractive(cmd2)
+
+    def execute(self,name,path):
+        """
+        execute file in docker
+        """
+        self.copy(name,path,path)
+        j.tools.docker.run(name,"chmod 770 %s;%s"%(path,path))
+
+    def copy(self,name,src,dest):        
+        rndd=j.base.idgenerator.generateRandomInt(10,1000000)
+        dest0="/var/docker/%s/%s"%(name,rndd)
+        j.do.copyFile(src,dest0)
+        ddir=j.system.fs.getDirName(dest)
+        cmd="mkdir -p %s"%(ddir)
+        self.run(name,cmd)
+        cmd="cp /var/jumpscale/%s %s"%(rndd,dest)
+        self.run(name,cmd)
+        j.do.delete(dest0)
 
     @property
     def basepath(self):
@@ -136,7 +158,7 @@ class Docker():
     def _btrfsExecute(self,cmd):
         cmd="btrfs %s"%cmd
         print(cmd)
-        return self.execute(cmd)
+        return self._execute(cmd)
 
     def btrfsSubvolList(self):
         raise RuntimeError("not implemented")
@@ -247,7 +269,7 @@ class Docker():
         cmd="cd %s;tar xzvf %s -C ."%(path,bpath)        
         j.system.process.executeWithoutPipe(cmd)
 
-    def create(self,name="",ports="",vols="",volsro="",stdout=True,base="despiegk/mc",nameserver="8.8.8.8",replace=True,cpu=None,mem=0,jumpscale=False):
+    def create(self,name="",ports="",vols="",volsro="",stdout=True,base="despiegk/mc",nameserver="8.8.8.8",replace=True,cpu=None,mem=0,jumpscale=False,ssh=True,myinit=True):
         """
         @param ports in format as follows  "22:8022 80:8080"  the first arg e.g. 22 is the port in the container
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
@@ -282,12 +304,13 @@ class Docker():
                 key,val=item.split(":",1)
                 portsdict[int(key)]=int(val)
 
-        if 22 not in portsdict:
-            for port in range(9022,9190):
-                if not j.system.net.tcpPortConnectionTest("localhost", port):
-                    portsdict[22]=port
-                    print(("SSH PORT WILL BE ON:%s"%port))
-                    break                
+        if ssh:
+            if 22 not in portsdict:
+                for port in range(9022,9190):
+                    if not j.system.net.tcpPortConnectionTest("localhost", port):
+                        portsdict[22]=port
+                        print(("SSH PORT WILL BE ON:%s"%port))
+                        break                
 
         volsdict={}
         if len(vols)>0:
@@ -338,16 +361,18 @@ class Docker():
 
         # volskeys=volsdict.keys()+volsdictro.keys()
 
-
         if base not in self.getImages():
             print("download docker")
             cmd="docker pull %s"%base
             j.system.process.executeWithoutPipe(cmd)
 
-        cmd="sh -c \"mkdir -p /var/run/screen;chmod 777 /var/run/screen; /var/run/screen;exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
-        cmd="sh -c \" /sbin/my_init -- bash -l\""
-        #echo -e 'rooter\nrooter' | passwd root;
-        # cmd="sh -c \"exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
+        if myinit:
+            cmd="sh -c \"mkdir -p /var/run/screen;chmod 777 /var/run/screen; /var/run/screen;exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
+            cmd="sh -c \" /sbin/my_init -- bash -l\""
+            #echo -e 'rooter\nrooter' | passwd root;
+            # cmd="sh -c \"exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
+        else:
+            cmd=None
 
         # mem=1000000
         print(("install docker with name '%s'"%base))     
@@ -364,24 +389,30 @@ class Docker():
         res=self.client.start(container=id, binds=binds, port_bindings=portsdict, lxc_conf=None, \
             publish_all_ports=False, links=None, privileged=False, dns=nameserver, dns_search=None, volumes_from=None, network_mode=None)
 
-        portfound=0
-        for internalport,extport in list(portsdict.items()):
-            if internalport==22:
-                print(("test docker internal port:22 on ext port:%s"%extport))
-                portfound=extport
-                if j.system.net.waitConnectionTest("localhost",extport,timeout=2)==False:
-                    cmd="docker logs %s"%name
-                    rc,log=j.system.process.execute(cmd)
-                    j.events.opserror_critical("Could not connect to external port on docker:'%s', docker prob not running.\nStartuplog:\n%s\n"%(extport,log),category="docker.create")            
+        if ssh:
+            portfound=0
+            for internalport,extport in list(portsdict.items()):
+                if internalport==22:
+                    print(("test docker internal port:22 on ext port:%s"%extport))
+                    portfound=extport
+                    if j.system.net.waitConnectionTest("localhost",extport,timeout=2)==False:
+                        cmd="docker logs %s"%name
+                        rc,log=j.system.process.execute(cmd)
+                        j.events.opserror_critical("Could not connect to external port on docker:'%s', docker prob not running.\nStartuplog:\n%s\n"%(extport,log),category="docker.create")            
 
-        time.sleep(0.5)
+            time.sleep(0.5)
 
-        self.pushSSHKey(name)
+            self.pushSSHKey(name)
 
-        if jumpscale:
-            self.installJumpscale(name)            
+            if jumpscale:
+                self.installJumpscale(name)            
 
-        return portfound
+            return portfound
+
+        else:
+            return None
+
+
 
         # return self.getIp(name)
 
