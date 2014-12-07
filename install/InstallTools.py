@@ -1453,7 +1453,7 @@ sudo stop redisc
 killall redis-server
 rm -rf /opt/redis/
 """
-        self.executeCmds(CMDS,dieOnNonZeroExitCode=False, outputToStdout=False, useShell = False, ignoreErrorOutput=True)
+        self.executeCmds(CMDS,dieOnNonZeroExitCode=False, outputStdout=False, useShell = False, ignoreErrorOutput=True)
 
     def prepareUbuntu14Development(self,js=False):
         self.cleanSystem()
