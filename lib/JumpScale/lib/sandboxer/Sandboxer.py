@@ -38,11 +38,7 @@ class Sandboxer():
 
     def __init__(self):
         self._done=[]
-<<<<<<< HEAD
-        self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so","libz.so","libgcc","librt","libstdc++"]
-=======
         self.exclude=["libpthread.so","libltdl.so","libm.so","libresolv.so","libz.so","libgcc","librt","libstdc++","libapt","libdbus","libselinux"]
->>>>>>> f72a54ea719dde04c2f77dd8089dcadeb8691d23
 
     def _ldd(self,path,result={}):
 
