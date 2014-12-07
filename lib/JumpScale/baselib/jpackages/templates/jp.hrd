@@ -1,19 +1,17 @@
 base='/opt/mariadb'
 
-process.cmd='./mysqld --basedir=$(base) --datadir=$(base)/data --plugin-dir=$(base)/lib/plugin/ --user=root --console --verbose'
-process.args=
-process.env=:
-#is prio between 0 and 10, 0 is not urgent , 10 is most urgent, so first all packages with prio 10 are installed then going down to 0
-process.prio=10
-#path where process needs to be started
-process.cwd='$(base)/bin'
-process.start.timeout=10
-process.stop.timeout=10
-process.ports=,
-#can be upstart,jsagent or tmux
-process.startupmanager=upstart
-#string which identifies process in memory
-process.filterstr='mysqld'
+process.1=
+    name:'$(jp.instance)_$(jp.name)',
+    cmd:'$(base)/bin/nginx -c $(base)/cfg/nginx/nginx.conf',
+    args:,
+    env:,
+    prio:10,
+    cwd:'$(base)/bin',
+    timeout_start:10,
+    timeout_stop:10,
+    ports:,
+    startupmanager:tmux,
+    filterstr:'nginx',
 
 
 #base of repo where code or files are e.g. http://git.aydo.com/binary/base

@@ -13,6 +13,13 @@ import platform
 import subprocess
 import time
 import fnmatch
+import signal
+from sys import argv
+from subprocess import Popen, PIPE
+import os, io
+from threading import Thread
+import Queue
+
 
 # from JumpScale import j
 
@@ -121,7 +128,7 @@ class InstallTools():
                 source+="/"
             self.createDir(dest)
             cmd="rsync -aW --no-compress %s %s %s"%(excl,source,dest)           
-            self.execute(cmd,outputToStdout=False)
+            self.execute(cmd)
             return()
         else:
             old_debug=self.debug
@@ -738,131 +745,279 @@ class InstallTools():
             return True
         return False
 
-    def executeCmds(self,cmdstr, dieOnNonZeroExitCode=True, outputToStdout=True, useShell = False, ignoreErrorOutput=False):        
+    def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):        
         for cmd in cmdstr.split("\n"):
             if cmd.strip()=="" or cmd[0]=="#":
                 continue
-            self.execute(cmd,dieOnNonZeroExitCode=dieOnNonZeroExitCode, outputToStdout=outputToStdout, useShell = useShell, ignoreErrorOutput=ignoreErrorOutput)
+            self.execute(cmd,dieOnNonZeroExitCode, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
 
-    def execute(self, command , dieOnNonZeroExitCode=True, outputToStdout=True, useShell = False, ignoreErrorOutput=False):
-        """Executes a command, returns the exitcode and the output
-        @param command: command to execute
-        @param dieOnNonZeroExitCode: boolean to die if got non zero exitcode
-        @param outputToStdout: boolean to show/hide output to stdout
-        @param ignoreErrorOutput standard stderror is added to stdout in out result, if you want to make sure this does not happen put on True
-        @rtype: integer represents the exitcode plus the output of the executed command
-        if exitcode is not zero then the executed command returned with errors
+
+
+    def execute(self, command , outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):
         """
-        # Since python has no non-blocking readline() call, we implement it ourselves
-        # using the following private methods.
-        #
-        # We choose for line buffering, i.e. whenever we receive a full line of output (terminated by \n)
-        # on stdout or stdin of the child process, we log it
-        #
-        # When the process terminates, we log the final lines (and add a \n to them)
-        if outputToStdout:
-            self.log("exec:%s" % command)
-        def _logentry(entry):
-            if outputToStdout:
-                self.log(entry)
+        @param errors is array of statements if found then exit as error
+        """
+        print "EXEC:"
+        print command
+        os.environ["PYTHONUNBUFFERED"]="1"
+        ON_POSIX = 'posix' in sys.builtin_module_names
+ 
+        popenargs={}        
+        if not subprocess.mswindows:
+            # Reset all signals before calling execlp but after forking. This
+            # fixes Python issue 1652 (http://bugs.python.org/issue1652) and
+            # jumpscale ticket 189
+            def reset_signals():
+                '''Reset all signals to SIG_DFL'''
+                for i in xrange(1, signal.NSIG):
+                    if signal.getsignal(i) != signal.SIG_DFL:
+                        try:
+                            signal.signal(i, signal.SIG_DFL)
+                        except RuntimeError:
+                            # Skip, can't set this signal
+                            pass
+            popenargs["preexec_fn"]=reset_signals
 
-        def _splitdata(data):
-            """ Split data in pieces separated by \n """
-            lines = data.split("\n")
-            return lines[:-1], lines[-1]
+        p=Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, \
+                    shell=useShell, env=os.environ,universal_newlines=True,cwd=cwd,bufsize=0,**popenargs)
 
-        def _logoutput(data, OUT_LINE, ERR_LINE):
-            [lines, partialline] = _splitdata(data)
-            if lines:
-                lines[0] = OUT_LINE + lines[0]
-            else:
-                partialline = OUT_LINE + partialline
-            OUT_LINE = ""
-            if partialline:
-                OUT_LINE = partialline
-            for x in lines:
-                _logentry(x,3)
-            return OUT_LINE, ERR_LINE
+        sout = io.open(p.stdout.fileno(), 'rb', closefd=False)
+        serr = io.open(p.stderr.fileno(), 'rb', closefd=False)
+        def Pump(sout,serr):
+            queue = Queue.Queue()
+            def stdout1():
+                while True:
+                    # buf = sout.read1(8192)
+                    buf = sout.readline()
+                    if len(buf)>0:
+                        queue.put( ("O",buf) )
+                    else:
+                        queue.put( (None,None) )
+                        return
+            def strerr1():
+                while True:
+                    # buf = serr.read1(8192)
+                    buf = serr.readline()
+                    if len(buf)>0:
+                        queue.put( ("E",buf) )
+                    else:
+                        queue.put((None, None) )
+                        return
 
-        def _logerror(data, OUT_LINE, ERR_LINE):
-            [lines, partialline] = _splitdata(data)
-            if lines:
-                lines[0] = ERR_LINE + lines[0]
-            else:
-                partialline = ERR_LINE + partialline
-            ERR_LINE = ""
-            if partialline:
-                ERR_LINE = partialline
-            for x in lines:
-                _logentry(x,4)
-            return OUT_LINE, ERR_LINE
-
-        def _flushlogs(OUT_LINE, ERR_LINE):
-            """ Called when the child process closes. We need to get the last
-                non-\n terminated pieces of the stdout and stderr streams
-            """
-            if OUT_LINE:
-                _logentry(OUT_LINE,3)
-            if ERR_LINE:
-                _logentry(ERR_LINE,4)
-
-        if command is None:
-            raise ValueError('Error, cannot execute command not specified')
-
-        try:
-            import errno
-            if self.isUnix():
-                import subprocess
-                import signal
-                try:
-                    signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-                except Exception as ex:
-                    selflog('failed to set child signal, error %s'%ex, 2)
-                childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, shell=True, env=os.environ)
-                (output,error) = childprocess.communicate()
-                exitcode = childprocess.returncode                
-                
-            elif self.isWindows():
-                import subprocess, win32pipe, msvcrt, pywintypes
-
-                # For some awkward reason you need to include the stdin pipe, or you get an error deep inside
-                # the subprocess module if you use QRedirectStdOut in the calling script
-                # We do not use the stdin.
-                childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False, shell=useShell, env=os.environ)
-                output = ""; OUT_LINE = ""; ERR_LINE = ""
-                childRunning = True
-
-                while childRunning:
-                    stdoutData = childprocess.stdout.readline() # The readline method will block until data is received on stdout, or the stdout pipe has been destroyed. (Will return empty string)
-                                                                # Only call processes that release their stdout pipe when exiting, otherwise the method will not return when the process completed.
-                                                                # When the called process starts another process and marks its handle of the stdout pipe as inheritable, the pipe will not be destroyed before both processes end.
-                    if stdoutData != '':
-                        output = output + stdoutData
-                        (OUT_LINE, ERR_LINE) = _logoutput(stdoutData, OUT_LINE, ERR_LINE)
-                    else: # Did not read any data on channel
-                        if childprocess.poll() != None: # Will return a number if the process has ended, or None if it's running.
-                            childRunning = False
-
-                exitcode = childprocess.returncode
-                error = "Error output redirected to stdout."
-
-            else:
-                raise RuntimeError("Non supported OS for self.execute()")
-
-        except Exception as e:
-            print("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
-            raise
-        
-        output=output.decode('utf8')#'ascii')            
-        error=error.decode('utf8')#'ascii')
-
-        if (int(exitcode)!=0 or str(error)!="") and dieOnNonZeroExitCode and ignoreErrorOutput!=True:
-            errmsg="**ERROR**: execute cmd '%s' exitcode(%s)\nOutput:%s\nError:%s\n" % (command,exitcode, output, error)  
-            # self.log(errmsg, 5)     
-            print (errmsg)
-            raise RuntimeError(errmsg)
+            t1 = Thread(target=stdout1)
+            t1.setDaemon(True)
+            t1.start()
+            t2 = Thread(target=strerr1)
+            t2.setDaemon(True)
+            t2.start()    
+            return queue,t1,t2 
             
-        return output        
+        inp,t1,t2=Pump(sout,serr)
+
+        start=time.time()
+
+        err=""
+        out=""
+        rc=1000
+
+
+        while p.poll() is None or inp.empty()==False:
+            # App still working
+            # print p.poll()
+            try:
+                chan,line = inp.get(timeout = 1.0)
+                if ok<>[]:
+                    for item in ok:
+                        if line.find(item)!=-1:
+                            rc=0
+                            break
+                if errors<>[]:
+                    # if captureout==False:
+                    #     out=line
+                    for item in errors:
+                        if line.find(item)!=-1:
+                            rc=997
+                            break
+                        # if err.find(item)!=-1:
+                        #     rc=1
+                        #     break  
+                    if rc==997 or rc==0:
+                        break
+
+                if line==None:
+                    break
+
+                if chan=='O':
+                    if outputStdout:
+                        print (line)
+                    if captureout:
+                        out+=line
+                elif chan=='E':
+                    if outputStderr:
+                        print ("ERR:%s"%line)
+                    if captureout:
+                        err+=line
+            except Queue.Empty:
+                pass
+            if time.time()>start+timeout:
+                print "TIMEOUT"
+                rc=999
+                break
+                            
+        (output2,error2) = p.communicate()
+        out+=output2
+        err==error2
+        if rc==1000:
+            rc = p.returncode
+            if rc==0 and err<>"":
+                rc=998
+
+        if rc>0 and dieOnNonZeroExitCode:
+            if err<>"":
+                raise RuntimeError("Could not execute cmd:\n'%s'\nerr:\n%s"%(command,err))
+            else:
+                raise RuntimeError("Could not execute cmd:\n'%s'\nout:\n%s"%(command,out))
+
+        return rc,out,err
+        
+
+
+    # def execute(self, command , dieOnNonZeroExitCode=True, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None):
+    #     """Executes a command, returns the exitcode and the output
+    #     @param command: command to execute
+    #     @param dieOnNonZeroExitCode: boolean to die if got non zero exitcode
+    #     @param outputToStdout: boolean to show/hide output to stdout
+    #     @param ignoreErrorOutput standard stderror is added to stdout in out result, if you want to make sure this does not happen put on True
+    #     @rtype: integer represents the exitcode plus the output of the executed command
+    #     if exitcode is not zero then the executed command returned with errors
+    #     """
+    #     # Since python has no non-blocking readline() call, we implement it ourselves
+    #     # using the following private methods.
+    #     #
+    #     # We choose for line buffering, i.e. whenever we receive a full line of output (terminated by \n)
+    #     # on stdout or stdin of the child process, we log it
+    #     #
+    #     # When the process terminates, we log the final lines (and add a \n to them)
+    #     if log:
+    #         self.log("exec:%s" % command)
+    #     def _logentry(entry):
+    #         if outputToStdout:
+    #             self.log(entry)
+
+    #     def _splitdata(data):
+    #         """ Split data in pieces separated by \n """
+    #         lines = data.split("\n")
+    #         return lines[:-1], lines[-1]
+
+    #     def _logoutput(data, OUT_LINE, ERR_LINE):
+    #         [lines, partialline] = _splitdata(data)
+    #         if lines:
+    #             lines[0] = OUT_LINE + lines[0]
+    #         else:
+    #             partialline = OUT_LINE + partialline
+    #         OUT_LINE = ""
+    #         if partialline:
+    #             OUT_LINE = partialline
+    #         for x in lines:
+    #             _logentry(x,3)
+    #         return OUT_LINE, ERR_LINE
+
+    #     def _logerror(data, OUT_LINE, ERR_LINE):
+    #         [lines, partialline] = _splitdata(data)
+    #         if lines:
+    #             lines[0] = ERR_LINE + lines[0]
+    #         else:
+    #             partialline = ERR_LINE + partialline
+    #         ERR_LINE = ""
+    #         if partialline:
+    #             ERR_LINE = partialline
+    #         for x in lines:
+    #             _logentry(x,4)
+    #         return OUT_LINE, ERR_LINE
+
+    #     def _flushlogs(OUT_LINE, ERR_LINE):
+    #         """ Called when the child process closes. We need to get the last
+    #             non-\n terminated pieces of the stdout and stderr streams
+    #         """
+    #         if OUT_LINE:
+    #             _logentry(OUT_LINE,3)
+    #         if ERR_LINE:
+    #             _logentry(ERR_LINE,4)
+
+    #     if command is None:
+    #         raise ValueError('Error, cannot execute command not specified')
+
+    #     try:
+    #         import errno
+    #         if self.isUnix():
+    #             import subprocess
+    #             # import signal
+    #             # try:
+    #             #     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+    #             # except Exception as ex:
+    #             #     print('failed to set child signal, error %s'%ex, 2)
+
+    #             childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False, \
+    #                 shell=useShell, env=os.environ,universal_newlines=True,cwd=cwd,bufsize=0)
+    #             (output,error) = childprocess.communicate()
+    #             exitcode = childprocess.returncode
+    #             poll=childprocess.poll()
+    #             print "EXEC DONE1"
+    #             print "exitcode:%s"%exitcode
+    #             print "output:'%s'"%output   
+
+    #             from IPython import embed
+    #             print "DEBUG NOW ooo"
+    #             embed()
+    #             p
+                
+
+    #         elif self.isWindows():
+    #             import subprocess, win32pipe, msvcrt, pywintypes
+
+    #             # For some awkward reason you need to include the stdin pipe, or you get an error deep inside
+    #             # the subprocess module if you use QRedirectStdOut in the calling script
+    #             # We do not use the stdin.
+    #             childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False, shell=useShell, env=os.environ)
+    #             output = ""; OUT_LINE = ""; ERR_LINE = ""
+    #             childRunning = True
+
+    #             while childRunning:
+    #                 stdoutData = childprocess.stdout.readline() # The readline method will block until data is received on stdout, or the stdout pipe has been destroyed. (Will return empty string)
+    #                                                             # Only call processes that release their stdout pipe when exiting, otherwise the method will not return when the process completed.
+    #                                                             # When the called process starts another process and marks its handle of the stdout pipe as inheritable, the pipe will not be destroyed before both processes end.
+    #                 if stdoutData != '':
+    #                     output = output + stdoutData
+    #                     (OUT_LINE, ERR_LINE) = _logoutput(stdoutData, OUT_LINE, ERR_LINE)
+    #                 else: # Did not read any data on channel
+    #                     if childprocess.poll() != None: # Will return a number if the process has ended, or None if it's running.
+    #                         childRunning = False
+
+    #             exitcode = childprocess.returncode
+    #             error = "Error output redirected to stdout."
+
+    #         else:
+    #             raise RuntimeError("Non supported OS for self.execute()")
+
+    #     except Exception as e:
+    #         print e
+    #         raise RuntimeError("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
+        
+    #     output=output.decode('utf8')#'ascii')  
+    #     print "EXEC DONE2"
+    #     print "exitcode:%s"%exitcode
+    #     print "output:'%s'"%output          
+    #     error=error.decode('utf8')#'ascii')
+
+    #     if (int(exitcode)!=0 or str(error)!=""):
+    #         errmsg="**ERROR**: execute cmd '%s' exitcode(%s)\nOutput:%s\nError:%s\n" % (command,exitcode, output, error)  
+    #         if dieOnNonZeroExitCode:                
+    #             print (errmsg)
+    #             raise RuntimeError(errmsg)
+    #         if not ignoreErrorOutput:
+    #             print (errmsg)
+            
+    #     return output        
 
     def executeInteractive(self,command):
         exitcode = os.system(command)
@@ -1150,6 +1305,11 @@ class InstallTools():
         print("Get jpackages metadata.")
         self.pullGitRepo("https://github.com/Jumpscale/jp_jumpscale7",depth=1)
 
+        p="/opt/jumpscale7/hrd/system/_whoami_template.hrd"
+        p2="/opt/jumpscale7/hrd/system/whoami.hrd"
+        if not j.system.fs.exists(path=p2):
+            j.do.copyFile(p,p2)
+
         print ("install was successfull")
         if pythonversion==2:
             print ("to use do 'source %s/env.sh;ipython'"%base)
@@ -1184,7 +1344,7 @@ paths.hrd=$(paths.base)/hrd
 export PATH=$base/bin:$PATH
 export JSBASE=$base
 export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
-export PYTHONHOME=$base/lib
+#export PYTHONHOME=$base
 export LD_LIBRARY_PATH=$base/bin    
 """
         C=C.replace("$base",basedir)

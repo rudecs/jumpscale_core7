@@ -1,5 +1,5 @@
 from JumpScale import j
-j.base.loader.makeAvailable(j, 'system.platform.lxc')
-from Lxc import Lxc
-j.system.platform.lxc = Lxc()
+j.base.loader.makeAvailable(j, 'system.platform.kvm')
+from KVM import KVM
+j.system.platform.kvm = KVM()
 

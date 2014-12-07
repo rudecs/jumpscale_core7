@@ -110,7 +110,7 @@ class ServerBaseFactory():
         # fformat = "<IIIIII"
         # size = struct.calcsize(fformat)
         # datasizes = struct.unpack(fformat, bytearray(data[0:size], 'utf-32'))
-        data = data.split(':', maxsplit=6)
+        data = data.split(':', 6)
         lengths, data = data[:-1], data[-1]
         lengths = [int(length) for length in lengths]
         for length in lengths:
@@ -131,5 +131,5 @@ class ServerBaseFactory():
         """
         return resultcode,returnformat,result
         """
-        resultcode, lenreturnformat, lendata, restofdata = data.split(':', maxsplit=3)
+        resultcode, lenreturnformat, lendata, restofdata = data.split(':', 3)
         return (resultcode, restofdata[:int(lenreturnformat)], restofdata[int(lenreturnformat):])

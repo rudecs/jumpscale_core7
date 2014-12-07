@@ -22,22 +22,28 @@ class Actions(ActionsBase):
 
     #overrule the methods which are interesting to you
 
-    # def prepare(self,hrd,**args):
+    # def prepare(self,**args):
     #     """
-    #     this gets executed before the files are downloaded & installed on approprate spots
+    #     this gets executed before the files are downloaded & installed on appropriate spots
     #     """
+    #     j.do.execute('apt-get purge \'nginx*\' -y')
+    #     j.do.execute('apt-get autoremove -y')
+    #     j.system.process.killProcessByPort(80)
+    #     j.system.fs.createDir("/var/nginx/cache/fcgi")
+    #     j.system.fs.createDir("/var/log/nginx")
     #     return True
 
-
-    # def configure(self,hrd,**args):
+    # def configure(self,**args):
     #     """
     #     this gets executed when files are installed
     #     this step is used to do configuration steps to the platform
     #     after this step the system will try to start the jpackage if anything needs to be started
     #     """
+    #     self.jp_instance.hrd.applyOnDir( path="$(base)/cfg", additionalArgs={})
     #     return True
 
-    # def stop(self,hrd,**args):
+
+    # def stop(self,**args):
     #     """
     #     if you want a gracefull shutdown implement this method
     #     a uptime check will be done afterwards (local)
@@ -45,48 +51,48 @@ class Actions(ActionsBase):
     #     """
     #     return True
 
-    # def halt(self,hrd,**args):
+    # def halt(self,**args):
     #     """
     #     hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
     #     """
     #     return True
 
-    # def check_uptime_local(self,hrd,**args):
+    # def check_uptime_local(self,**args):
     #     """
     #     do checks to see if process(es) is (are) running.
     #     this happens on system where process is
     #     """
     #     return True
 
-    # def check_requirements(self,hrd,**args):
+    # def check_requirements(self,**args):
     #     """
     #     do checks if requirements are met to install this app
     #     e.g. can we connect to database, is this the right platform, ...
     #     """
     #     return True
 
-    # def monitor_local(self,hrd,**args):
+    # def monitor_local(self,**args):
     #     """
     #     do checks to see if all is ok locally to do with this package
     #     this happens on system where process is
     #     """
     #     return True
 
-    # def monitor_remote(self,hrd,**args):
+    # def monitor_remote(self,**args):
     #     """
     #     do checks to see if all is ok from remote to do with this package
     #     this happens on system from which we install or monitor (unless if defined otherwise in hrd)
     #     """
     #     return True
 
-    # def cleanup(self,hrd,**args):
+    # def cleanup(self,**args):
     #     """
     #     regular cleanup of env e.g. remove logfiles, ...
     #     is just to keep the system healthy
     #     """
     #     return True
 
-    # def data_export(self,hrd,**args):
+    # def data_export(self,**args):
     #     """
     #     export data of app to a central location (configured in hrd under whatever chosen params)
     #     return the location where to restore from (so that the restore action knows how to restore)
@@ -94,14 +100,14 @@ class Actions(ActionsBase):
     #     """
     #     return False
 
-    # def data_import(self,id,hrd,**args):
+    # def data_import(self,id,**args):
     #     """
     #     import data of app to local location
     #     if specifies which retore to do, id corresponds with line item in the $name.export file
     #     """
     #     return False
 
-    # def uninstall(self,hrd,**args):
+    # def uninstall(self,**args):
     #     """
     #     uninstall the apps, remove relevant files
     #     """

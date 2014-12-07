@@ -129,7 +129,7 @@ class Text:
 
         @ASK can be at any position in the text
 
-        """
+        """        
         content=Text.eval(content)
         if content.strip()=="":
             return content
@@ -163,10 +163,6 @@ class Text:
                 result=args[name]
                 out+="%s%s\n"%(prefix,result)
                 continue
-
-            from IPython import embed
-            print(2)
-            embed()
             
             if name in args:
                 result=args[name]
@@ -400,6 +396,9 @@ class Text:
         """
         if text==None:
             return ""
+        elif isinstance(text,unicode):
+            text=text.decode("utf8")
+            return text
         elif j.basetype.boolean.check(text):
             if text==True:
                 text="True"
@@ -440,7 +439,7 @@ class Text:
                     resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
                 resout=resout.rstrip().rstrip(",")+"\n"            
             return resout
-        else:
+        else:   
             raise RuntimeError("Could not convert %s to string"%text)
 
     @staticmethod
