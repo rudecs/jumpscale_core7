@@ -219,6 +219,8 @@ class JPackageInstance():
         counter=0
 
         for process in self.hrd.getListFromPrefix("process"):
+            if not isinstance(process, dict):
+                continue
             counter+=1
 
                 
