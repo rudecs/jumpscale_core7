@@ -11,7 +11,7 @@ HRDIMAGE="""
 id=
 name=
 ostype = 
-architecture
+arch=
 version=
 description=
 
@@ -125,7 +125,7 @@ class KVM():
         """        
         find first ip addr which is free
         """
-        ips=self._getAllIp()
+        ips=self._getAllMachinesIps()
         if name in ips:
             return ips[name]
         else:
@@ -166,9 +166,25 @@ class KVM():
         when replace then remove original image
         
         """
-        print(("create:%s"%name))
         j.system.fs.createDir(self._getRootPath(name))
         self.LibvirtUtil.create_node(name, baseimage)
+        domain = self.LibvirtUtil.connection.lookupByName(name)
+        imagehrd = self.images[baseimage]
+        hrdfile = j.system.fs.joinPaths(self._getRootPath(name), 'main.hrd')
+        # assume that login and passwd are provided in the image hrd config file
+        hrdcontents = '''id=%s
+name=%s
+ostype=%s
+arch=%s
+version=%s
+description=
+
+bootstrap.ip=
+bootstrap.login=%s
+bootstrap.passwd=%s
+bootstrap.type=ssh''' % (dom.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
+                        imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+        j.system.fs.writeFile(hrdfile, hrdcontents)
         # if replace:
         #     if j.system.fs.exists(self._getMachinePath(name)):
         #         self.destroy(name)        

@@ -491,12 +491,10 @@ class LibvirtUtil(object):
 
     def _create_node(self, name, diskname, size, memory, cpucount):
         machinetemplate = self.env.get_template("machine.xml")
-        macaddress = self._generateRandomMacAddress()
+        macaddress1, macaddress2, macaddress3 = self._generateRandomMacAddress(), self._generateRandomMacAddress(), self._generateRandomMacAddress()
         POOLPATH = '%s/%s' % (self.basepath, name)
-        
-        # TODO: create network
-        #self.createNetwork(networkid, 'eth0')
-        machinexml = machinetemplate.render({'machinename': name, 'diskname': diskname, 'memory': memory, 'nrcpu': cpucount, 'macaddress': macaddress, 'poolpath': POOLPATH})
+        machinexml = machinetemplate.render({'machinename': name, 'diskname': diskname, 'memory': memory, 'nrcpu': cpucount, 'poolpath': POOLPATH,
+                    'macaddress1': macaddress1, 'macaddress2': macaddress2, 'macaddress3': macaddress3})
         self.create_machine(machinexml)
         #dnsmasq = DNSMasq()
         #nsid = '%04d' % networkid

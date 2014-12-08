@@ -24,8 +24,22 @@
                 <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
             </disk>
             <interface type='network'>
-                <source network='public'/>
-                <mac address='{{macaddress}}'/>
+                <source network='brmgmt'/>
+                <mac address='{{macaddress1}}'/>
+                <target dev='eth0'/>
+                <model type='virtio'/>
+            </interface>
+            <interface type='network'>
+                <source network='brpub'/>
+                <mac address='{{macaddress2}}'/>
+                <target dev='eth1'/>
+                <model type='virtio'/>
+            </interface>
+            <interface type='network'>
+                <source network='brtmp'/>
+                <mac address='{{macaddress3}}'/>
+                <target dev='eth2'/>
+                <model type='virtio'/>
             </interface>
             <graphics type='vnc' autoport='yes' listen='0.0.0.0'>
                 <listen type='address' address='0.0.0.0'/>

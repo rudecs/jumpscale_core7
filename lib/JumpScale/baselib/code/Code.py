@@ -226,6 +226,8 @@ class Code():
                         continue
                     value[key]=todict(obj[key],{},ignoreKeys)
                 return value
+            elif isinstance(obj, unicode):
+                return str(obj)
             elif isinstance(obj, (tuple,list)):
                 value=[]
                 for item in obj:
