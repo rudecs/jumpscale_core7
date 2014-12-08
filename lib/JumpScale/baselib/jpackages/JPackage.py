@@ -16,45 +16,13 @@ class JPackage():
         self.name=name
         self.domain=domain
         self.hrd=None
-        self.metapath=""
-        self._loaded=False
+        self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
 
         self.hrdpath=""
         self.hrdpath_main=""
 
 
-
-    def _load(self):
-        if self._loaded==False:
-
-            # self.hrdpath="%s/apps/%s__%s"%(j.dirs.hrdDir,self.jp.domain,self.jp.name)
-            self.hrdpath="%s/apps/jpackage.%s.%s.hrd"%(j.dirs.hrdDir,self.domain,self.name)
-            self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
-            self.hrdpath_main="%s/jp.hrd"%self.metapath
-
-            #this is hrd for jpackage (for all instances)
-            src="%s/app.hrd"%self.metapath
-            if j.system.fs.exists(path=src):
-                j.do.copyFile(src,self.hrdpath)
-
-            dest="%s/actions.py"%self.metapath
-            if not j.system.fs.exists(path=dest):
-                templ="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale/baselib/jpackages/templates/action.py"
-                j.do.copyFile(templ,dest)
-            args={}
-            args["jp.name"]=self.name
-            args["jp.domain"]=self.domain
-
-            if j.system.fs.exists(path=self.hrdpath):
-                j.application.config.applyOnFile(self.hrdpath,additionalArgs=args)            
-                self.hrd=j.core.hrd.get(self.hrdpath_main)            
-
-        self._loaded=True
-
     def getInstance(self,instance="main"):
-        self._load()
-        # if self.hrd.getInt("instances.maxnr",default=1)==1:
-        #     instance="main"
         return JPackageInstance(self,instance)        
 
     def __repr__(self):
@@ -73,7 +41,8 @@ class JPackageInstance():
         self.hrdpath=""
         self.actions=None
         self._loaded=False
-        self._reposDone={}        
+        self._reposDone={}   
+        self.args={}     
 
     def getLogPath(self):        
         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))        
@@ -92,12 +61,14 @@ class JPackageInstance():
             self.hrdpath="%s/apps/jpackage.%s.%s.%s.hrd"%(j.dirs.hrdDir,self.jp.domain,self.jp.name,self.instance)
             self.actionspath="%s/jpackage_actions/%s__%s__%s.py"%(j.dirs.baseDir,self.jp.domain,self.jp.name,self.instance)
 
-            source="%s/instance.hrd"%self.jp.metapath
-            if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
-                j.do.copyFile(source,self.hrdpath)
-            else:
-                if not j.system.fs.exists(path=source):
-                    j.do.writeFile(self.hrdpath,"")                
+            args.update(self.args)
+
+            # source="%s/instance.hrd"%self.jp.metapath
+            # if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
+            #     j.do.copyFile(source,self.hrdpath)
+            # else:
+            #     if not j.system.fs.exists(path=source):
+            #         j.do.writeFile(self.hrdpath,"")                
 
             source="%s/actions.py"%self.jp.metapath
             j.do.copyFile(source,self.actionspath)
@@ -106,29 +77,15 @@ class JPackageInstance():
             args["jp.domain"]=self.jp.domain
             args["jp.instance"]=self.instance
 
-
             # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
-            self.hrd=j.core.hrd.get(self.hrdpath,args=args)
-
-            self.hrd.applyTemplate(self.jp.hrdpath_main)
-
-            self.hrd.set("jp.name",self.jp.name)
-            self.hrd.set("jp.domain",self.jp.domain)
-            self.hrd.set("jp.instance",self.instance)
-
+            self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
             self.hrd.save()
 
-            self.hrd=j.core.hrd.get(self.hrdpath)
-
+            self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
+            j.application.config.applyOnFile(self.actionspath, additionalArgs=args)
             j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
 
             self.hrd=j.core.hrd.get(self.hrdpath)
-
-            hrd=j.packages.getHRD(reload=True)
-
-            hrd.applyOnFile(self.actionspath, additionalArgs=args)
-            self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
-            j.application.config.applyOnFile(self.actionspath, additionalArgs=args)
 
             modulename="%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
             mod = imp.load_source(modulename, self.actionspath)
@@ -160,17 +117,18 @@ class JPackageInstance():
                 item={}
                 item["name"]=item2
                 item["domain"]="jumpscale"
+                item["instance"]="main"
 
             if "args" in item:
-                args=item["args"]
-                if self.hrd.exists(args):
-                    args=self.hrd.getDict(args)
+                argskey=item["args"]
+                if self.hrd.exists(argskey):
+                    args=self.hrd.getDict(argskey)
 
-                    #dirty hack for now (hrd format has bug)
-                    args2={}
-                    for key,val in args.items():
-                        args2[key]=val.replace("\\n","").replace("\n","")
-                    args=args2
+                    # #dirty hack for now (hrd format has bug)
+                    # args2={}
+                    # for key,val in args.items():
+                    #     args2[key]=val.replace("\\n","").replace("\n","")
+                    # args=args2
             else:
                 args={}
 
@@ -196,6 +154,9 @@ class JPackageInstance():
 
             jp.args=args
 
+            # if args!={}:
+            #     jp._load()
+
             res.append(jp) 
 
         return res
@@ -218,39 +179,24 @@ class JPackageInstance():
         res=[]
         counter=0
 
-        for process in self.hrd.getListFromPrefix("process"):
-            counter+=1
+        defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
+        musthave=["cmd","args","prio","env","cwd","timeout_start","timeout_start","ports","startupmanager","filterstr","name","user"]
+        procs=self.hrd.getListFromPrefixEachItemDict("process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
+        for process in procs:
+            counter+=1                
 
-                
-            process=copy.copy(process)
-            for item in ["args","cmd","cwd","env","filterstr","name","ports","prio","timeout_start","startupmanager","timeout_stop","user"]:
-                if item not in process:
-                    process[item]=""
-
-            if isinstance(process["ports"],str) and process["ports"].strip()=="":
-                process["ports"]=[]
-            elif isinstance(process["ports"],str):
-                process["ports"]=[int(item) for item in process["ports"].split(";") if item.strip()!=""]
+            process["test"]=1            
 
             if process["name"].strip()=="":
                 process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
 
-            if process["startupmanager"].strip()=="":
-                process["startupmanager"]="tmux"
-
             if self.hrd.exists("env.process.%s"%counter):
                 process["env"]=self.hrd.getDict("env.process.%s"%counter)
-            elif process["env"].strip()=="":
-                process["env"]={}
-            else:
-                process["env"]==j.tools.text.getDict(process["env"])                
+            
+            if not isinstance(process["env"],dict):
+                raise RuntimeError("process env needs to be dict")
 
-            for item in ["prio","timeout_start","timeout_stop"]:
-                process[item]=j.tools.text.getInt(process[item])
-
-            res.append(process)
-
-        return res
+        return procs
 
     def install(self,args={},start=True):
         
@@ -298,7 +244,7 @@ class JPackageInstance():
             #download
 
             for recipeitem in self.hrd.getListFromPrefix("git.export"):
-                print recipeitem
+                # print recipeitem
                 
                 #pull the required repo
                 dest0=self._getRepo(recipeitem['url'])

@@ -39,8 +39,8 @@ class Core():
 # j.logger=Logger
 
 class EventsTemp():
-    def inputerror_critical(self,msg,category):
-        print("ERROR IN BOOTSTRAP")
+    def inputerror_critical(self,msg,category=""):
+        print("ERROR IN BOOTSTRAP:%s"%category)
         print(msg)
         sys.exit(1)
 

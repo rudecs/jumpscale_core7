@@ -1,5 +1,6 @@
 from JumpScale import j
 import binascii
+import copy
 class HRDBase():
 
     def prefix(self, key,depth=0):
@@ -75,10 +76,12 @@ class HRDBase():
         raise RuntimeError("no list for %s"%key)
 
     def getDict(self,key):
-        lst=self.get(key)
-        if j.basetype.dictionary.check(lst):
-            return lst
-        if lst.strip()=="":
+        ddict=self.get(key)
+        if j.basetype.dictionary.check(ddict):
+            for key,item in ddict.items():
+                ddict[key]=j.tools.text.str2var(item)
+            return ddict
+        if ddict.strip()=="":
             return {}        
         raise RuntimeError("no dict for %s"%key)
 
@@ -101,6 +104,73 @@ class HRDBase():
             key2=key[l+1:]
             result[key2]=self.get(key)
         return result
+
+
+    def getListFromPrefixEachItemDict(self, prefix,musthave=[],defaults={},aredict={},arelist=[],areint=[],arebool=[]):
+        """
+        returns values from prefix return as list
+        each value represents a dict
+        @param musthave means for each item which is dict, we need to have following keys
+        @param specifies the defaults
+        @param aredicts & arelist specifies which types
+        """
+        result=[]
+        for key in self.prefix(prefix):
+            result.append(self.get(key))
+
+        def processdict(ddict,musthave=[],defaults={},aredicts={},arelist=[],arebool=[]):
+            for key in musthave:
+                if key not in ddict.keys():
+                    ddict[key]=""
+
+            for key in ddict.keys():
+
+                ddict[key]=str(ddict[key]).strip().strip(",")
+
+                if key in defaults:
+                    if ddict[key]=="":
+                        ddict[key]=defaults[key]
+
+                #no default            
+                if key in areint:
+                    if ddict[key]=="":
+                        ddict[key]=0
+                    else:
+                        ddict[key]=j.tools.text.getInt(ddict[key])
+                
+                elif key in arebool:
+                    if ddict[key]=="":
+                        ddict[key]=False
+                    else:
+                        ddict[key]=j.tools.text.getBool(ddict[key])                        
+                
+                elif key in aredict:
+                    if ddict[key]=="":
+                        ddict[key]={}
+                    else:
+                        ddict[key]=j.tools.text.machinetext2hrd(ddict[key],quote=False)
+                        ddict[key]=j.tools.text.getDict(ddict[key])
+                            
+                        for key3,val3 in ddict[key].items():
+                            ddict[key][key3]=j.tools.text.str2var(ddict[key][key3])                      
+                
+                elif key in arelist:
+                    if ddict[key]=="":
+                        ddict[key]=[]
+                    else:
+                        ddict[key]=j.tools.text.machinetext2hrd(str(ddict[key]),quote=False)
+                        ddict[key]=j.tools.text.getList(str(ddict[key]))
+                        ddict[key]=[j.tools.text.str2var(item) for item in ddict[key]]
+
+                else:
+                    ddict[key]=j.tools.text.machinetext2hrd(ddict[key],quote=False)
+
+            return ddict
+
+        for item in result:
+            item=processdict(item,musthave,defaults,aredict,arelist,arebool)
+
+        return result   
 
     def checkValidity(self,template,hrddata={}):
         """
@@ -157,7 +227,7 @@ class HRDBase():
         look for $(name) and replace with hrd value
         """
 
-        content=self._replaceVarsInText(content,self,position,additionalArgs=additionalArgs)
+        content=self._replaceVarsInText(content,additionalArgs=additionalArgs)
         return content
 
     def _replaceVarsInText(self,content,additionalArgs={}):
@@ -173,10 +243,11 @@ class HRDBase():
 
                 if item2.lower() in additionalArgs:
                     newcontent=additionalArgs[item2.lower()]
+                    newcontent=str(newcontent)
                     content=content.replace(item,newcontent)
                 else:
                     if self.exists(item2):
-                        replacewith=j.tools.text.pythonObjToStr(self.get(item2),multiline=True)
+                        replacewith=j.tools.text.pythonObjToStr(self.get(item2),multiline=True).strip("'")
                         content=content.replace(item,replacewith)            
         return content          
 
@@ -197,16 +268,14 @@ class HRDBase():
             if hrditem.temp:
                 continue
 
-            # #see how many newlines in between
-            # if keylast!=[] and keynew[0]!=keylast[0]:
-            #     out.append("")
-            # else:
-            #     if len(keynew)>1 and len(keylast)>1 and len(keylast[1])>0 and j.tools.text.isNumeric(keylast[1][-1]) and keynew[1]!=keylast[1]:
-            #         out.append("")
-
             if hrditem.comments!="":
                 out.append("")
                 out.append("%s" % (hrditem.comments.strip()))
+            else:
+                if keylast!=[] and keynew[0]!=keylast[0]:
+                    if out[-1]<>"":
+                        out.append("")
+
 
             if hrditem.ttype =="string":
                 val=hrditem.getAsString()
@@ -214,18 +283,18 @@ class HRDBase():
                     out.append("%-30s = '%s'" % (key, val.strip("'")))
                 else:
                     out.append("%-30s = %s" % (key, val))
+
             elif hrditem.ttype =="list" or hrditem.ttype =="dict":
-                val=hrditem.getAsString()
-                if val.find("\n")!=-1:
-                    out.append("%-30s = %s\n" % (key, val))
-                else:
-                    out.append("%-30s = %s" % (key, val))
+                val=hrditem.getAsString()                
+                out.append("%-30s =\n%s" % (key, val))
+                out.append("")
+
             elif hrditem.ttype !="binary":
                 val=hrditem.getAsString()
                 out.append("%-30s = %s" % (key, val))                
             else:
                 out.append("%-30s = bqp\n%s\n#BINARYEND#########\n\n"%(key,binascii.b2a_qp(hrditem.data)))
-            # print("'''%s'''"%val)
+            # print("%s'''%s'''"%(hrditem.ttype,val))
             keylast=key.split(".")
         out=out[1:]
         out="\n".join(out).replace("\n\n\n","\n\n")

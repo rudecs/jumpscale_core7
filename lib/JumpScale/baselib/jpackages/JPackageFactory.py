@@ -79,11 +79,14 @@ class JPackageFactory():
 
         return res    
 
-    def get(self,domain="",name=""):
+    def get(self,domain="",name="",instance="",args={}):
         self._doinit()
         jps=self.find(domain,name,1)
         if len(jps)==0:
             j.events.opserror_critical("cannot find jpackage %s/%s"%(domain,name))
+        if instance!="":
+            jps[0]=jps[0].getInstance(instance)
+            jps[0].args=args
         return jps[0]
         
     def install(self,domain="",name="",instance="main",args={}):

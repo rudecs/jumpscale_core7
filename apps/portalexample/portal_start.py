@@ -14,24 +14,14 @@ import sys
 
 if __name__ == '__main__':
 
-    # args=sys.argv
-    # instance=args[1]
+    args=sys.argv
+    instance=args[1]
 
-    # jp = j.packages.findNewest('jumpscale', 'portal')
-    # jp = jp.load(instance=instance)
-    hrdstring = """
-changed:True
-osis_connection:main
-portal_ipaddr:localhost
-portal_name:main
-portal_port:82
-    """
-    j.application.instanceconfig = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale')
+    j.application.instanceconfig = j.application.getAppInstanceHRD(name="portal",instance=instance) 
 
     j.application.start("portal")
 
     server=j.core.portal.getServer()
     server.start()
-
 
     j.application.stop()

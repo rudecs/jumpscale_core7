@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # argstag=" ".join(args[2:])
     osishrd = j.application.getAppInstanceHRD(name="osis",instance=osis_instance) 
-    connectionsconfig = osishrd.get('osis.connection')
+    connectionsconfig = osishrd.get('param.osis.connection')
     #j.core.tags.getObject(argstag).getDict()
     connections = {}
 

@@ -207,6 +207,7 @@ class Text:
                 print (descr)
                 descr=""
 
+            # print "type:'%s'"%ttype
             if ttype=="str":
                 result=j.console.askString(question=descr, defaultparam=default, regex=regex, retry=retry)
 
@@ -251,7 +252,7 @@ class Text:
                 choicearray=[item.strip() for item in dropdownvals.split(",")]
                 result=j.console.askChoice(choicearray, descr=descr, sort=True)
             else:
-                j.events.inputerror_critical("Input type:%s is invalid (only: bool,int,str,string,dropdown,float)")
+                j.events.inputerror_critical("Input type:%s is invalid (only: bool,int,str,string,dropdown,float)"%ttype)
 
             out+="%s%s\n"%(prefix,result)
 
@@ -346,8 +347,10 @@ class Text:
                 else:
                     for key,item in list(string.items()):
                         result[key]=str(Text.machinetext2hrd(item)) 
+            elif isinstance(string,str) or isinstance(string,float) or isinstance(string,int):
+                ttype,result=Text._str2var(str(string))
             else:
-                ttype,result=Text._str2var(string)
+                j.events.inputerror_critical("Could not convert '%s' to basetype, input was no string, dict or list."%(string),"text.str2var")    
             return result
         except Exception as e:
             j.events.inputerror_critical("Could not convert '%s' to basetype, error was %s"%(string,e),"text.str2var")
@@ -369,9 +372,9 @@ class Text:
             code=code.replace(itemfull,result)
         return code        
 
-    @staticmethod
-    def strToPythonObj(str):
-        pass
+    # @staticmethod
+    # def strToPythonObj(str):
+    #     pass
 
     @staticmethod
     def pythonObjToStr1line(text,quote=True):
@@ -406,44 +409,53 @@ class Text:
                 text="False"
             return text
         elif j.basetype.string.check(text):
+            if text.strip()=="":
+                return ""
             if text.find("\n")!=-1 and multiline:
                 text="\n%s"%Text.prefix("    ",text.strip())
+            if text.find(":")!=-1 or text.find(" ")!=-1 or text.find("/")!=-1 or text.find(",")!=-1:
+                text="'%s'"%text.strip("'")
             return text
         elif j.basetype.integer.check(text) or j.basetype.float.check(text):
             return str(text)
         elif j.basetype.list.check(text):
-            resout=""
+            # resout=""
+            resout="\n"
             for item in text:
-                resout+="%s, "%Text.pythonObjToStr1line(item)
-            resout=resout.strip().strip(",")            
-            if len(resout)>30 and multiline:
-                resout="\n"
-                for item in text:
-                    resout+="    %s,\n"%Text.pythonObjToStr1line(item)
-                resout=resout.rstrip().strip(",")+"\n"
+                resout+="    %s,\n"%Text.pythonObjToStr1line(item)                
+            # resout=resout.strip().strip(",")            
+            # if multilineforce or (len(resout)>30 and multiline):
+            #     resout="\n"
+            #     for item in text:
+            #         resout+="    %s,\n"%Text.pythonObjToStr1line(item)
+            resout=resout.rstrip().strip(",")+",\n"
             return resout
 
         elif j.basetype.dictionary.check(text):
-            resout=""
+            # resout=""
+            resout="\n"
             keys=list(text.keys())
             keys.sort()
             for key in keys:
                 val=text[key]
                 val=Text.pythonObjToStr1line(val)
-                resout+="%s:%s, "%(key,val)
-            resout=resout.strip().strip(",")
-            if len(resout)>30 and multiline:
-                resout="\n"
-                for key in keys:
-                    val=text[key]
-                    resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
-                resout=resout.rstrip().rstrip(",")+"\n"            
+                # resout+="%s:%s, "%(key,val)
+                resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
+            resout=resout.rstrip().rstrip(",")+",\n"            
+            # # resout=resout.strip().strip(",")
+            # if multilineforce or (len(resout)>30 and multiline):
+            #     resout="\n"
+            #     for key in keys:
+            #         val=text[key]
+            #         resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
+            #     resout=resout.rstrip().rstrip(",")+"\n"     
             return resout
+
         else:   
             raise RuntimeError("Could not convert %s to string"%text)
 
     @staticmethod
-    def hrd2machinetext(value):
+    def hrd2machinetext(value,onlyone=False):
         """
         'something ' removes ''
         all spaces & commas & : inside ' '  are converted
@@ -462,6 +474,8 @@ class Text:
             item2=item2.replace("\n","\\N")
             item2=item2.replace("'","")
             value=value.replace(item,item2)
+            if onlyone:
+                return item2
         return value
 
     @staticmethod
@@ -480,26 +494,27 @@ class Text:
              : -> \\D
              \\n -> \\N
         """
+        value=value.strip("'")
         value2=value.replace("\\K",",")
         value2=value2.replace("\\Q","\"")
         value2=value2.replace("\\S"," ")
         value2=value2.replace("\\D",":")
         value2=value2.replace("\\N","\n")
         value2=value2.replace("\\n","\n")
-        if quote:
-            change=False
-            if value!=value2:
-                change=True
-            if change==False:
-                if value.find("'")!=-1 or value.find("\n")!=-1 or value.find(":")!=-1 or value.find(",")!=-1 or value.find(" ")!=-1:
-                    change=True
-
-            if change:
-                value2=value2.replace("\n","\\n")
-                value="'%s'"%value2
-            return value
-        else:
+        change=False
+        if value!=value2:
+            change=True
+        if value2.strip()=="":
             return value2
+        if change==False:
+            if Text.isInt(value2):                
+                return Text.getInt(value2)
+            elif  Text.isFloat(value2):
+                return Text.getFloat(value2)
+        value2=value2.replace("\n","\\n")
+        if quote:
+            value2="'%s'"%value2
+        return value2
 
     @staticmethod
     def machinetext2str(value):
@@ -550,6 +565,19 @@ class Text:
         else:
             text=float(text)
         return text
+
+    @staticmethod
+    def isFloat(text):
+        text=text.strip(",").strip()
+        if text.find(".")==-1:
+            return False
+        text=text.replace(".","")
+        return text.isdigit()
+
+    @staticmethod
+    def isInt(text):
+        text=text.strip(",").strip()
+        return text.isdigit()
 
     @staticmethod
     def getBool(text):
@@ -608,12 +636,15 @@ class Text:
         keys are always treated as string
         @type can be int,bool or float (otherwise its always str)
         """   
-        if text.strip()=="":
+        if text.strip()=="" or text.strip()=="{}":
             return {} 
         text=Text.dealWithQuote(text)
         res2={}
         for item in text.split(","):
             if item.strip()!="":
+                if item.find(":")==-1:
+                    raise RuntimeError("Could not find : in %s, cannot get dict out of it."%text)
+                    
                 key,val=item.split(":",1)
                 val=val.replace("\k",",")
                 key=key.strip()
