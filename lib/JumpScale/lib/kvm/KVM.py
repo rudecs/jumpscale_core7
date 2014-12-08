@@ -166,9 +166,22 @@ class KVM():
         when replace then remove original image
         
         """
-        print(("create:%s"%name))
         j.system.fs.createDir(self._getRootPath(name))
         self.LibvirtUtil.create_node(name, baseimage)
+        domain = self.LibvirtUtil.connection.lookupByName(name)
+        hrdfile = j.system.fs.joinPaths(self._getRootPath(name), 'main.hrd')
+        hrdcontents = '''id=%s
+name=%s
+ostype=%s
+architecture=
+version=
+description=
+
+bootstrap.ip=
+bootstrap.login=
+bootstrap.passwd=
+bootstrap.type=ssh''' % (dom.UUIDString(), name, dom.OSType())
+        j.system.fs.writeFile(hrdfile, hrdcontents)
         # if replace:
         #     if j.system.fs.exists(self._getMachinePath(name)):
         #         self.destroy(name)        
