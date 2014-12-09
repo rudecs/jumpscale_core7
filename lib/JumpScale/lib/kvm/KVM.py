@@ -182,7 +182,7 @@ description=
 bootstrap.ip=
 bootstrap.login=%s
 bootstrap.passwd=%s
-bootstrap.type=ssh''' % (dom.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
+bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
                         imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         # if replace:
