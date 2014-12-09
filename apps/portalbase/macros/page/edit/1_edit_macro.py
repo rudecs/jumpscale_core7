@@ -1,10 +1,12 @@
+import sys
 
 def main(j, args, params, tags, tasklet):
 
-    try:
-        import urllib
-    except:
+    if sys.version.startswith("3"):
         import urllib.parse as urllib
+    else:
+        import urllib
+        
 
     # import urllib.request, urllib.error
 
