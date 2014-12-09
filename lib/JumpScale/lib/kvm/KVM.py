@@ -52,7 +52,7 @@ class KVM():
         self.vmpath = "/mnt/vmstor/kvm"
         self.imagepath = "/mnt/vmstor/kvm/images"
         self.images = {}
-        #self.loadImages()
+        self.loadImages()
         self.ip_mgmt_range = "192.168.66.0/24" #used on brmgmt
         self.nameserver = "8.8.8.8"
         self.gateway = "192.168.1.1"
@@ -182,7 +182,7 @@ description=
 bootstrap.ip=
 bootstrap.login=%s
 bootstrap.passwd=%s
-bootstrap.type=ssh''' % (dom.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
+bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
                         imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         # if replace:
