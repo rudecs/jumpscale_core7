@@ -6,6 +6,7 @@ import os
 import JumpScale.baselib.netconfig
 import netaddr
 from libvirtutil import LibvirtUtil
+import imp
 
 HRDIMAGE="""
 id=
@@ -19,7 +20,7 @@ bootstrap.ip=
 bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
-
+fabric.setip=
 """
 
 class KVM(object):
@@ -135,12 +136,12 @@ class KVM(object):
             
             for i in range(1,253):
                 if i not in addr:
-                    return i
+                    return '192.168.66.%s' % i
 
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
-    def create(self, name, baseimage, start=False, replace=True):
+    def create(self, name, baseimage, replace=True):
         """
         create a KVM machine which inherits from a qcow2 image (so no COPY)
 
@@ -166,6 +167,9 @@ class KVM(object):
         when replace then remove original image
         
         """
+        if replace:
+            if j.system.fs.exists(self._getRootPath(name)):
+                self.destroy(name)
         j.system.fs.createDir(self._getRootPath(name))
         self.LibvirtUtil.create_node(name, baseimage)
         domain = self.LibvirtUtil.connection.lookupByName(name)
@@ -179,15 +183,15 @@ arch=%s
 version=%s
 description=
 
-bootstrap.ip=
+bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
-                        imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+                        imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
-        # if replace:
-        #     if j.system.fs.exists(self._getMachinePath(name)):
-        #         self.destroy(name)        
+        self.pushSSHKey(name)
+        public_ip = ''
+        self.setNetworkInfo(name, public_ip)
         # running,stopped=self.list()
         # machines=running+stopped
 
@@ -248,142 +252,20 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         machine_id = self._getIdFromConfig(name)
         self.LibvirtUtil.create(machine_id, None)
 
-    def networkSetPublic(self, machinename,netname="pub0",pubips=[],bridge=None,gateway=None):
-        """
-        will have to use ssh
-        """
-        print(("set pub network %s on %s" %(pubips,machinename)))
-        machine_cfg_file = j.system.fs.joinPaths('/var', 'lib', 'lxc', '%s%s' % (self._prefix, machinename), 'config')
-        
-        if not bridge:
-            bridge = j.application.config.get('lxc.bridge.public')
-        if not gateway:
-            gateway = j.application.config.get('lxc.bridge.public.gw')
-            if gateway=="":
-                gateway=None
-
-        config = '''
-lxc.network.type = veth
-lxc.network.flags = up
-lxc.network.link = %s
-lxc.network.name = %s
-'''  % (bridge, netname)
-
-#         notused="""
-# #lxc.network.hwaddr = 00:FF:12:34:52:79
-# #lxc.network.ipv4 = 192.168.22.1/24
-# #lxc.network.ipv4.gateway = 192.168.22.254
-# """
-
-        ed=j.codetools.getTextFileEditor(machine_cfg_file)
-        ed.setSection(netname,config)        
-
-        #do not do will configure in fs of root of clone
-        # for pubip in pubips:
-        #     config += '''lxc.network.ipv4 = %s\n''' % pubip
-
-        j.system.netconfig.setRoot(self._getRootPath(machinename)) #makes sure the network config is done on right spot
-        for ipaddr in pubips:        
-            j.system.netconfig.enableInterfaceStatic(dev=netname,ipaddr=ipaddr,gw=gateway,start=False)#do never start because is for lxc container, we only want to manipulate config
-        j.system.netconfig.root=""#set back to normal
-
-
-    def _getMachinePath(self,machinename,append=""):
-        if machinename=="":
-            raise RuntimeError("Cannot be empty")
-        base = j.system.fs.joinPaths('/var', 'lib', 'lxc', '%s%s' % (self._prefix, machinename))
-        if append!="":
-            base=j.system.fs.joinPaths(base,append)
-        return base
-
-    def networkSetPrivateOnBridge(self, machinename,netname="dmz0", bridge=None, ipaddresses=["192.168.30.20/24"]):
-        print(("set private network %s on %s" %(ipaddresses,machinename)))
-        machine_cfg_file = self._getMachinePath(machinename,'config')
-        
-        config = '''
-lxc.network.type = veth
-lxc.network.flags = up
-lxc.network.link = %s
-lxc.network.name = %s
-'''  % (bridge, netname)
-
-        ed=j.codetools.getTextFileEditor(machine_cfg_file)
-        ed.setSection(netname,config)
-
-        if not bridge:
-            bridge = j.application.config.get('lxc.bridge.public')        
-
-        j.system.netconfig.setRoot(self._getRootPath(machinename)) #makes sure the network config is done on right spot
-        for ipaddr in ipaddresses:        
-            j.system.netconfig.enableInterfaceStatic(dev=netname,ipaddr=ipaddr,gw=None,start=False)
-        j.system.netconfig.root=""#set back to normal
-
+    def setNetworkInfo(self, name, pubip):
+        mgmtip = self._findFreeIP(name)
+        capi = self._getSshConnection(name)
+        machine_hrd = self.getConfig(name)
+        setipmodulename = machine_hrd.get('fabric.setip')
+        setupmodulepath = j.system.fs.joinPaths(self.imagepath, '%s.py' % setipmodulename)
+        setupmodule = imp.load_source(setipmodulename, setupmodulepath)
+        capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', ''), 'eth1': (pubip, '255.255.255.0', '')})
+        # write ip to vm hrd
+        machine_hrd.set('bootstrap.ip', mgmtip)
 
     def networkSetPrivateVXLan(self, name, vxlanid, ipaddresses):
         #not to do now, phase 2
         raise RuntimeError("not implemented")
-
-    def _setConfig(self,name,parent):
-        #now for LXC needs to be completely redone using LIBVIRT
-
-        C="""
-<volume>
-        <name>{{diskname}}</name>
-        <capacity unit='GB'>{{disksize}}</capacity>
-        <allocation unit='GB'>{{disksize}}</allocation>
-        <target>
-            <path>{{diskname}}</path>
-            <format type='qcow2'/>
-            <compat>1.1</compat>
-        </target>
-        <backingStore>
-            <format type='qcow2'/>
-            <path>{{diskbasevolume}}</path>
-        </backingStore>
- </volume>
-        """
-
-
-        print("SET CONFIG")
-        base=self._getMachinePath(name)
-        baseparent=self._getMachinePath(parent)
-        machine_cfg_file = self._getMachinePath(name,'config')
-        C="""
-lxc.mount = $base/fstab
-lxc.tty = 4
-lxc.pts = 1024
-lxc.arch = x86_64
-lxc.cgroup.devices.deny = a
-lxc.cgroup.devices.allow = c *:* m
-lxc.cgroup.devices.allow = b *:* m
-lxc.cgroup.devices.allow = c 1:3 rwm
-lxc.cgroup.devices.allow = c 1:5 rwm
-lxc.cgroup.devices.allow = c 5:1 rwm
-lxc.cgroup.devices.allow = c 5:0 rwm
-lxc.cgroup.devices.allow = c 1:9 rwm
-lxc.cgroup.devices.allow = c 1:8 rwm
-lxc.cgroup.devices.allow = c 136:* rwm
-lxc.cgroup.devices.allow = c 5:2 rwm
-lxc.cgroup.devices.allow = c 254:0 rm
-lxc.cgroup.devices.allow = c 10:229 rwm
-lxc.cgroup.devices.allow = c 10:200 rwm
-lxc.cgroup.devices.allow = c 1:7 rwm
-lxc.cgroup.devices.allow = c 10:228 rwm
-lxc.cgroup.devices.allow = c 10:232 rwm
-lxc.utsname = $name
-lxc.cap.drop = sys_module
-lxc.cap.drop = mac_admin
-lxc.cap.drop = mac_override
-lxc.cap.drop = sys_time
-lxc.hook.clone = /usr/share/lxc/hooks/ubuntu-cloud-prep
-lxc.rootfs = overlayfs:$baseparent/rootfs:$base/delta0
-lxc.pivotdir = lxc_putold
-"""        
-        C=C.replace("$name",name)    
-        C=C.replace("$baseparent",baseparent)
-        C=C.replace("$base",base)
-        j.system.fs.writeFile(machine_cfg_file,C)
-        
 
     def snapshot(self,name,snapshotname,disktype="all"):
         """
@@ -397,3 +279,37 @@ lxc.pivotdir = lxc_putold
         try to mount the snapshotted disk to a location
         at least supported btrfs,ext234,ntfs,fat,fat32
         """
+
+    def pushSSHKey(self, name):
+        privkeyloc="/root/.ssh/id_dsa"
+        keyloc=privkeyloc + ".pub"
+        if not j.system.fs.exists(path=keyloc):
+            j.system.process.executeWithoutPipe("ssh-keygen -t dsa -f %s -N ''" % privkeyloc)
+            if not j.system.fs.exists(path=keyloc):
+                raise RuntimeError("cannot find path for key %s, was keygen well executed"%keyloc)            
+        key=j.system.fs.fileGetContents(keyloc)
+        # j.system.fs.writeFile(filename=path,contents="%s\n"%content)
+        # path=j.system.fs.joinPaths(self._get_rootpath(name),"root",".ssh","known_hosts")
+        # j.system.fs.writeFile(filename=path,contents="")
+
+        c=j.remote.cuisine.api
+        config = self.getConfig(name)
+        c.fabric.api.env['password'] = config.get('bootstrap.passwd')
+        c.fabric.api.env['connection_attempts'] = 5
+
+        c.fabric.state.output["running"]=False
+        c.fabric.state.output["stdout"]=False
+
+        c.connect(config.get('bootstrap.ip'), config.get('bootstrap.login'))
+
+        c.ssh_authorize("root", key)
+        c.fabric.state.output["running"]=True
+        c.fabric.state.output["stdout"]=True
+
+        return key
+
+    def _getSshConnection(self, name):
+        capi = j.remote.cuisine.api
+        config = self.getConfig(name)
+        capi.connect(config.get('bootstrap.ip'))
+        return capi
