@@ -22,7 +22,7 @@ bootstrap.type=ssh
 
 """
 
-class KVM():
+class KVM(object):
 
     def __init__(self):
         """
@@ -71,7 +71,7 @@ class KVM():
             hrd = j.core.hrd.get(path)
             self.images[hrd.get("name")] = hrd
 
-    def initbridges(self,baseinterface="eth0"):
+    def initbridges(self, pubinterface="eth0"):
         """
         - names of bridges are brmgmt & brpub & brtmp(and are predefined)
         - brpub will be connected to e.g. eth0 on host and is for public traffic
@@ -82,9 +82,9 @@ class KVM():
             give static ip range 192.168.66.254/24 to bridge brmgmt (see self.ip_mgmt_range)
             will be used for internal mgmt purposes
         """
-        pass
-        #use
-        #j.system.netconfig
+        j.system.netconfig.enableInterfaceBridge('brpub', pubinterface, True, False)
+        j.system.netconfig.enableInterfaceBridgeStatic('brmgmt', ipaddr='192.168.66.254/24', start=True)
+        j.system.netconfig.enableInterfaceBridgeStatic('brtmp')
 
     def list(self):
         """
