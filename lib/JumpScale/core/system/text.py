@@ -414,7 +414,7 @@ class Text:
             if text.find("\n")!=-1 and multiline:
                 text="\n%s"%Text.prefix("    ",text.strip())
             if text.find(":")!=-1 or text.find(" ")!=-1 or text.find("/")!=-1 or text.find(",")!=-1:
-                text="'%s'"%text.strip("'")
+                text="%s"%text.strip("'")
             return text
         elif j.basetype.integer.check(text) or j.basetype.float.check(text):
             return str(text)
