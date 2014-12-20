@@ -1493,6 +1493,16 @@ apt-get install mc git ssh python2.7 python-requests  -y
             self.installJS(clean=False)
         print("done")
 
+    def installDocker(self):
+        if not do.exists(path="/usr/lib/apt/methods/https"):
+            do.execute("apt-get install apt-transport-https -y")
+
+        if not do.exists(path="/etc/apt/sources.list.d/docker.list"):
+            do.execute("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9")
+            do.writeFile("/etc/apt/sources.list.d/docker.list","deb https://get.docker.com/ubuntu docker main\n")
+            do.execute("apt-get update")
+            do.execute("apt-get install lxc-docker -y")
+
     def gitConfig(self,name,email):
         self.execute("git config --global user.email \"%s\""%email)
         self.execute("git config --global user.name \"%s\""%name)      
