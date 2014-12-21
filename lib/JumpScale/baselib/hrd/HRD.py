@@ -167,7 +167,7 @@ class HRDItem():
     __repr__=__str__
 
 class HRD(HRDBase):
-    def __init__(self,path=None,tree=None,content="",prefixWithName=False,keepformat=True,args={},templates=[],template=False):
+    def __init__(self,path=None,tree=None,content="",prefixWithName=False,keepformat=True,args={},templates=[],istemplate=False):
         self.path=path
         if self.path is not None:
             self.name=".".join(j.system.fs.getBaseName(self.path).split(".")[:-1])
@@ -181,7 +181,7 @@ class HRD(HRDBase):
         self.prefixWithName=prefixWithName
         self.templates=templates    
         self.args=args   
-        self.template=template
+        self.istemplate=istemplate
 
         if content!="":
             self.process(content)
@@ -213,7 +213,7 @@ class HRD(HRDBase):
             self.tree.changed=True
 
     def save(self):
-        if self.template:
+        if self.istemplate:
             raise RuntimeError("should not save template")
         if self.prefixWithName:
             #remove prefix from mem representation
@@ -283,37 +283,42 @@ class HRD(HRDBase):
         else:
             return "base"
 
-    def applyTemplate(self,path="",hrd=None):
+    def applyTemplates(self,path="",hrd=None):
 
-        if self.template:
+        if self.istemplate:
             return
 
+        templates=[]
         if hrd!=None:
-            hrd.template=True
+            hrd.istemplate=True
             templates=[hrd]
         elif path!="":
-            templates=[HRD(path=path,template=True)]
-        else:
-            templates=[]
-            for path in self.templates:
-                templates.append(HRD(path=path,template=True))
+            templates=[HRD(path=path,istemplate=True)]
+            
+        for path in self.templates:
+            templates.append(HRD(path=path,istemplate=True))
+
+
 
         change=False
         for hrdtemplate in templates:
 
             for key in list(hrdtemplate.items.keys()):
                 if key in self.args:
+                    #means key does already exist in HRD arguments, will use that value
                     hrdtemplateitem=hrdtemplate.items[key]
                     self.set(hrdtemplateitem.name,self.args[key],comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
                     continue                    
-                if key not in self.items:
+                elif key not in self.items:
+                    #its not in hrd yet
                     change=True
                     hrdtemplateitem=hrdtemplate.items[key]
                     if hrdtemplateitem.data.find("@ASK")!=-1:
-                        self.set(hrdtemplateitem.name,hrdtemplateitem.data,comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
-                        self.get(hrdtemplateitem.name)
+                        val=j.tools.text.ask(hrdtemplateitem.data,name=key,args=self.args)
+                        self.set(hrdtemplateitem.name,val,comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
                     else:
                         self.set(hrdtemplateitem.name,hrdtemplateitem.get(),comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
+        
 
         for key in self.args:
             self.set(key,self.args[key])
@@ -470,4 +475,4 @@ class HRD(HRDBase):
                 comments=""
                 vartype="unknown"
 
-        self.applyTemplate()
+        self.applyTemplates()

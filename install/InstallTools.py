@@ -19,7 +19,8 @@ from subprocess import Popen, PIPE
 import os, io
 from threading import Thread
 import Queue
-
+import os
+import smtplib
 
 # from JumpScale import j
 
@@ -113,6 +114,8 @@ class InstallTools():
     def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"],rsync=True):
         if self.debug:
             print("copy %s %s" % (source,dest))
+        if not self.exists(source):
+            raise RuntimeError("copytree:Cannot find source:%s"%source)
         if rsync:
             excl=""
             for item in ignoredir:
@@ -751,6 +754,31 @@ class InstallTools():
                 continue
             self.execute(cmd, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
 
+
+    def sendmail(self,ffrom,to,subject,msg,smtpuser,smtppasswd,smtpserver="smtp.mandrillapp.com",port=587,html=""):
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        msg = MIMEMultipart('alternative')
+
+        msg['Subject'] = subject
+        msg['From']    =ffrom
+        msg['To']      = to
+
+        if msg!="":
+            part1 = MIMEText(str(msg), 'plain')
+            msg.attach(part1)
+        
+        if html!="":
+            part2 = MIMEText(html, 'html')            
+            msg.attach(part2)
+
+        s = smtplib.SMTP(smtpserver, port)
+
+        s.login(smtpuser, smtppasswd)
+        s.sendmail(msg['From'], msg['To'], msg.as_string())
+
+        s.quit()        
 
     def execute(self, command , outputStdout=True, outputStderr=True, useShell=True, log=True, cwd=None, timeout=60, errors=[], ok=[], captureout=True, dieOnNonZeroExitCode=True):
         """
@@ -1492,6 +1520,16 @@ apt-get install mc git ssh python2.7 python-requests  -y
         if js:
             self.installJS(clean=False)
         print("done")
+
+    def installDocker(self):
+        if not do.exists(path="/usr/lib/apt/methods/https"):
+            do.execute("apt-get install apt-transport-https -y")
+
+        if not do.exists(path="/etc/apt/sources.list.d/docker.list"):
+            do.execute("apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9",outputStdout=False, outputStderr=False,dieOnNonZeroExitCode=False)
+            do.writeFile("/etc/apt/sources.list.d/docker.list","deb https://get.docker.com/ubuntu docker main\n")
+            do.execute("apt-get update")
+            do.execute("apt-get install lxc-docker -y",dieOnNonZeroExitCode=False)
 
     def gitConfig(self,name,email):
         self.execute("git config --global user.email \"%s\""%email)
