@@ -85,12 +85,12 @@ class InstallTools():
 
     def delete(self,path):
 
-        if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin","/opt/code"]:
-            raise RuntimeError('cannot delete protected dirs')
-        
-        if path.find("/opt/code")!=-1:
-            raise RuntimeError('cannot delete protected dirs')
-        
+	    if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin","/opt/code"]:
+	        raise RuntimeError('cannot delete protected dirs')
+		
+		if path.find("/opt/code")!=-1:
+		    raise RuntimeError('cannot delete protected dirs')
+		
         if self.debug:
             print(("delete: %s" % path))
         if os.path.exists(path) or os.path.islink(path):
@@ -390,7 +390,7 @@ class InstallTools():
             except Exception as e:
                 pass
         else:
-            os.unlink(path.rstrip("/"))
+            os.unlink(path)
 
     def getBaseName(self, path):
         """Return the base name of pathname path."""
@@ -762,18 +762,10 @@ class InstallTools():
         return False
 
     def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):        
-        rc_=""
-        out_=""
-        err_=""
         for cmd in cmdstr.split("\n"):
             if cmd.strip()=="" or cmd[0]=="#":
                 continue
-            rc,out,err=self.execute(cmd, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
-            rc_+=rc
-            out_+=out
-            err_+=err
-
-        return rc_,out_,err_
+            self.execute(cmd, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
 
 
     def sendmail(self,ffrom,to,subject,msg,smtpuser,smtppasswd,smtpserver="smtp.mandrillapp.com",port=587,html=""):
@@ -805,8 +797,8 @@ class InstallTools():
         """
         @param errors is array of statements if found then exit as error
         """
-        # print "EXEC:"
-        # print command
+        print "EXEC:"
+        print command
         os.environ["PYTHONUNBUFFERED"]="1"
         ON_POSIX = 'posix' in sys.builtin_module_names
  

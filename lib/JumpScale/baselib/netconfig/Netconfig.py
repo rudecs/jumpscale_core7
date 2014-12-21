@@ -30,7 +30,7 @@ class Netconfig:
             if nic not in excludes:
                 cmd="ifdown %s --force"%nic
                 print(("shutdown:%s"%nic))
-                j.system.process.execute(cmd)
+                j.system.process.execute(cmd,dieOnNonZeroExitCode=False)
         
     def _getInterfacePath(self):
         path=j.system.fs.joinPaths(self.root,"etc/network/interfaces")
