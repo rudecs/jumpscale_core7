@@ -569,7 +569,7 @@ class Text:
     @staticmethod
     def isFloat(text):
         text=text.strip(",").strip()
-        if text.find(".")==-1:
+        if not text.find(".")==1:
             return False
         text=text.replace(".","")
         return text.isdigit()
