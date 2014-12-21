@@ -7,6 +7,8 @@ import JumpScale.baselib.netconfig
 import netaddr
 from libvirtutil import LibvirtUtil
 import imp
+import JumpScale.baselib.remote
+import time
 
 HRDIMAGE="""
 id=
@@ -189,6 +191,7 @@ bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
                         imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
+        time.sleep(30)
         self.pushSSHKey(name)
         public_ip = ''
         self.setNetworkInfo(name, public_ip)
