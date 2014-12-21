@@ -8,9 +8,6 @@ class mainclass(parentclass):
     """
 
     def set(self,key,value,waitIndex=False, session=None):
-        if 'passwd' in value:
-            passwd = j.core.osis.encrypt(value['passwd'] or '')
-            value['passwd'] = passwd #bson.Binary(passwd)
         guid, new, changed = super(parentclass, self).set(key, value, session=session)
 
         g=j.core.osis.cmds._getOsisInstanceForCat("system","group")
@@ -38,7 +35,8 @@ class mainclass(parentclass):
         @return as json encoded
         """
         val = parentclass.get(self, key, full, session=session)
-        if val is not None: #and 'passwd' in val:
-            # import ipdb; ipdb.set_trace()
-            # val['passwd'] = j.core.osis.decrypt(val['passwd'])
-            return val
+        # if val is not None and 'passwd' in val:
+
+        #     val['passwd'] = j.core.osis.decrypt(val['passwd'])
+        return val
+

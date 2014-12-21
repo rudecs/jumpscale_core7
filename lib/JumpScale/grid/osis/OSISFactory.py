@@ -75,6 +75,8 @@ class OSISFactory:
         
 
     def encrypt(self,obj):
+        if isinstance(obj, unicode):
+            obj = str(obj)
         if not j.basetype.string.check(obj):
             if j.basetype.dictionary.check(obj):
                 val=obj
