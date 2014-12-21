@@ -134,7 +134,7 @@ class KVM(object):
             for key,ip in ips.items():
                 addr.append(int(ip.split(".")[-1].strip()))
             
-            for i in range(1,253):
+            for i in range(1,252):
                 if i not in addr:
                     return '192.168.66.%s' % i
 
@@ -192,44 +192,6 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         self.pushSSHKey(name)
         public_ip = ''
         self.setNetworkInfo(name, public_ip)
-        # running,stopped=self.list()
-        # machines=running+stopped
-
-        # ipaddr=self._findFreeIP(name)
-
-        # set the ip address inside the VM (NO DHCP !!!!)
-        # use SSH to login to VM using info we know from image
-        # depending type set the ip addr properly on eth1 (for management)
-        # we will not set the ip addr for the other interfaces yet
-
-        
-        # ipaddrs=j.application.config.getDict("lxc.management.ipaddr")
-        # if name in ipaddrs:
-        #     ipaddr=ipaddrs[name]
-        # else:
-        #     #find free ip addr
-        #     import netaddr
-            
-        #     existing=[netaddr.ip.IPAddress(item).value for item in  list(ipaddrs.values()) if item.strip()!=""]
-        #     ip = netaddr.IPNetwork(j.application.config.get("lxc.management.iprange"))
-        #     for i in range(ip.first+2,ip.last-2):
-        #         if i not in existing:
-        #             ipaddr=str(netaddr.ip.IPAddress(i))
-        #             break
-        #     ipaddrs[name]=ipaddr
-        #     j.application.config.setDict("lxc.management.ipaddr",ipaddrs)
-
-        # # mgmtiprange=j.application.config.get("lxc.management.iprange")
-        # self.networkSetPrivateOnBridge( name,netname="mgmt0", bridge="mgmt", ipaddresses=["%s/24"%ipaddr]) #@todo make sure other ranges also supported
-
-        #set ipaddr in hrd file
-        # hrd=self.getConfig(name)
-        # hrd.set("ipaddr",ipaddr)
-
-        # if start:
-        #     return self.start(name)
-
-        # return ipaddr
 
     def _getIdFromConfig(self, name):
         machine_hrd = self.getConfig(name)
@@ -259,7 +221,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         setipmodulename = machine_hrd.get('fabric.setip')
         setupmodulepath = j.system.fs.joinPaths(self.imagepath, '%s.py' % setipmodulename)
         setupmodule = imp.load_source(setipmodulename, setupmodulepath)
-        capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', ''), 'eth1': (pubip, '255.255.255.0', '')})
+        capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'mgmt': (mgmtip, '255.255.255.0', ''), 'pub': (pubip, '255.255.255.0', '')})
         # write ip to vm hrd
         machine_hrd.set('bootstrap.ip', mgmtip)
 
