@@ -158,7 +158,7 @@ class OSISStoreMongo(OSISStore):
         get dict value
         """
         db, counter = self._getMongoDB(session)
-        if j.basetype.string.check(key):
+        if j.basetype.string.check(key) or isinstance(key, unicode):
             key = key.replace('-', '')
             return not db.find_one({"guid":key})==None
         else:
