@@ -10,8 +10,6 @@ iface lo inet loopback
 auto %s
 iface %s inet static
     address %s
-    netmask %s
-    gateway %s''' % (iface, iface, config[0], config[1], config[2])
+    netmask %s''' % (iface, iface, config[0], config[1])
     sudo('echo "%s" > /etc/network/interfaces' % interfaces)
-    sudo("ifdown -a")
-    sudo("ifup -a")
+    sudo("ifdown -a; ifup -a")
