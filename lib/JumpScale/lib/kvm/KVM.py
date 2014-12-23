@@ -7,6 +7,8 @@ import JumpScale.baselib.netconfig
 import netaddr
 from libvirtutil import LibvirtUtil
 import imp
+import JumpScale.baselib.remote
+import time
 
 HRDIMAGE="""
 id=
@@ -100,7 +102,7 @@ class KVM(object):
     def getIp(self, name):
         #info will be fetched from hrd in vm directory
         hrd = self.getConfig(name)
-        return hrd.get("ipaddr")
+        return hrd.get("bootstrap.ip")
 
     def getConfig(self, name):
         configpath = j.system.fs.joinPaths(self.vmpath, name, "main.hrd")
@@ -116,11 +118,13 @@ class KVM(object):
         ips = dict()
         for name in self._getAllVMs():
             hrd = self.getConfig(name)
-            ips[name] = hrd.get("ipaddr")
+            ips[name] = hrd.get("bootstrap.ip")
         return ips
 
     def _getAllVMs(self):
-        return j.system.fs.listDirsInDir(self.vmpath, recursive=False, dirNameOnly=True, findDirectorySymlinks=True)
+        result = j.system.fs.listDirsInDir(self.vmpath, recursive=False, dirNameOnly=True, findDirectorySymlinks=True)
+        result.remove('images')
+        return result
 
     def _findFreeIP(self, name):
         """        
@@ -182,15 +186,16 @@ ostype=%s
 arch=%s
 version=%s
 description=
-
+fabric.setip=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
-bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'),
+bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), imagehrd.get('fabric.setip'),
                         imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
+        time.sleep(30)
         self.pushSSHKey(name)
-        public_ip = ''
+        public_ip = '37.50.210.16'
         self.setNetworkInfo(name, public_ip)
 
     def _getIdFromConfig(self, name):
@@ -221,7 +226,10 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         setipmodulename = machine_hrd.get('fabric.setip')
         setupmodulepath = j.system.fs.joinPaths(self.imagepath, '%s.py' % setipmodulename)
         setupmodule = imp.load_source(setipmodulename, setupmodulepath)
-        capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'mgmt': (mgmtip, '255.255.255.0', ''), 'pub': (pubip, '255.255.255.0', '')})
+        try:
+            capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
+        except:
+            print 'Something might have gone wrong when installing network config'
         # write ip to vm hrd
         machine_hrd.set('bootstrap.ip', mgmtip)
 
