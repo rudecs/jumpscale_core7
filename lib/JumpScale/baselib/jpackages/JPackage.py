@@ -164,6 +164,10 @@ class JPackageInstance():
         if not self.actions.check_down_local(**args):
             self.actions.halt(**args)
 
+    def build(self,args={}):
+        self._load(args=args)
+        self.actions.build(**args)
+
     def start(self,args={}):
         self._load(args=args)
         self.actions.start(**args)

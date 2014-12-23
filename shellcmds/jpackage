@@ -13,7 +13,7 @@ parser = cmdutils.ArgumentParser()
 #             'publish', 'repackage', 'restart', 'start', 'stop', 'mdupdate','addrepo', 'update', 'upload', 'mirror',
 #             'switchbranch', 'list','mdswitch','mddisabledebug','showdeps']
 
-commands = ['install','list','stop','start','restart']
+commands = ['install','list','stop','start','restart','build']
 
 parser.add_argument("action", choices=commands, help='Command to perform')
 
@@ -255,6 +255,8 @@ elif args.action == 'install':
         #     download=False
 
         package.install(args=hrddata)
+
+
     
 elif args.action == 'update':
     if not args.name:
@@ -357,6 +359,11 @@ elif args.action == 'stop':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
         package.stop(args=hrddata)
+
+elif args.action == 'build':
+    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    for package in packages:
+        package.build(args=hrddata)
 
 elif args.action == 'mdupdate':
     if j.application.sandbox:
