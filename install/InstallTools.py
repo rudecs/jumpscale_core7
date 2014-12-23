@@ -769,7 +769,7 @@ class InstallTools():
             if cmd.strip()=="" or cmd[0]=="#":
                 continue
             rc,out,err=self.execute(cmd, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
-            rc_+=rc
+            rc_+=str(rc)
             out_+=out
             err_+=err
 
