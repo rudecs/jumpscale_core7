@@ -373,12 +373,12 @@ class InstallTools():
                 raise RuntimeError("could not find src for link:%s"%src)
             os.symlink(src,dest)
 
-    def symlinkFilesInDir(self,src,dest):
+    def symlinkFilesInDir(self,src,dest,delete=True):
         for item in self.listFilesInDir(src, recursive=False,followSymlinks=True,listSymlinks=True):
             dest2="%s/%s"%(dest,self.getBaseName(item))
             dest2=dest2.replace("//","/")
-            print(("%s:%s"%(item,dest2)))
-            self.symlink(item,dest2)
+            print(("link %s:%s"%(item,dest2)))
+            self.symlink(item,dest2,delete=delete)
 
 
     def removesymlink(self,path):
@@ -1308,7 +1308,6 @@ class InstallTools():
         desttest="/usr/local/bin/js"
         if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
-            self.delete(dest)
             self.symlinkFilesInDir(src, dest)
         
         dest="%s/bin"%base
