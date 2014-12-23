@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from JumpScale import j
-import sys,time
+import sys
 import JumpScale.lib.diskmanager
 import os
 import JumpScale.baselib.netconfig
@@ -8,7 +8,6 @@ import netaddr
 from libvirtutil import LibvirtUtil
 import imp
 import JumpScale.baselib.remote
-import time
 
 HRDIMAGE="""
 id=
@@ -190,7 +189,8 @@ bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), imagehrd.get('fabric.setip'),
                         imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
-        time.sleep(30)
+        if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.login'), 22, 30):
+            raise RuntimeError('SSH is not available after 30 seconds')
         self.pushSSHKey(name)
         public_ip = '37.50.210.16'
         self.setNetworkInfo(name, public_ip)
@@ -221,7 +221,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         capi = self._getSshConnection(name)
         machine_hrd = self.getConfig(name)
         setipmodulename = machine_hrd.get('fabric.setip')
-        setupmodulepath = j.system.fs.joinPaths(self.imagepath, '%s.py' % setipmodulename)
+        setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
         setupmodule = imp.load_source(setipmodulename, setupmodulepath)
         machine_hrd.set('bootstrap.ip', mgmtip)
         try:
@@ -265,10 +265,17 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
 
         c.fabric.state.output["running"]=False
         c.fabric.state.output["stdout"]=False
-
         c.connect(config.get('bootstrap.ip'), config.get('bootstrap.login'))
 
-        c.ssh_authorize("root", key)
+        try:
+            c.ssh_authorize("root", key)            
+        except:
+            machine_hrd = self.getConfig(name)
+            setipmodulename = machine_hrd.get('fabric.setip')
+            setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
+            setupmodule = imp.load_source(setipmodulename, setupmodulepath)
+            c.fabric.api.execute(setupmodule.pushSshKey, sshkey=key)
+
         c.fabric.state.output["running"]=True
         c.fabric.state.output["stdout"]=True
 
