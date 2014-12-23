@@ -58,7 +58,7 @@ class KVM(object):
         self.loadImages()
         self.ip_mgmt_range = "192.168.66.0/24" #used on brmgmt
         self.nameserver = "8.8.8.8"
-        self.gateway = "192.168.1.1"
+        #self.gateway = "192.168.1.1"
         self.LibvirtUtil = LibvirtUtil()
         self.LibvirtUtil.basepath = self.vmpath
 
@@ -131,16 +131,13 @@ class KVM(object):
         find first ip addr which is free
         """
         ips=self._getAllMachinesIps()
-        if name in ips:
-            return ips[name]
-        else:
-            addr=[]
-            for key,ip in ips.items():
-                addr.append(int(ip.split(".")[-1].strip()))
-            
-            for i in range(1,252):
-                if i not in addr:
-                    return '192.168.66.%s' % i
+        addr=[]
+        for key,ip in ips.items():
+            addr.append(int(ip.split(".")[-1].strip()))
+        
+        for i in range(2,252):
+            if i not in addr:
+                return '192.168.66.%s' % i
 
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
@@ -226,12 +223,11 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         setipmodulename = machine_hrd.get('fabric.setip')
         setupmodulepath = j.system.fs.joinPaths(self.imagepath, '%s.py' % setipmodulename)
         setupmodule = imp.load_source(setipmodulename, setupmodulepath)
+        machine_hrd.set('bootstrap.ip', mgmtip)
         try:
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
         except:
             print 'Something might have gone wrong when installing network config'
-        # write ip to vm hrd
-        machine_hrd.set('bootstrap.ip', mgmtip)
 
     def networkSetPrivateVXLan(self, name, vxlanid, ipaddresses):
         #not to do now, phase 2
