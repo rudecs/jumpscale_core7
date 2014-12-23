@@ -1308,6 +1308,7 @@ class InstallTools():
         desttest="/usr/local/bin/js"
         if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
+            self.remove(dest)
             self.symlinkFilesInDir(src, dest)
         
         dest="%s/bin"%base
