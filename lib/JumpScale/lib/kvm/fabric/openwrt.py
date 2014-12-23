@@ -2,7 +2,7 @@ from fabric.api import task, run, settings
 
 @task
 def setupNetwork(ifaces):
-    with settings(shell='ash'):
+    with settings(shell='ash -c'):
         interfaces = '''config interface 'loopback'
         option ifname 'lo'
         option proto 'static'
@@ -28,5 +28,5 @@ def setupNetwork(ifaces):
 
 @task
 def pushSshKey(sshkey):
-    with settings(shell='ash'):
+    with settings(shell='ash -c'):
         run('touch /etc/dropbear/authorized_keys; echo "%s" > /etc/dropbear/authorized_keys' % sshkey)
