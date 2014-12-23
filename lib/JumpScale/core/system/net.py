@@ -436,6 +436,143 @@ class SystemNet:
             raise RuntimeError("No ip foungetIpAddressd that can connect to %s:%s"%(ip,port))
         return s.getsockname()[0]
 
+    def getDefaultIPConfig(self):
+        ipaddr=self.getReachableIpAddress("8.8.8.8",22)
+        for key,item in j.system.net.getNetworkInfo().items():
+            interface,ipaddr2=item
+            if str(ipaddr)==str(ipaddr2):
+                return interface,ipaddr
+
+    def bridgeExists(self,bridgename):
+        cmd="brctl show"
+        rc,out,err=j.do.execute(cmd,outputStdout=False)
+        for line in out.split("\n"):
+            if line.lower().startswith(bridgename):
+                return True
+        return False
+
+    def resetDefaultGateway(self,gw):
+        def gwexists():
+            cmd="ip r"
+            rc,out,err=j.do.execute(cmd,outputStdout=False)
+            for line in out.split("\n"):
+                if line.lower().startswith("default"):
+                    return True
+            return False
+        def removegw():
+            cmd="ip route del 0/0"
+            rc,out,err=j.do.execute(cmd,outputStdout=False,outputStderr=False,dieOnNonZeroExitCode=False)
+
+        removegw()            
+        couter=0
+        while gwexists():
+            removegw()
+            time.sleep(1)
+            print("try to delete def gw")
+            counter+=1
+            if counter>10:
+                raise RuntimeError("cannot delete def gw")
+
+        cmd='route add default gw %s'%gw
+        j.do.execute(cmd)
+
+
+    def bridgeConfigResetPub(self,interface=None,ipaddr=None,gw=None,mask=None):
+        """
+        will look for configure bridge brpub
+        if available and has ip addr to go to internet then nothing will happen
+        otherwise system will try in a save way set this ipaddr, this is a dangerous operation
+        """
+        import pynetlinux
+        import JumpScale.baselib.netconfig
+        if ipaddr==None or mask==None or interface==None:
+            interface2,ipaddr2=self.getDefaultIPConfig()
+            if interface==None:
+                interface==interface2
+                print "interface found:%s"%interface
+            if ipaddr2==None:
+                ipaddr==ipaddr2
+                print "ipaddr found:%s"%ipaddr
+
+        i=pynetlinux.ifconfig.findif(interface)
+
+        if mask==None:
+            mask=i.get_netmask()
+            print "mask found:%s"%mask
+
+        if gw==None:
+            defgw=pynetlinux.route.get_default_gw()
+            print "gw found:%s"%gw
+
+        if not j.system.net.pingMachine(gw):
+            raise RuntimeError("cannot continue to execute on bridgeConfigResetPub, gw was not reachable.")
+        print "gw can be reached"
+
+        if interface=="brpub":
+            return
+        if self.bridgeExists("brpub"):
+            from IPython import embed
+            print("bridgeExists")
+            embed()
+
+        try:
+            i.down()
+
+            j.do.execute("sudo stop network-manager",outputStdout=False,outputStderr=False,dieOnNonZeroExitCode=False)
+            j.do.writeFile("/etc/init/network-manager.override","manual")
+
+            j.system.netconfig.reset()
+
+            j.system.netconfig.setNameserver("8.8.8.8")
+            #now we should have no longer a network
+            p
+
+        except Exception,e:
+            print "error in bridgeConfigResetPub:'%s'"%e
+            #recover situation
+            if pynetlinux.brctl.findbridge("brpub")<>None:
+                i=pynetlinux.brctl.findbridge("brpub")
+                i.down()
+                while i.is_up():
+                    i.down()
+                    time.sleep(1)
+                    print "waiting for bridge:brpub to go down"
+                
+            if pynetlinux.ifconfig.findif(interface)<>None:
+                i=pynetlinux.ifconfig.findif(interface)
+                i.down()
+                while i.is_up():
+                    i.down()
+                    time.sleep(1)
+                    print "waiting for interface:%s to go down"%interface
+
+            i.set_ip(ipaddr)
+            i.set_netmask(mask)
+            i.up()
+            while i.is_up()==False:
+                i.up()
+                time.sleep(1)
+                print "waiting for interface:%s to go up"%interface 
+
+            print "interface:%s up"%interface  
+
+            self.resetDefaultGateway(gw)
+
+            print "default gw up"
+
+
+
+
+
+            #bring down brpub interface
+
+
+
+
+        return interface,ipaddr,mask,gw
+
+
+
     def getNetworkInfo(self):
         """
         returns {macaddr_name:[ipaddr,ipaddr],...}

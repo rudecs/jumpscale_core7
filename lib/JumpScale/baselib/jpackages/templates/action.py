@@ -42,6 +42,11 @@ class Actions(ActionsBase):
     #     self.jp_instance.hrd.applyOnDir( path="$(base)/cfg", additionalArgs={})
     #     return True
 
+    # def build(self,**args):
+    #     """
+    #     build instructions for the jpackage, make sure the builded jpackage ends up in right directory
+    #     """
+    #     return True
 
     # def stop(self,**args):
     #     """

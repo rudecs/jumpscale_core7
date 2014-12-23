@@ -231,7 +231,9 @@ class Code():
                 for item in obj:
                     value.append(todict(item,{},ignoreKeys))
                 return value
-            elif isinstance(obj, (int,str,float,bool,long,unicode)) or obj==None:
+            elif isinstance(obj, unicode):
+                return str(obj)
+            elif isinstance(obj, (int,str,float,bool,long)) or obj==None:
                 return obj
             elif isinstance(obj, bytes) or obj==None:
                 return obj.decode('utf-8', 'ignore')

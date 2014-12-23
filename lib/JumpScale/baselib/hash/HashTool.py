@@ -1,5 +1,6 @@
 
 from JumpScale import j
+import ExtraTools
 
 class HashTool:
     def hashDir(self,rootpath):
@@ -23,7 +24,7 @@ class HashTool:
 #                print "realpath %s %s" % (rootpath,path2)
                 hhash=j.tools.hash.md5(realpath)
                 out+="%s|%s\n"%(hhash,path2)
-        return j.base.byteprocessor.hashMd5(out),out        
+        return ExtraTools.ByteProcessor.hashMd5(out),out        
 
 import hashlib
 import zlib

@@ -77,8 +77,11 @@ class JPackageInstance():
             args["jp.domain"]=self.jp.domain
             args["jp.instance"]=self.instance
 
+            hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
+
             # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
             self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
+            
             self.hrd.save()
 
             self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
@@ -123,12 +126,6 @@ class JPackageInstance():
                 argskey=item["args"]
                 if self.hrd.exists(argskey):
                     args=self.hrd.getDict(argskey)
-
-                    # #dirty hack for now (hrd format has bug)
-                    # args2={}
-                    # for key,val in args.items():
-                    #     args2[key]=val.replace("\\n","").replace("\n","")
-                    # args=args2
             else:
                 args={}
 
@@ -166,6 +163,10 @@ class JPackageInstance():
         self.actions.stop(**args)
         if not self.actions.check_down_local(**args):
             self.actions.halt(**args)
+
+    def build(self,args={}):
+        self._load(args=args)
+        self.actions.build(**args)
 
     def start(self,args={}):
         self._load(args=args)
@@ -207,6 +208,8 @@ class JPackageInstance():
         if j.packages.indocker or not docker:
 
             self.stop()
+
+            #	j.system.platform.ubuntu.check()            
 
             for dep in self.getDependencies():
                 if dep.jp.name not in j.packages._justinstalled:
@@ -277,19 +280,24 @@ class JPackageInstance():
                     items=[(src,dest,link)]
 
                 for src,dest,link in items:
+                    if dest.strip()=="":
+                        raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
+                    if dest[0]!="/":
+                        dest="/%s"%dest
                     if link:
                         j.system.fs.createDir(j.do.getParent(dest))
                         j.do.symlink(src, dest)
                     else:
                         if j.system.fs.exists(path=dest):
-                            if "overwrite" in recipeitem:
-                                if recipeitem["overwrite"].lower()=="false":
-                                    continue
-                                else:
-                                    print ("copy: %s->%s"%(src,dest))
-                                    j.do.delete(dest)
-                                    j.system.fs.createDir(dest)
-                                    j.do.copyTree(src,dest)
+                            if not "overwrite" in recipeitem:
+                                recipeitem["overwrite"]="true"
+                            if recipeitem["overwrite"].lower()=="false":
+                                continue
+                            else:
+                                print ("copy: %s->%s"%(src,dest))
+                                j.do.delete(dest)
+                                j.system.fs.createDir(dest)
+                                j.do.copyTree(src,dest)
                         else:
                             print ("copy: %s->%s"%(src,dest))
                             j.do.copyTree(src,dest)

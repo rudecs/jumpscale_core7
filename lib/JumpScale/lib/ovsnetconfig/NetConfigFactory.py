@@ -4,8 +4,8 @@ import pprint
 import re
 
 from JumpScale import j
-from . import VXNet.vxlan as vxlan
-from . import VXNet.netclasses as netcl
+import VXNet.vxlan as vxlan
+import VXNet.netclasses as netcl
 from .VXNet.utils import *
 
 

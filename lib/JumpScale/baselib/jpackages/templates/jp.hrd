@@ -31,8 +31,13 @@ git.export.2=
     overwrite:False,
     link:False,
 
-#name of packages which need to be installed locally
-dependencies=,
+#args are name to other key which is a dict & represents the args
+dependencies.1                 =
+    name:'mail_client',
+    domain:,
+    instance:,
+    args:,
+
 
 platform.supported=linux64,
 

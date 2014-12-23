@@ -30,7 +30,7 @@ class Netconfig:
             if nic not in excludes:
                 cmd="ifdown %s --force"%nic
                 print(("shutdown:%s"%nic))
-                j.system.process.execute(cmd)
+                j.system.process.execute(cmd,dieOnNonZeroExitCode=False)
         
     def _getInterfacePath(self):
         path=j.system.fs.joinPaths(self.root,"etc/network/interfaces")
@@ -166,17 +166,21 @@ iface $int inet static
         self._applyNetconfig(dev,C,args,start=start)        
 
     def enableInterfaceBridgeDhcp(self,dev,bridgedev,start=False):
+        self.enableInterfaceBridge(dev,bridgedev,start, True)
+
+    def enableInterfaceBridge(self,dev,bridgedev,start=False,dhcp=True):
         """
         """
         C="""
 auto $int        
-iface $int inet dhcp
+iface $int inet $method
        bridge_ports $bridgedev
        bridge_fd 0
        bridge_maxwait 0
 """
 
         args={}
+        args['method'] = 'dhcp' if dhcp else 'manual'
         args["dev"]=dev
         args["bridgedev"]=bridgedev        
         self._applyNetconfig(dev,C,args,start=start)        
@@ -212,6 +216,8 @@ iface $int:$aliasnr inet static
                 C=C.replace("$net",str(ip.network))
 
         C=C.replace("$int",dev)
+        if 'method' in args:
+            C = C.replace("$method", args['method'])
         
         if "gw" in args:
             C=C.replace("$gw","gateway %s"%args["gw"])
@@ -226,9 +232,4 @@ iface $int:$aliasnr inet static
             cmd="ifdown %s"%devToApplyTo
             j.system.process.execute(cmd) 
             cmd="ifup %s"%devToApplyTo
-            j.system.process.execute(cmd) 
-
-
-
-
-
+            j.system.process.execute(cmd)

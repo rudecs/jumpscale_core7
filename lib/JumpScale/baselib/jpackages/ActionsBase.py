@@ -168,6 +168,9 @@ class ActionsBase():
 
         return True
 
+    def build(self,**args):
+        pass
+
     def check_up_local(self,**args):
         """
         do checks to see if process(es) is (are) running.

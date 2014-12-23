@@ -1,4 +1,5 @@
 from JumpScale import j
+import ExtraTools
 
 class system_errorconditionhandler(j.code.classGetBase()):
 
@@ -35,7 +36,7 @@ class system_errorconditionhandler(j.code.classGetBase()):
         key = eco.actorname + str(eco.level) + eco.appname +\
             eco.category + eco.description + eco.tags +\
             eco.descriptionpub
-        key = j.base.byteprocessor.hashMd5(key)
+        key = ExtraTools.ByteProcessor.hashMd5(key)
         print("ecokey:%s" % key)
         return key
 
