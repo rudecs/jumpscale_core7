@@ -9,6 +9,7 @@ except:
 from weed.volume import WeedVolume
 import requests
 import JumpScale.baselib.redis
+import ExtraTools
 
 class BlobStorClientFake:
     """
@@ -52,7 +53,7 @@ class BlobStorClientFake:
         #use ledis & weedfs
         #key is md5, use ledis to have link between md5 & key on weedfs
         wv = WeedVolume(self.host, self.port)
-        key = j.base.byteprocessor.hashMd5(data)
+        key = ExtraTools.ByteProcessor.hashMd5(data)
         url = wv.url_base + '/%s' % key
         files = {'file': (key, data)}
         try:
@@ -180,7 +181,7 @@ class BlobStorClientFake:
             # print "upload file (>4MB) %s"%(path)
             for data in self._read_file(path):
                 self._dump2stor(data,repoid=repoid,compress=compress)
-                self.redis.rpush('files.%s' % key, j.base.byteprocessor.hashMd5(data))
+                self.redis.rpush('files.%s' % key, ExtraTools.ByteProcessor.hashMd5(data))
                 #hashes.append(self._dump2stor(data,repoid=repoid,compress=compress))
             # if len(hashes)>1:
             #     out = "##HASHLIST##\n"
@@ -195,7 +196,7 @@ class BlobStorClientFake:
             # print "upload file (<4MB) %s"%(path)
             for data in self._read_file(path):
                 self._dump2stor(data,key=key,repoid=repoid,compress=compress)
-                self.redis.rpush('files.%s' % key, j.base.byteprocessor.hashMd5(data))
+                self.redis.rpush('files.%s' % key, ExtraTools.ByteProcessor.hashMd5(data))
         return key
 
     def downloadFile(self,key,dest,link=False,repoid=0, chmod=0,chownuid=0,chowngid=0,sync=False,size=0):

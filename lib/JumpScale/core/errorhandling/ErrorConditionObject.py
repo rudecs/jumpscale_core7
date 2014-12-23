@@ -12,6 +12,7 @@ except ImportError:
 
 
 import JumpScale.baselib.hash
+import ExtraTools
 
 
 class ErrorConditionObject():
@@ -334,4 +335,4 @@ class ErrorConditionObject():
             dd.pop("guid")
         if "sguid" in dd:
             dd.pop("sguid")
-        return j.base.byteprocessor.hashMd5(str(dd))
+        return ExtraTools.ByteProcessor.hashMd5(str(dd))

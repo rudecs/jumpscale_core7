@@ -1,5 +1,6 @@
 
 def main(j, args, params, tags, tasklet):
+    import ExtraTools
     params.merge(args)
 
     doc = params.doc
@@ -7,7 +8,7 @@ def main(j, args, params, tags, tasklet):
 
     out = ""
     cmdstr = params.macrostr.split(":", 1)[1].replace("}}", "").strip()
-    md5 = j.base.byteprocessor.hashMd5(cmdstr)
+    md5 = ExtraTools.ByteProcessor.hashMd5(cmdstr)
     j.system.fs.createDir(j.system.fs.joinPaths(j.core.portal.active.filesroot, "dot"))
     path = j.system.fs.joinPaths(j.core.portal.active.filesroot, "dot", md5)
     if not j.system.fs.exists(path + ".png"):
