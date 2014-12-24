@@ -84,11 +84,13 @@ class KVM(object):
             give static ip range 192.168.66.254/24 to bridge brmgmt (see self.ip_mgmt_range)
             will be used for internal mgmt purposes
         """
+        print 'Creating physical bridges brpub, brmgmt and brtmp on the host...'
         j.system.netconfig.enableInterfaceBridge('brpub', pubinterface, True, False)
         j.system.netconfig.enableInterfaceBridgeStatic('brmgmt', ipaddr='192.168.66.254/24', start=True)
         j.system.netconfig.enableInterfaceBridgeStatic('brtmp')
 
     def initLibvirtNetowrk(self):
+        print 'Creating libvirt networks brpub, brmgmt and brtmp...'
         networks = ('brmgmt', 'brpub', 'brtmp')
         for network in networks:
             j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
@@ -146,7 +148,7 @@ class KVM(object):
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
-    def create(self, name, baseimage, replace=True):
+    def create(self, name, baseimage, replace=True, description=''):
         """
         create a KVM machine which inherits from a qcow2 image (so no COPY)
 
@@ -174,9 +176,12 @@ class KVM(object):
         """
         if replace:
             if j.system.fs.exists(self._getRootPath(name)):
+                print 'Machine %s already exists, will destroy and recreate...' % name
                 self.destroy(name)
         j.system.fs.createDir(self._getRootPath(name))
+        print 'Creating machine %s...' % name
         self.LibvirtUtil.create_node(name, baseimage)
+        print 'Wrtiting machine HRD config file...'
         domain = self.LibvirtUtil.connection.lookupByName(name)
         imagehrd = self.images[baseimage]
         hrdfile = j.system.fs.joinPaths(self._getRootPath(name), 'main.hrd')
@@ -186,40 +191,51 @@ name=%s
 ostype=%s
 arch=%s
 version=%s
-description=
+description=%s
 fabric.setip=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
-bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), imagehrd.get('fabric.setip'),
-                        imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
+                        imagehrd.get('fabric.setip'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
+        print 'Waiting for SSH connection to be ready...'
         if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 60):
             raise RuntimeError('SSH is not available after 60 seconds')
         self.pushSSHKey(name)
         public_ip = '37.50.210.16'
+        print 'Setting network configuration on the guest, this might take some time...'
         self.setNetworkInfo(name, public_ip)
+        print 'Machine %s created successfully' % name
+        print 'Machine IP address is: %s' % self.getIp(name)
 
     def _getIdFromConfig(self, name):
         machine_hrd = self.getConfig(name)
         return machine_hrd.get('id')
         
     def destroyAll(self):
+        print 'Destroying all created vmachines...'
         running, stopped = self.list()
         for item in running + stopped:
             self.destroy(item['name'])
+        print 'Done'
 
     def destroy(self, name):
+        print 'Destroying machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
         self.LibvirtUtil.delete_machine(machine_id)
         
     def stop(self, name):
+        print 'Stopping machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
         self.LibvirtUtil.shutdown(machine_id)
+        print 'Done'
 
     def start(self, name):
+        print 'Starting machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
         self.LibvirtUtil.create(machine_id, None)
+        print 'Done'
 
     def setNetworkInfo(self, name, pubip):
         mgmtip = self._findFreeIP(name)
@@ -252,6 +268,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         """
 
     def pushSSHKey(self, name):
+        print 'Pushing SSH key to the guest...'
         privkeyloc="/root/.ssh/id_dsa"
         keyloc=privkeyloc + ".pub"
         if not j.system.fs.exists(path=keyloc):
