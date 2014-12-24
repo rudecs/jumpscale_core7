@@ -179,6 +179,7 @@ class KVM(object):
             if j.system.fs.exists(self._getRootPath(name)):
                 print 'Machine %s already exists, will destroy and recreate...' % name
                 self.destroy(name)
+                j.system.fs.removeDirTree(self._getRootPath(name))
         j.system.fs.createDir(self._getRootPath(name))
         print 'Creating machine %s...' % name
         self.LibvirtUtil.create_node(name, baseimage)
@@ -242,9 +243,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         mgmtip = self._findFreeIP(name)
         capi = self._getSshConnection(name)
         machine_hrd = self.getConfig(name)
-        setipmodulename = machine_hrd.get('fabric.module')
-        setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
-        setupmodule = imp.load_source(setipmodulename, setupmodulepath)
+        setupmodule = self._getFabricModule(name)
         machine_hrd.set('bootstrap.ip', mgmtip)
         try:
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
