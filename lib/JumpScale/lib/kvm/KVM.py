@@ -9,7 +9,8 @@ from libvirtutil import LibvirtUtil
 import imp
 import JumpScale.baselib.remote
 
-HRDIMAGE="""
+"""
+HRDIMAGE format
 id=
 name=
 ostype = 
@@ -49,7 +50,6 @@ class KVM(object):
         name e.g. ourbase
 
         each image needs to have ssh agent installed and needs to be booted when machine starts & be configured using the params as specified
-
         """
         self.vmpath = "/mnt/vmstor/kvm"
         self.imagepath = "/mnt/vmstor/kvm/images"
@@ -173,7 +173,6 @@ class KVM(object):
         @param baseimage is name of the image used (see self.images)
 
         when replace then remove original image
-        
         """
         if replace:
             if j.system.fs.exists(self._getRootPath(name)):
