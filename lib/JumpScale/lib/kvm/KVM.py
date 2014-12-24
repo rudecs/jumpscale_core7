@@ -73,7 +73,7 @@ class KVM(object):
             hrd = j.core.hrd.get(path)
             self.images[hrd.get("name")] = hrd
 
-    def initbridges(self, pubinterface="eth0"):
+    def initPhysicalBridges(self, pubinterface="eth0"):
         """
         - names of bridges are brmgmt & brpub & brtmp(and are predefined)
         - brpub will be connected to e.g. eth0 on host and is for public traffic
@@ -87,6 +87,11 @@ class KVM(object):
         j.system.netconfig.enableInterfaceBridge('brpub', pubinterface, True, False)
         j.system.netconfig.enableInterfaceBridgeStatic('brmgmt', ipaddr='192.168.66.254/24', start=True)
         j.system.netconfig.enableInterfaceBridgeStatic('brtmp')
+
+    def initLibvirtNetowrk(self):
+        networks = ('brmgmt', 'brpub', 'brtmp')
+        for network in networks:
+            j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
 
     def list(self):
         """
