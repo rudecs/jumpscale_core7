@@ -69,9 +69,10 @@ class KVM(object):
         """
         walk over images & remember so we can use to create & manipulate machines
         """
-        for path in j.system.fs.listFilesInDir(self.imagepath, recursive=False, filter="*.hrd", listSymlinks=True):
+        for image in j.system.fs.listDirsInDir(self.imagepath, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+            path = j.system.fs.joinPaths(self.imagepath, image, '%s.hrd' % image)
             hrd = j.core.hrd.get(path)
-            self.images[hrd.get("name")] = hrd
+            self.images[image] = hrd
 
     def initPhysicalBridges(self, pubinterface="eth0"):
         """
