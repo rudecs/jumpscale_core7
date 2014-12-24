@@ -249,6 +249,8 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
         except:
             print 'Something might have gone wrong when installing network config'
+        finally:
+            capi.fabric.network.disconnect_all()
 
     def networkSetPrivateVXLan(self, name, vxlanid, ipaddresses):
         #not to do now, phase 2
