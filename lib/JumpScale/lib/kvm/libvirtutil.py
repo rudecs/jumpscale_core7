@@ -458,7 +458,10 @@ class LibvirtUtil(object):
 
     def createNetwork(self, networkname, bridge):
         networkxml = self.env.get_template('network.xml').render(networkname=networkname, bridge=bridge)
-        self.connection.networkCreateXML(networkxml)
+        self.connection.networkDefineXML(networkxml)
+        nw = self.connection.networkLookupByName(networkname)
+        nw.setAutostart(1)
+        nw.create()
 
     def createVMStorSnapshot(self, name):
         vmstor_snapshot_path = j.system.fs.joinPaths(self.basepath,'snapshots')
