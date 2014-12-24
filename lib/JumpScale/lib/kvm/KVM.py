@@ -21,7 +21,7 @@ bootstrap.ip=
 bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
-fabric.setip=
+fabric.module=
 """
 
 class KVM(object):
@@ -193,12 +193,12 @@ ostype=%s
 arch=%s
 version=%s
 description=%s
-fabric.setip=%s
+fabric.module=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
-                        imagehrd.get('fabric.setip'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+                        imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
         if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
@@ -242,7 +242,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         mgmtip = self._findFreeIP(name)
         capi = self._getSshConnection(name)
         machine_hrd = self.getConfig(name)
-        setipmodulename = machine_hrd.get('fabric.setip')
+        setipmodulename = machine_hrd.get('fabric.module')
         setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
         setupmodule = imp.load_source(setipmodulename, setupmodulepath)
         machine_hrd.set('bootstrap.ip', mgmtip)
@@ -272,7 +272,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
 
     def _getFabricModule(self, name):
         machine_hrd = self.getConfig(name)
-        setipmodulename = machine_hrd.get('fabric.setip')
+        setipmodulename = machine_hrd.get('fabric.module')
         setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
         return imp.load_source(setipmodulename, setupmodulepath)
 
