@@ -509,7 +509,7 @@ class LibvirtUtil(object):
     def _create_disk(self, vm_id, image_name, size=10, disk_role='base'):
         disktemplate = self.env.get_template("disk.xml")
         diskname = vm_id + '-' + disk_role + '.qcow2'
-        diskbasevolume = j.system.fs.joinPaths(self.templatepath, '%s.qcow2' % image_name)
+        diskbasevolume = j.system.fs.joinPaths(self.templatepath, image_name, '%s.qcow2' % image_name)
         diskxml = disktemplate.render({'diskname': diskname, 'diskbasevolume':
                                        diskbasevolume, 'disksize': size})
         self.create_disk(diskxml, vm_id)

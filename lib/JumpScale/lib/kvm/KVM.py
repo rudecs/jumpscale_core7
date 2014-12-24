@@ -21,7 +21,7 @@ bootstrap.ip=
 bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
-fabric.setip=
+fabric.module=
 """
 
 class KVM(object):
@@ -69,9 +69,10 @@ class KVM(object):
         """
         walk over images & remember so we can use to create & manipulate machines
         """
-        for path in j.system.fs.listFilesInDir(self.imagepath, recursive=False, filter="*.hrd", listSymlinks=True):
+        for image in j.system.fs.listDirsInDir(self.imagepath, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+            path = j.system.fs.joinPaths(self.imagepath, image, '%s.hrd' % image)
             hrd = j.core.hrd.get(path)
-            self.images[hrd.get("name")] = hrd
+            self.images[image] = hrd
 
     def initPhysicalBridges(self, pubinterface="eth0"):
         """
@@ -192,16 +193,16 @@ ostype=%s
 arch=%s
 version=%s
 description=%s
-fabric.setip=%s
+fabric.module=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
-                        imagehrd.get('fabric.setip'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+                        imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
-        if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 60):
-            raise RuntimeError('SSH is not available after 60 seconds')
+        if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
+            raise RuntimeError('SSH is not available after 5 minutes')
         self.pushSSHKey(name)
         public_ip = '37.50.210.16'
         print 'Setting network configuration on the guest, this might take some time...'
@@ -241,7 +242,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         mgmtip = self._findFreeIP(name)
         capi = self._getSshConnection(name)
         machine_hrd = self.getConfig(name)
-        setipmodulename = machine_hrd.get('fabric.setip')
+        setipmodulename = machine_hrd.get('fabric.module')
         setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
         setupmodule = imp.load_source(setipmodulename, setupmodulepath)
         machine_hrd.set('bootstrap.ip', mgmtip)
@@ -249,6 +250,8 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
         except:
             print 'Something might have gone wrong when installing network config'
+        finally:
+            capi.fabric.network.disconnect_all()
 
     def networkSetPrivateVXLan(self, name, vxlanid, ipaddresses):
         #not to do now, phase 2
@@ -267,6 +270,12 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         at least supported btrfs,ext234,ntfs,fat,fat32
         """
 
+    def _getFabricModule(self, name):
+        machine_hrd = self.getConfig(name)
+        setipmodulename = machine_hrd.get('fabric.module')
+        setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
+        return imp.load_source(setipmodulename, setupmodulepath)
+
     def pushSSHKey(self, name):
         print 'Pushing SSH key to the guest...'
         privkeyloc="/root/.ssh/id_dsa"
@@ -279,28 +288,22 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         # j.system.fs.writeFile(filename=path,contents="%s\n"%content)
         # path=j.system.fs.joinPaths(self._get_rootpath(name),"root",".ssh","known_hosts")
         # j.system.fs.writeFile(filename=path,contents="")
-
         c=j.remote.cuisine.api
         config = self.getConfig(name)
         c.fabric.api.env['password'] = config.get('bootstrap.passwd')
         c.fabric.api.env['connection_attempts'] = 5
-
         c.fabric.state.output["running"]=False
         c.fabric.state.output["stdout"]=False
         c.connect(config.get('bootstrap.ip'), config.get('bootstrap.login'))
 
-        try:
-            c.ssh_authorize("root", key)            
-        except:
-            machine_hrd = self.getConfig(name)
-            setipmodulename = machine_hrd.get('fabric.setip')
-            setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
-            setupmodule = imp.load_source(setipmodulename, setupmodulepath)
+        setupmodule = self._getFabricModule(name)
+        if hasattr(setupmodule, 'pushSshKey'):
             c.fabric.api.execute(setupmodule.pushSshKey, sshkey=key)
-
+        else:
+            c.ssh_authorize("root", key)
+        
         c.fabric.state.output["running"]=True
         c.fabric.state.output["stdout"]=True
-
         return key
 
     def _getSshConnection(self, name):
