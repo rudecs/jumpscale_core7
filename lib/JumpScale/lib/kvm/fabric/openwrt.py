@@ -24,7 +24,7 @@ config interface '%s'
     option ipaddr '%s'
     option netmask '%s' ''' % (iface, iface, config[0], config[1])
         run('echo "%s" > /etc/config/network' % interfaces)
-        run("/etc/init.d/network restart", timeout=10)
+        run("/etc/init.d/network restart", timeout=3)
 
 @task
 def pushSshKey(sshkey):
