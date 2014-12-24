@@ -194,7 +194,7 @@ bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), imagehrd.get('fabric.setip'),
                         imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
-        if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.login'), 22, 60):
+        if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 60):
             raise RuntimeError('SSH is not available after 60 seconds')
         self.pushSSHKey(name)
         public_ip = '37.50.210.16'
