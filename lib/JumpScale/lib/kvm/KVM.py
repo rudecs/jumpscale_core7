@@ -9,7 +9,8 @@ from libvirtutil import LibvirtUtil
 import imp
 import JumpScale.baselib.remote
 
-HRDIMAGE="""
+"""
+HRDIMAGE format
 id=
 name=
 ostype = 
@@ -49,7 +50,6 @@ class KVM(object):
         name e.g. ourbase
 
         each image needs to have ssh agent installed and needs to be booted when machine starts & be configured using the params as specified
-
         """
         self.vmpath = "/mnt/vmstor/kvm"
         self.imagepath = "/mnt/vmstor/kvm/images"
@@ -173,7 +173,6 @@ class KVM(object):
         @param baseimage is name of the image used (see self.images)
 
         when replace then remove original image
-        
         """
         if replace:
             if j.system.fs.exists(self._getRootPath(name)):
@@ -190,6 +189,7 @@ class KVM(object):
         # assume that login and passwd are provided in the image hrd config file
         hrdcontents = '''id=%s
 name=%s
+image=%s
 ostype=%s
 arch=%s
 version=%s
@@ -198,7 +198,7 @@ fabric.module=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
-bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
+bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
                         imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
@@ -248,7 +248,8 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         try:
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
         except:
-            print 'Something might have gone wrong when installing network config'
+            if not j.system.net.waitConnectionTest(mgmtip, 22, 10):
+                raise RuntimeError('Could not change machine ip address')
         finally:
             capi.fabric.network.disconnect_all()
 
@@ -272,7 +273,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
     def _getFabricModule(self, name):
         machine_hrd = self.getConfig(name)
         setipmodulename = machine_hrd.get('fabric.module')
-        setupmodulepath = j.system.fs.joinPaths(self.imagepath, 'fabric', '%s.py' % setipmodulename)
+        setupmodulepath = j.system.fs.joinPaths(self.imagepath, machine_hrd.get('image'), 'fabric', '%s.py' % setipmodulename)
         return imp.load_source(setipmodulename, setupmodulepath)
 
     def pushSSHKey(self, name):

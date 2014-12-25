@@ -114,6 +114,8 @@ class HRDItem():
                         data=data.replace(item,replacewith)                    
                         # data=data.replace("//","/")
 
+        data=j.tools.text.dealWithList(data)
+
         data=j.tools.text.ask(data,self.name,args=self.hrd.args)
         if data.find("@ASK")!=-1:
             # print ("CHANGED")
@@ -121,7 +123,7 @@ class HRDItem():
 
         if self.ttype=="str" or self.ttype=="base":
             self.value=data.strip().strip("'")
-            self.value=j.tools.text.machinetext2hrd(self.value)
+            self.value=j.tools.text.machinetext2val(self.value)
 
         elif self.ttype=="dict":
             currentobj={}
@@ -136,7 +138,7 @@ class HRDItem():
                     if item.find(":")==-1:
                         j.events.inputerror_critical("In %s/%s: cannot parse:'%s', need to find : to parse dict"%(self.hrd.name,self.name,item))                        
                     key,post2=item.split(":",1)                        
-                    currentobj[key.strip()]=j.tools.text.machinetext2hrd(post2.strip())
+                    currentobj[key.strip()]=j.tools.text.machinetext2val(post2.strip())
                 self.value=currentobj
 
         elif self.ttype=="list":
@@ -148,7 +150,7 @@ class HRDItem():
                 for item in self.value.split(","):
                     if item.strip()=="":
                         continue
-                    currentobj.append(j.tools.text.machinetext2hrd(item.strip()))
+                    currentobj.append(j.tools.text.machinetext2val(item.strip()))
                 self.value=currentobj
 
         elif self.ttype=="binary":
@@ -188,13 +190,16 @@ class HRD(HRDBase):
         else:
             self.read()
 
-    def set(self,key,value,persistent=True,comments="",temp=False,ttype=None):
+    def set(self,key,value="",persistent=True,comments="",temp=False,ttype=None,data=""):
         """
         """
         key=key.lower()
         if key not in self.items:
             self.items[key]=HRDItem(name=key,hrd=self,ttype=ttype,data=value,comments="")
-        self.items[key].set(value,persistent=persistent,comments=comments,temp=temp)
+        if data!="":
+            self.items[key].data=data
+        else:
+            self.items[key].set(value,persistent=persistent,comments=comments,temp=temp)
 
     def get(self,key,default=None,):
         key=key.lower()

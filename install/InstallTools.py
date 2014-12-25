@@ -83,12 +83,12 @@ class InstallTools():
         fo.write( content )
         fo.close()
 
-    def delete(self,path):
+    def delete(self,path,force=False):
 
         if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin","/opt/code"]:
             raise RuntimeError('cannot delete protected dirs')
         
-        if path.find("/opt/code")!=-1:
+        if not force and path.find("/opt/code")!=-1:
             raise RuntimeError('cannot delete protected dirs')
         
         if self.debug:
@@ -805,6 +805,7 @@ class InstallTools():
     def execute(self, command , outputStdout=True, outputStderr=True, useShell=True, log=True, cwd=None, timeout=60, errors=[], ok=[], captureout=True, dieOnNonZeroExitCode=True):
         """
         @param errors is array of statements if found then exit as error
+        return rc,out,err
         """
         # print "EXEC:"
         # print command
@@ -898,12 +899,12 @@ class InstallTools():
 
                 if chan=='O':
                     if outputStdout:
-                        print (line)
+                        print (line.strip())
                     if captureout:
                         out+=line
                 elif chan=='E':
                     if outputStderr:
-                        print ("ERR:%s"%line)
+                        print ("E:%s"%line.strip())
                     if captureout:
                         err+=line
             except Queue.Empty:
@@ -920,8 +921,8 @@ class InstallTools():
             err==error2
         if rc==1000:
             rc = p.returncode
-            if rc==0 and err<>"":
-                rc=998
+            # if rc==0 and err<>"":
+            #     rc=998
 
         if rc>0 and dieOnNonZeroExitCode:
             if err<>"":
@@ -1139,7 +1140,7 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def pullGitRepo(self,url,dest=None,login=None,passwd=None,depth=None,ignorelocalchanges=False,reset=False,branch="master"):
+    def pullGitRepo(self,url,dest=None,login=None,passwd=None,depth=None,ignorelocalchanges=False,reset=False,branch="master",revision=None):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
@@ -1154,7 +1155,7 @@ class InstallTools():
         else:
             raise RuntimeError("Url needs to start with 'http(s)://'")
 
-        if login!=None:            
+        if login!=None and login!="guest":            
             url="%s%s:%s@%s"%(pre,login,passwd,url2)
 
         if dest==None:
@@ -1184,10 +1185,17 @@ class InstallTools():
                 self.executeInteractive(cmd)
         else:
             print(("git clone %s -> %s"%(url,dest)))
-            cmd="cd %s;git clone -b %s --single-branch %s %s"%(dest,branch,url,dest)
+            cmd="cd %s;git clone --single-branch -b %s %s %s"%(dest,branch,url,dest)
+            print cmd
             if depth!=None:
                 cmd+=" --depth %s"%depth        
             self.executeInteractive(cmd)
+
+        if revision!=None:
+            cmd="cd %s;git checkout %s"%(dest,revision)
+            print cmd
+            self.executeInteractive(cmd)
+            
 
         return dest
 

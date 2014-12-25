@@ -89,14 +89,21 @@ class ErrorConditionObject():
 
     def toAscii(self):
         def _toAscii(s):
+            doagain=False
             try:
                 if isinstance(s, unicode):
                     s=unicodedata.normalize('NFKD',s)
-                return s.encode('utf-8')
+                return s.encode('utf-8','ignore')
             except Exception as e:
-                print("BUG in toascii in ErrorConditionObject")
-                import ipdb
-                ipdb.set_trace()
+                #try default
+                doagain=True
+            if doagain:
+                try:
+                    s=str(s)
+                except Exception as e2:
+                    print("BUG in toascii in ErrorConditionObject")
+                    import ipdb
+                    ipdb.set_trace()
                                                 
         self.errormessage=_toAscii(self.errormessage)
         self.errormessagePub=_toAscii(self.errormessagePub)
