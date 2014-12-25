@@ -115,6 +115,10 @@ class JPackageInstance():
         if recipeitem<>None and "branch" in recipeitem:
             branch=recipeitem["branch"]
 
+        revision=None
+        if recipeitem<>None and "revision" in recipeitem:
+            revision=recipeitem["revision"]            
+
         depth=1
         if recipeitem<>None and "depth" in recipeitem:
             depth=recipeitem["depth"]
@@ -127,7 +131,7 @@ class JPackageInstance():
             dest=j.do.pullGitRepo(url=url, login=j.application.config.get("whoami.git.login"), \
                 passwd=j.application.config.get("whoami.git.passwd"), depth=depth, branch=branch)
         else:
-            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch)  
+            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision)  
         self._reposDone[url]=dest
         return dest      
 
