@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from JumpScale import j
-import sys,time
+import sys
 import JumpScale.lib.diskmanager
 import os
 import JumpScale.baselib.netconfig
@@ -8,9 +8,9 @@ import netaddr
 from libvirtutil import LibvirtUtil
 import imp
 import JumpScale.baselib.remote
-import time
 
-HRDIMAGE="""
+"""
+HRDIMAGE format
 id=
 name=
 ostype = 
@@ -22,7 +22,7 @@ bootstrap.ip=
 bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
-fabric.setip=
+fabric.module=
 """
 
 class KVM(object):
@@ -50,7 +50,6 @@ class KVM(object):
         name e.g. ourbase
 
         each image needs to have ssh agent installed and needs to be booted when machine starts & be configured using the params as specified
-
         """
         self.vmpath = "/mnt/vmstor/kvm"
         self.imagepath = "/mnt/vmstor/kvm/images"
@@ -70,11 +69,12 @@ class KVM(object):
         """
         walk over images & remember so we can use to create & manipulate machines
         """
-        for path in j.system.fs.listFilesInDir(self.imagepath, recursive=False, filter="*.hrd", listSymlinks=True):
+        for image in j.system.fs.listDirsInDir(self.imagepath, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+            path = j.system.fs.joinPaths(self.imagepath, image, '%s.hrd' % image)
             hrd = j.core.hrd.get(path)
-            self.images[hrd.get("name")] = hrd
+            self.images[image] = hrd
 
-    def initbridges(self, pubinterface="eth0"):
+    def initPhysicalBridges(self, pubinterface="eth0"):
         """
         - names of bridges are brmgmt & brpub & brtmp(and are predefined)
         - brpub will be connected to e.g. eth0 on host and is for public traffic
@@ -85,9 +85,16 @@ class KVM(object):
             give static ip range 192.168.66.254/24 to bridge brmgmt (see self.ip_mgmt_range)
             will be used for internal mgmt purposes
         """
+        print 'Creating physical bridges brpub, brmgmt and brtmp on the host...'
         j.system.netconfig.enableInterfaceBridge('brpub', pubinterface, True, False)
         j.system.netconfig.enableInterfaceBridgeStatic('brmgmt', ipaddr='192.168.66.254/24', start=True)
         j.system.netconfig.enableInterfaceBridgeStatic('brtmp')
+
+    def initLibvirtNetowrk(self):
+        print 'Creating libvirt networks brpub, brmgmt and brtmp...'
+        networks = ('brmgmt', 'brpub', 'brtmp')
+        for network in networks:
+            j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
 
     def list(self):
         """
@@ -142,7 +149,7 @@ class KVM(object):
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
-    def create(self, name, baseimage, replace=True):
+    def create(self, name, baseimage, replace=True, description=''):
         """
         create a KVM machine which inherits from a qcow2 image (so no COPY)
 
@@ -166,68 +173,85 @@ class KVM(object):
         @param baseimage is name of the image used (see self.images)
 
         when replace then remove original image
-        
         """
         if replace:
             if j.system.fs.exists(self._getRootPath(name)):
+                print 'Machine %s already exists, will destroy and recreate...' % name
                 self.destroy(name)
+                j.system.fs.removeDirTree(self._getRootPath(name))
         j.system.fs.createDir(self._getRootPath(name))
+        print 'Creating machine %s...' % name
         self.LibvirtUtil.create_node(name, baseimage)
+        print 'Wrtiting machine HRD config file...'
         domain = self.LibvirtUtil.connection.lookupByName(name)
         imagehrd = self.images[baseimage]
         hrdfile = j.system.fs.joinPaths(self._getRootPath(name), 'main.hrd')
         # assume that login and passwd are provided in the image hrd config file
         hrdcontents = '''id=%s
 name=%s
+image=%s
 ostype=%s
 arch=%s
 version=%s
-description=
-fabric.setip=%s
+description=%s
+fabric.module=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
-bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), imagehrd.get('fabric.setip'),
-                        imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
+                        imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
-        time.sleep(30)
+        print 'Waiting for SSH connection to be ready...'
+        if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
+            raise RuntimeError('SSH is not available after 5 minutes')
         self.pushSSHKey(name)
         public_ip = '37.50.210.16'
+        print 'Setting network configuration on the guest, this might take some time...'
         self.setNetworkInfo(name, public_ip)
+        print 'Machine %s created successfully' % name
+        print 'Machine IP address is: %s' % self.getIp(name)
 
     def _getIdFromConfig(self, name):
         machine_hrd = self.getConfig(name)
         return machine_hrd.get('id')
         
     def destroyAll(self):
+        print 'Destroying all created vmachines...'
         running, stopped = self.list()
         for item in running + stopped:
             self.destroy(item['name'])
+        print 'Done'
 
     def destroy(self, name):
+        print 'Destroying machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
         self.LibvirtUtil.delete_machine(machine_id)
         
     def stop(self, name):
+        print 'Stopping machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
         self.LibvirtUtil.shutdown(machine_id)
+        print 'Done'
 
     def start(self, name):
+        print 'Starting machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
         self.LibvirtUtil.create(machine_id, None)
+        print 'Done'
 
     def setNetworkInfo(self, name, pubip):
         mgmtip = self._findFreeIP(name)
         capi = self._getSshConnection(name)
         machine_hrd = self.getConfig(name)
-        setipmodulename = machine_hrd.get('fabric.setip')
-        setupmodulepath = j.system.fs.joinPaths(self.imagepath, '%s.py' % setipmodulename)
-        setupmodule = imp.load_source(setipmodulename, setupmodulepath)
+        setupmodule = self._getFabricModule(name)
         machine_hrd.set('bootstrap.ip', mgmtip)
         try:
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
         except:
-            print 'Something might have gone wrong when installing network config'
+            if not j.system.net.waitConnectionTest(mgmtip, 22, 10):
+                raise RuntimeError('Could not change machine ip address')
+        finally:
+            capi.fabric.network.disconnect_all()
 
     def networkSetPrivateVXLan(self, name, vxlanid, ipaddresses):
         #not to do now, phase 2
@@ -246,7 +270,14 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         at least supported btrfs,ext234,ntfs,fat,fat32
         """
 
+    def _getFabricModule(self, name):
+        machine_hrd = self.getConfig(name)
+        setipmodulename = machine_hrd.get('fabric.module')
+        setupmodulepath = j.system.fs.joinPaths(self.imagepath, machine_hrd.get('image'), 'fabric', '%s.py' % setipmodulename)
+        return imp.load_source(setipmodulename, setupmodulepath)
+
     def pushSSHKey(self, name):
+        print 'Pushing SSH key to the guest...'
         privkeyloc="/root/.ssh/id_dsa"
         keyloc=privkeyloc + ".pub"
         if not j.system.fs.exists(path=keyloc):
@@ -257,21 +288,22 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('ostype'), imag
         # j.system.fs.writeFile(filename=path,contents="%s\n"%content)
         # path=j.system.fs.joinPaths(self._get_rootpath(name),"root",".ssh","known_hosts")
         # j.system.fs.writeFile(filename=path,contents="")
-
         c=j.remote.cuisine.api
         config = self.getConfig(name)
         c.fabric.api.env['password'] = config.get('bootstrap.passwd')
         c.fabric.api.env['connection_attempts'] = 5
-
         c.fabric.state.output["running"]=False
         c.fabric.state.output["stdout"]=False
-
         c.connect(config.get('bootstrap.ip'), config.get('bootstrap.login'))
 
-        c.ssh_authorize("root", key)
+        setupmodule = self._getFabricModule(name)
+        if hasattr(setupmodule, 'pushSshKey'):
+            c.fabric.api.execute(setupmodule.pushSshKey, sshkey=key)
+        else:
+            c.ssh_authorize("root", key)
+        
         c.fabric.state.output["running"]=True
         c.fabric.state.output["stdout"]=True
-
         return key
 
     def _getSshConnection(self, name):

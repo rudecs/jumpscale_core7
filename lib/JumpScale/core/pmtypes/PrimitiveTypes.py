@@ -80,4 +80,4 @@ class String(BaseType):
     @staticmethod
     def check(value):
         '''Check whether provided value is a string'''
-        return isinstance(value, str)
+        return isinstance(value, (str, unicode))

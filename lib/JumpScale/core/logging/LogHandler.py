@@ -7,13 +7,7 @@ import sys
 import time
 from datetime import datetime
 
-try:
-    from io import StringIO
-except ImportError:
-    try:
-        from io import StringIO
-    except:
-        from io import StringIO
+from io import BytesIO
 
 try:
     import ujson as json
@@ -201,7 +195,7 @@ class LogHandler(object):
             def __init__(self):
                 self._original_stderr = sys.stderr
                 self._original_stdout = sys.stdout
-                self._buffer = StringIO()
+                self._buffer = BytesIO()
 
             def __call__(self, func):
                 def wrapper(*args, **kwargs):

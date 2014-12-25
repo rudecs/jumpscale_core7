@@ -30,7 +30,11 @@ class AgentControllerFactory(object):
     def getInstanceConfig(self, instance=None):
         if instance is None:
             instance = j.application.instanceconfig.get('agentcontroller.connection')
-        accljp = j.packages.findNewest(name="agentcontroller_client",domain="jumpscale")
+        accljp = j.packages.find(name="agentcontroller_client",domain="jumpscale")
+        if len(accljp) > 0:
+            accljp = accljp[0]
+        else:
+            j.events.inputerror_critical("Could not find agentcontroller_client instance, please install")
         accljp.load(instance=instance)
         hrd = accljp.hrd_instance
         prefix = 'agentcontroller.client.'
@@ -127,3 +131,4 @@ class AgentControllerClient():
             return result["result"]
         else:
             return result
+
