@@ -116,16 +116,15 @@ class HRDBase():
         """
         result=[]
         for key in self.prefix(prefix):
-            result.append(self.get(key))
+            result.append(copy.copy(self.get(key)))
 
         def processdict(ddict,musthave=[],defaults={},aredicts={},arelist=[],arebool=[]):
+            # print "##\n%s\n##\n"%ddict
             for key in musthave:
                 if key not in ddict.keys():
                     ddict[key]=""
 
             for key in ddict.keys():
-
-                ddict[key]=str(ddict[key]).strip().strip(",")
 
                 if key in defaults:
                     if ddict[key]=="":
@@ -133,37 +132,46 @@ class HRDBase():
 
                 #no default            
                 if key in areint:
+                    ddict[key]=str(ddict[key]).strip().strip(",")
                     if ddict[key]=="":
                         ddict[key]=0
                     else:
                         ddict[key]=j.tools.text.getInt(ddict[key])
                 
                 elif key in arebool:
+                    ddict[key]=str(ddict[key]).strip().strip(",")
                     if ddict[key]=="":
                         ddict[key]=False
                     else:
                         ddict[key]=j.tools.text.getBool(ddict[key])                        
                 
                 elif key in aredict:
-                    if ddict[key]=="":
+                    checkval=str(ddict[key]).strip().strip(",")
+                    if checkval=="":
                         ddict[key]={}
-                    else:
-                        ddict[key]=j.tools.text.machinetext2hrd(ddict[key],quote=False)
-                        ddict[key]=j.tools.text.getDict(ddict[key])
-                            
+                    elif j.basetype.dictionary.check(ddict[key]):
                         for key3,val3 in ddict[key].items():
-                            ddict[key][key3]=j.tools.text.str2var(ddict[key][key3])                      
+                            ddict[key][key3]=j.tools.text.machinetext2val(str(ddict[key][key3]))
+                    else:
+                        # ddict[key]=j.tools.text.machinetext2val(ddict[key])
+                        ddict[key]=j.tools.text.getDict(checkval)                            
+                        for key3,val3 in ddict[key].items():
+                            ddict[key][key3]=j.tools.text.str2var(str(ddict[key][key3]))
                 
                 elif key in arelist:
-                    if ddict[key]=="":
+                    checkval=str(ddict[key]).strip().strip(",")
+                    if checkval=="":
                         ddict[key]=[]
+                    elif j.basetype.list.check(ddict[key]):
+                        for val3 in ddict[key]:
+                            val3=j.tools.text.machinetext2val(str(val3))
                     else:
-                        ddict[key]=j.tools.text.machinetext2hrd(str(ddict[key]),quote=False)
-                        ddict[key]=j.tools.text.getList(str(ddict[key]))
+                        # ddict[key]=j.tools.text.machinetext2val(str(ddict[key]))
+                        ddict[key]=j.tools.text.getList(checkval)
                         ddict[key]=[j.tools.text.str2var(item) for item in ddict[key]]
 
                 else:
-                    ddict[key]=j.tools.text.machinetext2hrd(ddict[key],quote=False)
+                    ddict[key]=j.tools.text.machinetext2val(str(ddict[key]))
 
             return ddict
 

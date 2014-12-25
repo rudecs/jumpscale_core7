@@ -3,6 +3,7 @@ import imp
 import copy
 
 import JumpScale.baselib.remote.cuisine
+import JumpScale.baselib.actions
 
 # import JumpScale.lib.docker
 try:
@@ -96,14 +97,37 @@ class JPackageInstance():
             self.actions.jp_instance=self
             self._loaded=True
 
-    def _getRepo(self,url):
+    def _getRepo(self,url,recipeitem=None):
         if url in self._reposDone:
             return self._reposDone[url]
-        if j.application.config.get("whoami.git.login")!="":
+
+        login=None
+        passwd=None
+        if recipeitem<>None and "login" in recipeitem:
+            login=recipeitem["login"]
+            if login=="anonymous" or login.lower()=="none" or login=="" or login.lower()=="guest" :
+                login="guest"
+        if recipeitem<>None and "passwd" in recipeitem:
+            passwd=recipeitem["passwd"]
+        
+
+        branch='master'
+        if recipeitem<>None and "branch" in recipeitem:
+            branch=recipeitem["branch"]
+
+        depth=1
+        if recipeitem<>None and "depth" in recipeitem:
+            depth=recipeitem["depth"]
+            if depth.lower()=="all":
+                depth=None
+            else:
+                depth=int(depth)
+
+        if login==None and j.application.config.get("whoami.git.login")!="":
             dest=j.do.pullGitRepo(url=url, login=j.application.config.get("whoami.git.login"), \
-                passwd=j.application.config.get("whoami.git.passwd"), depth=1, branch='master')
+                passwd=j.application.config.get("whoami.git.passwd"), depth=depth, branch=branch)
         else:
-            dest=j.do.pullGitRepo(url=url, login=None, passwd=None, depth=1, branch='master')  
+            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch)  
         self._reposDone[url]=dest
         return dest      
 
@@ -182,6 +206,7 @@ class JPackageInstance():
 
         defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
         musthave=["cmd","args","prio","env","cwd","timeout_start","timeout_start","ports","startupmanager","filterstr","name","user"]
+        
         procs=self.hrd.getListFromPrefixEachItemDict("process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
         for process in procs:
             counter+=1                
@@ -248,9 +273,8 @@ class JPackageInstance():
 
             for recipeitem in self.hrd.getListFromPrefix("git.export"):
                 # print recipeitem
-                
                 #pull the required repo
-                dest0=self._getRepo(recipeitem['url'])
+                dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
                 src="%s/%s"%(dest0,recipeitem['source'])
                 src=src.replace("//","/")
                 if "dest" not in recipeitem:

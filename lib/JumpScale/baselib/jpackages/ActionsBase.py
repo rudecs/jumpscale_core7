@@ -107,22 +107,6 @@ class ActionsBase():
                 else:
                     j.system.platform.ubuntu.startService(name)
 
-            isrunning=self.check_up_local()
-
-            if isrunning==False:            
-                if j.system.fs.exists(path=self.jp_instance.getLogPath()):
-                    log=j.do.readFile(self.jp_instance.getLogPath()).strip()
-                else:
-                    log=""
-
-                msg=""
-
-                if self.jp_instance.getTCPPorts()!=[]:
-                    ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
-                    msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
-                    j.events.opserror_critical(msg,"jp.start.failed.ports")
-                else:
-                    j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")
 
                 # if msg=="":
                 #     pids=self.getPids(ifNoPidFail=False,wait=False)
@@ -143,6 +127,23 @@ class ActionsBase():
 
         for process in self.jp_instance.getProcessDicts():
             start2(process)
+
+        isrunning=self.check_up_local()
+
+        if isrunning==False:            
+            if j.system.fs.exists(path=self.jp_instance.getLogPath()):
+                log=j.do.readFile(self.jp_instance.getLogPath()).strip()
+            else:
+                log=""
+
+            msg=""
+
+            if self.jp_instance.getTCPPorts()!=[]:
+                ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
+                msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
+                j.events.opserror_critical(msg,"jp.start.failed.ports")
+            else:
+                j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")            
 
     def stop(self,**args):
         """
@@ -177,10 +178,9 @@ class ActionsBase():
         this happens on system where process is
         """      
         def do(process):
-            if not self.jp_instance.hrd.exists("process.cwd"):
-                return
-            cwd=process["cwd"]
-            ports=self.jp_instance.getTCPPorts()
+
+            ports=self.jp_instance.getTCPPorts()            
+                                    
             timeout=process["timeout_start"]
             if timeout==0:
                 timeout=2
@@ -201,8 +201,12 @@ class ActionsBase():
                         return True
                     now=j.base.time.getTimeEpoch()
                 return False
+        
         for process in self.jp_instance.getProcessDicts():
-            do(process)
+            result=do(process)
+            if result==False:
+                return False
+        print ("Process UP")
         return True
 
     def check_down_local(self,**args):
@@ -213,9 +217,6 @@ class ActionsBase():
         """        
         def do(process):        
             if not self.jp_instance.hrd.exists("process.cwd"):
-                return
-            cwd=process["cwd"]
-            if cwd.strip()=="":
                 return
 
             ports=self.jp_instance.getTCPPorts()
@@ -234,7 +235,10 @@ class ActionsBase():
                 return j.system.process.checkProcessRunning(filterstr)==False
 
         for process in self.jp_instance.getProcessDicts():
-            do(process)
+            result=do(process)
+            if result==False:
+                return False            
+        print ("Process DOWN")
         return True        
 
     def check_requirements(self,**args):

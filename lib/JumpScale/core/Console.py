@@ -569,10 +569,13 @@ class Console:
 
             
     def showOutput(self):
-        pass
+        pass#@todo
         
     def hideOutput(self):
-        pass    
+        pass   
+
+    def enableOutput(self):
+        pass
 
     def showArray(self,array,header=True):
         choices=self._array2list(array,header)
