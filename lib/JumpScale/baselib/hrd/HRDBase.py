@@ -101,10 +101,39 @@ class HRDBase():
         result={}
         l=len(prefix)
         for key in self.prefix(prefix):
-            key2=key[l+1:]
+            if prefix!="":
+                key2=key[l+1:]
+            else:
+                key2=key
             result[key2]=self.get(key)
         return result
 
+    def getHRDAsDict(self):
+        ddict=self.getDictFromPrefix("")
+        keys=ddict.keys()
+        keys.sort()
+        prevkey=""
+        for key in keys:
+            if key.count(".")==1:
+                keyparts=key.split(".")
+                if j.tools.text.isNumeric(keyparts[1]):
+                    if keyparts[0] not in ddict.keys():
+                        ddict[keyparts[0]]=[]
+                    ddict[keyparts[0]].append(self.get(key).replace("\\n","\n"))
+                    ddict.pop(key)                
+            elif key.count(".")==2:
+                keyparts=key.split(".")
+                if j.tools.text.isNumeric(keyparts[1]):
+                    if keyparts[0] not in ddict.keys():
+                        ddict[keyparts[0]]=[]
+                    newkey="%s_%s"%(keyparts[0],keyparts[1])
+                    if newkey!=prevkey:
+                        ddict[keyparts[0]].append({})
+                    # print "%s %s"%(prevkey,newkey)
+                    prevkey=newkey
+                    ddict[keyparts[0]][-1][keyparts[2]]=self.get(key).replace("\\n","\n")
+                    ddict.pop(key)                
+        return ddict
 
     def getListFromPrefixEachItemDict(self, prefix,musthave=[],defaults={},aredict={},arelist=[],areint=[],arebool=[]):
         """
