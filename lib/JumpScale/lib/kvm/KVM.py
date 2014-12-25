@@ -248,7 +248,8 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         try:
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
         except:
-            print 'Something might have gone wrong when installing network config'
+            if not j.system.net.waitConnectionTest(mgmtip, 22, 10):
+                raise RuntimeError('Could not change machine ip address')
         finally:
             capi.fabric.network.disconnect_all()
 
