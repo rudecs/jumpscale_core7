@@ -52,43 +52,47 @@ class Tmux:
         for name, value in list(env.items()):
             envstr += "export %s=%s\n" % (name, value)
 
-        self.createWindow(sessionname, screenname,user=tmuxuser)
-        pane = self._getPane(sessionname, screenname,user=tmuxuser)
-        env = os.environ.copy()
-        env.pop('TMUX', None)
+        if cmd.strip():
+            import ipdb;ipdb.set_trace()
+            self.createWindow(sessionname, screenname,user=tmuxuser)
+            pane = self._getPane(sessionname, screenname,user=tmuxuser)
+            env = os.environ.copy()
+            env.pop('TMUX', None)
 
-        if envstr!="":
-            cmd2="tmux send-keys -t '%s' '%s\n'" % (pane,envstr)
-            if tmuxuser!=None:
-                cmd2 = "sudo -u %s -i %s"%(tmuxuser,cmd2)        
-            j.system.process.run(cmd2, env=env)
+            if envstr!="":
+                cmd2="tmux send-keys -t '%s' '%s\n'" % (pane,envstr)
+                if tmuxuser!=None:
+                    cmd2 = "sudo -u %s -i %s"%(tmuxuser,cmd2)        
+                j.system.process.run(cmd2, env=env)
 
 
-        if user!="root":
-            cmd="cd %s;%s"%(cwd,cmd)
-            sudocmd="su -c \"%s\" %s"%(cmd,user)
-            cmd2="tmux send-keys -t '%s' '%s' ENTER" % (pane,sudocmd)
-        else:
+            if cwd:
+                cwd = "cd %s;" % cwd
+                cmd="%s %s"%(cwd,cmd)
+            if user!="root":
+                sudocmd="su -c \"%s\" %s"%(cmd,user)
+                cmd2="tmux send-keys -t '%s' '%s' ENTER" % (pane,sudocmd)
+            else:
             # if cmd.find("'") != -1:
             #     cmd=cmd.replace("'","\\\'")  
-            if cmd.find("$")!=-1:
-                cmd=cmd.replace("$","\\$")                              
-            cmd2="tmux send-keys -t '%s' \"%s;%s\" ENTER" % (pane,"cd %s"%cwd,cmd)
-            print(cmd2)
-        if tmuxuser!=None:
-            cmd2 = "sudo -u %s -i %s"%(tmuxuser,cmd2)
-        # j.system.process.run(cmd2, env=env)
-        j.system.process.execute(cmd2)
+                if cmd.find("$")!=-1:
+                     cmd=cmd.replace("$","\\$")                              
+                cmd2="tmux send-keys -t '%s' \"%s\" ENTER" % (pane,cmd)
+                print(cmd2)
+            if tmuxuser!=None:
+                cmd2 = "sudo -u %s -i %s"%(tmuxuser,cmd2)
+            # j.system.process.run(cmd2, env=env)
+            j.system.process.execute(cmd2)
 
-        time.sleep(wait)
-        if wait and j.system.fs.exists(ppath):
-            resultcode=j.system.fs.fileGetContents(ppath).strip()
-            j.system.fs.remove(ppath)
-            if not resultcode or int(resultcode)>0:
-                raise RuntimeError("Could not execute %s in screen %s:%s, errorcode was %s" % (cmd,sessionname,screenname,resultcode))
-        elif wait:
-            j.console.echo("Execution of %s  did not return, maybe interactive, in screen %s:%s." % (cmd,sessionname,screenname))
-
+            time.sleep(wait)
+            if wait and j.system.fs.exists(ppath):
+                resultcode=j.system.fs.fileGetContents(ppath).strip()
+                j.system.fs.remove(ppath)
+                if not resultcode or int(resultcode)>0:
+                    raise RuntimeError("Could not execute %s in screen %s:%s, errorcode was %s" % (cmd,sessionname,screenname,resultcode))
+            elif wait:
+                j.console.echo("Execution of %s  did not return, maybe interactive, in screen %s:%s." % (cmd,sessionname,screenname))
+    
     def getSessions(self,user=None):
         cmd = 'tmux list-sessions -F "#{session_name}"'
         if user!=None:
@@ -137,11 +141,12 @@ class Tmux:
             j.system.process.execute(cmd)
 
     def logWindow(self, session, name, filename,user=None):
-        pane = self._getPane(session, name,user=user)        
-        cmd = "tmux pipe-pane -t '%s' 'cat >> \"%s\"'" % (pane, filename)
-        if user!=None:
-            cmd = "sudo -u %s -i %s"%(user,cmd)
-        j.system.process.execute(cmd)
+        pane = self._getPane(session, name,user=user)
+        if pane:  
+            cmd = "tmux pipe-pane -t '%s' 'cat >> \"%s\"'" % (pane, filename)
+            if user!=None:
+                cmd = "sudo -u %s -i %s"%(user,cmd)
+            j.system.process.execute(cmd)
 
     def windowExists(self, session, name,user=None):
         if session in self.getSessions(user=user):
@@ -152,6 +157,8 @@ class Tmux:
     def _getPane(self, session, name,user=None):
         windows = self.getWindows(session,user=user)
         remap = dict([ (win, idx) for idx, win in list(windows.items()) ])
+        if not name in remap:
+             return None
         result = "%s:%s" % (session, remap[name])
         return result
 
@@ -188,3 +195,4 @@ class Tmux:
         if user!=None:
             cmd = "sudo -u %s -i %s"%(user,cmd)
         j.system.process.executeWithoutPipe(cmd)
+
