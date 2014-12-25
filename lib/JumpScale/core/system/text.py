@@ -2,6 +2,7 @@ import time
 from JumpScale import j
 import re
 matchquote = re.compile(r'\'[^\']*\'')
+matchlist = re.compile(r'\[[^\']*\]')
 re_nondigit= re.compile(r'\D')
 re_float = re.compile(r'[0-9]*\.[0-9]+')
 re_digit = re.compile(r'[0-9]*')
@@ -316,7 +317,7 @@ class Text:
                     if ttype not in ttypes:
                         ttypes.append(ttype)
                 if "s" in ttypes:
-                    result=[str(Text.machinetext2hrd(item))  for item in string]
+                    result=[str(Text.machinetext2val(item))  for item in string]
                 elif "f" in ttypes and "b" not in ttypes:
                     result=[Text.getFloat(item) for item in string]
                 elif "i" in ttypes and "b" not in ttypes:
@@ -324,7 +325,7 @@ class Text:
                 elif "b" == ttypes:
                     result=[Text.getBool(item) for item in string]                
                 else:
-                    result=[str(Text.machinetext2hrd(item)) for item in string]
+                    result=[str(Text.machinetext2val(item)) for item in string]
             elif j.basetype.dictionary.check(string):
                 ttypes=[]
                 result={}
@@ -334,7 +335,7 @@ class Text:
                         ttypes.append(ttype)
                 if "s" in ttypes:                        
                     for key,item in list(string.items()):
-                        result[key]=str(Text.machinetext2hrd(item)) 
+                        result[key]=str(Text.machinetext2val(item)) 
                 elif "f" in ttypes and "b" not in ttypes:
                     for key,item in list(string.items()):
                         result[key]=Text.getFloat(item)
@@ -346,7 +347,7 @@ class Text:
                         result[key]=Text.getBool(item)
                 else:
                     for key,item in list(string.items()):
-                        result[key]=str(Text.machinetext2hrd(item)) 
+                        result[key]=str(Text.machinetext2val(item)) 
             elif isinstance(string,str) or isinstance(string,float) or isinstance(string,int):
                 ttype,result=Text._str2var(str(string))
             else:
@@ -372,87 +373,79 @@ class Text:
             code=code.replace(itemfull,result)
         return code        
 
-    # @staticmethod
-    # def strToPythonObj(str):
-    #     pass
 
     @staticmethod
-    def pythonObjToStr1line(text,quote=True):
-        if text==None:
-            return ""
-        elif j.basetype.boolean.check(text):
-            if text==True:
-                text="true"
-            else:
-                text="false"
-            return text
-        elif j.basetype.string.check(text):
-            return Text.machinetext2hrd(text,quote)
-        elif j.basetype.integer.check(text) or j.basetype.float.check(text):
-            return str(text)
-
+    def pythonObjToStr1line(obj):
+        return Text.pythonObjToStr(obj,False,canBeDict=False)
 
     @staticmethod
-    def pythonObjToStr(text,multiline=True):
+    def pythonObjToStr(obj,multiline=True,canBeDict=True):
         """
         try to convert a python object to string representation works for None, bool, integer, float, dict, list
         """
-        if text==None:
+        if obj==None:
             return ""
-        elif isinstance(text,unicode):
-            text=text.decode("utf8")
-            return text
-        elif j.basetype.boolean.check(text):
-            if text==True:
-                text="True"
+        elif isinstance(obj,unicode):
+            obj=obj.decode("utf8")
+            return obj
+        elif j.basetype.boolean.check(obj):
+            if obj==True:
+                obj="True"
             else:
-                text="False"
-            return text
-        elif j.basetype.string.check(text):
-            if text.strip()=="":
+                obj="False"
+            return obj
+        elif j.basetype.string.check(obj):
+            if obj.strip()=="":
                 return ""
-            if text.find("\n")!=-1 and multiline:
-                text="\n%s"%Text.prefix("    ",text.strip())
-            if text.find(":")!=-1 or text.find(" ")!=-1 or text.find("/")!=-1 or text.find(",")!=-1:
-                text="%s"%text.strip("'")
-            return text
-        elif j.basetype.integer.check(text) or j.basetype.float.check(text):
-            return str(text)
-        elif j.basetype.list.check(text):
-            # resout=""
-            resout="\n"
-            for item in text:
-                resout+="    %s,\n"%Text.pythonObjToStr1line(item)                
-            # resout=resout.strip().strip(",")            
-            # if multilineforce or (len(resout)>30 and multiline):
-            #     resout="\n"
-            #     for item in text:
-            #         resout+="    %s,\n"%Text.pythonObjToStr1line(item)
-            resout=resout.rstrip().strip(",")+",\n"
+            if obj.find("\n")!=-1 and multiline:
+                obj="\n%s"%obj.prefix("    ",obj.strip())
+            if obj.find(":")!=-1 or obj.find(" ")!=-1 or obj.find("/")!=-1 or obj.find(",")!=-1:
+                obj="%s"%obj.strip("'")
+            return obj
+        elif j.basetype.integer.check(obj) or j.basetype.float.check(obj):
+            return str(obj)
+        elif j.basetype.list.check(obj):
+            # if not canBeDict:
+            #     raise RuntimeError("subitem cannot be list or dict for:%s"%obj)
+            if multiline:
+                resout="\n"
+                for item in obj:
+                    resout+="    %s,\n"%Text.pythonObjToStr1line(item)                
+                resout=resout.rstrip().strip(",")+",\n"
+            else:
+                resout='['
+                for item in obj:
+                    resout+="%s,"%Text.pythonObjToStr1line(item)
+                resout=resout.rstrip().strip(",")+"]"
+
             return resout
 
-        elif j.basetype.dictionary.check(text):
-            # resout=""
-            resout="\n"
-            keys=list(text.keys())
-            keys.sort()
-            for key in keys:
-                val=text[key]
-                val=Text.pythonObjToStr1line(val)
-                # resout+="%s:%s, "%(key,val)
-                resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
-            resout=resout.rstrip().rstrip(",")+",\n"            
-            # # resout=resout.strip().strip(",")
-            # if multilineforce or (len(resout)>30 and multiline):
-            #     resout="\n"
-            #     for key in keys:
-            #         val=text[key]
-            #         resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
-            #     resout=resout.rstrip().rstrip(",")+"\n"     
+        elif j.basetype.dictionary.check(obj):
+            if not canBeDict:
+                raise RuntimeError("subitem cannot be list or dict for:%s"%obj)            
+            if multiline:
+                resout="\n"
+                keys=list(obj.keys())
+                keys.sort()
+                for key in keys:
+                    val=obj[key]
+                    val=Text.pythonObjToStr1line(val)
+                    # resout+="%s:%s, "%(key,val)
+                    resout+="    %s:%s,\n"%(key,Text.pythonObjToStr1line(val))
+                resout=resout.rstrip().rstrip(",")+",\n"            
+            else:
+                resout=""
+                keys=list(obj.keys())
+                keys.sort()
+                for key in keys:
+                    val=obj[key]
+                    val=Text.pythonObjToStr1line(val)
+                    resout+="%s:%s,"%(key,val)
+                resout=resout.rstrip().rstrip(",")+","
             return resout
 
         else:   
-            raise RuntimeError("Could not convert %s to string"%text)
+            raise RuntimeError("Could not convert %s to string"%obj)
 
     @staticmethod
     def hrd2machinetext(value,onlyone=False):
@@ -485,14 +478,14 @@ class Text:
         return value
 
     @staticmethod
-    def machinetext2hrd(value,quote=False):
+    def machinetext2val(value):
         """
         do reverse of:
              SPACE -> \\S
              " -> \\Q
              , -> \\K
              : -> \\D
-             \\n -> \\N
+             \\n -> return
         """
         value=value.strip("'")
         value2=value.replace("\\K",",")
@@ -506,14 +499,25 @@ class Text:
             change=True
         if value2.strip()=="":
             return value2
+        if value2.strip().strip('\'').startswith("[") and value2.strip().strip('\'').endswith("]"):
+            value2=value2.strip().strip('\'').strip("[]")
+            res=[]
+            for item in value2.split(","):
+                if item.strip()=="":
+                    continue
+                if Text.isInt(item):                
+                    item=Text.getInt(item)
+                elif  Text.isFloat(item):
+                    item=Text.getFloat(item)
+                res.append(item)
+            return res
+            
         if change==False:
             if Text.isInt(value2):                
                 return Text.getInt(value2)
             elif  Text.isFloat(value2):
                 return Text.getFloat(value2)
-        value2=value2.replace("\n","\\n")
-        if quote:
-            value2="'%s'"%value2
+        # value2=value2.replace("\n","\\n")
         return value2
 
     @staticmethod
@@ -600,7 +604,17 @@ class Text:
         look for 'something,else' the comma needs to be converted to \k
         """
         for item in re.findall(matchquote, text):
-            item2=item.replace(",","\\k")
+            item2=item.replace(",","\\K")
+            text=text.replace(item,item2)
+        return text
+
+    @staticmethod
+    def dealWithList(text):
+        """
+        look for [something,2] the comma needs to be converted to \k 
+        """
+        for item in re.findall(matchlist, text):
+            item2=item.replace(",","\\K")
             text=text.replace(item,item2)
         return text
 
@@ -638,6 +652,7 @@ class Text:
         """   
         if text.strip()=="" or text.strip()=="{}":
             return {} 
+        text=Text.dealWithList(text)
         text=Text.dealWithQuote(text)
         res2={}
         for item in text.split(","):
@@ -646,8 +661,11 @@ class Text:
                     raise RuntimeError("Could not find : in %s, cannot get dict out of it."%text)
                     
                 key,val=item.split(":",1)
-                val=val.replace("\k",",")
-                key=key.strip()
-                val=val.strip()
+                if val.find("[")!=-1:
+                    val=Text.machinetext2val(val)
+                else:
+                    val=val.replace("\k",",")
+                    key=key.strip()
+                    val=val.strip()
                 res2[key]=val
         return res2
