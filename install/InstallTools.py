@@ -132,11 +132,12 @@ class InstallTools():
             excl+="--exclude '*.pyc' "
             excl+="--exclude '*.bak' "
             excl+="--exclude '*__pycache__*' "
-            if dest[-1]!="/":
-                dest+="/"
-            if source[-1]!="/":
-                source+="/"
-            self.createDir(dest)
+            if self.isDir(source):
+                if dest[-1]!="/":
+                    dest+="/"
+                if source[-1]!="/":
+                    source+="/"
+                self.createDir(dest)
             cmd="rsync -aW --no-compress %s %s %s"%(excl,source,dest)           
             self.execute(cmd)
             return()
