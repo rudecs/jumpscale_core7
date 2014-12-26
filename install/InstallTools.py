@@ -1139,33 +1139,39 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def pullGitRepo(self,url,dest=None,login=None,passwd=None,depth=None,ignorelocalchanges=False,reset=False,branch="master",revision=None):
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=None,ignorelocalchanges=False,reset=False,branch=None,revision=None):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
         will ignore changes !!!!!!!!!!!
         """
-        if url.startswith("https://"):
-            pre="https://"
-            url2=url[len(pre):]
-        elif url.startswith("http://"):
-            pre="http://"
-            url2=url[len(pre):]
-        else:
-            raise RuntimeError("Url needs to start with 'http(s)://'")
+        if url!="":
+            if url.startswith("https://"):
+                pre="https://"
+                url2=url[len(pre):]
+            elif url.startswith("http://"):
+                pre="http://"
+                url2=url[len(pre):]
+            else:
+                raise RuntimeError("Url needs to start with 'http(s)://'")
 
-        if login!=None and login!="guest":            
-            url="%s%s:%s@%s"%(pre,login,passwd,url2)
+            if login!=None and login!="guest":            
+                url="%s%s:%s@%s"%(pre,login,passwd,url2)
 
-        if dest==None:
-            url3=url2.strip(" /")
-            ttype,account,repo=url3.split("/",3)
-            if ttype.find(".")!=-1:
-                ttype=ttype.split(".",1)[0]
-            dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo.lower().replace(".git",""))
+            if dest==None:
+                url3=url2.strip(" /")
+                ttype,account,repo=url3.split("/",3)
+                if ttype.find(".")!=-1:
+                    ttype=ttype.split(".",1)[0]
+                dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo.lower().replace(".git",""))
 
         if reset:
+            if url=="":
+                j.events.inputerror_critical("cannot reset a repo when url not specified")
             self.delete(dest)
+
+        if dest=="" and branch==None:
+            branch="master"
 
         self.createDir(dest)
         checkdir="%s/.git"%(dest)
@@ -1176,11 +1182,15 @@ class InstallTools():
                 if depth!=None:
                     cmd+=" --depth %s"%depth    
                 self.executeInteractive(cmd)
-                self.executeInteractive("cd %s;git reset --hard origin/%s"%(dest,branch))
+                if branch!=None:
+                    self.executeInteractive("cd %s;git reset --hard origin/%s"%(dest,branch))
             else:
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
-                cmd="cd %s;git pull origin %s"%(dest,branch)
+                if branch!=None:
+                    cmd="cd %s;git pull origin %s"%(dest,branch)
+                else:
+                    cmd="cd %s;git pull"
                 self.executeInteractive(cmd)
         else:
             print(("git clone %s -> %s"%(url,dest)))
@@ -1195,7 +1205,6 @@ class InstallTools():
             print cmd
             self.executeInteractive(cmd)
             
-
         return dest
 
     def getGitReposListLocal(self,ttype="",account="",name="",errorIfNone=True):

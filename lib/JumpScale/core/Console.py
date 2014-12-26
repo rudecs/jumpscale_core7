@@ -103,9 +103,7 @@ class Console:
             linenow="%s%s"%(prepend,line[:linelength])
             out.append(linenow)
         
-
-        return "\n".join(out)+"\n"
-    
+        return "\n".join(out)
     
     def echo(self, msg,indent=None,withStar=False,prefix="",log=False,lf=True):
         '''
@@ -115,12 +113,14 @@ class Console:
 
         '''
         msg=str(msg)
-        if lf and msg!="" and msg[-1]!="\n":
-            msg+="\n"
+        # if lf and msg!="" and msg[-1]!="\n":
+        #     msg+="\n"
         msg=self._cleanline(msg)
         #if j.transaction.hasRunningTransactions() and withStar==False:
         #    indent=self.indent+1
         msg=self.formatMessage(msg,indent=indent,withStar=withStar,prefix=prefix).rstrip(" ")
+        # msg=msg.rstrip()
+
         if "_stdout_ori" in sys.__dict__:
             sys._stdout_ori.write(msg)
         else:
@@ -612,12 +612,19 @@ class Console:
         return choices
 
 
-    def askArrayRow(self,array,header=True,descr="",returncol=0):
+    def askArrayRow(self,array,header=True,descr="",returncol=None):
         choices=self._array2list(array,header)
         result=self.askChoiceMultiple(choices,descr="")
         results=[]
         for item in result:
-            results.append(item.split("|")[returncol+1])
-        return [item.strip(" ") for item in results]
+            if returncol==None:
+                results.append([item.strip() for item in item.split("|") if item.strip()!=""])
+            else:
+                results.append(item.split("|")[returncol+1])
+        
+        if returncol!=None:
+            return [item.strip(" ") for item in results]
+        else:
+            return results
         
 

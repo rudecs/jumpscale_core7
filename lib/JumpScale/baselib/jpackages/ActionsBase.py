@@ -2,19 +2,7 @@ from JumpScale import j
 import JumpScale.baselib.screen
 class ActionsBase():
     """
-    process for install
-    -------------------
-    step1: prepare actions
-    step2: check_requirements action
-    step3: download files & copy on right location (hrd info is used)
-    step4: configure action
-    step5: check_uptime_local to see if process stops  (uses timeout $process.stop.timeout)
-    step5b: if check uptime was true will do stop action and retry the check_uptime_local check
-    step5c: if check uptime was true even after stop will do halt action and retry the check_uptime_local check
-    step6: use the info in the hrd to start the application
-    step7: do check_uptime_local to see if process starts
-    step7b: do monitor_local to see if package healthy installed & running
-    step7c: do monitor_remote to see if package healthy installed & running, but this time test is done from central location
+    implement methods of this class to change behaviour of lifecycle management of jpackage
     """
 
     def prepare(self,**args):
@@ -22,7 +10,6 @@ class ActionsBase():
         this gets executed before the files are downloaded & installed on approprate spots
         """
         return True
-
 
     def configure(self,**args):
         """
@@ -33,6 +20,10 @@ class ActionsBase():
         return True
 
     def start(self,**args):
+        """
+        start happens because of info from main.hrd file but we can overrule this
+        make sure to also call ActionBase.start(**args) in your implementation otherwise the default behaviour will not happen
+        """
 
         def start2(process):
             cwd=process["cwd"]
@@ -147,6 +138,9 @@ class ActionsBase():
 
     def stop(self,**args):
         """
+        if you want a gracefull shutdown implement this method
+        a uptime check will be done afterwards (local)
+        return True if stop was ok, if not this step will have failed & halt will be executed.
         """
         return True
 
@@ -170,6 +164,15 @@ class ActionsBase():
         return True
 
     def build(self,**args):
+        """
+        build instructions for the jpackage, make sure the builded jpackage ends up in right directory, this means where otherwise binaries would run from
+        """        
+        pass
+
+    def package(self,**args):
+        """
+        copy the files from the production location on the filesystem to the appropriate binary git repo      
+        """
         pass
 
     def check_up_local(self,**args):
@@ -290,4 +293,14 @@ class ActionsBase():
         """
         pass
 
+    def removedata(self,**args):
+        """
+        remove all data from the app (called when doing a reset)
+        """
+        pass
 
+    def uninstall(self,**args):
+        """
+        uninstall the apps, remove relevant files
+        """
+        pass

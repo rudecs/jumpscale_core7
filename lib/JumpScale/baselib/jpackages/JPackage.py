@@ -11,6 +11,57 @@ try:
 except:
     pass
 
+#decorator to get dependencies
+def deps(F): # F is func or method without instance
+    def processresult(result,newresult):        
+        """
+        this makes sure we can concatenate the results in an intelligent way for all deps
+        """
+        if isinstance(newresult,str):
+            if result==None:
+                result=""
+            result+=newresult
+        elif newresult==None:
+            pass
+        elif isinstance(newresult,dict):
+            if result==None:
+                result={}
+            result.update(newresult)
+        elif isinstance(newresult,list):
+            if result==None:
+                result=[]
+            for item in newresult:
+                if item not in result:
+                    result.append(item)
+        elif isinstance(newresult,bool):
+            if result==None:
+                result=True
+            result=result and newresult
+        elif isinstance(newresult,int):
+            if result==None:
+                result=0
+            result+=newresult
+        else:
+            raise RuntimeError("did not expect this result, needs to be str,list,bool,int,dict")
+        return result
+
+    def wrapper(*args,**kwargs): # class instance in args[0] for method
+        result=None
+        jp=args[0] #this is the self from before
+        jp._load(**kwargs)        
+        if deps:
+            j.packages._justinstalled=[]
+            for dep in jp.getDependencies():
+                if dep.jp.name not in j.packages._justinstalled:
+                    if 'args' in dep.__dict__:
+                        result=processresult(result,F(jp,args=dep.args))
+                    else:
+                        result=processresult(result,F(jp))
+                    j.packages._justinstalled.append(dep.jp.name)
+        result=processresult(result,F(*args,**kwargs))
+        return result
+    return wrapper
+
 class JPackage():
 
     def __init__(self,domain="",name=""):
@@ -49,7 +100,8 @@ class JPackageInstance():
         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))        
         return logpath
 
-    def getTCPPorts(self):
+    @deps
+    def getTCPPorts(self,deps=True):
         ports=[]
         for process in self.getProcessDicts():
             for item in process["ports"]:
@@ -97,7 +149,7 @@ class JPackageInstance():
             self.actions.jp_instance=self
             self._loaded=True
 
-    def _getRepo(self,url,recipeitem=None):
+    def _getRepo(self,url,recipeitem=None,dest=None):
         if url in self._reposDone:
             return self._reposDone[url]
 
@@ -110,7 +162,6 @@ class JPackageInstance():
         if recipeitem<>None and "passwd" in recipeitem:
             passwd=recipeitem["passwd"]
         
-
         branch='master'
         if recipeitem<>None and "branch" in recipeitem:
             branch=recipeitem["branch"]
@@ -129,12 +180,11 @@ class JPackageInstance():
 
         if login==None and j.application.config.get("whoami.git.login")!="":
             dest=j.do.pullGitRepo(url=url, login=j.application.config.get("whoami.git.login"), \
-                passwd=j.application.config.get("whoami.git.passwd"), depth=depth, branch=branch)
+                passwd=j.application.config.get("whoami.git.passwd"), depth=depth, branch=branch,dest=dest)
         else:
-            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision)  
+            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision,dest=dest)  
         self._reposDone[url]=dest
         return dest      
-
 
     def getDependencies(self):
         res=[]
@@ -186,25 +236,29 @@ class JPackageInstance():
 
         return res
 
-    def stop(self,args={}):
-        self._load(args=args)
+    @deps
+    def stop(self,args={},deps=True):
+        # self._load(args=args)
         self.actions.stop(**args)
         if not self.actions.check_down_local(**args):
             self.actions.halt(**args)
 
-    def build(self,args={}):
-        self._load(args=args)
+    @deps
+    def build(self,args={},deps=True):
+        # self._load(args=args)
         self.actions.build(**args)
 
-    def start(self,args={}):
-        self._load(args=args)
+    @deps
+    def start(self,args={},deps=True):
+        # self._load(args=args)
         self.actions.start(**args)
 
-    def restart(self,args={}):
+    @deps
+    def restart(self,args={},deps=True):
         self.stop(args)
         self.start(args)
 
-    def getProcessDicts(self):
+    def getProcessDicts(self,deps=True):
         res=[]
         counter=0
 
@@ -228,17 +282,14 @@ class JPackageInstance():
 
         return procs
 
-    def install(self,args={},start=True):
-        
-        self._load(args=args)
-        
+    @deps
+    def install(self,args={},start=True,deps=True):        
+        # self._load(args=args)
         docker=self.hrd.exists("docker.enable") and self.hrd.getBool("docker.enable")
 
         if j.packages.indocker or not docker:
 
             self.stop()
-
-            #	j.system.platform.ubuntu.check()            
 
             for dep in self.getDependencies():
                 if dep.jp.name not in j.packages._justinstalled:
@@ -247,7 +298,6 @@ class JPackageInstance():
                     else:
                         dep.install()
                     j.packages._justinstalled.append(dep.jp.name)
-
             
             for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
                 src=src.replace(";",":")
@@ -264,7 +314,7 @@ class JPackageInstance():
                 print "apt update"
                 j.do.execute("apt-get update -y",dieOnNonZeroExitCode=False)
 
-            if self.hrd.getBool("ubuntu.apt.upgrade -y",default=False):
+            if self.hrd.getBool("ubuntu.apt.upgrade",default=False):
                 j.do.execute("apt-get upgrade -y",dieOnNonZeroExitCode=False)
 
             if self.hrd.exists("ubuntu.packages"):
@@ -330,10 +380,15 @@ class JPackageInstance():
                             print ("copy: %s->%s"%(src,dest))
                             j.do.copyTree(src,dest)
 
+            for recipeitem in self.hrd.getListFromPrefix("git.build"):
+                # print recipeitem
+                #pull the required repo
+                name=recipeitem['url'].replace("https://",""),replace("http://","").replace(".git","")
+                dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s/%s"%name)
+
             self.actions.configure()
 
-            if start:
-                self.actions.start()
+            self.start()
 
         else:
             #now bootstrap docker
@@ -384,7 +439,95 @@ class JPackageInstance():
             j.tools.docker.copy(name,src,src)
             j.tools.docker.run(name,"jpackage install -n %s -d %s"%(self.jp.name,self.jp.domain))
 
+    @deps
+    def publish(self,args={},deps=True):
+        """
+        check which repo's are used & push the info 
+        this does not use the build repo's
+        """
+        # self._load(args=args)
+        self.actions.publish(**args)
 
+    @deps
+    def update(self,args={},deps=True):
+        """
+        - go over all related repo's & do an update
+        - copy the files again
+        - restart the app
+        """
+        for recipeitem in self.hrd.getListFromPrefix("git.export"):
+            # print recipeitem
+            #pull the required repo
+            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
+
+        for recipeitem in self.hrd.getListFromPrefix("git.build"):
+            # print recipeitem
+            #pull the required repo
+            name=recipeitem['url'].replace("https://",""),replace("http://","").replace(".git","")
+            dest="/opt/build/%s/%s"%name
+            j.do.pullGitRepo(dest=dest,ignorelocalchanges=True)
+
+        self.restart()
+
+    @deps
+    def resetstate(self,args={},deps=True):
+        j.do.delete(self.hrdpath)
+        j.do.delete(self.actionspath)
+        j.do.delete(self.actionspath+"c")
+
+    @deps
+    def reset(self,args={},deps=True):
+        """
+        - remove build repo's !!!
+        - remove state of the app (same as resetstate) in jumpscale (the configuration info)
+        - remove data of the app        
+        """
+        self._load(args=args)
+        self.resetstate()
+        #remove build repo's
+        for recipeitem in self.hrd.getListFromPrefix("git.build"):
+            name=recipeitem['url'].replace("https://",""),replace("http://","").replace(".git","")
+            dest="/opt/build/%s/%s"%name
+            j.do.delete(dest)
+        
+        self.actions.removedata(**args)
+
+    @deps
+    def uninstall(self,args={},deps=True):
+        self.reset()
+        self._load(args=args)
+        self.actions.uninstall(**args)
+
+    @deps
+    def monitor(self,args={},deps=True):
+        """
+        do all monitor checks and return True if they all succeed
+        """
+        self._load(args=args)
+        res=self.actions.check_up_local(**args)
+        res=res and self.actions.monitor_local(**args)
+        res=res and self.actions.monitor_remove(**args)
+        return res
+
+    @deps
+    def iimport(self,url,args={},deps=True):
+        # self._load(args=args)
+        self.actions.iimport(url,**args)
+
+    @deps
+    def export(self,args={},deps=True):
+        # self._load(args=args)
+        self.actions.export(url,**args)
+
+    @deps
+    def build(self,args={},deps=True):
+        self.actions.build(url,**args)
+
+    @deps
+    def configure(self,args={},deps=True,restart=True):
+        self.actions.configure(url,**args)
+        if restart:
+            self.restart()
 
     def __repr__(self):
         return "%-15s:%-15s:%s"%(self.jp.domain,self.jp.name,self.instance)

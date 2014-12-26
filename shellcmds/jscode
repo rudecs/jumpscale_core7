@@ -10,9 +10,12 @@ import sys,time
 j.application.start("jscode2")
 
 parser = cmdutils.ArgumentParser()
-parser.add_argument("action", choices=['commit','push','update','status'], help='Command to perform')
+parser.add_argument("action", choices=['get','commit','push','update','status','list'], help='Command to perform')
 
-parser.add_argument('-m','--message',help='commit message')
+parser.add_argument('-n','--name',help='name or partial name')
+parser.add_argument('--url',help='url')
+
+parser.add_argument('-m','--message',help='commit message',default="new")
 parser.add_argument('-b','--branch',help='branch')
 
 parser.add_argument('-a','--accounts',help='comma separated list of accounts, * is all')
@@ -39,7 +42,7 @@ if opts.branch != None and opts.action in ['status']:
     raise RuntimeError("Cannot specify branch when asking status")
 
 
-def getRepos():
+def getRepos(name=None):
     result=[]
 
     repos=[]
@@ -47,35 +50,37 @@ def getRepos():
         for account in j.system.fs.listDirsInDir("/opt/code/%s"%top, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
             accountdir="/opt/code/%s/%s"%(top,account)
             if j.system.fs.exists(path="%s/.git"%accountdir):
+                if name!=None:
+                    if reponame.find(name)==-1:
+                        continue
                 repos.append([account,accountdir])        #is for when repo is one level higher as usual        
             else:
                 for reponame in j.system.fs.listDirsInDir("/opt/code/%s/%s"%(top,account), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                     repodir="/opt/code/%s/%s/%s"%(top,account,reponame)
                     if j.system.fs.exists(path="%s/.git"%repodir):
-                        repos.append([reponame,repodir])                
+                        if name!=None:
+                            if reponame.find(name)==-1:
+                                continue
+                        repos.append([top,account,reponame,repodir])                
 
 
-    for repodir in j.console.askArrayRow(repos,returncol=1):
-        splitted=repodir.strip("/").split("/")
-        if len(splitted)==5:
-            account=splitted[3]
-        else:
-            account="unknown"
-        reponame=splitted[-1]
-        provider=splitted[2]
+    accounts=[]
+    for top,account,reponame,repodir in repos:
+        if account not in accounts:
+            accounts.append(account)
+    accounts.sort()
 
-        if reponame.find("__") != -1:
-            branch,reponame=reponame.split("__",1)
-        else:
-            branch="master"
-            #@todo need to add back
-            # raise RuntimeError("branch not specified in reponame.")
+    if len(repos)>20:
+        print ("Select account to choose from, too many choices.")
+        accounts=j.console.askChoiceMultiple(accounts)
+        repos=[item for item in repos if item[1]in accounts]
 
-            cl=j.clients.git.getClient(repodir)
-            result.append((provider,account,reponame,branch,cl,repodir))
+    for top,account,reponame,repodir in j.console.askArrayRow(repos):
+        cl=j.clients.git.getClient(repodir)
+        result.append((top,account,reponame,"unknown",cl,repodir))
     return result
 
-repos=getRepos()
+repos=getRepos(opts.name)
 
 if opts.action == "status":
     print("\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev")
@@ -88,6 +93,25 @@ for provider,account,reponame,branch,client,path in repos:
         print(("force update %s/%s/%s"%(provider,account,reponame)))
         client.pull()
         client.update(force=True)
+        continue
+
+    if opts.action == "get":
+        cmd="git config --global push.default matching"
+        do.execute(cmd)
+        do.pullGitRepo(opts.url,dest=None,depth=None,ignorelocalchanges=opts.deletechanges,reset=False,branch=opts.branch)
+        continue
+
+    #is dirty hack, am sure there are better ways (@TODO)
+    if opts.action == "push":
+        print(("push git repo:%s"%path))
+        cmd="cd %s;git add . -A"%(path)
+        j.do.executeInteractive(cmd)
+        cmd="cd %s;git commit -m \"%s\""%(path,opts.message)
+        j.do.executeInteractive(cmd)
+        cmd="cd %s;git pull"%(path)
+        j.do.executeInteractive(cmd)
+        cmd="cd %s;git push"%(path)
+        j.do.executeInteractive(cmd)
         continue
 
     if opts.action in ['status','commit','push','update']:
@@ -108,7 +132,7 @@ for provider,account,reponame,branch,client,path in repos:
                 from IPython import embed
                 print("DEBUG NOW not suported yet")
                 embed()
-                
+                #@todo FIX !!!! URGENT
                 cmd="cd %s;hg branch %s"%(path,opts.branch)
                 j.system.process.execute(cmd,dieOnNonZeroExitCode=False, outputToStdout=True, useShell=True, ignoreErrorOutput=False)                
                 cmd="cd %s;hg update %s"%(path,opts.branch)

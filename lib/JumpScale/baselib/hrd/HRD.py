@@ -64,36 +64,36 @@ class HRDItem():
         
         self.hrd._markChanged()
 
-        if self.hrd.keepformat and persistent:
-            state="start"
-            out=""
-            found=False
-            for line in j.system.fs.fileGetContents(self.hrd.path).split("\n"):
-                if line.strip().startswith(name):                        
-                    state="found"
-                    continue
+        # if self.hrd.keepformat and persistent:
+        #     state="start"
+        #     out=""
+        #     found=False
+        #     for line in j.system.fs.fileGetContents(self.hrd.path).split("\n"):
+        #         if line.strip().startswith(name):                        
+        #             state="found"
+        #             continue
 
-                if state=="found" and (len(line)==0 or line[0]==" "):
-                    continue
+        #         if state=="found" and (len(line)==0 or line[0]==" "):
+        #             continue
 
-                if state=="found":
-                    state="start"
-                    #now add the var
-                    found=True
-                    if self.comments!="":
-                        out+="%s\n" % (self.comments)
-                    out+="%s = %s\n" % (name, self.getAsString())
+        #         if state=="found":
+        #             state="start"
+        #             #now add the var
+        #             found=True
+        #             if self.comments!="":
+        #                 out+="%s\n" % (self.comments)
+        #             out+="%s = %s\n" % (name, self.getAsString())
 
-                out+="%s\n"%line
+        #         out+="%s\n"%line
 
-            if found==False:
-                if self.comments!="":
-                    out+="%s\n" % (self.comments)
-                out+="%s = %s\n" % (name, self.getAsString())
+        #     if found==False:
+        #         if self.comments!="":
+        #             out+="%s\n" % (self.comments)
+        #         out+="%s = %s\n" % (name, self.getAsString())
 
-            j.system.fs.writeFile(filename=self.hrd.path,contents=out)
+        #     j.system.fs.writeFile(filename=self.hrd.path,contents=out)
 
-        elif persistent:
+        if persistent:
             self.hrd.save()
 
     def _process(self):
@@ -116,10 +116,11 @@ class HRDItem():
 
         data=j.tools.text.dealWithList(data)
 
-        data=j.tools.text.ask(data,self.name,args=self.hrd.args)
         if data.find("@ASK")!=-1:
-            # print ("CHANGED")
+            # print ("%s CHANGED"%self)
             self.hrd.changed=True        
+
+        data=j.tools.text.ask(data,self.name,args=self.hrd.args)
 
         if self.ttype=="str" or self.ttype=="base":
             self.value=data.strip().strip("'")
@@ -159,6 +160,10 @@ class HRDItem():
         else:
             self.value=j.tools.text.str2var(data)
 
+        if self.hrd.changed:
+            # print "SAVE"
+            self.hrd.save()
+            self.hrd.changed=False
 
     def __str__(self):
         if self.ttype!="binary":
@@ -302,8 +307,6 @@ class HRD(HRDBase):
             
         for path in self.templates:
             templates.append(HRD(path=path,istemplate=True))
-
-
 
         change=False
         for hrdtemplate in templates:

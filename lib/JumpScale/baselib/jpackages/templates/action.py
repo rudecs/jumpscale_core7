@@ -4,33 +4,12 @@ ActionsBase=j.packages.getActionsBaseClass()
 
 class Actions(ActionsBase):
     """
-    process for install
-    -------------------
-    step1: prepare actions
-    step2: check_requirements action
-    step3: download files & copy on right location (hrd info is used)
-    step4: configure action
-    step5: check_uptime_local to see if process stops  (uses timeout $process.stop.timeout)
-    step5b: if check uptime was true will do stop action and retry the check_uptime_local check
-    step5c: if check uptime was true even after stop will do halt action and retry the check_uptime_local check
-    step6: use the info in the hrd to start the application
-    step7: do check_uptime_local to see if process starts
-    step7b: do monitor_local to see if package healthy installed & running
-    step7c: do monitor_remote to see if package healthy installed & running, but this time test is done from central location
+    implement methods of this class to change behaviour of lifecycle management of jpackage
     """
-    pass
-
-    #overrule the methods which are interesting to you
-
     # def prepare(self,**args):
     #     """
-    #     this gets executed before the files are downloaded & installed on appropriate spots
+    #     this gets executed before the files are downloaded & installed on approprate spots
     #     """
-    #     j.do.execute('apt-get purge \'nginx*\' -y')
-    #     j.do.execute('apt-get autoremove -y')
-    #     j.system.process.killProcessByPort(80)
-    #     j.system.fs.createDir("/var/nginx/cache/fcgi")
-    #     j.system.fs.createDir("/var/log/nginx")
     #     return True
 
     # def configure(self,**args):
@@ -39,12 +18,12 @@ class Actions(ActionsBase):
     #     this step is used to do configuration steps to the platform
     #     after this step the system will try to start the jpackage if anything needs to be started
     #     """
-    #     self.jp_instance.hrd.applyOnDir( path="$(base)/cfg", additionalArgs={})
     #     return True
 
-    # def build(self,**args):
+    # def start(self,**args):
     #     """
-    #     build instructions for the jpackage, make sure the builded jpackage ends up in right directory
+    #     start happens because of info from main.hrd file but we can overrule this
+    #     make sure to also call ActionBase.start(**args) in your implementation otherwise the default behaviour will not happen
     #     """
     #     return True
 
@@ -62,12 +41,32 @@ class Actions(ActionsBase):
     #     """
     #     return True
 
-    # def check_uptime_local(self,**args):
+    # def build(self,**args):
+    #     """
+    #     build instructions for the jpackage, make sure the builded jpackage ends up in right directory, this means where otherwise binaries would run from
+    #     """        
+    #     pass
+
+    # def package(self,**args):
+    #     """
+    #     copy the files from the production location on the filesystem to the appropriate binary git repo      
+    #     """
+    #     pass
+
+    # def check_up_local(self,**args):
     #     """
     #     do checks to see if process(es) is (are) running.
     #     this happens on system where process is
-    #     """
+    #     """      
     #     return True
+
+    # def check_down_local(self,**args):
+    #     """
+    #     do checks to see if process(es) are all down
+    #     this happens on system where process is
+    #     return True when down
+    #     """        
+    #     return True        
 
     # def check_requirements(self,**args):
     #     """
@@ -118,4 +117,14 @@ class Actions(ActionsBase):
     #     """
     #     pass
 
+    # def removedata(self,**args):
+    #     """
+    #     remove all data from the app (called when doing a reset)
+    #     """
+    #     pass
 
+    # def uninstall(self,**args):
+    #     """
+    #     uninstall the apps, remove relevant files
+    #     """
+    #     pass

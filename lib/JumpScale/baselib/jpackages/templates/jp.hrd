@@ -9,7 +9,7 @@ process.1=
     cwd:'$(base)/bin',
     timeout_start:10,
     timeout_stop:10,
-    ports:,
+    ports:[],
     startupmanager:tmux,
     filterstr:'nginx',
 
@@ -20,6 +20,8 @@ git.url='http://git.aydo.com/binary/mariadb_linux64'
 #known var's are: $root,$base,$cfg,$jslib,$pylib,$lib  
 git.export.1=
     url:$(git.url),
+    branch:,
+    revision:,    
     source:'mariadb/bin',
     dest:'$(base)/bin',
     link:True,
@@ -31,13 +33,31 @@ git.export.2=
     overwrite:False,
     link:False,
 
+#build git connections will checkout to /opt/build/ and always refreshed
+git.build.1=
+    url:$(git.url),
+    branch:,
+    revision:,
+
 #args are name to other key which is a dict & represents the args
 dependencies.1                 =
     name:'mail_client',
     domain:,
     instance:,
-    args:,
+    args:'ajpackage.arg',
 
+ajpackage.arg=
+    arg1:1,
+    arg2:2
+
+#UBUNTU RELATED
+#can be more than 1 source & key
+ubuntu.apt.source.1=''
+ubuntu.apt.key.pub.1=''
+#update/upgrade/install packages
+ubuntu.apt.update=False
+ubuntu.apt.upgrade=False
+ubuntu.packages=[]
 
 platform.supported=linux64,
 
