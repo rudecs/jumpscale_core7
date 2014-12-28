@@ -114,7 +114,8 @@ class KVM(object):
     def getConfig(self, name):
         configpath = j.system.fs.joinPaths(self.vmpath, name, "main.hrd")
         if not j.system.fs.exists(path=configpath):
-            raise RuntimeError('Machine %s does not exist' % name)
+            print 'Machine %s does not exist' % name
+            return
         return j.core.hrd.get(path=configpath)
 
     def _getAllMachinesIps(self):
@@ -125,7 +126,8 @@ class KVM(object):
         ips = dict()
         for name in self._getAllVMs():
             hrd = self.getConfig(name)
-            ips[name] = hrd.get("bootstrap.ip")
+            if hrd:
+                ips[name] = hrd.get("bootstrap.ip")
         return ips
 
     def _getAllVMs(self):
@@ -308,6 +310,5 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
 
     def _getSshConnection(self, name):
         capi = j.remote.cuisine.api
-        config = self.getConfig(name)
-        capi.connect(config.get('bootstrap.ip'))
+        capi.connect(self.getIp(name))
         return capi
