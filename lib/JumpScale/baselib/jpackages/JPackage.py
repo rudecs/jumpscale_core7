@@ -48,7 +48,7 @@ def deps(F): # F is func or method without instance
     def wrapper(*args,**kwargs): # class instance in args[0] for method
         result=None
         jp=args[0] #this is the self from before
-        jp._load(**kwargs)        
+        jp._load(**kwargs)    
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
@@ -109,7 +109,7 @@ class JPackageInstance():
                     ports.append(item)
         return ports        
 
-    def _load(self,args={}):
+    def _load(self,args={},*stdargs,**kwargs):
         if self._loaded==False:
             self.hrdpath="%s/apps/jpackage.%s.%s.%s.hrd"%(j.dirs.hrdDir,self.jp.domain,self.jp.name,self.instance)
             self.actionspath="%s/jpackage_actions/%s__%s__%s.py"%(j.dirs.baseDir,self.jp.domain,self.jp.name,self.instance)
