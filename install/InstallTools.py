@@ -1140,7 +1140,7 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=None,ignorelocalchanges=False,reset=False,branch=None,revision=None):
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=None,ignorelocalchanges=False,reset=False,branch='master',revision=None):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
