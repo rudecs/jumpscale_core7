@@ -30,7 +30,7 @@ class AgentControllerFactory(object):
     def getInstanceConfig(self, instance=None):
         if instance is None:
             instance = j.application.instanceconfig.get('agentcontroller.connection')
-        accljp = j.packages.find(name="agentcontroller_client",domain="jumpscale")
+        accljp = j.packages.find(name="agentcontroller_client",domain="jumpscale", instance=instance)
         if len(accljp) > 0:
             accljp = accljp[0]
         else:
