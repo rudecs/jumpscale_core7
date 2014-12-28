@@ -201,9 +201,10 @@ class JPackageInstance():
                 item["instance"]="main"
 
             if "args" in item:
-                argskey=item["args"]
-                if self.hrd.exists(argskey):
-                    args=self.hrd.getDict(argskey)
+                if self.hrd.exists('args'):
+                    args=self.hrd.getDict('args')
+                else:
+                    args = {}
             else:
                 args={}
 
