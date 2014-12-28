@@ -101,7 +101,7 @@ class JPackageInstance():
         return logpath
 
     @deps
-    def getTCPPorts(self,deps=True):
+    def getTCPPorts(self,deps=True, *args, **kwargs):
         ports=[]
         for process in self.getProcessDicts():
             for item in process["ports"]:
@@ -178,9 +178,11 @@ class JPackageInstance():
             else:
                 depth=int(depth)
 
-        if login==None and j.application.config.get("whoami.git.login")!="":
-            dest=j.do.pullGitRepo(url=url, login=j.application.config.get("whoami.git.login"), \
-                passwd=j.application.config.get("whoami.git.passwd"), depth=depth, branch=branch,dest=dest)
+        login = j.application.config.get("whoami.git.login").strip()
+        passwd = j.application.config.get("whoami.git.passwd").strip()
+
+        if login:
+            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,dest=dest)
         else:
             dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision,dest=dest)  
         self._reposDone[url]=dest

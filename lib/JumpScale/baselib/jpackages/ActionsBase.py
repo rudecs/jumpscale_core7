@@ -183,7 +183,9 @@ class ActionsBase():
         def do(process):
 
             ports=self.jp_instance.getTCPPorts()            
-                                    
+            
+            if ports and isinstance(ports[0], str) and ';' in ports[0]:
+                ports = ports[0].split(';')
             timeout=process["timeout_start"]
             if timeout==0:
                 timeout=2
