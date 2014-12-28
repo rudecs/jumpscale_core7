@@ -1523,7 +1523,7 @@ rm -rf /opt/redis/
 """
         self.executeCmds(CMDS,outputStdout=False, outputStderr=False,useShell = True,log=False,cwd=None,timeout=60,errors=[],ok=[],captureout=False,dieOnNonZeroExitCode=False)
 
-    def prepareUbuntu14Development(self,js=False):
+    def prepareUbuntu14Development(self,js=True):
         self.cleanSystem()
         print("prepare ubuntu for development")
 
@@ -1543,7 +1543,7 @@ apt-get install byobu tmux libmhash2 libpython-all-dev python-redis python-hired
             self.installJS(clean=False)
         print("done")
 
-    def prepareUbuntu14(self,js=False):
+    def prepareUbuntu14(self,js=True):
         self.cleanSystem()
         print("prepare ubuntu for development")
 
