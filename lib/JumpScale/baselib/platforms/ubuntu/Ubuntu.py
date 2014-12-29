@@ -31,12 +31,15 @@ class Ubuntu:
         """
         check if ubuntu or mint (which is based on ubuntu)
         """
-        if not self._checked:
+        if not self._checked:            
             try:
                 import lsb_release
                 info = lsb_release.get_distro_information()['ID']
+                release = lsb_release.get_distro_information()['RELEASE']
                 if info != 'Ubuntu' and info !='LinuxMint':
                     raise RuntimeError("Only ubuntu or mint supported.")
+                if not (release.startswith("14") or release.startswith("15")):
+                    raise RuntimeError("Only ubuntu version 14+ supported")
                 self._checked = True
             except ImportError:
                 self._checked = False

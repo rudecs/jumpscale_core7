@@ -241,19 +241,38 @@ class JPackageInstance():
 
     @deps
     def stop(self,args={},deps=True):
-        # self._load(args=args)
+        
         self.actions.stop(**args)
         if not self.actions.check_down_local(**args):
             self.actions.halt(**args)
 
     @deps
     def build(self,args={},deps=True):
-        # self._load(args=args)
+
+        for dep in self.getDependencies():
+            if dep.jp.name not in j.packages._justinstalled:
+                if 'args' in dep.__dict__:
+                    dep.install(args=dep.args)
+                else:
+                    dep.install()
+                j.packages._justinstalled.append(dep.jp.name)
+
+        for recipeitem in self.hrd.getListFromPrefix("git.export"):
+            # print recipeitem
+            #pull the required repo
+            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
+
+        for recipeitem in self.hrd.getListFromPrefix("git.build"):
+            # print recipeitem
+            #pull the required repo
+            name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
+            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)        
+
         self.actions.build(**args)
 
     @deps
     def start(self,args={},deps=True):
-        # self._load(args=args)
+        
         self.actions.start(**args)
 
     @deps
@@ -285,9 +304,36 @@ class JPackageInstance():
 
         return procs
 
+    def prepare(self,args={}):
+
+        for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
+            src=src.replace(";",":")
+            if src.strip()!="":     
+                j.system.platform.ubuntu.addSourceUri(src)                
+
+        for src in self.hrd.getListFromPrefix("ubuntu.apt.key.pub"):
+            src=src.replace(";",":")
+            if src.strip()!="":            
+                cmd="wget -O - %s | apt-key add -"%src
+                j.do.execute(cmd,dieOnNonZeroExitCode=False)
+
+        if self.hrd.getBool("ubuntu.apt.update",default=False):
+            print "apt update"
+            j.do.execute("apt-get update -y",dieOnNonZeroExitCode=False)
+
+        if self.hrd.getBool("ubuntu.apt.upgrade",default=False):
+            j.do.execute("apt-get upgrade -y",dieOnNonZeroExitCode=False)
+
+        if self.hrd.exists("ubuntu.packages"):
+            for jp in self.hrd.getList("ubuntu.packages"):
+                if jp.strip()!="":
+                    j.do.execute("apt-get install %s -f"%jp,dieOnNonZeroExitCode=False)     
+
+        self.actions.prepare()  
+
     @deps
     def install(self,args={},start=True,deps=True):        
-        # self._load(args=args)
+        
         docker=self.hrd.exists("docker.enable") and self.hrd.getBool("docker.enable")
 
         if j.packages.indocker or not docker:
@@ -302,30 +348,7 @@ class JPackageInstance():
                         dep.install()
                     j.packages._justinstalled.append(dep.jp.name)
             
-            for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
-                src=src.replace(";",":")
-                if src.strip()!="":     
-                    j.system.platform.ubuntu.addSourceUri(src)                
-
-            for src in self.hrd.getListFromPrefix("ubuntu.apt.key.pub"):
-                src=src.replace(";",":")
-                if src.strip()!="":            
-                    cmd="wget -O - %s | apt-key add -"%src
-                    j.do.execute(cmd,dieOnNonZeroExitCode=False)
-
-            if self.hrd.getBool("ubuntu.apt.update",default=False):
-                print "apt update"
-                j.do.execute("apt-get update -y",dieOnNonZeroExitCode=False)
-
-            if self.hrd.getBool("ubuntu.apt.upgrade",default=False):
-                j.do.execute("apt-get upgrade -y",dieOnNonZeroExitCode=False)
-
-            if self.hrd.exists("ubuntu.packages"):
-                for jp in self.hrd.getList("ubuntu.packages"):
-                    if jp.strip()!="":
-                        j.do.execute("apt-get install %s -f"%jp,dieOnNonZeroExitCode=False)       
-
-            self.actions.prepare()
+            self.prepare()
             #download
 
             for recipeitem in self.hrd.getListFromPrefix("git.export"):
@@ -383,11 +406,6 @@ class JPackageInstance():
                             print ("copy: %s->%s"%(src,dest))
                             j.do.copyTree(src,dest)
 
-            for recipeitem in self.hrd.getListFromPrefix("git.build"):
-                # print recipeitem
-                #pull the required repo
-                name=recipeitem['url'].replace("https://",""),replace("http://","").replace(".git","")
-                dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s/%s"%name)
 
             self.actions.configure()
 
@@ -448,8 +466,14 @@ class JPackageInstance():
         check which repo's are used & push the info 
         this does not use the build repo's
         """
-        # self._load(args=args)
+        
         self.actions.publish(**args)
+
+    @deps
+    def package(self,args={},deps=True):
+        """
+        """        
+        self.actions.package(**args)
 
     @deps
     def update(self,args={},deps=True):
@@ -477,6 +501,10 @@ class JPackageInstance():
         j.do.delete(self.hrdpath)
         j.do.delete(self.actionspath)
         j.do.delete(self.actionspath+"c")
+        actionsdonepath="%s/cfg/actions/"%j.dirs.baseDir
+        actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
+        j.do.delete("%s/%s.json"%(actionsdonepath,actioncat))
+
 
     @deps
     def reset(self,args={},deps=True):
@@ -489,8 +517,8 @@ class JPackageInstance():
         self.resetstate()
         #remove build repo's
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
-            name=recipeitem['url'].replace("https://",""),replace("http://","").replace(".git","")
-            dest="/opt/build/%s/%s"%name
+            name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
+            dest="/opt/build/%s"%name
             j.do.delete(dest)
         
         self.actions.removedata(**args)
@@ -514,17 +542,14 @@ class JPackageInstance():
 
     @deps
     def iimport(self,url,args={},deps=True):
-        # self._load(args=args)
+        
         self.actions.iimport(url,**args)
 
     @deps
     def export(self,args={},deps=True):
-        # self._load(args=args)
+        
         self.actions.export(url,**args)
 
-    @deps
-    def build(self,args={},deps=True):
-        self.actions.build(url,**args)
 
     @deps
     def configure(self,args={},deps=True,restart=True):
