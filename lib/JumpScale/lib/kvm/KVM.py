@@ -151,7 +151,7 @@ class KVM(object):
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
-    def create(self, name, baseimage, replace=True, description=''):
+    def create(self, name, baseimage, replace=True, description='', size=10, memory=512, cpu_count=1):
         """
         create a KVM machine which inherits from a qcow2 image (so no COPY)
 
@@ -174,6 +174,10 @@ class KVM(object):
 
         @param baseimage is name of the image used (see self.images)
 
+        @param size disk size in GBs
+        @param memory memory size in MBs
+        @param cpu_count is the number of vCPUs
+
         when replace then remove original image
         """
         if replace:
@@ -183,7 +187,7 @@ class KVM(object):
                 j.system.fs.removeDirTree(self._getRootPath(name))
         j.system.fs.createDir(self._getRootPath(name))
         print 'Creating machine %s...' % name
-        self.LibvirtUtil.create_node(name, baseimage)
+        self.LibvirtUtil.create_node(name, baseimage, size=size, memory=memory, cpu_count=cpu_count)
         print 'Wrtiting machine HRD config file...'
         domain = self.LibvirtUtil.connection.lookupByName(name)
         imagehrd = self.images[baseimage]
