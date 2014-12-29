@@ -270,9 +270,20 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         #todo define naming convention for how snapshots are stored on disk
         """
         machine_hrd = self.getConfig(name)
+        print 'Creating snapshot %s for machine %s' % (snapshotname, name)
         self.LibvirtUtil.snapshot(machine_hrd.get('id'), snapshotname, snapshottype=snapshottype)
 
-    def mountsnapshot(self,name,snapshotname,location="/mnt/1"):
+    def deleteSnapshot(self, name, snapshotname):
+        '''
+        deletes a vmachine snapshot
+        @param name: vmachine name
+        @param snapshotname: snapshot name
+        '''
+        machine_hrd = self.getConfig(name)
+        print 'Deleting snapshot %s for machine %s' % (snapshotname, name)
+        self.LibvirtUtil.deleteSnapshot(machine_hrd.get('id'), snapshotname)
+
+    def mountSnapshot(self,name,snapshotname,location="/mnt/1"):
         """
         try to mount the snapshotted disk to a location
         at least supported btrfs,ext234,ntfs,fat,fat32
