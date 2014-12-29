@@ -281,6 +281,9 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         '''
         machine_hrd = self.getConfig(name)
         print 'Deleting snapshot %s for machine %s' % (snapshotname, name)
+        if snapshotname not in [s['name'] for s in self.LibvirtUtil.listSnapshots(machine_hrd.get('id'))]:
+            print "Couldn't find snapshot %s for machine %s" % (snapshotname, name)
+            return
         self.LibvirtUtil.deleteSnapshot(machine_hrd.get('id'), snapshotname)
 
     def mountSnapshot(self,name,snapshotname,location="/mnt/1"):
