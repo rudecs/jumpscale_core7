@@ -106,6 +106,10 @@ class KVM(object):
         stopped = [machine for machine in machines if machine['state'] == 5]
         return (running, stopped)
 
+    def listSnapshots(self, name):
+        machine_hrd = self.getConfig(name)
+        return [s['name'] for s in self.LibvirtUtil.listSnapshots(machine_hrd.get('id'))]
+
     def getIp(self, name):
         #info will be fetched from hrd in vm directory
         hrd = self.getConfig(name)
@@ -281,7 +285,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         '''
         machine_hrd = self.getConfig(name)
         print 'Deleting snapshot %s for machine %s' % (snapshotname, name)
-        if snapshotname not in [s['name'] for s in self.LibvirtUtil.listSnapshots(machine_hrd.get('id'))]:
+        if snapshotname not in self.listSnapshots(name):
             print "Couldn't find snapshot %s for machine %s" % (snapshotname, name)
             return
         self.LibvirtUtil.deleteSnapshot(machine_hrd.get('id'), snapshotname)
