@@ -155,7 +155,7 @@ class LibvirtUtil(object):
             return False
         return True
 
-    def snapshot(self, id, xml, snapshottype):
+    def _snapshot(self, id, xml, snapshottype):
         if self.isCurrentStorageAction(id):
             raise Exception("Can't snapshot a locked machine")
         domain = self._get_domain(id)
@@ -514,3 +514,11 @@ class LibvirtUtil(object):
                                        diskbasevolume, 'disksize': size})
         self.create_disk(diskxml, vm_id)
         return diskname
+
+    def snapshot(self, machine_id, name, snapshottype='external'):
+        domain = self._get_domain(machine_id)
+        diskfiles = self._get_domain_disk_file_names(domain)
+        t = int(time.time())
+        poolpath = '%s/%s' % (self.basepath, domain.name())
+        snapshot_xml = self.env.get_template('snapshot.xml').render(name=name, diskfiles=diskfiles, type=snapshottype, time=t, poolpath=poolpath)
+        self._snapshot(machine_id, snapshot_xml, snapshottype)

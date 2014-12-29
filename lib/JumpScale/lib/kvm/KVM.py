@@ -263,12 +263,14 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         #not to do now, phase 2
         raise RuntimeError("not implemented")
 
-    def snapshot(self,name,snapshotname,disktype="all"):
+    def snapshot(self, name, snapshotname, disktype='all', snapshottype='external'):
         """
         take a snapshot of the disk(s)
         @param disktype = all,root,data1,data2
         #todo define naming convention for how snapshots are stored on disk
         """
+        machine_hrd = self.getConfig(name)
+        self.LibvirtUtil.snapshot(machine_hrd.get('id'), snapshotname, snapshottype=snapshottype)
 
     def mountsnapshot(self,name,snapshotname,location="/mnt/1"):
         """
