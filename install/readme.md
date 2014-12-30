@@ -5,13 +5,13 @@ use these install scripts to make your life easy
 
 ```
 #if ubuntu is in recent state & apt get update was done recently
-curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python.sh | bash
+curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python.sh > /tmp/js7.sh && bash /tmp/js7.sh
 
 #if you also want to have the web packages 
-curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python_web.sh | bash
+curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python_web.sh > /tmp/js7.sh && bash /tmp/js7.sh
 
 #or (note gevent & fabric not working on python 3.4)
-curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python34.sh | bash
+curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install_python34.sh > /tmp/js7.sh && bash /tmp/js7.sh
 ```
 
 to use in sandbox
