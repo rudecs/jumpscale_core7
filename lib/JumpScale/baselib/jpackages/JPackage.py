@@ -54,9 +54,9 @@ def deps(F): # F is func or method without instance
             for dep in jp.getDependencies():
                 if dep.jp.name not in j.packages._justinstalled:
                     if 'args' in dep.__dict__:
-                        result=processresult(result,F(jp,args=dep.args))
+                        result=processresult(result,F(dep,args=dep.args))
                     else:
-                        result=processresult(result,F(jp))
+                        result=processresult(result,F(dep))
                     j.packages._justinstalled.append(dep.jp.name)
         result=processresult(result,F(*args,**kwargs))
         return result
@@ -96,12 +96,14 @@ class JPackageInstance():
         self._reposDone={}   
         self.args={}     
 
-    def getLogPath(self):        
+    def getLogPath(self):   
+        self._load()     
         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))        
         return logpath
 
     @deps
     def getTCPPorts(self,deps=True, *args, **kwargs):
+        self._load()
         ports=[]
         for process in self.getProcessDicts():
             for item in process["ports"]:
@@ -203,10 +205,14 @@ class JPackageInstance():
                 item["instance"]="main"
 
             if "args" in item:
-                if self.hrd.exists('args'):
-                    args=self.hrd.getDict('args')
+                if isinstance(item['args'], dict):
+                    args = item['args']
                 else:
-                    args = {}
+                    argskey = item['args']
+                    if self.hrd.exists(argskey):
+                        args=self.hrd.getDict(argskey)
+                    else:
+                        args = {}
             else:
                 args={}
 
@@ -241,14 +247,14 @@ class JPackageInstance():
 
     @deps
     def stop(self,args={},deps=True):
-        
+        self._load(args=args)
         self.actions.stop(**args)
         if not self.actions.check_down_local(**args):
             self.actions.halt(**args)
 
     @deps
     def build(self,args={},deps=True):
-
+        self._load(args=args)
         for dep in self.getDependencies():
             if dep.jp.name not in j.packages._justinstalled:
                 if 'args' in dep.__dict__:
@@ -272,15 +278,17 @@ class JPackageInstance():
 
     @deps
     def start(self,args={},deps=True):
-        
+        self._load(args=args)
         self.actions.start(**args)
 
     @deps
     def restart(self,args={},deps=True):
+        self._load(args=args)
         self.stop(args)
         self.start(args)
 
     def getProcessDicts(self,deps=True):
+        self._load()
         res=[]
         counter=0
 
@@ -305,7 +313,7 @@ class JPackageInstance():
         return procs
 
     def prepare(self,args={}):
-
+        self._load(args=args)
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
             src=src.replace(";",":")
             if src.strip()!="":     
@@ -332,8 +340,8 @@ class JPackageInstance():
         self.actions.prepare()  
 
     @deps
-    def install(self,args={},start=True,deps=True):        
-        
+    def install(self,args={},start=True,deps=True):
+        self._load(args=args)
         docker=self.hrd.exists("docker.enable") and self.hrd.getBool("docker.enable")
 
         if j.packages.indocker or not docker:
@@ -466,13 +474,14 @@ class JPackageInstance():
         check which repo's are used & push the info 
         this does not use the build repo's
         """
-        
+        self._load(args=args)
         self.actions.publish(**args)
 
     @deps
     def package(self,args={},deps=True):
         """
-        """        
+        """
+        self._load(args)
         self.actions.package(**args)
 
     @deps
@@ -482,6 +491,7 @@ class JPackageInstance():
         - copy the files again
         - restart the app
         """
+        self._load(args)
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             # print recipeitem
             #pull the required repo
@@ -498,6 +508,7 @@ class JPackageInstance():
 
     @deps
     def resetstate(self,args={},deps=True):
+        self._load(args)
         j.do.delete(self.hrdpath)
         j.do.delete(self.actionspath)
         j.do.delete(self.actionspath+"c")
@@ -513,6 +524,7 @@ class JPackageInstance():
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app        
         """
+        self._load(args)
         self._load(args=args)
         self.resetstate()
         #remove build repo's
@@ -525,6 +537,7 @@ class JPackageInstance():
 
     @deps
     def uninstall(self,args={},deps=True):
+        self._load(args)
         self.reset()
         self._load(args=args)
         self.actions.uninstall(**args)
@@ -542,17 +555,18 @@ class JPackageInstance():
 
     @deps
     def iimport(self,url,args={},deps=True):
-        
+        self._load(args=args)
         self.actions.iimport(url,**args)
 
     @deps
-    def export(self,args={},deps=True):
-        
+    def export(self,args={},deps=True):        
+        self._load(args=args)
         self.actions.export(url,**args)
 
 
     @deps
     def configure(self,args={},deps=True,restart=True):
+        self._load(args=args)
         self.actions.configure(url,**args)
         if restart:
             self.restart()

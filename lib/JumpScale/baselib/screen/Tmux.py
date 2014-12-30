@@ -53,7 +53,6 @@ class Tmux:
             envstr += "export %s=%s\n" % (name, value)
 
         if cmd.strip():
-            # import ipdb;ipdb.set_trace()
             self.createWindow(sessionname, screenname,user=tmuxuser)
             pane = self._getPane(sessionname, screenname,user=tmuxuser)
             env = os.environ.copy()
