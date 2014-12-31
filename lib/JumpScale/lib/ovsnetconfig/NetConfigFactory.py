@@ -7,7 +7,7 @@ from JumpScale import j
 import VXNet.vxlan as vxlan
 import VXNet.netclasses as netcl
 from .VXNet.utils import *
-
+import JumpScale.baselib.codetools
 
 class NetConfigFactory():
 

@@ -5,6 +5,8 @@ try:
 except Exception as e:
     pass
 
+import JumpScale.baselib.codetools
+
 class Netconfig:
     """
     """
@@ -75,11 +77,17 @@ iface eth0 inet manual
         path=self._getInterfacePath()
         ed=j.codetools.getTextFileEditor(path)
         ed.setSection(dev,C)
-        if start and dhcp==False:
+        if start:
+            cmd="ifdown %s"%dev
+            print(("down:%s"%dev))
+            j.system.process.execute(cmd)     
             cmd="ifup %s"%dev
             print(("up:%s"%dev))
-            print(cmd)
             j.system.process.execute(cmd)     
+        if dhcp:
+            print "refresh dhcp"
+            j.system.process.execute("dhclient %s"%dev)  
+
 
     def remove(self,dev):
         path=self._getInterfacePath()
@@ -144,9 +152,9 @@ iface $int inet static
             C=C.replace("static","manual")
             
         if bridgedev!=None:
-            C+="       bridge_ports $bridgedev"
+            C+="       bridge_ports $bridgedev\n"
         else:
-            C+="       bridge_ports none"
+            C+="       bridge_ports none\n"
 
         if gw!=None:
             C+="       gateway %s"%gw
@@ -228,8 +236,16 @@ iface $int:$aliasnr inet static
         ed.setSection(devToApplyTo,C)
 
         if start:
-            print(("up:%s"%devToApplyTo))
+            print(("restart:%s"%devToApplyTo))
             cmd="ifdown %s"%devToApplyTo
             j.system.process.execute(cmd) 
             cmd="ifup %s"%devToApplyTo
             j.system.process.execute(cmd)
+
+            if devToApplyTo<>dev:
+                print(("restart:%s"%dev))
+                cmd="ifdown %s"%dev
+                j.system.process.dev(cmd) 
+                cmd="ifup %s"%dev
+                j.system.process.execute(cmd)
+                
