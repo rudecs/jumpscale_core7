@@ -30,8 +30,8 @@ class WebdisFactory:
         if instance is None:
             instance = j.application.instanceconfig.get('webdis.connection')
         hrd = j.application.getAppInstanceHRD('webdis', instance)
-        ipaddr = hrd.get("addr")
-        port = int(hrd.get("port"))
+        ipaddr = hrd.get("agentcontroller.client.addr")
+        port = int(hrd.get("agentcontroller.client.port"))
         return self.get(ipaddr, port, timeout)
 
     def check(self, addr="127.0.0.1",port=7779,timeout=1):

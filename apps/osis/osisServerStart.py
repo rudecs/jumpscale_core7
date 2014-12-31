@@ -23,8 +23,8 @@ if __name__ == '__main__':
     # osisjp=osisjp.load(osis_instance)
 
     # argstag=" ".join(args[2:])
-    osishrd = j.application.getAppInstanceHRD(name="osis",instance=osis_instance) 
-    connectionsconfig = osishrd.get('param.osis.connection')
+    osishrd = j.application.getAppInstanceHRD(name="osis",instance=osis_instance)
+    connectionsconfig = osishrd.getDictFromPrefix('param.osis.connection')
     #j.core.tags.getObject(argstag).getDict()
     connections = {}
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         #client.hrd=hrd #remember hrd as well
         connections["%s_%s"%(dbname,instancename)]=client
 
-    superadminpasswd = osishrd.get("osis.superadmin.passwd")
+    superadminpasswd = osishrd.get("param.osis.superadmin.passwd")
 
     j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=osishrd)
 

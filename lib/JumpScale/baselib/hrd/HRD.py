@@ -133,12 +133,12 @@ class HRDItem():
                 self.value={}
             else:
                 for item in self.value.split(","):
-                    item=item.strip()                    
-                    if item=="":
+                    item = item.strip()
+                    if item == "":
                         continue
-                    if item.find(":")==-1:
-                        j.events.inputerror_critical("In %s/%s: cannot parse:'%s', need to find : to parse dict"%(self.hrd.name,self.name,item))                        
-                    key,post2=item.split(":",1)                        
+                    if item.find(":") == -1:
+                        j.events.inputerror_critical("In %s/%s: cannot parse:'%s', need to find : to parse dict"%(self.hrd.name,self.name,item))
+                    key,post2=item.split(":",1)
                     currentobj[key.strip()]=j.tools.text.machinetext2val(post2.strip())
                 self.value=currentobj
 
