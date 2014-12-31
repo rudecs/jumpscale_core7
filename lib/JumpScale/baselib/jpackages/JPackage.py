@@ -403,15 +403,16 @@ class JPackageInstance():
                         if j.system.fs.exists(path=dest):
                             if not "overwrite" in recipeitem:
                                 recipeitem["overwrite"]="true"
-                            if recipeitem["overwrite"].lower()=="false":
-                                continue
-                            else:
+                            if recipeitem["overwrite"].lower()=="true":
                                 print ("copy: %s->%s"%(src,dest))
                                 j.do.delete(dest)
                                 j.system.fs.createDir(dest)
-                                j.do.copyTree(src,dest)
+                            else:
+                                print ("merge: %s->%s"%(src,dest))
+                            j.do.copyTree(src,dest)
                         else:
                             print ("copy: %s->%s"%(src,dest))
+                            j.system.fs.createDir(dest)
                             j.do.copyTree(src,dest)
 
 
