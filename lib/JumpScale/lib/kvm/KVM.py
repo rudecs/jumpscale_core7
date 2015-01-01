@@ -123,7 +123,7 @@ class KVM(object):
             try:
                 j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
             except Exception,e:
-                if e.find("already exists")!=-1:
+                if str(e).find("already exists")!=-1:
                     continue
                 raise RuntimeError("Error in creating libvirt network:%s"%e)
 
