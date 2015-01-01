@@ -110,11 +110,28 @@ class KVM(object):
             br.up()
 
     def initLibvirtNetwork(self):
+
+        for brname in ["brmgmt","brtmp","brpub"]:
+            br=pynetlinux.brctl.findbridge(brname)
+            if br.is_up()==False:
+                br.up()
+
         print 'Creating libvirt networks brpub, brmgmt and brtmp...'
         networks = ('brmgmt', 'brpub', 'brtmp')
         for network in networks:
             #@todo need to do something so that we can execute this multiple times
-            j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
+            try:
+                j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
+            except Exception,e:
+                if e.find("already exists")!=-1:
+                    continue
+                raise RuntimeError("Error in creating libvirt network:%s"%e)
+
+        for brname in ["brmgmt","brtmp","brpub"]:
+            br=pynetlinux.brctl.findbridge(brname)
+            if br.is_up()==False:
+                br.up()
+
 
     def list(self):
         """
@@ -204,6 +221,9 @@ class KVM(object):
 
         when replace then remove original image
         """
+
+        self.initLibvirtNetwork()
+
         if replace:
             if j.system.fs.exists(self._getRootPath(name)):
                 print 'Machine %s already exists, will destroy and recreate...' % name
