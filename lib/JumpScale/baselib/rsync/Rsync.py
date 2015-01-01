@@ -1,5 +1,4 @@
 from JumpScale import j
-import toml
 
 class RsyncInstance:
 
@@ -140,7 +139,7 @@ list = no
 
             
 
-    def start(self,background=True):
+    def start(self,background=False):
         self.saveConfig()
         self.prepareroles()
         

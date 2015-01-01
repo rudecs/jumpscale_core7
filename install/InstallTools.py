@@ -138,7 +138,7 @@ class InstallTools():
                 if source[-1]!="/":
                     source+="/"
                 self.createDir(dest)
-            cmd="rsync -aW --no-compress %s %s %s"%(excl,source,dest)           
+            cmd="rsync -a --no-compress --max-delete=0 %s %s %s"%(excl,source,dest)                 
             self.execute(cmd)
             return()
         else:

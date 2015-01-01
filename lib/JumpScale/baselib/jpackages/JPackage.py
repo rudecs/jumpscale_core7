@@ -401,9 +401,9 @@ class JPackageInstance():
                         j.do.symlink(src, dest)
                     else:
                         if j.system.fs.exists(path=dest):
-                            if not "overwrite" in recipeitem:
-                                recipeitem["overwrite"]="true"
-                            if recipeitem["overwrite"].lower()=="true":
+                            if not "delete" in recipeitem:
+                                recipeitem["delete"]="false"
+                            if recipeitem["delete"].lower()=="true":
                                 print ("copy: %s->%s"%(src,dest))
                                 j.do.delete(dest)
                                 j.system.fs.createDir(dest)

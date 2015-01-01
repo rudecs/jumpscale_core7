@@ -8,6 +8,7 @@ import netaddr
 from libvirtutil import LibvirtUtil
 import imp
 import JumpScale.baselib.remote
+import pynetlinux
 
 """
 HRDIMAGE format
@@ -86,14 +87,33 @@ class KVM(object):
             will be used for internal mgmt purposes
         """
         print 'Creating physical bridges brpub, brmgmt and brtmp on the host...'
-        j.system.netconfig.enableInterfaceBridge('brpub', pubinterface, True, False)
+        j.system.net.setBasicNetConfigurationBridgePub() #failsave method to introduce bridge to pub interface
         j.system.netconfig.enableInterfaceBridgeStatic('brmgmt', ipaddr='192.168.66.254/24', start=True)
-        j.system.netconfig.enableInterfaceBridgeStatic('brtmp')
+        j.system.netconfig.enableInterfaceBridgeStatic('brtmp', start=True)
 
-    def initLibvirtNetowrk(self):
+        # j.system.net.setBasicNetConfigurationBridgePub()
+        if j.system.net.bridgeExists("brmgmt")==False:
+            pynetlinux.brctl.addbr("brmgmt")
+        br=pynetlinux.brctl.findbridge("brmgmt")        
+        ip=br.get_ip()
+        if ip!="192.168.66.254":  #there seems to be bug in this lib, will always be 0 the br.get_ip()
+            br.set_ip("192.168.66.254")
+            br.set_netmask(24)
+        if br.is_up()==False:
+            br.up()
+
+        #tmp bridge
+        if j.system.net.bridgeExists("brtmp")==False:
+            pynetlinux.brctl.addbr("brtmp")
+        br=pynetlinux.brctl.findbridge("brtmp")
+        if br.is_up()==False:
+            br.up()
+
+    def initLibvirtNetwork(self):
         print 'Creating libvirt networks brpub, brmgmt and brtmp...'
         networks = ('brmgmt', 'brpub', 'brtmp')
         for network in networks:
+            #@todo need to do something so that we can execute this multiple times
             j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
 
     def list(self):
@@ -220,6 +240,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         self.setNetworkInfo(name, public_ip)
         print 'Machine %s created successfully' % name
         print 'Machine IP address is: %s' % self.getIp(name)
+        return self.getIp(name)
 
     def _getIdFromConfig(self, name):
         machine_hrd = self.getConfig(name)

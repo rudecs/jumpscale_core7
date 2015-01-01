@@ -30,7 +30,7 @@ git.export.2=
     url:$(git.url),
     source:'mariadb/cfg',
     dest:'$(base)/cfg',
-    overwrite:False,
+    delete:False,
     link:False,
 
 #build git connections will checkout to /opt/build/ and always refreshed
