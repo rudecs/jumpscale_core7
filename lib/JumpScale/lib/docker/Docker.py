@@ -463,11 +463,12 @@ class Docker():
         if not j.system.fs.exists(path=keyloc):
             j.system.process.executeWithoutPipe("ssh-keygen -t dsa -f %s -N ''" % privkeyloc)
             if not j.system.fs.exists(path=keyloc):
-                raise RuntimeError("cannot find path for key %s, was keygen well executed"%keyloc)            
+                raise RuntimeError("cannot find path for key %s, was keygen well executed"%keyloc)          
         key=j.system.fs.fileGetContents(keyloc)
         # j.system.fs.writeFile(filename=path,contents="%s\n"%content)
-        # path=j.system.fs.joinPaths(self._get_rootpath(name),"root",".ssh","known_hosts")
-        # j.system.fs.writeFile(filename=path,contents="")
+
+        path=j.system.fs.joinPaths(self._get_rootpath(name),"root",".ssh","known_hosts")
+        j.system.fs.writeFile(filename=path,contents="")
 
         c=j.remote.cuisine.api
         c.fabric.api.env['password'] = "gig1234"
