@@ -478,11 +478,27 @@ class Docker():
 
         ssh_port=self.getPubPortForInternalPort(name,22)
         if ssh_port==None:
-            j.events.opserror_critical("cannot find pub port ssh")        
-
+            j.events.opserror_critical("cannot find pub port ssh") 
+                
         c.connect('%s:%s' % ("localhost", ssh_port), "root")
 
-        c.ssh_authorize("root",key)
+        counter=0
+        connect=False
+        time.sleep(0.5)
+        while counter<20 and connect==False:
+            try:
+                counter+=1
+                print "connect ssh2"                
+                c.ssh_authorize("root",key)
+            except Exception,e:
+                time.sleep(0.1)
+                continue
+            connect=True
+
+        if connect==False:
+            j.events.opserror_critical("Could not connect to ssh on localhost on port %s"%ssh_port)
+
+        
         c.fabric.state.output["running"]=True
         c.fabric.state.output["stdout"]=True
 
