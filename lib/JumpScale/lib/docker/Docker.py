@@ -467,8 +467,7 @@ class Docker():
         key=j.system.fs.fileGetContents(keyloc)
         # j.system.fs.writeFile(filename=path,contents="%s\n"%content)
 
-        path=j.system.fs.joinPaths("root",".ssh","known_hosts")
-        j.system.fs.writeFile(filename=path,contents="")
+        j.system.fs.writeFile(filename="/root/.ssh/known_hosts",contents="")
 
         c=j.remote.cuisine.api
         c.fabric.api.env['password'] = "gig1234"
