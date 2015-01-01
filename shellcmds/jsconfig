@@ -7,34 +7,28 @@ import sys,time
 j.application.start("jsconfig")
 
 parser = cmdutils.ArgumentParser()
-parser.add_argument("action", choices=['hrdset','hrdget','configset','configget'], help='Command to perform')
+parser.add_argument("action", choices=['hrdset','hrdget','prefix'], help='Command to perform')
 
 group = parser.add_argument_group(title="hrd set&get")
-group.add_argument('-n','--name', required=False, help='name of var in hrd to set')
+group.add_argument('-n','--name', required=False, help='key of var in hrd to set')
 group.add_argument('-v','--value',required=False, help='value')
 
-group = parser.add_argument_group(title="config set&get")
-group.add_argument('-c','--configname', required=False, help='name of config file')
-group.add_argument('-cs','--configsection', required=False, help='name of config file section')
-group.add_argument('-cn','--configvar', required=False, help='name of var in configfile set/get')
-group.add_argument('-cv','--configvalue',required=False, help='value when set')
 
 # parser.add_argument('-m','--message',required=False, action='store_true',help='commit message')
 
 opts = parser.parse_args()
 
+hrd=j.core.hrd.get("%s/hrd"%j.dirs.baseDir)
 
 if opts.action == "hrdset":
-    hrd=j.core.hrd.get("%s/hrd"%j.dirs.cfgDir)
     hrd.set(opts.name,opts.value)
 
-if opts.action == "hrdget":
-    hrd=j.core.hrd.get("%s/hrd"%j.dirs.cfgDir)
+elif opts.action == "hrdget":    
     print(hrd.get(opts.name))
 
-if opts.action == "configset":
-    config=j.config.getInifile(opts.configname)
-    config.setParam(opts.configsection, opts.configvar, opts.configvalue)
+elif opts.action == "prefix":    
+	for item in hrd.prefix(opts.name):
+		print "%-30s %s"%(item,(hrd.get(item)))
 
 
 j.application.stop()
