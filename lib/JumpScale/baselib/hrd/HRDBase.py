@@ -314,7 +314,13 @@ class HRDBase():
                     if out[-1]<>"":
                         out.append("")
 
-            if hrditem.data.find("@ASK")!=-1:
+            if not isinstance( hrditem.data,str):
+                #@todo fix this bug
+                # raise RuntimeError("BUG SHOULD ALWAYS BE STR")
+                pass
+                
+
+            if isinstance( hrditem.data,str) and hrditem.data.find("@ASK")!=-1:
                 val=hrditem.data
                 out.append("%-30s = %s" % (key, val))
             elif hrditem.ttype =="string":                
