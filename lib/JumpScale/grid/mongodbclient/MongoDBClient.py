@@ -20,8 +20,8 @@ class MongoDBClient:
         # hrd = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/mongodb_client/%s/hrd' % instancename)
         if hrd is None:
             j.events.opserror_critical("Could not find mongodb_client for instance %s" % instancename)
-        ipaddr = hrd.get("addr")
-        port = hrd.getInt("port")    
+        ipaddr = hrd.get("param.addr")
+        port = hrd.getInt("param.port")    
         ssl = False
         if j.application.config.exists('ssl'):
             ssl = j.application.config.getBool('ssl')
