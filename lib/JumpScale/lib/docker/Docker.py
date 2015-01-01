@@ -369,7 +369,7 @@ class Docker():
         if myinit:
             cmd="sh -c \"mkdir -p /var/run/screen;chmod 777 /var/run/screen; /var/run/screen;exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
             cmd="sh -c \" /sbin/my_init -- bash -l\""
-            #echo -e 'rooter\nrooter' | passwd root;
+            #echo -e 'gig1234\ngig1234' | passwd root;
             # cmd="sh -c \"exec >/dev/tty 2>/dev/tty </dev/tty && /sbin/my_init -- /usr/bin/screen -s bash\""        
         else:
             cmd=None
@@ -470,7 +470,7 @@ class Docker():
         # j.system.fs.writeFile(filename=path,contents="")
 
         c=j.remote.cuisine.api
-        c.fabric.api.env['password'] = "rooter"
+        c.fabric.api.env['password'] = "gig1234"
         c.fabric.api.env['connection_attempts'] = 5
         
         c.fabric.state.output["running"]=False
