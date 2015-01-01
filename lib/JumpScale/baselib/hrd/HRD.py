@@ -337,7 +337,6 @@ class HRD(HRDBase):
 
 
     def process(self,content):
-
         if content=="":
             content=j.system.fs.fileGetContents(self.path)        
 
@@ -484,3 +483,4 @@ class HRD(HRDBase):
                 vartype="unknown"
 
         self.applyTemplates()
+

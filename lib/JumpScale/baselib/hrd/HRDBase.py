@@ -298,6 +298,7 @@ class HRDBase():
         else:
             out=[""]
         keylast=[]
+
         for key in keys:
             keynew=key.split(".")
             
@@ -313,8 +314,10 @@ class HRDBase():
                     if out[-1]<>"":
                         out.append("")
 
-
-            if hrditem.ttype =="string":
+            if hrditem.data.find("@ASK")!=-1:
+                val=hrditem.data
+                out.append("%-30s = %s" % (key, val))
+            elif hrditem.ttype =="string":                
                 val=hrditem.getAsString()
                 if val.find("\n")!=-1:
                     out.append("%-30s = '%s'" % (key, val.strip("'")))
