@@ -2,14 +2,8 @@ from JumpScale import j
 import imp
 import copy
 
-import JumpScale.baselib.remote.cuisine
 import JumpScale.baselib.actions
 
-# import JumpScale.lib.docker
-try:
-    import JumpScale.lib.docker
-except:
-    pass
 
 #decorator to get dependencies
 def deps(F): # F is func or method without instance
@@ -94,7 +88,14 @@ class JPackageInstance():
         self.actions=None
         self._loaded=False
         self._reposDone={}   
-        self.args={}     
+        self.args={} 
+        self._init=False
+
+    def _init(self):
+        if self._init==False:
+            import JumpScale.baselib.remote.cuisine
+            import JumpScale.lib.docker    
+        self._init=True
 
     def getLogPath(self):   
         self._load()     
