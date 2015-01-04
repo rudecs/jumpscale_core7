@@ -118,7 +118,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
 
     if installed:
         packages = [jp for jp in packages if j.system.fs.find('/opt/jumpscale7/hrd/apps/', 'jpackage.jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
-        print packages
+        packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
 
     return packages
 
@@ -245,7 +245,8 @@ elif args.action == 'start':
         package.start(args=hrddata,deps=args.deps)
 
 elif args.action == 'stop':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True)
+    packages.reverse()
     for package in packages:
         package.stop(args=hrddata,deps=args.deps)
 
