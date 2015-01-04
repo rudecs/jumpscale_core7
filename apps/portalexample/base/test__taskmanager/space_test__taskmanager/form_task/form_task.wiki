@@ -1,5 +1,0 @@
-
-h2. task
-
-{{form_taskmanager_task}}
-

@@ -42,8 +42,8 @@ def deps(F): # F is func or method without instance
     def wrapper(*args2,**kwargs): # class instance in args[0] for method
         result=None
         jp=args2[0] #this is the self from before
-        
-        jp._load(**kwargs)    
+
+        jp._load(**kwargs)
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():

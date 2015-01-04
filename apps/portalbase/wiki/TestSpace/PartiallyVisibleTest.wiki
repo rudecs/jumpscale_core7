@@ -1,7 +1,0 @@
-@usedefault
-
-@show doc.test=="hallo"
-
-show
-
-@end

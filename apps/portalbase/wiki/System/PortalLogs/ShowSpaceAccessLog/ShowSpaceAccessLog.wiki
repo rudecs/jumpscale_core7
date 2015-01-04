@@ -1,4 +1,0 @@
-
-h2. space $$space access log overview
-
-{{spaceaccesslog: space:$$space}}
