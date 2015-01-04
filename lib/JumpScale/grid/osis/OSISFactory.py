@@ -183,10 +183,10 @@ class OSISFactory:
         # hrdinstance = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/osis_client/%s.hrd' % instance)
         hrdinstance= j.application.getAppInstanceHRD(name="osis_client",instance=instance) 
         if hrdinstance:
-            ipaddr=hrdinstance.get("osis.client.addr")
-            port=int(hrdinstance.get("osis.client.port"))
-            user=hrdinstance.get("osis.client.login")
-            passwd=hrdinstance.get("osis.client.passwd")
+            ipaddr=hrdinstance.get("param.osis.client.addr")
+            port=int(hrdinstance.get("param.osis.client.port"))
+            user=hrdinstance.get("param.osis.client.login")
+            passwd=hrdinstance.get("param.osis.client.passwd")
             return self.getClient(ipaddr=ipaddr, port=port, user=user, passwd=passwd, ssl=ssl, gevent=gevent)
         if die:
             j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)

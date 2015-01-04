@@ -11,17 +11,13 @@ from email.mime.text import MIMEText
 
 class EmailClient(object):
     def __init__(self):
-        self._server = j.application.config.get('mail.relay.addr')
-        self._port = j.application.config.getInt('mail.relay.port')
-        self._username = None
-        self._password = None
+        hrd=j.application.getAppInstanceHRD("mailclient","main")
+        self._server = hrd.getStr("smtp.server",None)
+        self._port = hrd.getInt("smtp.port",None)
         self._ssl = False
-        if j.application.config.exists('mail.relay.username'):
-            self._username = j.application.config.get('mail.relay.username')
-        if j.application.config.exists('mail.relay.passwd'):
-            self._password = j.application.config.get('mail.relay.passwd')
-        if j.application.config.exists('mail.relay.ssl'):
-            self._ssl = j.application.config.getBool('mail.relay.ssl')
+        self._username = hrd.getStr("smtp.login",None)
+        self._password = hrd.getStr("smtp.passwd",None)
+        self._sender = hrd.getStr("smtp.sender",'')
 
     def __str__(self):
         out="server=%s\n"%(self._server)
@@ -31,7 +27,7 @@ class EmailClient(object):
 
     __repr__=__str__
 
-    def send(self, recipients, sender, subject, message, files=None, mimetype=None):
+    def send(self, recipients, sender="", subject="", message="", files=None, mimetype=None):
         """
         @param recipients: Recipients of the message
         @type recipients: mixed, string or list
@@ -46,6 +42,8 @@ class EmailClient(object):
         @param mimetype: Type of the body plain, html or None for autodetection
         @type mimetype: string
         """
+        if sender=="":
+            sender=self._sender 
         if isinstance(recipients, str):
             recipients = [ recipients ]
         server = smtplib.SMTP(self._server, self._port) 
