@@ -1,17 +1,14 @@
 import sys
 
 def main(j, args, params, tags, tasklet):
-
-    if sys.version.startswith("3"):
-        import urllib.parse as urllib
-    else:
-        import urllib
+    import urlparse
+    import urllib
         
 
     # import urllib.request, urllib.error
 
     querystr = args.requestContext.env['QUERY_STRING']
-    querytuples = urllib.parse_qsl(querystr)
+    querytuples = urlparse.parse_qsl(querystr)
     for item in querytuples[:]:
         if item[0] in ['space', 'page']:
             querytuples.remove(item)
