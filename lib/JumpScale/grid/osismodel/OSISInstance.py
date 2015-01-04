@@ -123,7 +123,8 @@ class OSISInstance(OSISInstanceNoDB):
         data = self._getDict(obj)
         if 'guid' not in data or not data['guid']:
             data['guid'] = j.base.idgenerator.generateGUID()
-
+        if 'id' not in data:
+            data['id'] = data['_P_id']
         if self.exists(id=data['id']):
             saveddata = self.get(id=data['id']).obj2dict()
             saveddata.update(data)

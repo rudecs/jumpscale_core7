@@ -1,7 +1,0 @@
-h2. test
-
-test
-
-$$projname
-
-{{pageexplorer hight:300}}

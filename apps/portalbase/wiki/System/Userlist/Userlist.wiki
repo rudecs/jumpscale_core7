@@ -1,3 +1,0 @@
-h2. User List
-
-{{users}}

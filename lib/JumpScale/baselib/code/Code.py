@@ -118,7 +118,7 @@ class Code():
         if isinstance(data, dict):
             for key, value in list(data.items()):
                 #is for new obj functionname
-                objpropname="_P_%s"%key
+                objpropname="_P_%s"%key if not key.startswith('_P_') else key
 
                 if isinstance(value, dict) and isinstance(obj.__dict__[objpropname], dict) :
                     #is a real dict (not a dict as representation of an object)
