@@ -45,6 +45,7 @@ class EventsTemp():
         sys.exit(1)
 
 j = JumpScale()
+from . import base
 
 j.core=Core()
 j.events=EventsTemp()
@@ -86,6 +87,7 @@ from .baselib import jpackages
 # import JumpScale.baselib.startupmanager
 # from . import shellconfig
 # from . import gui
+
 
 j.application.init()
 

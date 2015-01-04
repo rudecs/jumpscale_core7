@@ -51,7 +51,7 @@ class ActionsBase():
 
             j.do.delete(self.jp_instance.getLogPath())
 
-            if j.system.fs.exists(path="/etc/my_init.d"):
+            if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
                 j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
 
                 for port in process["ports"]:
@@ -86,7 +86,6 @@ class ActionsBase():
                 j.system.process.executeIndependant(cmd2)            
 
             elif startupmethod=="tmux":
-
                 for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)

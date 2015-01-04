@@ -167,7 +167,7 @@ class JumpscriptFactory:
     def _getWebdisConnection(self):
         return j.clients.webdis.getByInstance()
 
-    def pushToGridMaster(self): 
+    def pushToGridMaster(self):
         webdis = self._getWebdisConnection()
         #create tar.gz of cmds & monitoring objects & return as binary info
         #@todo make async with local workers
@@ -180,9 +180,9 @@ class JumpscriptFactory:
             for path in j.system.fs.walkExtended("%s/apps/agentcontroller/jumpscripts"%j.dirs.baseDir, recurse=1, filePattern="*.py", dirs=False):
 	        arcpath="jumpscripts/%s"%path.split("/jumpscripts/")[1]
                 tar.add(path,arcpath)
-        data=j.system.fs.fileGetContents(ppath)       
-        webdis.set("%s:scripts"%(self.secret),data)  
-        # scripttgz=webdis.get("%s:scripts"%(self.secret))      
+        data=j.system.fs.fileGetContents(ppath)
+        webdis.set("%s:scripts"%(self.secret),data)
+        # scripttgz=webdis.get("%s:scripts"%(self.secret))
         # assert data==scripttgz
 
     def loadFromGridMaster(self):
@@ -209,10 +209,10 @@ class JumpscriptFactory:
             if tarinfo.isfile():
                 print((tarinfo.name))
                 if tarinfo.name.find("processmanager/")==0:
-                    # dest=tarinfo.name.replace("processmanager/","")           
+                    # dest=tarinfo.name.replace("processmanager/","")
                     tar.extract(tarinfo.name, j.system.fs.getParent(self.basedir))
                 if tarinfo.name.find("jumpscripts/")==0:
-                    # dest=tarinfo.name.replace("processmanager/","")           
+                    # dest=tarinfo.name.replace("processmanager/","")
                     tar.extract(tarinfo.name, self.basedir)
 
         j.system.fs.remove(ppath)

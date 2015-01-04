@@ -330,4 +330,5 @@ class Transport(object):
         # send message, retry if needed, retrieve message
 
     def __str__(self):
-        return "%s %s:%s" % (self.__class__.__name__, self._addr, self._port)
+        # return "%s %s:%s" % (self.__class__.__name__, self._addr, self._port)
+        return "%s" % (self.__class__.__name__)

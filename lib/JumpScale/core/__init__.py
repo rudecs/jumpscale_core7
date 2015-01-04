@@ -10,6 +10,7 @@ class Empty():
 j.base=Empty()
 
 from . import LOADER
+from . import BYTEPROCESSOR
 
 def _setup_stacktrace_hook():
     '''Set up SIGUSR2 signal handler which dumps stack traces of all threads'''
