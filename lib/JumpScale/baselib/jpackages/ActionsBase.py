@@ -59,14 +59,20 @@ class ActionsBase():
                     j.system.process.killProcessByPort(port)
 
                 cmd2="%s %s"%(tcmd,targs)
-                C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,cmd2,name)
+                extracmds=""
+                if cmd2.find(";")!=-1:
+                    parts=cmd2.split(";")
+                    extracmds="\n".join(parts[:-1])
+                    cmd2=parts[-1]
+                    
+                C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\n%s\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,extracmds,cmd2,name)
                 j.do.delete("/var/log/%s.log"%name)
                 j.do.createDir("/etc/service/%s"%name)
                 path2="/etc/service/%s/run"%name
                 j.do.writeFile(path2,C)
                 j.do.chmod(path2,0o770)            
                 j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
-                print "STARTED SUCCESFULLY:%s"%name
+                print "put in init:%s"%name
             
             elif startupmethod=="upstart":
                 raise RuntimeError("not implemented")
@@ -92,11 +98,7 @@ class ActionsBase():
 
             else:
                 raise RuntimeError("startup method not known:'%s'"%startupmethod)
-                if j.system.fs.exists(path="/etc/my_init.d"):
-                    #docker
-                    pass
-                else:
-                    j.system.platform.ubuntu.startService(name)
+
 
 
                 # if msg=="":
@@ -135,6 +137,8 @@ class ActionsBase():
                 j.events.opserror_critical(msg,"jp.start.failed.ports")
             else:
                 j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")            
+
+        print "STARTED OK"
 
     def stop(self,**args):
         """
@@ -304,5 +308,11 @@ class ActionsBase():
     def uninstall(self,**args):
         """
         uninstall the apps, remove relevant files
+        """
+        pass
+
+    def test(self,**args):
+        """
+        test the jpackage on appropriate behaviour
         """
         pass

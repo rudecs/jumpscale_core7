@@ -128,3 +128,9 @@ class Actions(ActionsBase):
     #     uninstall the apps, remove relevant files
     #     """
     #     pass
+
+    # def test(self,**args):
+    #     """
+    #     tests for the jpackage to test its behaviour
+    #     """
+    #     return True
