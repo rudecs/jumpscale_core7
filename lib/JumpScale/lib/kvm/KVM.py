@@ -24,6 +24,8 @@ bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
 fabric.module=
+
+shell=
 """
 
 class KVM(object):
@@ -248,12 +250,13 @@ ostype=%s
 arch=%s
 version=%s
 description=%s
+shell=%s
 fabric.module=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
-                        imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+        imagehrd.get('shell', ''), imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
         if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
@@ -283,6 +286,11 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         machine_hrd = self.getConfig(name)
         if machine_hrd:
             return machine_hrd.get('id')
+
+    def _getShellFromConfig(self, name):
+        machine_hrd = self.getConfig(name)
+        if machine_hrd:
+            return machine_hrd.get('shell')
         
     def destroyAll(self):
         print 'Destroying all created vmachines...'
@@ -413,7 +421,9 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
 
     def execute(self, name, cmd, sudo=False):
         rapi = self._getSshConnection(name)
-        if not sudo:
-            return rapi.run(cmd)
-        else:
-            return rapi.sudo(cmd)
+        shell = self._getShellFromConfig(name) or '/bin/bash -l -c'
+        with capi.fabric.api.settings(shell=shell):
+            if not sudo:
+                return rapi.run(cmd, shell=shell)
+            else:
+                return rapi.sudo(cmd, shell=shell)
