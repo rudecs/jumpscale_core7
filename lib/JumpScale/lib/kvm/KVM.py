@@ -224,6 +224,10 @@ class KVM(object):
                 print 'Machine %s already exists, will destroy and recreate...' % name
                 self.destroy(name)
                 j.system.fs.removeDirTree(self._getRootPath(name))
+        else:
+            if j.system.fs.exists(self._getRootPath(name)):
+                print 'Error creating machine "%s"' % name
+                raise RuntimeError('Machine "%s" already exists, please explicitly specify replace=True(default) if you want to create a vmachine with the same name' % name)
         j.system.fs.createDir(self._getRootPath(name))
         print 'Creating machine %s...' % name
         try:
