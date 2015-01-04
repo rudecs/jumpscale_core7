@@ -422,7 +422,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
     def execute(self, name, cmd, sudo=False):
         rapi = self._getSshConnection(name)
         shell = self._getShellFromConfig(name) or '/bin/bash -l -c'
-        with capi.fabric.api.settings(shell=shell):
+        with rapi.fabric.api.settings(shell=shell):
             if not sudo:
                 return rapi.run(cmd, shell=shell)
             else:
