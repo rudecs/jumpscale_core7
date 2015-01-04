@@ -504,12 +504,12 @@ class Docker():
 
         return key
 
-    def getSSH(self,name):
+    def getSSH(self,name,stdout=False):
         ssh_port=self.getPubPortForInternalPort(name,22)        
         c=j.remote.cuisine.api
         c.fabric.api.env['connection_attempts'] = 2
-        c.fabric.state.output["running"]=False
-        c.fabric.state.output["stdout"]=False
+        c.fabric.state.output["running"]=stdout
+        c.fabric.state.output["stdout"]=stdout
         c.connect('%s:%s' % ("localhost", ssh_port), "root")
         return c
 

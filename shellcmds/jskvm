@@ -1,8 +1,8 @@
 #!/usr/bin/env jspython
 from JumpScale import j
 from JumpScale.baselib import cmdutils
-import JumpScale.lib.docker
-import JumpScale.lib.diskmanager
+import JumpScale.lib.kvm
+
 import sys
 
 j.application.start("jsmachine_docker")
@@ -17,10 +17,10 @@ parser.add_argument("-p",'--passwd', help='password for machine')
 parser.add_argument("-r",'--prefix', help='prefix')
 parser.add_argument("-k",'--key', help='key for syncing')
 parser.add_argument("-j",'--jumpscale', help='only relevant for new, will install jumpscale',action='store_true', default=False)
-parser.add_argument('--ports', help='format "22:8022 80:8080"  the first arg e.g. 22 is the port in the container')
-parser.add_argument('--vols', help='format: "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."')
-parser.add_argument('--volsro', help='same as vols but now mounted read only')
-parser.add_argument('--cpu', help='cpu shares (min 0, max 1000')
+# parser.add_argument('--ports', help='format "22:8022 80:8080"  the first arg e.g. 22 is the port in the container')
+# parser.add_argument('--vols', help='format: "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."')
+# parser.add_argument('--volsro', help='same as vols but now mounted read only')
+# parser.add_argument('--cpu', help='cpu shares (min 0, max 1000')
 parser.add_argument('--mem', help='max mem in MB')
 parser.add_argument("-c",'--cmd', help='cmd to execute')
 parser.add_argument("-a",'--pubip', help='set pub ip addr of machine (192.168.1.207/24)',default='')
@@ -30,10 +30,14 @@ parser.add_argument('--start', help='start after creation', action='store_true',
 
 opts = parser.parse_args()
 
-l=j.tools.docker
+l=j.system.platform.kvm
 
 if opts.prefix != None:
     l.prefix=opts.prefix
+
+#@todo complete the commands, use ssh to e.g. install jumpscale when -j
+
+#l.create(self, name, baseimage, replace=True, description='', size=10, memory=512, cpu_count=1)
 
 ############PS
 if opts.action =='ps':

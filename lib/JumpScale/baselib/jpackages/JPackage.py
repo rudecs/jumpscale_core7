@@ -39,20 +39,21 @@ def deps(F): # F is func or method without instance
             raise RuntimeError("did not expect this result, needs to be str,list,bool,int,dict")
         return result
 
-    def wrapper(*args,**kwargs): # class instance in args[0] for method
+    def wrapper(*args2,**kwargs): # class instance in args[0] for method
         result=None
-        jp=args[0] #this is the self from before
+        jp=args2[0] #this is the self from before
+        
         jp._load(**kwargs)    
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
-                if dep.jp.name not in j.packages._justinstalled:
+                if dep.jp.name not in j.packages._justinstalled:                    
                     if 'args' in dep.__dict__:
                         result=processresult(result,F(dep,args=dep.args))
                     else:
                         result=processresult(result,F(dep))
                     j.packages._justinstalled.append(dep.jp.name)
-        result=processresult(result,F(*args,**kwargs))
+        result=processresult(result,F(*args2,**kwargs))
         return result
     return wrapper
 
@@ -342,6 +343,8 @@ class JPackageInstance():
 
     @deps
     def install(self,args={},start=True,deps=True):
+        print "INSTALL:%s"%self
+        
         self._load(args=args)
         docker=self.hrd.exists("docker.enable") and self.hrd.getBool("docker.enable")
 
