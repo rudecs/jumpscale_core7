@@ -463,6 +463,13 @@ class LibvirtUtil(object):
         nw.setAutostart(1)
         nw.create()
 
+    def checkNetwork(self, networkname):
+        try:
+            self.connection.networkLookupByName(networkname):
+            return True
+        except libvirt.libvirtError, e:
+            return False
+
     def createVMStorSnapshot(self, name):
         vmstor_snapshot_path = j.system.fs.joinPaths(self.basepath,'snapshots')
         if not j.system.fs.exists(vmstor_snapshot_path):

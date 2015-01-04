@@ -110,8 +110,7 @@ class KVM(object):
             br.up()
 
     def initLibvirtNetwork(self):
-
-        for brname in ["brmgmt","brtmp","brpub"]:
+        for brname in ("brmgmt", "brtmp", "brpub"):
             br=pynetlinux.brctl.findbridge(brname)
             if br.is_up()==False:
                 br.up()
@@ -119,19 +118,15 @@ class KVM(object):
         print 'Creating libvirt networks brpub, brmgmt and brtmp...'
         networks = ('brmgmt', 'brpub', 'brtmp')
         for network in networks:
-            #@todo need to do something so that we can execute this multiple times
-            try:
+            if not self.LibvirtUtil.checkNetwork(network):
                 j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
-            except Exception,e:
-                if str(e).find("already exists")!=-1:
-                    continue
-                raise RuntimeError("Error in creating libvirt network:%s"%e)
+            else:
+                print 'Virtual network "%s" is already there' % network
 
-        for brname in ["brmgmt","brtmp","brpub"]:
+        for brname in ("brmgmt", "brtmp", "brpub"):
             br=pynetlinux.brctl.findbridge(brname)
             if br.is_up()==False:
                 br.up()
-
 
     def list(self):
         """
