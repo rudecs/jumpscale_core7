@@ -226,7 +226,12 @@ class KVM(object):
                 j.system.fs.removeDirTree(self._getRootPath(name))
         j.system.fs.createDir(self._getRootPath(name))
         print 'Creating machine %s...' % name
-        self.LibvirtUtil.create_node(name, baseimage, size=size, memory=memory, cpu_count=cpu_count)
+        try:
+            self.LibvirtUtil.create_node(name, baseimage, size=size, memory=memory, cpu_count=cpu_count)
+        except:
+            print 'Error creating machine "%s"' % name
+            print 'Rolling back machine creation...'
+            return self.destroy(name)
         print 'Wrtiting machine HRD config file...'
         domain = self.LibvirtUtil.connection.lookupByName(name)
         imagehrd = self.images[baseimage]
@@ -248,11 +253,23 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
         if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
+            print 'Rolling back machine creation...'
+            self.destroy(name)
             raise RuntimeError('SSH is not available after 5 minutes')
-        self.pushSSHKey(name)
+        try:
+            self.pushSSHKey(name)
+        except:
+            print 'Rolling back machine creation...'
+            self.destroy(name)
+            raise RuntimeError("Couldn't push SSH key to the guest")
         public_ip = '37.50.210.16'
         print 'Setting network configuration on the guest, this might take some time...'
-        self.setNetworkInfo(name, public_ip)
+        try:
+            self.setNetworkInfo(name, public_ip)
+        except:
+            print 'Rolling back machine creation...'
+            self.destroy(name)
+            raise RuntimeError("Couldn't configure guest network")
         print 'Machine %s created successfully' % name
         mgmt_ip = self.getIp(name)
         print 'Machine IP address is: %s' % mgmt_ip
