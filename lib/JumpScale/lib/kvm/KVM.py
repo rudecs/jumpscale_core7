@@ -144,8 +144,9 @@ class KVM(object):
 
     def getIp(self, name):
         #info will be fetched from hrd in vm directory
-        hrd = self.getConfig(name)
-        return hrd.get("bootstrap.ip")
+        machine_hrd = self.getConfig(name)
+        if machine_hrd:
+            return machine_hrd.get("bootstrap.ip")
 
     def getConfig(self, name):
         configpath = j.system.fs.joinPaths(self.vmpath, name, "main.hrd")
@@ -216,7 +217,6 @@ class KVM(object):
 
         when replace then remove original image
         """
-
         self.initLibvirtNetwork()
 
         if replace:
@@ -254,12 +254,14 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         print 'Setting network configuration on the guest, this might take some time...'
         self.setNetworkInfo(name, public_ip)
         print 'Machine %s created successfully' % name
-        print 'Machine IP address is: %s' % self.getIp(name)
-        return self.getIp(name)
+        mgmt_ip = self.getIp(name)
+        print 'Machine IP address is: %s' % mgmt_ip
+        return mgmt_ip
 
     def _getIdFromConfig(self, name):
         machine_hrd = self.getConfig(name)
-        return machine_hrd.get('id')
+        if machine_hrd:
+            return machine_hrd.get('id')
         
     def destroyAll(self):
         print 'Destroying all created vmachines...'
@@ -271,19 +273,30 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
     def destroy(self, name):
         print 'Destroying machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
-        self.LibvirtUtil.delete_machine(machine_id)
+        try:
+            self.LibvirtUtil.delete_machine(machine_id)
+        except:
+            pass
+        finally:
+            j.system.fs.removeDirTree(self._getRootPath(name))
         
     def stop(self, name):
         print 'Stopping machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
-        self.LibvirtUtil.shutdown(machine_id)
-        print 'Done'
+        try:
+            self.LibvirtUtil.shutdown(machine_id)
+            print 'Done'
+        except:
+            pass
 
     def start(self, name):
         print 'Starting machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
-        self.LibvirtUtil.create(machine_id, None)
-        print 'Done'
+        try:
+            self.LibvirtUtil.create(machine_id, None)
+            print 'Done'
+        except:
+            pass
 
     def setNetworkInfo(self, name, pubip):
         mgmtip = self._findFreeIP(name)
@@ -309,9 +322,13 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         @param disktype = all,root,data1,data2
         #todo define naming convention for how snapshots are stored on disk
         """
-        machine_hrd = self.getConfig(name)
         print 'Creating snapshot %s for machine %s' % (snapshotname, name)
-        self.LibvirtUtil.snapshot(machine_hrd.get('id'), snapshotname, snapshottype=snapshottype)
+        machine_hrd = self.getConfig(name)
+        try:
+            self.LibvirtUtil.snapshot(machine_hrd.get('id'), snapshotname, snapshottype=snapshottype)
+            print 'Done'
+        except:
+            pass
 
     def deleteSnapshot(self, name, snapshotname):
         '''
