@@ -24,6 +24,8 @@ bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
 fabric.module=
+
+shell=
 """
 
 class KVM(object):
@@ -110,8 +112,7 @@ class KVM(object):
             br.up()
 
     def initLibvirtNetwork(self):
-
-        for brname in ["brmgmt","brtmp","brpub"]:
+        for brname in ("brmgmt", "brtmp", "brpub"):
             br=pynetlinux.brctl.findbridge(brname)
             if br.is_up()==False:
                 br.up()
@@ -119,19 +120,15 @@ class KVM(object):
         print 'Creating libvirt networks brpub, brmgmt and brtmp...'
         networks = ('brmgmt', 'brpub', 'brtmp')
         for network in networks:
-            #@todo need to do something so that we can execute this multiple times
-            try:
+            if not self.LibvirtUtil.checkNetwork(network):
                 j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
-            except Exception,e:
-                if str(e).find("already exists")!=-1:
-                    continue
-                raise RuntimeError("Error in creating libvirt network:%s"%e)
+            else:
+                print 'Virtual network "%s" is already there' % network
 
-        for brname in ["brmgmt","brtmp","brpub"]:
+        for brname in ("brmgmt", "brtmp", "brpub"):
             br=pynetlinux.brctl.findbridge(brname)
             if br.is_up()==False:
                 br.up()
-
 
     def list(self):
         """
@@ -149,8 +146,9 @@ class KVM(object):
 
     def getIp(self, name):
         #info will be fetched from hrd in vm directory
-        hrd = self.getConfig(name)
-        return hrd.get("bootstrap.ip")
+        machine_hrd = self.getConfig(name)
+        if machine_hrd:
+            return machine_hrd.get("bootstrap.ip")
 
     def getConfig(self, name):
         configpath = j.system.fs.joinPaths(self.vmpath, name, "main.hrd")
@@ -221,7 +219,6 @@ class KVM(object):
 
         when replace then remove original image
         """
-
         self.initLibvirtNetwork()
 
         if replace:
@@ -229,9 +226,18 @@ class KVM(object):
                 print 'Machine %s already exists, will destroy and recreate...' % name
                 self.destroy(name)
                 j.system.fs.removeDirTree(self._getRootPath(name))
+        else:
+            if j.system.fs.exists(self._getRootPath(name)):
+                print 'Error creating machine "%s"' % name
+                raise RuntimeError('Machine "%s" already exists, please explicitly specify replace=True(default) if you want to create a vmachine with the same name' % name)
         j.system.fs.createDir(self._getRootPath(name))
         print 'Creating machine %s...' % name
-        self.LibvirtUtil.create_node(name, baseimage, size=size, memory=memory, cpu_count=cpu_count)
+        try:
+            self.LibvirtUtil.create_node(name, baseimage, size=size, memory=memory, cpu_count=cpu_count)
+        except:
+            print 'Error creating machine "%s"' % name
+            print 'Rolling back machine creation...'
+            return self.destroy(name)
         print 'Wrtiting machine HRD config file...'
         domain = self.LibvirtUtil.connection.lookupByName(name)
         imagehrd = self.images[baseimage]
@@ -244,27 +250,47 @@ ostype=%s
 arch=%s
 version=%s
 description=%s
+shell=%s
 fabric.module=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
-                        imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+        imagehrd.get('shell', ''), imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
         if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
+            print 'Rolling back machine creation...'
+            self.destroy(name)
             raise RuntimeError('SSH is not available after 5 minutes')
-        self.pushSSHKey(name)
+        try:
+            self.pushSSHKey(name)
+        except:
+            print 'Rolling back machine creation...'
+            self.destroy(name)
+            raise RuntimeError("Couldn't push SSH key to the guest")
         public_ip = '37.50.210.16'
         print 'Setting network configuration on the guest, this might take some time...'
-        self.setNetworkInfo(name, public_ip)
+        try:
+            self.setNetworkInfo(name, public_ip)
+        except:
+            print 'Rolling back machine creation...'
+            self.destroy(name)
+            raise RuntimeError("Couldn't configure guest network")
         print 'Machine %s created successfully' % name
-        print 'Machine IP address is: %s' % self.getIp(name)
-        return self.getIp(name)
+        mgmt_ip = self.getIp(name)
+        print 'Machine IP address is: %s' % mgmt_ip
+        return mgmt_ip
 
     def _getIdFromConfig(self, name):
         machine_hrd = self.getConfig(name)
-        return machine_hrd.get('id')
+        if machine_hrd:
+            return machine_hrd.get('id')
+
+    def _getShellFromConfig(self, name):
+        machine_hrd = self.getConfig(name)
+        if machine_hrd:
+            return machine_hrd.get('shell', '')
         
     def destroyAll(self):
         print 'Destroying all created vmachines...'
@@ -276,19 +302,30 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
     def destroy(self, name):
         print 'Destroying machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
-        self.LibvirtUtil.delete_machine(machine_id)
+        try:
+            self.LibvirtUtil.delete_machine(machine_id)
+        except:
+            pass
+        finally:
+            j.system.fs.removeDirTree(self._getRootPath(name))
         
     def stop(self, name):
         print 'Stopping machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
-        self.LibvirtUtil.shutdown(machine_id)
-        print 'Done'
+        try:
+            self.LibvirtUtil.shutdown(machine_id)
+            print 'Done'
+        except:
+            pass
 
     def start(self, name):
         print 'Starting machine "%s"' % name
         machine_id = self._getIdFromConfig(name)
-        self.LibvirtUtil.create(machine_id, None)
-        print 'Done'
+        try:
+            self.LibvirtUtil.create(machine_id, None)
+            print 'Done'
+        except:
+            pass
 
     def setNetworkInfo(self, name, pubip):
         mgmtip = self._findFreeIP(name)
@@ -314,9 +351,13 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         @param disktype = all,root,data1,data2
         #todo define naming convention for how snapshots are stored on disk
         """
-        machine_hrd = self.getConfig(name)
         print 'Creating snapshot %s for machine %s' % (snapshotname, name)
-        self.LibvirtUtil.snapshot(machine_hrd.get('id'), snapshotname, snapshottype=snapshottype)
+        machine_hrd = self.getConfig(name)
+        try:
+            self.LibvirtUtil.snapshot(machine_hrd.get('id'), snapshotname, snapshottype=snapshottype)
+            print 'Done'
+        except:
+            pass
 
     def deleteSnapshot(self, name, snapshotname):
         '''
@@ -377,3 +418,12 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         capi = j.remote.cuisine.api
         capi.connect(self.getIp(name))
         return capi
+
+    def execute(self, name, cmd, sudo=False):
+        rapi = self._getSshConnection(name)
+        shell = self._getShellFromConfig(name) or '/bin/bash -l -c'
+        with rapi.fabric.api.settings(shell=shell):
+            if not sudo:
+                return rapi.run(cmd, shell=shell)
+            else:
+                return rapi.sudo(cmd, shell=shell)
