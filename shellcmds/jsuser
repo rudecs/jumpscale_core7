@@ -77,7 +77,11 @@ if opts.action =='passwd':
 if opts.action =='delete':
     if opts.userlogin==None:
         opts.userlogin=j.console.askString("user to delete")
+    if userclient.simpleSearch({'id': opts.userlogin}, withguid=True)==[]:
+        print("user not found, no need to delete")
+        j.application.stop()
     userguid = getUserGUID(opts.userlogin)
+    
     user=userclient.get(userguid)
     userclient.delete(user.guid)
 
