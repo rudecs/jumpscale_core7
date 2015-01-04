@@ -410,3 +410,10 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         capi = j.remote.cuisine.api
         capi.connect(self.getIp(name))
         return capi
+
+    def execute(self, name, cmd, sudo=False):
+        rapi = self._getSshConnection(name)
+        if not sudo:
+            return rapi.run(cmd)
+        else:
+            return rapi.sudo(cmd)
