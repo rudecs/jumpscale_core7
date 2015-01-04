@@ -465,7 +465,7 @@ class LibvirtUtil(object):
 
     def checkNetwork(self, networkname):
         try:
-            self.connection.networkLookupByName(networkname):
+            self.connection.networkLookupByName(networkname)
             return True
         except libvirt.libvirtError, e:
             return False
