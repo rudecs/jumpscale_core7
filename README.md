@@ -1,5 +1,4 @@
-jumpscale_core7
-===============
+JumpScale 7
+===========
 
-.
-new version of jumpscale
+Please check our [WIKI](Home) for full documentation
