@@ -401,8 +401,9 @@ class JPackageInstance():
                     if dest[0]!="/":
                         dest="/%s"%dest
                     if link:
-                        j.system.fs.createDir(j.do.getParent(dest))
-                        j.do.symlink(src, dest)
+                        if not j.system.fs.exists(dest):
+                            j.system.fs.createDir(j.do.getParent(dest))
+                            j.do.symlink(src, dest)
                     else:
                         if j.system.fs.exists(path=dest):
                             if not "delete" in recipeitem:
