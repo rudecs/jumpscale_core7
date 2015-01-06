@@ -248,9 +248,7 @@ if __name__ == '__main__':
 
     opts = parser.parse_args()
 
-    jp = j.packages.findNewest('jumpscale', 'jsagent')
-    jp.load(opts.instance)
-    j.application.instanceconfig = jp.hrd_instance
+    j.application.instanceconfig = j.application.getAppInstanceHRD(name="jsagent",instance=opts.instance)
 
     j.core.osis.client = j.core.osis.getClientByInstance(die=False)
 

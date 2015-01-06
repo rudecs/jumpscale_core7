@@ -26,17 +26,12 @@ def action():
     if j.application.config.exists('nic.pattern'):
         pattern = j.application.config.getStr('nic.pattern')
     
-    for mac,val in netinfo.iteritems():
-        name,ipaddr=val
+    for netitem in netinfo:
+        name = netitem['name']
         if pattern and j.codetools.regex.match(pattern,name) == False:
                 continue
 
-        if ipaddr:
-            ipaddr=ipaddr.split(",")
-            if ipaddr==['']:
-                ipaddr=[]
-        else:
-            ipaddr=[]
+        ipaddr = netitem.get('ip', [])
 
         nic = ncl.new()
         oldkey = rediscl.hget('nics', name)
@@ -47,7 +42,7 @@ def action():
         nic.gid = j.application.whoAmI.gid
         nic.nid = j.application.whoAmI.nid
         nic.ipaddr=ipaddr
-        nic.mac=mac
+        nic.mac=netitem['mac']
         nic.name=name
 
         ckey = nic.getContentKey()

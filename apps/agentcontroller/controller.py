@@ -259,9 +259,9 @@ class ControllerCMDS():
     def _updateNetInfo(self, netinfo, node):
         node.netaddr = netinfo
         node.ipaddr = list()
-        for mac, netinfo in netinfo.iteritems():
-            if mac != "00:00:00:00:00:00" and len(netinfo) == 2 and netinfo[1]:
-                node.ipaddr.append(netinfo[1])
+        for netitem in netinfo:
+            if netitem['mac'] != "00:00:00:00:00:00" and netitem['ip'] and netitem['name']:
+                node.ipaddr.append(netitem['ip'])
 
     def registerNode(self, hostname, machineguid, session):
         # if session.user != 'root' or not self._adminAuth(session.user, session.passwd):

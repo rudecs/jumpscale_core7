@@ -24,10 +24,6 @@ processes = list()
 
 import JumpScale.baselib.redis
 
-#from lib.web import PMWSServer
-
-import JumpScale.grid.processmanager
-
 
 class Process():
     def __init__(self):
@@ -197,29 +193,19 @@ class ProcessManager():
 
             nid=res["node"]["id"]
             webdiskey=res["webdiskey"]
-            j.application.config.set("grid.node.id",nid)
-            
-            j.application.loadConfig()
+            self.hrd.set("grid.node.id",nid)
 
-            j.application.config.set("agentcontroller.webdiskey",webdiskey)
-            j.application.config.set("grid.id",res["node"]["gid"])
-            j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
-            j.application.config.set("grid.master.ip",acip)
+            self.hrd.set("agentcontroller.webdiskey",webdiskey)
+            self.hrd.set("grid.id",res["node"]["gid"])
+            self.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
+            self.hrd.set("grid.master.ip",acip)
             if aclogin=="root":
-                j.application.config.set("grid.master.superadminpasswd",acpasswd)
+                self.hrd.set("grid.master.superadminpasswd",acpasswd)
 
-            jp=j.packages.findNewest("jumpscale","webdis_client")
-            if reset or not jp.isInstalled(instance="main"):                
-                jp.install(hrddata={"addr":acip,"port":7779},instance="main",reinstall=reset)
-
-            jp=j.packages.findNewest("jumpscale","osis_client")
-            if reset or not jp.isInstalled(instance="processmanager"):
-                jp.install(hrddata={"osis.client.addr":acip,"osis.client.port":5544,"osis.client.login":aclogin,"osis.client.passwd":acpasswd},instance="processmanager",reinstall=reset)
-                self.hrd.set("osis.connection","processmanager")
-
-            jp=j.packages.findNewest("jumpscale","agentcontroller_client")
-            if reset or not jp.isInstalled(instance="main"):
-                jp.install(hrddata={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin},instance=acclientinstancename,reinstall=reset)
+            verifyinstall('jumpscale', 'webdis_client', args={"addr":acip,"port":7779})
+            verifyinstall('jumpscale', 'osis_client', instance='processmanager', args={"osis.client.addr":acip,"osis.client.port":5544,"osis.client.login":aclogin,"osis.client.passwd":acpasswd})
+            self.hrd.set("osis.connection","processmanager")
+            verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, args={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
             
             self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
@@ -296,6 +282,15 @@ def kill_subprocesses():
     for p in processes:
         p.kill()        
 
+def verifyinstall(domain='jumpscale', name='', instance='main', args={}):
+    jps = j.packages.find(domain, name)
+    if not jps:
+        j.packages.install(domain=domain, name=name, instance=instance, args=args)
+    else:
+        jp = jps[0]
+        isInstalled = j.system.fs.exists(jp.getInstance(instance).getHRDPath())
+        if opts.reset or not isInstalled:
+            j.packages.install(domain=domain, name=name, instance=instance, args=args)
 
 parser = cmdutils.ArgumentParser()
 parser.add_argument("-i", '--instance', default="0", help='jsagent instance', required=False)
@@ -305,13 +300,9 @@ parser.add_argument("-s", '--services', help='list of services to run e.g heka, 
 
 opts = parser.parse_args()
 
-jp=j.packages.findNewest("jumpscale","jsagent")
-if opts.reset or not jp.isInstalled(instance=opts.instance):
-    jp.install(instance=opts.instance,reinstall=opts.reset)
 
-jp = j.packages.findNewest('jumpscale', 'jsagent')
-jp.load(opts.instance)
-j.application.instanceconfig = jp.hrd_instance
+verifyinstall('jumpscale', 'jsagent', 'main')
+j.application.instanceconfig = j.application.getAppInstanceHRD('jsagent', 'main')
 
 #first start processmanager with all required stuff
 pm=ProcessManager(reset=opts.reset)
