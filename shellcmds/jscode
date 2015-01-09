@@ -82,7 +82,8 @@ def getRepos(account=None,name=None):
                 accounts.append(account)
     accounts.sort()
 
-    if len(repos)>20 and accounttofind==None:
+
+    if len(repos)>20 and accounttofind=='':
         print ("Select account to choose from, too many choices.")
         accounts=j.console.askChoiceMultiple(accounts)
         
