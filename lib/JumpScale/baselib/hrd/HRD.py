@@ -467,6 +467,7 @@ class HRD(HRDBase):
                 if vartype=="ask":
                     vartype="base" #ask was temporary type, is really a string
 
+                name2 = name
                 if self.prefixWithName:
                     name2="%s.%s"%(self.name,name)
 

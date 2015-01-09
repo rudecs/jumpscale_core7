@@ -1397,7 +1397,7 @@ paths.lib=$(paths.base)/lib
 
 paths.python.lib.js=$(paths.lib)/JumpScale
 paths.python.lib.ext=$(paths.base)/libext
-paths.app=$(paths.base)/app
+paths.apps=$(paths.base)/apps
 paths.var=$(paths.base)/var
 paths.log=$(paths.var)/log
 paths.pid=$(paths.var)/pid

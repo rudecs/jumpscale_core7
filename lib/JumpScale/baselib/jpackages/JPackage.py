@@ -103,6 +103,10 @@ class JPackageInstance():
         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))        
         return logpath
 
+    def getHRDPath(self):
+        hrdpath = "%s/apps/jpackage.%s.%s.%s.hrd" % (j.dirs.hrdDir, self.jp.domain, self.jp.name, self.instance)
+        return hrdpath
+
     @deps
     def getTCPPorts(self,deps=True, *args, **kwargs):
         self._load()
@@ -115,7 +119,7 @@ class JPackageInstance():
 
     def _load(self,args={},*stdargs,**kwargs):
         if self._loaded==False:
-            self.hrdpath="%s/apps/jpackage.%s.%s.%s.hrd"%(j.dirs.hrdDir,self.jp.domain,self.jp.name,self.instance)
+            self.hrdpath = self.getHRDPath()
             self.actionspath="%s/jpackage_actions/%s__%s__%s.py"%(j.dirs.baseDir,self.jp.domain,self.jp.name,self.instance)
 
             args.update(self.args)
@@ -401,8 +405,9 @@ class JPackageInstance():
                     if dest[0]!="/":
                         dest="/%s"%dest
                     if link:
-                        j.system.fs.createDir(j.do.getParent(dest))
-                        j.do.symlink(src, dest)
+                        if not j.system.fs.exists(dest):
+                            j.system.fs.createDir(j.do.getParent(dest))
+                            j.do.symlink(src, dest)
                     else:
                         if j.system.fs.exists(path=dest):
                             if not "delete" in recipeitem:
