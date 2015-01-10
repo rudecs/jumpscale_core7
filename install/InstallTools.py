@@ -1278,7 +1278,7 @@ class InstallTools():
 
 ############# package installation
 
-    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=False,pythonversion=2,web=False,copybinary=True):
+    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=True,pythonversion=2,web=False,copybinary=True):
         """
         @param pythonversion is 2 or 3
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1324,30 +1324,16 @@ class InstallTools():
         dest="%s/lib/JumpScale"%base
         print ("link: '%s' -> '%s'"%(src,dest))
         self.symlink(src, dest)
+
+
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
         desttest="/usr/local/bin/js"
-
-        from IPython import embed
-        print "DEBUG NOW 1111"
-        embed()
-        
-
         if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
             self.symlinkFilesInDir(src, dest)
-
-        from IPython import embed
-        print "DEBUG NOW 222"
-        embed()
-
         
         dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
-
-        from IPython import embed
-        print "DEBUG NOW 333"
-        embed()
-
 
         print ("copycore")
         for item in ["InstallTools","ExtraTools"]:
