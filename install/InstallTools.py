@@ -1156,6 +1156,12 @@ class InstallTools():
             else:
                 raise RuntimeError("Url needs to start with 'http(s)://'")
 
+            url=url.rstrip("/")
+            if not url.find(".git")==(len(url)-4):
+                #no .git at end
+                url+=".git"
+
+
             if login!=None and login!="guest":            
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
 
@@ -1182,9 +1188,9 @@ class InstallTools():
                 cmd="cd %s;git fetch"%dest
                 if depth!=None:
                     cmd+=" --depth %s"%depth    
-                self.executeInteractive(cmd)
+                self.execute(cmd)
                 if branch!=None:
-                    self.executeInteractive("cd %s;git reset --hard origin/%s"%(dest,branch))
+                    self.execute("cd %s;git reset --hard origin/%s"%(dest,branch))
             else:
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
@@ -1192,19 +1198,19 @@ class InstallTools():
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
                 else:
                     cmd="cd %s;git -c http.sslVerify=false pull"
-                self.executeInteractive(cmd)
+                self.execute(cmd)
         else:
             print(("git clone %s -> %s"%(url,dest)))
-            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(dest,branch,url,dest)
+            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(j.system.fs.getParent(dest),branch,url,dest)
             print cmd
             if depth!=None:
                 cmd+=" --depth %s"%depth        
-            self.executeInteractive(cmd)
+            self.execute(cmd)
 
         if revision!=None:
             cmd="cd %s;git checkout %s"%(dest,revision)
             print cmd
-            self.executeInteractive(cmd)
+            self.execute(cmd)
             
         return dest
 

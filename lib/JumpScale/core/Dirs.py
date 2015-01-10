@@ -233,28 +233,37 @@ class Dirs(object):
         self.gitConfigDir=None
         return None
 
-    def getHrdDir(self):
+    def getHrdDir(self,node=None):
         if self.gitConfigDir=="unknown":
             self.amInGitConfigRepo()
         if self.gitConfigDir!=None:            
-            return "%s/self/hrd"%self.gitConfigDir
+            if node!=None:
+                return "%s/nodes/%s/hrd"%(self.gitConfigDir,node)
+            else:
+                return "%s/self/hrd"%self.gitConfigDir
         else:
             return self._hrdDir
 
-    def getJPActionsPath(self):
+    def getJPActionsPath(self,node=None):
         if self.gitConfigDir=="unknown":
             self.amInGitConfigRepo()
         if self.gitConfigDir!=None:            
-            return "%s/self/actions"%self.gitConfigDir
+            if node!=None:
+                return "%s/nodes/%s/actions"%(self.gitConfigDir,node)
+            else:
+                return "%s/self/actions"%self.gitConfigDir
         else:
             return "%s/jpackage_actions"%(j.dirs.baseDir)
 
 
-    def getStatePath(self):
+    def getStatePath(self,node=None):
         if self.gitConfigDir=="unknown":
             self.amInGitConfigRepo()
         if self.gitConfigDir!=None:            
-            return "%s/self/state"%self.gitConfigDir
+            if node!=None:
+                return "%s/nodes/%s/state"%(self.gitConfigDir,node)
+            else:
+                return "%s/self/state"%self.gitConfigDir
         else:
             return "%s/cfg/actionsstate"%(j.dirs.baseDir)            
             

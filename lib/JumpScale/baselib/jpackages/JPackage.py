@@ -85,7 +85,6 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
-
     def getInstance(self,instance="main"):
         return JPackageInstance(self,instance)        
 
@@ -120,9 +119,9 @@ class JPackageInstance():
         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))        
         return logpath
 
-    def getHRDPath(self):
+    def getHRDPath(self,node=None):
         if j.packages.type=="c":
-            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.name, self.instance)
+            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.instance)
         else:            
             hrdpath = "%s/apps/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
         return hrdpath
@@ -139,13 +138,22 @@ class JPackageInstance():
 
     def _load(self,args={},*stdargs,**kwargs):
         if self._loaded==False:
-            self.hrdpath = self.getHRDPath()
+
+            node=None
+            if "node2execute" in args:
+                node=args["node2execute"]
+
+            self.hrdpath = self.getHRDPath(node=node)
+
             if j.packages.type=="c":
-                self.actionspath="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.name,self.instance)
+                j.system.fs.createDir(j.dirs.getJPActionsPath(node=node))
+                self.actionspath="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=node),self.jp.name,self.instance)
             else:
                 self.actionspath="%s/%s__%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
 
             args.update(self.args)
+
+
 
             # source="%s/instance.hrd"%self.jp.metapath
             # if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
@@ -176,8 +184,12 @@ class JPackageInstance():
 
             modulename="%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
             mod = imp.load_source(modulename, self.actionspath)
-            self.actions=mod.Actions()
-            self.actions.jp_instance=self
+
+            if not "node2execute" in args:
+                self.actions=mod.Actions()
+                self.actions.jp_instance=self
+            else:
+                self.actions=None
             self._loaded=True
 
     def _getRepo(self,url,recipeitem=None,dest=None):
