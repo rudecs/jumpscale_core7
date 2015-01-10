@@ -30,7 +30,7 @@ class Dirs(object):
         import sys
 
         self.baseDir=j.application.config.get("system.paths.base")
-        self.appDir = j.application.config.get("system.paths.app")
+        self.appDir = j.application.config.get("system.paths.apps")
         self.varDir = j.application.config.get("system.paths.var")
         self.tmpDir = j.application.config.get("system.paths.tmp")
         self.cfgDir = j.application.config.get("system.paths.cfg")
