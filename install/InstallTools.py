@@ -1140,7 +1140,7 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=None,ignorelocalchanges=False,reset=False,branch='master',revision=None):
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=0,ignorelocalchanges=False,reset=False,branch='master',revision=None):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
@@ -1189,13 +1189,13 @@ class InstallTools():
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
-                    cmd="cd %s;git pull origin %s"%(dest,branch)
+                    cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
                 else:
-                    cmd="cd %s;git pull"
+                    cmd="cd %s;git -c http.sslVerify=false pull"
                 self.executeInteractive(cmd)
         else:
             print(("git clone %s -> %s"%(url,dest)))
-            cmd="cd %s;git clone --single-branch -b %s %s %s"%(dest,branch,url,dest)
+            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(dest,branch,url,dest)
             print cmd
             if depth!=None:
                 cmd+=" --depth %s"%depth        

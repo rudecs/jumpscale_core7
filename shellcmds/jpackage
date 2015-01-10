@@ -9,7 +9,8 @@ j.application.start('jpackage')
 
 parser = cmdutils.ArgumentParser()
 
-commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate","monitor","configure","cleanup","export","import","uninstall","package","push"]
+commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
+    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute"]
 
 help="""
 jpackage commands:
@@ -38,6 +39,11 @@ jpackage commands:
     - remove data of the app
     resetstate
     - remove state of the app (same as resetstate) in jumpscale (the configuration info)
+    removedata
+    - remove data of app (e.g. database, e.g. vmachine when node jpackage)
+    execute
+    - execute cmd on package e.g. sshcmd on node jp or sql statement on database ...
+    - use --data with cmd:... to specify cmd to be execute
     monitor
     - do uptime check, local monitor & remote monitor check, if all ok return True
     configure
@@ -59,6 +65,8 @@ group.add_argument('-f','--force',required=False, action='store_true',help='auto
 group.add_argument('--nodeps',required=False, action='store_true',help='do action on dependencies, default True',default=False)
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
 
+group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
+
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
 group.add_argument('--data', required=False, help='use this to pass hrd information to jpackage e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
@@ -68,7 +76,6 @@ group.add_argument('--data', required=False, help='use this to pass hrd informat
 #install
 group = parser.add_argument_group(title="Export/Import")
 group.add_argument('--url', required=False, help='uncpath to export to or import from')
-
 
 #list
 group = parser.add_argument_group(title="List")
@@ -116,9 +123,10 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
         pass
         #@todo
 
-    if installed:
-        packages = [jp for jp in packages if j.system.fs.find('/opt/jumpscale7/hrd/apps/', 'jpackage.jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
-        packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
+    #@todo fix
+    # if installed:
+    #     packages = [jp for jp in packages if j.system.fs.find('/opt/jumpscale7/hrd/apps/', 'jpackage.jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
+    #     packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
 
     return packages
 
@@ -139,6 +147,9 @@ if args.data<>None:
     else:
         tags=j.core.tags.getObject(args.data)
         hrddata=tags.getDict()
+
+if args.node!=None:
+    hrddata["node2execute"]=args.node
   
 # def askDomains(args):
 #     if args.domain==None:
@@ -161,7 +172,7 @@ if args.action == 'configure':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
         package.configure(args=hrddata,deps=args.deps)
-        package.start()
+        package.start(args=hrddata)
 
 elif args.action == 'install':
 
@@ -191,7 +202,7 @@ elif args.action == 'monitor':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     result=[]
     for package in packages:
-        if package.monitor(deps=args.deps)==True:
+        if package.monitor(args={},deps=args.deps)==True:
             result.append("OK    :%s"%package)
         else:
             result.append("ERROR :%s"%package)
@@ -202,27 +213,32 @@ elif args.action == 'monitor':
 elif args.action == 'package':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.package(deps=args.deps)
+        package.package(args={},deps=args.deps)
 
 elif args.action == 'publish':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.publish(deps=args.deps)
+        package.publish(args={},deps=args.deps)
 
 elif args.action == 'reset':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.reset(deps=args.deps)
+        package.reset(args={},deps=args.deps)
+
+elif args.action == 'removedata':
+    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    for package in packages:
+        package.removedata(args={},deps=args.deps)
 
 elif args.action == 'resetstate':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.resetstate(deps=args.deps)
+        package.resetstate(args={},deps=args.deps)
 
 elif args.action == 'publish':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
-        package.publish(deps=args.deps)
+        package.publish(args={},deps=args.deps)
 
 elif args.action == 'export':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
@@ -249,6 +265,11 @@ elif args.action == 'stop':
     packages.reverse()
     for package in packages:
         package.stop(args=hrddata,deps=args.deps)
+
+elif args.action == 'execute':
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True)
+    for package in packages:
+        package.execute(args=hrddata,deps=args.deps)
 
 elif args.action == 'build':
     packages = getJPackage(args,expandInstances=True,toinstall=True)

@@ -205,9 +205,12 @@ class Application:
 
     def getAppInstanceHRD(self,name,instance,domain="jumpscale"):
         """
-        returns hrd for specific appname & instance name (default domain=jumpscale)
+        returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
         """
-        path='%s/hrd/apps/jpackage.%s.%s.%s.hrd' % (j.dirs.baseDir,domain,name,instance)
+        if j.packages.type!="c":
+            path='%s/%s.%s.%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
+        else:
+            path='%s/%s.%s.hrd' % (j.dirs.getHrdDir(),name,instance)
         if not j.system.fs.exists(path=path):
             j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
         return j.core.hrd.get(path)

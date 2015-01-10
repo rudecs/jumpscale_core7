@@ -4,6 +4,23 @@ import copy
 
 import JumpScale.baselib.actions
 
+#decorator to execute an action on a remote machine
+def remote(F): # F is func or method without instance
+    def wrapper(*args2,**kwargs): # class instance in args[0] for method
+        # print "remote wrapper"
+        result=None
+        jp=args2[0] #this is the self from before
+        jp._load(**kwargs)        
+        if not "args" in kwargs:
+            raise RuntimeError("args need to be part of kwargs")
+        if not "node2execute" in kwargs["args"]:
+            return F(*args2,**kwargs)
+        else:
+            from IPython import embed
+            print "DEBUG NOW wrapper"
+            embed()        
+
+    return wrapper
 
 #decorator to get dependencies
 def deps(F): # F is func or method without instance
@@ -104,7 +121,10 @@ class JPackageInstance():
         return logpath
 
     def getHRDPath(self):
-        hrdpath = "%s/apps/jpackage.%s.%s.%s.hrd" % (j.dirs.hrdDir, self.jp.domain, self.jp.name, self.instance)
+        if j.packages.type=="c":
+            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.name, self.instance)
+        else:            
+            hrdpath = "%s/apps/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
         return hrdpath
 
     @deps
@@ -120,7 +140,10 @@ class JPackageInstance():
     def _load(self,args={},*stdargs,**kwargs):
         if self._loaded==False:
             self.hrdpath = self.getHRDPath()
-            self.actionspath="%s/jpackage_actions/%s__%s__%s.py"%(j.dirs.baseDir,self.jp.domain,self.jp.name,self.instance)
+            if j.packages.type=="c":
+                self.actionspath="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.name,self.instance)
+            else:
+                self.actionspath="%s/%s__%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
 
             args.update(self.args)
 
@@ -181,7 +204,7 @@ class JPackageInstance():
         depth=1
         if recipeitem<>None and "depth" in recipeitem:
             depth=recipeitem["depth"]
-            if depth.lower()=="all":
+            if isinstance(depth,str) and depth.lower()=="all":
                 depth=None
             else:
                 depth=int(depth)
@@ -252,6 +275,7 @@ class JPackageInstance():
         return res
 
     @deps
+    @remote
     def stop(self,args={},deps=True):
         self._load(args=args)
         self.actions.stop(**args)
@@ -283,6 +307,7 @@ class JPackageInstance():
         self.actions.build(**args)
 
     @deps
+    @remote
     def start(self,args={},deps=True):
         self._load(args=args)
         self.actions.start(**args)
@@ -290,8 +315,8 @@ class JPackageInstance():
     @deps
     def restart(self,args={},deps=True):
         self._load(args=args)
-        self.stop(args)
-        self.start(args)
+        self.stop(args=args)
+        self.start(args=args)
 
     def getProcessDicts(self,deps=True):
         self._load()
@@ -318,7 +343,8 @@ class JPackageInstance():
 
         return procs
 
-    def prepare(self,args={}):
+    @remote
+    def prepare(self,args={},deps=False):
         self._load(args=args)
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
             src=src.replace(";",":")
@@ -346,137 +372,135 @@ class JPackageInstance():
         self.actions.prepare()  
 
     @deps
+    @remote    
     def install(self,args={},start=True,deps=True):
         print "INSTALL:%s"%self
         
         self._load(args=args)
-        docker=self.hrd.exists("docker.enable") and self.hrd.getBool("docker.enable")
-
-        if j.packages.indocker or not docker:
-
-            self.stop()
-
-            for dep in self.getDependencies():
-                if dep.jp.name not in j.packages._justinstalled:
-                    if 'args' in dep.__dict__:
-                        dep.install(args=dep.args)
-                    else:
-                        dep.install()
-                    j.packages._justinstalled.append(dep.jp.name)
             
-            self.prepare()
-            #download
+        self.stop(args=args,deps=deps)
 
-            for recipeitem in self.hrd.getListFromPrefix("git.export"):
-                # print recipeitem
-                #pull the required repo
-                dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
-                src="%s/%s"%(dest0,recipeitem['source'])
-                src=src.replace("//","/")
-                if "dest" not in recipeitem:
-                    raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
-                dest=recipeitem['dest']          
-
-                if "link" in recipeitem and str(recipeitem["link"]).lower()=='true':
-                    #means we need to only list files & one by one link them
-                    link=True
+        for dep in self.getDependencies():
+            if dep.jp.name not in j.packages._justinstalled:
+                if 'args' in dep.__dict__:
+                    dep.install(args=dep.args)
                 else:
-                    link=False
+                    dep.install()
+                j.packages._justinstalled.append(dep.jp.name)
+        
+        self.prepare(args=args,deps=deps)
+        #download
 
-                if src[-1]=="*":
-                    src=src.replace("*","")
-                    if "nodirs" in recipeitem and str(recipeitem["nodirs"]).lower()=='true':
-                        #means we need to only list files & one by one link them
-                        nodirs=True
-                    else:
-                        nodirs=False
+        for recipeitem in self.hrd.getListFromPrefix("git.export"):
+            # print recipeitem
+            #pull the required repo
+            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
+            src="%s/%s"%(dest0,recipeitem['source'])
+            src=src.replace("//","/")
+            if "dest" not in recipeitem:
+                raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
+            dest=recipeitem['dest']          
 
-                    items=j.do.listFilesInDir( path=src, recursive=False, followSymlinks=False, listSymlinks=False)
-                    if nodirs==False:
-                        items+=j.do.listDirsInDir(path=src, recursive=False, dirNameOnly=False, findDirectorySymlinks=False)
-
-                    items=[(item,"%s/%s"%(dest,j.do.getBaseName(item)),link) for item in items]
-                else:
-                    items=[(src,dest,link)]
-
-                for src,dest,link in items:
-                    if dest.strip()=="":
-                        raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
-                    if dest[0]!="/":
-                        dest="/%s"%dest
-                    if link:
-                        if not j.system.fs.exists(dest):
-                            j.system.fs.createDir(j.do.getParent(dest))
-                            j.do.symlink(src, dest)
-                    else:
-                        if j.system.fs.exists(path=dest):
-                            if not "delete" in recipeitem:
-                                recipeitem["delete"]="false"
-                            if recipeitem["delete"].lower()=="true":
-                                print ("copy: %s->%s"%(src,dest))
-                                j.do.delete(dest)
-                                j.system.fs.createDir(dest)
-                            else:
-                                print ("merge: %s->%s"%(src,dest))
-                            j.do.copyTree(src,dest)
-                        else:
-                            print ("copy: %s->%s"%(src,dest))
-                            j.system.fs.createDir(dest)
-                            j.do.copyTree(src,dest)
-
-
-            self.actions.configure()
-
-            self.start()
-
-        else:
-            #now bootstrap docker
-            ports=""
-            tcpports=self.hrd.getDict("docker.ports.tcp")
-            for inn,outt in tcpports.items():
-                ports+="%s:%s "%(inn,outt)
-            ports=ports.strip()
-
-            volsdict=self.hrd.getDict("docker.vols")
-            vols=""
-            for inn,outt in volsdict.items():
-                vols+="%s:%s # "%(inn,outt)
-            vols=vols.strip().strip("#").strip()
-
-            if self.instance!="main":
-                name="%s_%s"%(self.jp.name,self.instance)
+            if "link" in recipeitem and str(recipeitem["link"]).lower()=='true':
+                #means we need to only list files & one by one link them
+                link=True
             else:
-                name="%s"%(self.jp.name)
+                link=False
 
-            image=self.hrd.get("docker.base",default="despiegk/mc")
+            if src[-1]=="*":
+                src=src.replace("*","")
+                if "nodirs" in recipeitem and str(recipeitem["nodirs"]).lower()=='true':
+                    #means we need to only list files & one by one link them
+                    nodirs=True
+                else:
+                    nodirs=False
 
-            mem=self.hrd.get("docker.mem",default="0")
-            if mem.strip()=="":
-                mem=0
+                items=j.do.listFilesInDir( path=src, recursive=False, followSymlinks=False, listSymlinks=False)
+                if nodirs==False:
+                    items+=j.do.listDirsInDir(path=src, recursive=False, dirNameOnly=False, findDirectorySymlinks=False)
 
-            cpu=self.hrd.get("docker.cpu",default=None)
-            if cpu.strip()=="":
-                cpu=None
+                items=[(item,"%s/%s"%(dest,j.do.getBaseName(item)),link) for item in items]
+            else:
+                items=[(src,dest,link)]
 
-            ssh=self.hrd.get("docker.ssh",default=True)
-            if ssh.strip()=="":
-                ssh=True
+            for src,dest,link in items:
+                if dest.strip()=="":
+                    raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
+                if dest[0]!="/":
+                    dest="/%s"%dest
+                if link:
+                    if not j.system.fs.exists(dest):
+                        j.system.fs.createDir(j.do.getParent(dest))
+                        j.do.symlink(src, dest)
+                else:
+                    if j.system.fs.exists(path=dest):
+                        if not "delete" in recipeitem:
+                            recipeitem["delete"]="false"
+                        if recipeitem["delete"].lower()=="true":
+                            print ("copy: %s->%s"%(src,dest))
+                            j.do.delete(dest)
+                            j.system.fs.createDir(dest)
+                        else:
+                            print ("merge: %s->%s"%(src,dest))
+                        j.do.copyTree(src,dest)
+                    else:
+                        print ("copy: %s->%s"%(src,dest))
+                        j.system.fs.createDir(dest)
+                        j.do.copyTree(src,dest)
 
-            ns=self.hrd.get("docker.ns",default='8.8.8.8')
-            if ns.strip()=="":
-                ns='8.8.8.8'
 
-            port=   j.tools.docker.create(name=name, ports=ports, vols=vols, volsro='', stdout=True, base=image, nameserver=ns, \
-                replace=True, cpu=cpu, mem=0,jumpscale=True,ssh=ssh)
+        self.actions.configure()            
 
-            self.hrd.set("docker.ssh.port",port)
-            self.hrd.set("docker.name",name)
-            self.hrd.save()
+        self.start(args=args)
 
-            hrdname="jpackage.%s.%s.%s.hrd"%(self.jp.domain,self.jp.name,self.instance)
-            src="/%s/hrd/apps/%s"%(j.dirs.baseDir,hrdname)
-            j.tools.docker.copy(name,src,src)
-            j.tools.docker.run(name,"jpackage install -n %s -d %s"%(self.jp.name,self.jp.domain))
+        # else:
+        #     #now bootstrap docker
+        #     ports=""
+        #     tcpports=self.hrd.getDict("docker.ports.tcp")
+        #     for inn,outt in tcpports.items():
+        #         ports+="%s:%s "%(inn,outt)
+        #     ports=ports.strip()
+
+        #     volsdict=self.hrd.getDict("docker.vols")
+        #     vols=""
+        #     for inn,outt in volsdict.items():
+        #         vols+="%s:%s # "%(inn,outt)
+        #     vols=vols.strip().strip("#").strip()
+
+        #     if self.instance!="main":
+        #         name="%s_%s"%(self.jp.name,self.instance)
+        #     else:
+        #         name="%s"%(self.jp.name)
+
+        #     image=self.hrd.get("docker.base",default="despiegk/mc")
+
+        #     mem=self.hrd.get("docker.mem",default="0")
+        #     if mem.strip()=="":
+        #         mem=0
+
+        #     cpu=self.hrd.get("docker.cpu",default=None)
+        #     if cpu.strip()=="":
+        #         cpu=None
+
+        #     ssh=self.hrd.get("docker.ssh",default=True)
+        #     if ssh.strip()=="":
+        #         ssh=True
+
+        #     ns=self.hrd.get("docker.ns",default='8.8.8.8')
+        #     if ns.strip()=="":
+        #         ns='8.8.8.8'
+
+        #     port=   j.tools.docker.create(name=name, ports=ports, vols=vols, volsro='', stdout=True, base=image, nameserver=ns, \
+        #         replace=True, cpu=cpu, mem=0,jumpscale=True,ssh=ssh)
+
+        #     self.hrd.set("docker.ssh.port",port)
+        #     self.hrd.set("docker.name",name)
+        #     self.hrd.save()
+
+        #     hrdname="jpackage.%s.%s.%s.hrd"%(self.jp.domain,self.jp.name,self.instance)
+        #     src="/%s/hrd/apps/%s"%(j.dirs.baseDir,hrdname)
+        #     j.tools.docker.copy(name,src,src)
+        #     j.tools.docker.run(name,"jpackage install -n %s -d %s"%(self.jp.name,self.jp.domain))
 
     @deps
     def publish(self,args={},deps=True):
@@ -495,6 +519,7 @@ class JPackageInstance():
         self.actions.package(**args)
 
     @deps
+    @remote    
     def update(self,args={},deps=True):
         """
         - go over all related repo's & do an update
@@ -519,12 +544,11 @@ class JPackageInstance():
     @deps
     def resetstate(self,args={},deps=True):
         self._load(args)
-        j.do.delete(self.hrdpath)
-        j.do.delete(self.actionspath)
-        j.do.delete(self.actionspath+"c")
-        actionsdonepath="%s/cfg/actions/"%j.dirs.baseDir
+        j.do.delete(self.hrdpath,force=True)
+        j.do.delete(self.actionspath,force=True)
+        j.do.delete(self.actionspath+"c",force=True) #for .pyc file
         actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
-        j.do.delete("%s/%s.json"%(actionsdonepath,actioncat))
+        j.do.delete("%s/%s.json"%(j.dirs.getStatePath(),actioncat),force=True)
 
 
     @deps
@@ -534,7 +558,6 @@ class JPackageInstance():
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app        
         """
-        self._load(args)
         self._load(args=args)
         self.resetstate()
         #remove build repo's
@@ -546,6 +569,27 @@ class JPackageInstance():
         self.actions.removedata(**args)
 
     @deps
+    @remote    
+    def removedata(self,args={},deps=False):
+        """
+        - remove build repo's !!!
+        - remove state of the app (same as resetstate) in jumpscale (the configuration info)
+        - remove data of the app        
+        """
+        self._load(args=args)
+        self.actions.removedata(**args)
+
+    @deps
+    @remote    
+    def execute(self,args={},deps=False):
+        """
+        execute cmd on jpackage    
+        """
+        self._load(args=args)
+        self.actions.execute(**args)
+
+    @deps
+    @remote    
     def uninstall(self,args={},deps=True):
         self._load(args)
         self.reset()
@@ -553,6 +597,7 @@ class JPackageInstance():
         self.actions.uninstall(**args)
 
     @deps
+    @remote    
     def monitor(self,args={},deps=True):
         """
         do all monitor checks and return True if they all succeed
@@ -564,20 +609,23 @@ class JPackageInstance():
         return res
 
     @deps
+    @remote
     def iimport(self,url,args={},deps=True):
         self._load(args=args)
         self.actions.iimport(url,**args)
 
     @deps
+    @remote
     def export(self,args={},deps=True):        
         self._load(args=args)
         self.actions.export(url,**args)
 
 
     @deps
+    @remote
     def configure(self,args={},deps=True,restart=True):
         self._load(args=args)
-        self.actions.configure(url,**args)
+        self.actions.configure(**args)
         if restart:
             self.restart()
 

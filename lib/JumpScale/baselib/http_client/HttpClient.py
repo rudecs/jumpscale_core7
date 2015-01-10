@@ -1,16 +1,21 @@
-import urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error
+# import urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error
 import base64
 import mimetypes
 import mimetools
+import sys
 
 
-try:
-    from urllib import urlencode
-    import urllib
-except:
-    import urllib.parse as urllib
-    from urllib.parse import urlencode
+from urllib import urlencode
+import urllib
 
+if sys.version_info >= (3,):
+    import urllib.request as urllib2
+    import urllib.parse as urlparse
+else:
+    import urllib2
+    import urlparse
+
+import urllib2
 
 try:
     import ujson as json
@@ -75,7 +80,7 @@ class Connection(object):
         response = self._http_request(url, data=data, headers=headers, method='DELETE', **params)
         return response
     
-    def download(self, fileUrl, downloadPath, customHeaders=None):
+    def download(self, fileUrl, downloadPath, customHeaders=None,report=False):
         '''
         Download a file from server to a local path
         
@@ -85,13 +90,45 @@ class Connection(object):
         @return: True
         '''
         
-        _urlopener = urllib.request.FancyURLopener()
-        if customHeaders:
-            for k, v in list(customHeaders.items()):
-                _urlopener.addheader(k, v)
-        _urlopener.retrieve(fileUrl, downloadPath, None, None)
-        return True
-    
+        # # _urlopener    = urllib.request.FancyURLopener()
+        # _urlopener=urllib2.urlopen
+        # if customHeaders:
+        #     for k, v in list(customHeaders.items()):
+        #         _urlopener.addheader(k, v)
+        # _urlopener.retrieve(fileUrl, downloadPath, None, None)
+        # return True
+        
+        url=fileUrl
+        u = urllib2.urlopen(url)
+
+        scheme, netloc, path, query, fragment = urlparse.urlsplit(url)
+
+        with open(downloadPath, 'wb') as f:
+            meta = u.info()
+            meta_func = meta.getheaders if hasattr(meta, 'getheaders') else meta.get_all
+            meta_length = meta_func("Content-Length")
+            file_size = None
+            if meta_length:
+                file_size = int(meta_length[0])
+            if report:
+                print("Downloading: {0} Bytes: {1}".format(url, file_size))
+
+            file_size_dl = 0
+            block_sz = 8192
+            while True:
+                buffer = u.read(block_sz)
+                if not buffer:
+                    break
+
+                file_size_dl += len(buffer)
+                f.write(buffer)
+                if report:
+                    status = "{0:16}".format(file_size_dl)
+                    if file_size:
+                        status += "   [{0:6.2f}%]".format(file_size_dl * 100 / file_size)
+                    status += chr(13)
+                    print(status)
+
     def _updateUrlParams(self, url, **kwargs):
         _scheme, _netloc, _url, _params, _query, _fragment = urllib2.urlparse.urlparse(url)
         params = urllib2.urlparse.parse_qs(_query)
@@ -100,13 +137,13 @@ class Connection(object):
             
         for k, v in list(kwargs.items()):
             if v is not None: params[k] = v
-        _query = urllib.parse.urlencode(params)
+        _query = urllib.urlencode(params)
         return urllib2.urlparse.urlunparse((_scheme, _netloc, _url, _params, _query, _fragment))
     
     
     def _http_request(self, url, data=None, headers=None, method=None, **kwargs):
         url = self._updateUrlParams(url, **kwargs)
-        request = urllib.request.Request(url, data=data)
+        request = urllib2.Request(url, data=data)
         if headers:
             for key, value in list(headers.items()):
                 request.add_header(key, value)
@@ -114,7 +151,7 @@ class Connection(object):
             method = 'POST' if data else 'GET'
         request.get_method = lambda: method
         try:
-            resp = urllib.request.urlopen(request)
+            resp = urllib2.urlopen(request)
         except Exception as e:
             print(e)
             raise Exception('Could not open http connection to url %s\nError:%s, %s'% (url,e, e.read()))

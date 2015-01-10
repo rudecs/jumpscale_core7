@@ -19,11 +19,11 @@ class ActionController(object):
 
     def reset(self,category=None):
         from IPython import embed
-        print "DEBUG NOW ooo"
+        print "DEBUG NOW reset ActionController"
         embed()
         
     def _getPathMD(self,category):
-        return "%s/actions/%s.json"%(j.dirs.cfgDir,category)
+        return "%s/%s.json"%(j.dirs.getStatePath(),category)
 
     def getActionNamesDone(self,category):
         path=self._getPathMD(category)

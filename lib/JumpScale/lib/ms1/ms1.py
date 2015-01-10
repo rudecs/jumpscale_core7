@@ -2,7 +2,7 @@ import requests
 import time
 from JumpScale import j
 import JumpScale.portal
-import JumpScale.lib.cloudrobots
+# import JumpScale.lib.cloudrobots
 
 import JumpScale.baselib.remote
 import JumpScale.baselib.redis
@@ -67,7 +67,7 @@ class MS1(object):
         space=self.getCloudspaceObj(space_secret)
         return space["id"]
 
-    def getCloudspaceSecret(self, login, password, cloudspace_name, location, spacesecret=None,**args):
+    def getCloudspaceSecret(self, login, password, cloudspace_name, location='default', spacesecret=None,**args):
         """
         @param location ca1 (canada),us2 (us)
         """
@@ -87,6 +87,7 @@ class MS1(object):
             raise RuntimeError("E:Could not find a matching cloud space with name %s and location %s" % (cloudspace_name, location))
 
         self.redis_cl.hset('cloudrobot:cloudspaces:secrets', auth_key, json.dumps(cloudspace))
+
         return auth_key
 
     def sendUserMessage(self,msg,level=2,html=False,args={}):
@@ -98,7 +99,8 @@ class MS1(object):
     def getApiConnection(self, space_secret,**args):
         cs=self.getCloudspaceObj(space_secret)
 
-        host = 'www.mothership1.com' if cs["location"] == 'ca1' else '%s.mothership1.com' % cs["location"]
+        host = 'www.mothership1.com'# if cs["location"] == 'ca1' else '%s.mothership1.com' % cs["location"]
+        api=j.core.portal.getClient(host, 443, space_secret)
         try:
             api=j.core.portal.getClient(host, 443, space_secret)
         except Exception as e:
@@ -471,22 +473,22 @@ class MS1(object):
     def _getSSHConnection(self, spacesecret, name, **args):
         api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
         
-        mkey="%s_%s"%(cloudspace_id,machine_id)
-        print(("check ssh connection:%s"%mkey))
-        if self.redis_cl.hexists("ms1_iaas:machine:sshpub",mkey):
-            print("in cache")
-            pub_ipaddr,pub_port=self.redis_cl.hget("ms1_iaas:machine:sshpub",mkey).split(",")
-            ssh_connection = j.remote.cuisine.api
-            ssh_connection.fabric.api.env['connection_attempts'] = 5
-            ssh_connection.mode_user()
-            if j.system.net.tcpPortConnectionTest(pub_ipaddr, int(pub_port)):
-                try:
-                    ssh_connection.connect('%s:%s' % (pub_ipaddr, pub_port), "root")
-                    return ssh_connection
-                except Exception as e:
-                    from IPython import embed
-                    print("DEBUG NOW _getSSHConnection error")
-                    embed()
+        # mkey="%s_%s"%(cloudspace_id,machine_id)
+        # print(("check ssh connection:%s"%mkey))
+        # if self.redis_cl.hexists("ms1_iaas:machine:sshpub",mkey):
+        #     print("in cache")
+        #     pub_ipaddr,pub_port=self.redis_cl.hget("ms1_iaas:machine:sshpub",mkey).split(",")
+        #     ssh_connection = j.remote.cuisine.api
+        #     ssh_connection.fabric.api.env['connection_attempts'] = 5
+        #     ssh_connection.mode_user()
+        #     if j.system.net.tcpPortConnectionTest(pub_ipaddr, int(pub_port)):
+        #         try:
+        #             ssh_connection.connect('%s:%s' % (pub_ipaddr, pub_port), "root")
+        #             return ssh_connection
+        #         except Exception as e:
+        #             from IPython import embed
+        #             print("DEBUG NOW _getSSHConnection error")
+        #             embed()
 
         cloudspaces_actor = api.getActor('cloudapi', 'cloudspaces')
 
@@ -559,7 +561,7 @@ class MS1(object):
         #will overwrite all old keys
         ssh_connection.file_write(rloc,key)
 
-        self.redis_cl.hset("ms1_iaas:machine:sshpub",mkey,"%s,%s"%(pubip,tempport))        
+        # self.redis_cl.hset("ms1_iaas:machine:sshpub",mkey,"%s,%s"%(pubip,tempport))        
 
         return ssh_connection
 

@@ -22,20 +22,29 @@ class JPackageFactory():
 
             login=j.application.config.get("whoami.git.login").strip()
             passwd=j.application.config.get("whoami.git.passwd").strip()
-            items=j.application.config.getDictFromPrefix("jpackage.metadata")
-            repos=j.do.getGitReposListLocal()            
-            for domain in items.keys():                
-                url=items[domain]
-                domain=domain.rpartition(".url")[0]
-                reponame=url.rpartition("/")[-1]
-                if not reponame in repos.keys():
-                    #means git has not been pulled yet
-                    if login!="":
-                        dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch="master")
-                    else:
-                        dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch="master")
-                dest=repos[reponame]
-                self.domains[domain]=dest
+            self.type="n" #n from normal
+            #check if we are in a git directory, if so we will use $thatdir/jp as base for the metadata
+            configpath=j.dirs.amInGitConfigRepo()
+            if configpath!=None:
+                self.type="c"
+            
+            if self.type=="n":
+                items=j.application.config.getDictFromPrefix("jpackage.metadata")
+                repos=j.do.getGitReposListLocal()            
+                for domain in items.keys():                
+                    url=items[domain]
+                    domain=domain.rpartition(".url")[0]
+                    reponame=url.rpartition("/")[-1]
+                    if not reponame in repos.keys():
+                        #means git has not been pulled yet
+                        if login!="":
+                            dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch="master")
+                        else:
+                            dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch="master")
+                    dest=repos[reponame]
+                    self.domains[domain]=dest
+            else:
+                self.domains[j.system.fs.getBaseName(configpath)]="%s/jp/"%configpath
 
             self_init=True
 
@@ -73,6 +82,7 @@ class JPackageFactory():
                     if domain==domainfound and name==namefound: 
                         res.append(JPackage(domainfound,namefound))
 
+
         #now name & domain is known
         if maxnr!=None and len(res)>maxnr:
             j.events.inputerror_critical("Found more than %s jpackage for query '%s':'%s'"%(maxnr,domain,name))    
@@ -99,7 +109,10 @@ class JPackageFactory():
 
     def getHRD(self,reload=True):
         if self.hrd==None or reload:
-            source="%s/apps/"%j.dirs.hrdDir
+            if self.type=="n":
+                source="%s/apps/"%self.domains[0]
+            else:
+                source="%s/apps/"%j.dirs.hrdDir
             self.hrd=j.core.hrd.get(source)
         
         return self.hrd

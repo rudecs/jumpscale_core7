@@ -150,9 +150,9 @@ class ActionsBase():
             for port in ports:
                 j.system.process.killProcessByPort(port)
 
-        if self.jp_instance.jp.name == 'redis':
-            print("will not shut down application redis")
-            return
+        # if self.jp_instance.jp.name == 'redis':
+        #     print("will not shut down application redis (is system app)")
+        #     return
 
         for process in self.jp_instance.getProcessDicts():
             _stop(process)
@@ -324,5 +324,13 @@ class ActionsBase():
     def test(self,**args):
         """
         test the jpackage on appropriate behaviour
+        """
+        pass
+
+    def execute(self,**args):
+        """
+        execute is not relevant for each type of jpackage
+        for e.g. a node.ms1 package it would mean remote some shell command on that machine
+        for e.g. postgresql it would mean execute a sql query
         """
         pass
