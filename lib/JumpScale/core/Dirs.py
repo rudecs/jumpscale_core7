@@ -3,7 +3,6 @@ import sys, os, inspect
 
 from JumpScale import j
 
-
 def pathToUnicode(path):
     """
     Convert path to unicode. Use the local filesystem encoding. Will return
@@ -30,11 +29,11 @@ class Dirs(object):
         import sys
 
         self.baseDir=j.application.config.get("system.paths.base")
-        self.appDir = j.application.config.get("system.paths.apps")
+        self.appDir = j.application.config.get("system.paths.app")
         self.varDir = j.application.config.get("system.paths.var")
         self.tmpDir = j.application.config.get("system.paths.tmp")
         self.cfgDir = j.application.config.get("system.paths.cfg")
-        self._hrdDir = j.application.config.get("system.paths.hrd")
+        self.hrdDir = j.application.config.get("system.paths.hrd")
         self.libDir = j.application.config.get("system.paths.lib")
         self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
         self.logDir = j.application.config.get("system.paths.log")
@@ -104,7 +103,6 @@ class Dirs(object):
     def _createDir(self,path):
         if not os.path.exists(path):
             os.makedirs(path)
-
 
     def init(self,reinit=False):
         """Initializes all the configured directories if needed
@@ -233,16 +231,19 @@ class Dirs(object):
         self.gitConfigDir=None
         return None
 
-    def getHrdDir(self,node=None):
-        if self.gitConfigDir=="unknown":
-            self.amInGitConfigRepo()
-        if self.gitConfigDir!=None:            
-            if node!=None:
-                return "%s/nodes/%s/hrd"%(self.gitConfigDir,node)
+    def getHrdDir(self,node=None,system=False):
+        if system==False :
+            if self.gitConfigDir=="unknown":
+                self.amInGitConfigRepo()
+            if self.gitConfigDir!=None:            
+                if node!=None:
+                    return "%s/nodes/%s/hrd"%(self.gitConfigDir,node)
+                else:
+                    return "%s/self/hrd"%self.gitConfigDir
             else:
-                return "%s/self/hrd"%self.gitConfigDir
+                return self.hrdDir+"/apps"
         else:
-            return self._hrdDir
+            return self.hrdDir+"/system"
 
     def getJPActionsPath(self,node=None):
         if self.gitConfigDir=="unknown":

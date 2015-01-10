@@ -112,10 +112,6 @@ class InstallTools():
     #         self.delete(dest)
     #     if self.debug:
     #         print("copy %s %s" % (source,dest))
-    #     from IPython import embed
-    #     print "DEBUG NOW ooo"
-    #     embed()
-        
     #     shutil.copytree(source,dest)
 
     def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"],rsync=True):
@@ -1338,8 +1334,6 @@ class InstallTools():
         self.symlinkFilesInDir(src, dest)
 
         print ("copycore")
-        self.copyTree("/opt/code/github/jumpscale/jumpscale_core7/jsbox/cfg/hrd/","%s/hrd/"%base)
-
         for item in ["InstallTools","ExtraTools"]:
             src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
             dest="%s/lib/%s.py"%(base,item)
@@ -1379,11 +1373,6 @@ class InstallTools():
         print("Get jpackages metadata.")
         self.pullGitRepo("https://github.com/Jumpscale/jp_jumpscale7",depth=1)
 
-        p="/opt/jumpscale7/hrd/system/_whoami_template.hrd"
-        p2="/opt/jumpscale7/hrd/system/whoami.hrd"
-        if not j.system.fs.exists(path=p2):
-            j.do.copyFile(p,p2)
-
         print ("install was successfull")
         if pythonversion==2:
             print ("to use do 'source %s/env.sh;ipython'"%base)
@@ -1393,6 +1382,8 @@ class InstallTools():
 
     def _writeenv(self,basedir,insystem=False):
 
+        j.system.fs.createDir("%s/hrd/system/"%basedir)
+        j.system.fs.createDir("%s/hrd/apps/"%basedir)
 
         C="""
 paths.base=$base
@@ -1403,7 +1394,7 @@ paths.lib=$(paths.base)/lib
 
 paths.python.lib.js=$(paths.lib)/JumpScale
 paths.python.lib.ext=$(paths.base)/libext
-paths.apps=$(paths.base)/apps
+paths.app=$(paths.base)/apps
 paths.var=$(paths.base)/var
 paths.log=$(paths.var)/log
 paths.pid=$(paths.var)/pid
@@ -1413,6 +1404,24 @@ paths.hrd=$(paths.base)/hrd
 """
         C=C.replace("$base",basedir.rstrip("/"))
         self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
+
+        C="""
+email                   = @ASK
+fullname                = @ASK
+git.login               = @ASK
+git.passwd              = @ASK
+"""
+        hpath="%s/hrd/system/whoami.hrd"%basedir
+        if not j.system.fs.exists(path=hpath):
+            self.writeFile(hpath,C)
+
+        C="""
+#here domain=jumpscale, change name for more domains
+metadata.jumpscale.url='https://github.com/Jumpscale/jp_jumpscale7'
+"""
+        hpath="%s/hrd/system/jpackage.hrd"%basedir
+        if not j.system.fs.exists(path=hpath):
+            self.writeFile(hpath,C)
 
         C="""
 export PATH=$base/bin:$PATH
