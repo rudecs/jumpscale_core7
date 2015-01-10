@@ -1382,8 +1382,8 @@ class InstallTools():
 
     def _writeenv(self,basedir,insystem=False):
 
-        j.system.fs.createDir("%s/hrd/system/"%basedir)
-        j.system.fs.createDir("%s/hrd/apps/"%basedir)
+        self.createDir("%s/hrd/system/"%basedir)
+        self.createDir("%s/hrd/apps/"%basedir)
 
         C="""
 paths.base=$base
