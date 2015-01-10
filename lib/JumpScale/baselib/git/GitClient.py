@@ -24,6 +24,7 @@ class GitClient(object):
         # Load git when we absolutly need it cause it does not work in gevent mode
         import git
         if not self._repo:
+            j.system.process.execute("git config --global http.sslVerify false")
             if not j.system.fs.exists(self.baseDir):
                 self._clone()
             else:
