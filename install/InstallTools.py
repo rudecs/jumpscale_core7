@@ -1460,10 +1460,6 @@ $base/bin/python "$@"
             # C2=C2.replace("$base",basedir)
             dest="/usr/local/bin/jspython"
             self.delete(dest)#to remove link
-            from IPython import embed
-            print "DEBUG NOW ooipop"
-            embed()
-            p
             
             self.writeFile(dest,C2)
             self.chmod(dest, 0o770)
