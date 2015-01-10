@@ -1408,10 +1408,10 @@ paths.hrd=$(paths.base)/hrd
         self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
         C="""
-email                   = @ASK
-fullname                = @ASK
-git.login               = @ASK
-git.passwd              = @ASK
+email                   = @ASK descr:'email as used for github'
+fullname                = @ASK descr:'full name as used for github'
+git.login               = @ASK descr:'login for github'
+git.passwd              = @ASK descr:'passwd for github'
 """
         hpath="%s/hrd/system/whoami.hrd"%basedir
         if not self.exists(path=hpath):
