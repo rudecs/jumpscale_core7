@@ -1412,7 +1412,7 @@ git.login               = @ASK
 git.passwd              = @ASK
 """
         hpath="%s/hrd/system/whoami.hrd"%basedir
-        if not j.system.fs.exists(path=hpath):
+        if not self.exists(path=hpath):
             self.writeFile(hpath,C)
 
         C="""
@@ -1420,7 +1420,7 @@ git.passwd              = @ASK
 metadata.jumpscale.url='https://github.com/Jumpscale/jp_jumpscale7'
 """
         hpath="%s/hrd/system/jpackage.hrd"%basedir
-        if not j.system.fs.exists(path=hpath):
+        if not self.exists(path=hpath):
             self.writeFile(hpath,C)
 
         C="""
@@ -1483,7 +1483,7 @@ set -ex
 
     def loadScript(self,path):
         print(("load jumpscript: %s"%path))
-        source = j.system.fs.fileGetContents(path)
+        source = self.readFile(path)
         out,tags=self._preprocess(source)        
         md5sum=j.tools.hash.md5_string(out)
         modulename = 'JumpScale.jumpscript_%s' % md5sum
