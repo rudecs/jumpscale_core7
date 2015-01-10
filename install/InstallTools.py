@@ -1326,12 +1326,28 @@ class InstallTools():
         self.symlink(src, dest)
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
         desttest="/usr/local/bin/js"
+
+        from IPython import embed
+        print "DEBUG NOW 1111"
+        embed()
+        
+
         if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
             self.symlinkFilesInDir(src, dest)
+
+        from IPython import embed
+        print "DEBUG NOW 222"
+        embed()
+
         
         dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
+
+        from IPython import embed
+        print "DEBUG NOW 333"
+        embed()
+
 
         print ("copycore")
         for item in ["InstallTools","ExtraTools"]:
@@ -1457,7 +1473,12 @@ $base/bin/python "$@"
 # """            
             # C2=C2.replace("$base",basedir)
             dest="/usr/local/bin/jspython"
-            self.delete(dest)
+            self.delete(dest)#to remove link
+            from IPython import embed
+            print "DEBUG NOW ooipop"
+            embed()
+            p
+            
             self.writeFile(dest,C2)
             self.chmod(dest, 0o770)
 
