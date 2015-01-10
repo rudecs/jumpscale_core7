@@ -1174,7 +1174,7 @@ class InstallTools():
 
         if reset:
             if url=="":
-                j.events.inputerror_critical("cannot reset a repo when url not specified")
+                raise RuntimeError("cannot reset a repo when url not specified")
             self.delete(dest)
 
         if dest=="" and branch==None:
@@ -1201,7 +1201,7 @@ class InstallTools():
                 self.execute(cmd)
         else:
             print(("git clone %s -> %s"%(url,dest)))
-            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(j.system.fs.getParent(dest),branch,url,dest)
+            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(self.getParent(dest),branch,url,dest)
             print cmd
             if depth!=None:
                 cmd+=" --depth %s"%depth        
