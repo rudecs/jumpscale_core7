@@ -1380,7 +1380,7 @@ class InstallTools():
             print ("to use do 'source %s/env.sh;ipython3'"%base)
 
 
-    def _writeenv(self,basedir,insystem=False):
+    def _writeenv(self,basedir,insystem=True):
 
         self.createDir("%s/hrd/system/"%basedir)
         self.createDir("%s/hrd/apps/"%basedir)
@@ -1435,7 +1435,7 @@ export LD_LIBRARY_PATH=$base/bin
 
         C2="""
 #!/bin/bash
-set -x
+# set -x
 $ENV
 echo sandbox:$base
 # echo $base/bin/python "$@"
@@ -1449,17 +1449,20 @@ $base/bin/python "$@"
         self.chmod(dest, 0o770)
 
         if insystem:
-            C2="""
-#!/bin/bash
-set -ex
-#export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu:$PYTHONPATH
-/usr/bin/python "$@"
-"""            
-            C2=C2.replace("$base",basedir)
+#             C2="""
+# #!/bin/bash
+# set -ex
+# #export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu:$PYTHONPATH
+# /usr/bin/python "$@"
+# """            
+            # C2=C2.replace("$base",basedir)
             dest="/usr/local/bin/jspython"
             self.delete(dest)
             self.writeFile(dest,C2)
             self.chmod(dest, 0o770)
+
+            dest="/usr/bin/jspython"
+            self.delete(dest)
 
         #change site.py file        
         def changesite(path):

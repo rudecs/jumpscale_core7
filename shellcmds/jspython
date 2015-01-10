@@ -1,17 +1,13 @@
+
 #!/bin/bash
-# set -ex
-if [ -z "$JSBASE" ]; then
-    export JSBASE=/opt/jumpscale7
-    export PYTHONPATH=/usr/local/lib/python3.4/dist-packages:$JSBASE/lib:$JSBASE/lib/python.zip:$JSBASE/libjs
-    python3 "$@"
-else
-    export PYTHONPATH=$JSBASE/lib:$JSBASE/python.zip:$JSBASE/libjs
-    echo sandbox:$JSBASE
-    # echo $JSBASE/bin/python3 "$@"
-    $JSBASE/bin/python3 "$@"
-fi
+set -x
 
+export PATH=/opt/jumpscale7/bin:$PATH
+export JSBASE=/opt/jumpscale7
+export PYTHONPATH=/opt/jumpscale7/lib:/opt/jumpscale7/lib/lib-dynload/:/opt/jumpscale7/bin:/opt/jumpscale7/lib/python.zip:/opt/jumpscale7/lib/plat-x86_64-linux-gnu
+#export PYTHONHOME=/opt/jumpscale7
+export LD_LIBRARY_PATH=/opt/jumpscale7/bin    
 
-
-
-
+echo sandbox:/opt/jumpscale7
+# echo /opt/jumpscale7/bin/python "$@"
+/opt/jumpscale7/bin/python "$@"
