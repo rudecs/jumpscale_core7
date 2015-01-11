@@ -64,6 +64,8 @@ if opts.action == 'list_snapshots':
         raise RuntimeError("specify machine name")
     for snapshot in kvm.listSnapshots(opts.name):
         print(snapshot)
+    else:
+        print('vmachine %s does not have snapshots' % opts.name)
 
 ##########info
 if opts.action == 'info':
