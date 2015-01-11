@@ -17,7 +17,7 @@ parser.add_argument('-d', '--description', help='vmachine description')
 parser.add_argument('-p', '--vcpu', help='cpu count', default=1)
 parser.add_argument("-c", '--cmd', help='cmd to execute')
 parser.add_argument("-a", '--pubip', help='set pub ip addr of machine (192.168.1.207/24)', default='')
-parser.add_argument("-g", '--gw', help='set ip gateway of machine (192.168.1.1)', efault='')
+parser.add_argument("-g", '--gw', help='set ip gateway of machine (192.168.1.1)', default='')
 parser.add_argument("-i", '--pubiface', help='public interface', default='eth0')
 
 
