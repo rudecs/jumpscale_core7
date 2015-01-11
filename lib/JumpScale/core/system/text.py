@@ -398,7 +398,7 @@ class Text:
             if obj.strip()=="":
                 return ""
             if obj.find("\n")!=-1 and multiline:
-                obj="\n%s"%obj.prefix("    ",obj.strip())
+                obj="\n%s"%Text.prefix("    ",obj.strip())
             if obj.find(":")!=-1 or obj.find(" ")!=-1 or obj.find("/")!=-1 or obj.find(",")!=-1:
                 obj="%s"%obj.strip("'")
             return obj
