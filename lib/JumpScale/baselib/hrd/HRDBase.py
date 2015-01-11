@@ -289,7 +289,7 @@ class HRDBase():
         return content          
 
     def __repr__(self):
-        
+
         parts=[]
         keys=list(self.items.keys())
         keys.sort()
@@ -321,7 +321,7 @@ class HRDBase():
                 
 
             if isinstance( hrditem.data,str) and hrditem.data.find("@ASK")!=-1:
-                val=hrditem.data
+                val=hrditem.value
                 out.append("%-30s = %s" % (key, val))
             elif hrditem.ttype =="string":                
                 val=hrditem.getAsString()

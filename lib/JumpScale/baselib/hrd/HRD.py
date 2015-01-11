@@ -236,7 +236,6 @@ class HRD(HRDBase):
         else:
             out=str(self)
 
-        
         j.system.fs.writeFile(self.path,out)
 
     def getHrd(self,key):

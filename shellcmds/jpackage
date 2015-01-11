@@ -99,7 +99,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
             tofind=name.replace("*","")
             packages=[item for item in packages if item.name.find(tofind)!=-1]
 
-        if len(packages) > 1 and name.find("*")==-1:
+        if len(packages) > 1 and name.find("*")!=-1:
             pass #no need to ask interactive
         elif len(packages) > 1 and list==False:
             if not j.application.interactive:
@@ -107,6 +107,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
                 j.application.stop(1)
             else:
                 packages = j.console.askChoiceMultiple(packages, "Multiple packages found. Select:")
+
 
     if len(packages) == 0:
         print(("Could not find package with name '%s' in domain '%s' " % (args.name, args.domain)))
