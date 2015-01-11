@@ -123,7 +123,7 @@ class JPackageInstance():
         if j.packages.type=="c":
             hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.instance)
         else:            
-            hrdpath = "%s/apps/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
+            hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
         return hrdpath
 
     @deps
