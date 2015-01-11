@@ -1156,6 +1156,10 @@ class InstallTools():
             if not url2.find(".git")==(len(url2)-4):
                 #no .git at end
                 url2+=".git"
+            
+            if not url.find(".git")==(len(url)-4):
+                #no .git at end
+                url+=".git"
 
             if login!=None and login!="guest":            
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
@@ -1195,8 +1199,8 @@ class InstallTools():
                     cmd="cd %s;git -c http.sslVerify=false pull"
                 self.execute(cmd)
         else:
-            print(("git clone %s -> %s"%(url2,dest)))
-            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(self.getParent(dest),branch,url2,dest)
+            print(("git clone %s -> %s"%(url,dest)))
+            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(self.getParent(dest),branch,url,dest)
             print cmd
             if depth!=None:
                 cmd+=" --depth %s"%depth        
