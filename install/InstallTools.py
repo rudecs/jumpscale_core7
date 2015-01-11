@@ -905,12 +905,13 @@ class InstallTools():
                         err+=line
             except Queue.Empty:
                 pass
-            if time.time()>start+timeout:
-                print "TIMEOUT"
-                rc=999
-                p.kill()
-                
-                break
+            if timeout:
+                if time.time()>start+timeout:
+                    print "TIMEOUT"
+                    rc=999
+                    p.kill()
+
+                    break
         if rc<>999:
             (output2,error2) = p.communicate()
             out+=output2
@@ -1136,7 +1137,7 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=0,ignorelocalchanges=False,reset=False,branch='master',revision=None):
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch='master',revision=None):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
@@ -1205,8 +1206,6 @@ class InstallTools():
                  extra = "--depth=%s" % depth
             cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             print cmd
-            if depth!=None:
-                cmd+=" --depth %s"%depth        
             self.execute(cmd)
 
         if revision!=None:
@@ -1304,7 +1303,7 @@ class InstallTools():
             gitbase="base_python3"
         
         print ("pull binaries")
-        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)        
+        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1,timeout=0)        
 
         print ("copy binaries")
         # self.createDir(base)        
@@ -1312,7 +1311,7 @@ class InstallTools():
             self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
         print ("pull core")
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)    
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1,timeout=0)    
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         if pythonversion==2:
