@@ -1195,8 +1195,8 @@ class InstallTools():
                     cmd="cd %s;git -c http.sslVerify=false pull"
                 self.execute(cmd)
         else:
-            print(("git clone %s -> %s"%(url,dest)))
-            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(self.getParent(dest),branch,url,dest)
+            print(("git clone %s -> %s"%(url2,dest)))
+            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(self.getParent(dest),branch,url2,dest)
             print cmd
             if depth!=None:
                 cmd+=" --depth %s"%depth        
