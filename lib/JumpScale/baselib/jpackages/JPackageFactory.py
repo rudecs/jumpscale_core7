@@ -23,6 +23,10 @@ class JPackageFactory():
             self._type="c"
         return self._type
 
+    @type.setter
+    def type(self, value):
+        self._type=value
+
     def _doinit(self):
         if self._init==False:
             j.do.debug=False
