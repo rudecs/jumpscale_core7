@@ -1206,7 +1206,7 @@ class InstallTools():
                  extra = "--depth=%s" % depth
             cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             print cmd
-            self.execute(cmd)
+            self.execute(cmd,timeout=0)
 
         if revision!=None:
             cmd="cd %s;git checkout %s"%(dest,revision)
@@ -1303,7 +1303,7 @@ class InstallTools():
             gitbase="base_python3"
         
         print ("pull binaries")
-        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1,timeout=0)        
+        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)        
 
         print ("copy binaries")
         # self.createDir(base)        
@@ -1311,7 +1311,7 @@ class InstallTools():
             self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
         print ("pull core")
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1,timeout=0)    
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)    
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         if pythonversion==2:
