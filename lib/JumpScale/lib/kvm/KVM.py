@@ -64,7 +64,6 @@ class KVM(object):
         self.LibvirtUtil = LibvirtUtil()
         self.LibvirtUtil.basepath = self.vmpath
 
-
     def _getRootPath(self, name):
         return j.system.fs.joinPaths(self.vmpath, name)
 
