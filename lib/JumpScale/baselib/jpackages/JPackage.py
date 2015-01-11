@@ -99,6 +99,8 @@ class JPackageInstance():
     def __init__(self,jp,instance):
         self.instance=instance
         self.jp=jp
+        self.domain=self.jp.domain
+        self.name=self.jp.name
         self.hrd=None
         self.metapath=""
         self.hrdpath=""

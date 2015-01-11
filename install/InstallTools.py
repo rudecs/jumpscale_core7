@@ -1152,11 +1152,10 @@ class InstallTools():
             else:
                 raise RuntimeError("Url needs to start with 'http(s)://'")
 
-            url=url.rstrip("/")
-            if not url.find(".git")==(len(url)-4):
+            url2=url2.rstrip("/")
+            if not url2.find(".git")==(len(url2)-4):
                 #no .git at end
-                url+=".git"
-
+                url2+=".git"
 
             if login!=None and login!="guest":            
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
@@ -1189,7 +1188,7 @@ class InstallTools():
                     self.execute("cd %s;git reset --hard origin/%s"%(dest,branch))
             else:
                 #pull
-                print(("git pull %s -> %s"%(url,dest)))
+                print(("git pull %s -> %s"%(url2,dest)))
                 if branch!=None:
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
                 else:

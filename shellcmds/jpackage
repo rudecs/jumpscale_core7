@@ -123,11 +123,11 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
         #find all instances
         pass
         #@todo
-
+    
     #@todo fix
-    # if installed:
-    #     packages = [jp for jp in packages if j.system.fs.find('/opt/jumpscale7/hrd/apps/', 'jpackage.jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
-    #     packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
+    if installed:
+        packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jpackage.jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
+        # packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
 
     return packages
 
@@ -315,7 +315,7 @@ elif args.action == 'list':
             print form % {'name': package.name, 'domain': package.domain, 'version': version, \
             'debug': debug, 'buildnr': buildNr,'debugInJpackage':debugINJP}
 
-    jps=getJPackage(args,list=True)
+    jps=getJPackage(args,list=True,toinstall=args.installed)
     printJPackages(jps)
 
 j.application.stop()
