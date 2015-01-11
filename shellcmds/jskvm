@@ -3,8 +3,6 @@ from JumpScale import j
 from JumpScale.baselib import cmdutils
 import JumpScale.lib.kvm
 
-import sys
-
 j.application.start("jskvm")
 
 parser = cmdutils.ArgumentParser()
@@ -71,7 +69,7 @@ if opts.action == 'list_images':
 
 if opts.action == 'destroy_all':
     if j.console.askYesNo('Are you sure you want to destroy all vmachines?'):
-        kvm.destroyall()
+        kvm.destroyAll()
     else:
         print 'Rolled back'
 

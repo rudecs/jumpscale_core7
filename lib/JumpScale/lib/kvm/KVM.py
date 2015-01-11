@@ -290,7 +290,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         machine_hrd = self.getConfig(name)
         if machine_hrd:
             return machine_hrd.get('shell', '')
-        
+
     def destroyAll(self):
         print 'Destroying all created vmachines...'
         running, stopped = self.list()
