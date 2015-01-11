@@ -19,6 +19,7 @@ parser.add_argument("-c", '--cmd', help='cmd to execute')
 parser.add_argument("-a", '--pubip', help='set pub ip addr of machine (192.168.1.207/24)', default='')
 parser.add_argument("-g", '--gw', help='set ip gateway of machine (192.168.1.1)', default='')
 parser.add_argument("-i", '--pubiface', help='public interface', default='eth0')
+parser.add_argument("-t", '--snapshotname', help='snapshot name')
 
 
 opts = parser.parse_args()
@@ -76,6 +77,22 @@ if opts.action == 'info':
         print('Name: %s\nBase image: %s\nID: %s\nIP address: %s\nMemory: %s MB\nDisk size: %s GB\n' % (config.get('name'), 
               config.get('image'), config.get('id'), config.get('bootstrap.ip'), 
               config.get('memory'), config.get('disk_size')))
+
+##########snapshot
+if opts.action == 'snapshot':
+    if not opts.name:
+        raise RuntimeError("specify machine name")
+    if not opts.snapshotname:
+        raise RuntimeError("specify snapshot name")
+    kvm.snapshot(opts.name, opts.snapshotname)
+
+##########delete_snapshot
+if opts.action == 'delete_snapshot':
+    if not opts.name:
+        raise RuntimeError("specify machine name")
+    if not opts.snapshotname:
+        raise RuntimeError("specify snapshot name")
+    kvm.deleteSnapshot(opts.name, opts.snapshotname)
 
 # if opts.action =='rdp':
 #     if opts.name==None:
