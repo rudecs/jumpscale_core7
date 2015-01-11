@@ -20,6 +20,7 @@ parser.add_argument('-p', '--vcpu', help='cpu count', default=1)
 parser.add_argument("-c",'--cmd', help='cmd to execute')
 parser.add_argument("-a",'--pubip', help='set pub ip addr of machine (192.168.1.207/24)',default='')
 parser.add_argument("-g",'--gw', help='set ip gateway of machine (192.168.1.1)',default='')
+parser.add_argument("-i",'--pubiface', help='public interface', default='eth0')
 
 
 opts = parser.parse_args()
@@ -45,6 +46,19 @@ if opts.action == 'list':
     print("## stopped:")
     for item in stopped:
         print("  machine: %-25s %s" % (item['name'], kvm.getIp(item['name'])))
+
+##########init_network
+if opts.action == 'init_network':
+    if not opts.pubiface:
+        raise RuntimeError('public iface must be specified')
+    kvm.initPhysicalBridges(opts.pubiface)
+    kvm.initLibvirtNetwork()
+
+##########list_images
+if opts.action == 'list_images':
+    print("## images:")
+    for image_name, image_hrd in kvm.images.iteritems():
+        print("  image: %-25s %s" % (image_name, image_hrd.get('ostype'))
 
 # if opts.action =='rdp':
 #     if opts.name==None:
