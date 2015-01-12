@@ -625,10 +625,15 @@ class SystemNet:
             #this means the default found interface is already brpub, so can leave here
             return
 
-        i=pynetlinux.ifconfig.findif(interface)
+        i=pynetlinux.ifconfig.Interface(interface)
 
-        if i==None:
-            raise RuntimeError("Did not find interface: %s"%interface)
+        try:
+            i.mac
+        except IOError, e:
+            if e.errno == 19:
+                raise RuntimeError("Did not find interface: %s"%interface)
+            else:
+                raise
 
         if ipaddr==None:
             raise RuntimeError("Did not find ipaddr: %s"%ipaddr)
