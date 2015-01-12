@@ -237,18 +237,8 @@ class Daemon(object):
 
         return returnCodes.OK, returnformat, result
 
-    def processRPCUnSerialized(self, cmd, informat, returnformat, data, sessionid, category=""):
-        """
-        @return (resultcode,returnformat,result)
-                item 0=cmd, item 1=returnformat (str), item 2=args (dict)
-        resultcode
-            0=ok
-            1= not authenticated
-            2= method not found
-            2+ any other error
-        """
-        # if isinstance(sessionid, bytes):
-        #     sessionid = sessionid.decode('utf-8', 'ignore')
+
+    def getSession(self, cmd, sessionid):
         if sessionid in self.sessions:
             session = self.sessions[sessionid]
             encrkey = session.encrkey
@@ -262,6 +252,21 @@ class Daemon(object):
                 error = "Authentication  or Session error, session not known with id:%s" % sessionid
                 eco = j.errorconditionhandler.getErrorConditionObject(msg=error)
                 return returnCodes.AUTHERROR, "j", self.errorconditionserializer.dumps(eco.__dict__)
+        return session
+
+    def processRPCUnSerialized(self, cmd, informat, returnformat, data, sessionid, category=""):
+        """
+        @return (resultcode,returnformat,result)
+                item 0=cmd, item 1=returnformat (str), item 2=args (dict)
+        resultcode
+            0=ok
+            1= not authenticated
+            2= method not found
+            2+ any other error
+        """
+        sessionid = self.getSession(cmd, sessionid)
+        if isinstance(sessionid, tuple):
+            return sessionid
         try:
             if informat != "":
                 # if isinstance(informat, bytes):
