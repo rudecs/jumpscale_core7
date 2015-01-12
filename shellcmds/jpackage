@@ -126,7 +126,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
     
     #@todo fix
     if installed:
-        packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jpackage.jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
+        packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
         # packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
 
     return packages
