@@ -20,7 +20,7 @@ parser.add_argument("-a", '--pubip', help='set pub ip addr of machine (192.168.1
 parser.add_argument("-g", '--gw', help='set ip gateway of machine (192.168.1.1)', default='')
 parser.add_argument("-i", '--pubiface', help='public interface', default='eth0')
 parser.add_argument("-t", '--snapshotname', help='snapshot name')
-parser.add_argument("-u", '--sudo', help='execute with sudo', default=False, action='store_false')
+parser.add_argument("-u", '--sudo', help='execute with sudo', default=False, action='store_true')
 
 
 opts = parser.parse_args()
