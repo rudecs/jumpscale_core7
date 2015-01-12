@@ -758,7 +758,7 @@ class InstallTools():
             return True
         return False
 
-    def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=60,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):        
+    def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=120,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):        
         rc_=""
         out_=""
         err_=""
@@ -1185,7 +1185,7 @@ class InstallTools():
                     cmd+=" --depth %s"%depth    
                 self.execute(cmd)
                 if branch!=None:
-                    self.execute("cd %s;git reset --hard origin/%s"%(dest,branch))
+                    self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
             else:
                 #pull
                 print(("git pull %s -> %s"%(url2,dest)))
@@ -1193,19 +1193,19 @@ class InstallTools():
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
                 else:
                     cmd="cd %s;git -c http.sslVerify=false pull"
-                self.execute(cmd)
+                self.execute(cmd,timeout=600)
         else:
             print(("git clone %s -> %s"%(url,dest)))
             cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(self.getParent(dest),branch,url,dest)
             print cmd
             if depth!=None:
                 cmd+=" --depth %s"%depth        
-            self.execute(cmd)
+            self.execute(cmd,timeout=600)
 
         if revision!=None:
             cmd="cd %s;git checkout %s"%(dest,revision)
             print cmd
-            self.execute(cmd)
+            self.execute(cmd,timeout=600)
             
         return dest
 
