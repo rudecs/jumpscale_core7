@@ -53,6 +53,7 @@ if opts.action == 'init_network':
         raise RuntimeError('public iface must be specified')
     kvm.initPhysicalBridges(opts.pubiface)
     kvm.initLibvirtNetwork()
+    kvm.initNattingRules()
 
 ##########list_images
 if opts.action == 'list_images':
