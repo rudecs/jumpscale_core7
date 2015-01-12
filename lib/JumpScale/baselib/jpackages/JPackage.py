@@ -64,7 +64,7 @@ def deps(F): # F is func or method without instance
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
-                if dep.jp.name not in j.packages._justinstalled:                    
+                if dep.jp.name not in j.packages._justinstalled:
                     if 'args' in dep.__dict__:
                         result=processresult(result,F(dep,args=dep.args))
                     else:
@@ -127,6 +127,12 @@ class JPackageInstance():
         else:            
             hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
         return hrdpath
+
+    def isInstalled(self):
+        hrdpath = self.getHRDPath()
+        if j.system.fs.exists(hrdpath):
+            return True
+        return False
 
     @deps
     def getTCPPorts(self,deps=True, *args, **kwargs):
@@ -386,8 +392,10 @@ class JPackageInstance():
         self.actions.prepare()  
 
     @deps
-    @remote    
+    @remote
     def install(self,args={},start=True,deps=True):
+        if self.name == 'portal_lib':
+            import ipdb; ipdb.set_trace()
         print "INSTALL:%s"%self
         
         self._load(args=args)
