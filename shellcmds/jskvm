@@ -20,6 +20,7 @@ parser.add_argument("-a", '--pubip', help='set pub ip addr of machine (192.168.1
 parser.add_argument("-g", '--gw', help='set ip gateway of machine (192.168.1.1)', default='')
 parser.add_argument("-i", '--pubiface', help='public interface', default='eth0')
 parser.add_argument("-t", '--snapshotname', help='snapshot name')
+parser.add_argument("-u", '--sudo', help='execute with sudo', default=False)
 
 
 opts = parser.parse_args()
@@ -77,6 +78,14 @@ if opts.action == 'info':
         print('Name: %s\nBase image: %s\nID: %s\nIP address: %s\nMemory: %s MB\nDisk size: %s GB\n' % (config.get('name'), 
               config.get('image'), config.get('id'), config.get('bootstrap.ip'), 
               config.get('memory'), config.get('disk_size')))
+
+##########execute
+if opts.action == 'execute':
+    if not opts.name:
+        raise RuntimeError("specify machine name")
+    if not opts.cmd:
+        raise RuntimeError("specify command to execute")
+    kvm.execute(opts.name, opts.cmd, opts.sudo)
 
 ##########snapshot
 if opts.action == 'snapshot':
