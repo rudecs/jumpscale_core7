@@ -798,7 +798,7 @@ class InstallTools():
 
         s.quit()        
 
-    def execute(self, command , outputStdout=True, outputStderr=True, useShell=True, log=True, cwd=None, timeout=60, errors=[], ok=[], captureout=True, dieOnNonZeroExitCode=True):
+    def execute(self, command , outputStdout=True, outputStderr=True, useShell=True, log=True, cwd=None, timeout=0, errors=[], ok=[], captureout=True, dieOnNonZeroExitCode=True):
         """
         @param errors is array of statements if found then exit as error
         return rc,out,err
@@ -905,12 +905,13 @@ class InstallTools():
                         err+=line
             except Queue.Empty:
                 pass
-            if time.time()>start+timeout:
-                print "TIMEOUT"
-                rc=999
-                p.kill()
-                
-                break
+            if timeout>0:
+                if time.time()>start+timeout:
+                    print "TIMEOUT"
+                    rc=999
+                    p.kill()
+
+                    break
         if rc<>999:
             (output2,error2) = p.communicate()
             out+=output2
@@ -1136,7 +1137,7 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=0,ignorelocalchanges=False,reset=False,branch='master',revision=None):
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch='master',revision=None):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
@@ -1156,6 +1157,10 @@ class InstallTools():
             if not url2.find(".git")==(len(url2)-4):
                 #no .git at end
                 url2+=".git"
+            
+            if not url.find(".git")==(len(url)-4):
+                #no .git at end
+                url+=".git"
 
             if login!=None and login!="guest":            
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
@@ -1196,11 +1201,18 @@ class InstallTools():
                 self.execute(cmd,timeout=600)
         else:
             print(("git clone %s -> %s"%(url,dest)))
-            cmd="cd %s;git -c http.sslVerify=false clone --single-branch -b %s %s %s"%(self.getParent(dest),branch,url,dest)
+            extra = ""
+            if depth != 0:
+                 extra = "--depth=%s" % depth
+            cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             print cmd
+<<<<<<< HEAD
             if depth!=None:
                 cmd+=" --depth %s"%depth        
             self.execute(cmd,timeout=600)
+=======
+            self.execute(cmd,timeout=0)
+>>>>>>> 16a4e3f3e1b75f34ead4c9f2ea05aee7ef4bc86a
 
         if revision!=None:
             cmd="cd %s;git checkout %s"%(dest,revision)

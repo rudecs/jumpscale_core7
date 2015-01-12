@@ -64,7 +64,6 @@ class KVM(object):
         self.LibvirtUtil = LibvirtUtil()
         self.LibvirtUtil.basepath = self.vmpath
 
-
     def _getRootPath(self, name):
         return j.system.fs.joinPaths(self.vmpath, name)
 
@@ -250,13 +249,16 @@ ostype=%s
 arch=%s
 version=%s
 description=%s
+memory=%s
+disk_size=%s
+cpu_count=%s
 shell=%s
 fabric.module=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
-        imagehrd.get('shell', ''), imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+        memory, size, cpu_count, imagehrd.get('shell', ''), imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
         if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
@@ -291,7 +293,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         machine_hrd = self.getConfig(name)
         if machine_hrd:
             return machine_hrd.get('shell', '')
-        
+
     def destroyAll(self):
         print 'Destroying all created vmachines...'
         running, stopped = self.list()

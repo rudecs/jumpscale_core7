@@ -145,14 +145,16 @@ class ActionsBase():
         a uptime check will be done afterwards (local)
         return True if stop was ok, if not this step will have failed & halt will be executed.
         """
+        
+        
         def _stop(process):
             ports = process.get('ports', [])
             for port in ports:
                 j.system.process.killProcessByPort(port)
 
-        # if self.jp_instance.jp.name == 'redis':
-        #     print("will not shut down application redis (is system app)")
-        #     return
+        if self.jp_instance.jp.name == 'redis':
+            j.logger.redislogging = None
+            j.logger.redis = None
 
         for process in self.jp_instance.getProcessDicts():
             _stop(process)

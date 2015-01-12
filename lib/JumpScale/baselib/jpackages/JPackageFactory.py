@@ -10,8 +10,22 @@ class JPackageFactory():
         self.domains={}
         self.hrd=None
         self._justinstalled=[]
+        self._type = None
 
         self.indocker=False
+
+    @property
+    def type(self):
+        self._type="n" #n from normal
+        #check if we are in a git directory, if so we will use $thatdir/jp as base for the metadata
+        configpath=j.dirs.amInGitConfigRepo()
+        if configpath!=None:
+            self._type="c"
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        self._type=value
 
     def _doinit(self):
         if self._init==False:
@@ -22,13 +36,7 @@ class JPackageFactory():
 
             login=j.application.config.get("whoami.git.login").strip()
             passwd=j.application.config.get("whoami.git.passwd").strip()
-            self.type="n" #n from normal
-            #check if we are in a git directory, if so we will use $thatdir/jp as base for the metadata
-            configpath=j.dirs.amInGitConfigRepo()
-            if configpath!=None:
-                self.type="c"
-            
-            if self.type=="n":
+            if self.type == "n":
                 items=j.application.config.getDictFromPrefix("jpackage.metadata")
                 repos=j.do.getGitReposListLocal()            
                 for domain in items.keys():                
@@ -44,6 +52,7 @@ class JPackageFactory():
                     dest=repos[reponame]
                     self.domains[domain]=dest
             else:
+                configpath=j.dirs.amInGitConfigRepo()
                 self.domains[j.system.fs.getBaseName(configpath)]="%s/jp/"%configpath
 
             self_init=True
