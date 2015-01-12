@@ -241,13 +241,11 @@ class Daemon(object):
     def getSession(self, cmd, sessionid):
         if sessionid in self.sessions:
             session = self.sessions[sessionid]
-            encrkey = session.encrkey
         else:
             # if isinstance(cmd, bytes):
             #     cmd = cmd.decode('utf-8', 'ignore')
             if cmd in ["registerpubkey", "getpubkeyserver", "registersession"]:
                 session = None
-                encrkey = ""
             else:
                 error = "Authentication  or Session error, session not known with id:%s" % sessionid
                 eco = j.errorconditionhandler.getErrorConditionObject(msg=error)
@@ -264,9 +262,9 @@ class Daemon(object):
             2= method not found
             2+ any other error
         """
-        sessionid = self.getSession(cmd, sessionid)
-        if isinstance(sessionid, tuple):
-            return sessionid
+        session = self.getSession(cmd, sessionid)
+        if isinstance(session, tuple):
+            return session
         try:
             if informat != "":
                 # if isinstance(informat, bytes):
@@ -283,7 +281,7 @@ class Daemon(object):
         # if isinstance(returnformat, bytes):
         #     returnformat = returnformat.decode('utf-8', 'ignore')
         if returnformat != "":  # is
-            returnser = j.db.serializers.get(returnformat, key=encrkey)
+            returnser = j.db.serializers.get(returnformat, key=session.encrkey)
             error=0
             try:
                 data = self.encrypt(returnser.dumps(parts[2]), session)
