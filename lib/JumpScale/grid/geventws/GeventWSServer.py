@@ -7,41 +7,8 @@ monkey.patch_ssl()
 from JumpScale import j
 from gevent.pywsgi import WSGIServer
 import JumpScale.grid.serverbase
-from JumpScale.grid.serverbase import returnCodes
 import time
-import json
 import gevent
-
-
-def jsonrpc(func):
-    def wrapper(s, environ, start_response):
-        if not environ["REQUEST_METHOD"]=='POST':
-            return s.invalidRequest()
-
-        data = environ['wsgi.input'].read()
-        msg = dict()
-        try:
-            msg = json.loads(data)
-        except Exception, e:
-            print e
-            result = s.invalidRequest()
-
-        if msg:
-            try:
-                returncode, returnformat, data = func(s, msg['method'], **msg['params'])
-                if returncode == returnCodes.OK:
-                    result = {'result': data, 'id': msg['id'], 'error': None}
-                else:
-                    result = {'result': None, 'id': msg['id'], 'error': data}
-            except Exception, e:
-                print e
-                result = s.invalidRequest()
-
-        statuscode = '500 Internal Server Error' if result.get('error') else '200 OK'
-        result = json.dumps(result)
-        start_response(statuscode, (('Content-type', 'application/json-rpc'),))
-        return result
-    return wrapper
 
 class GeventWSServer():
 
@@ -122,21 +89,8 @@ class GeventWSServer():
             resultcode, returnformat, result = self.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
             data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
             return self.responseRaw(data3,start_response)
-        elif environ['CONTENT_TYPE'] == 'application/json' and environ["REQUEST_METHOD"] == 'POST':
-            return self.handleJSONRPC(environ, start_response)
         else:
             return self.responseNotFound(start_response)
-
-    def invalidRequest(self):
-        msg = {'error': {'code': -32600, 'message': 'Invalid Request'}, 'id': None, 'jsonrpc': '2.0'}
-        return msg
-
-    @jsonrpc
-    def handleJSONRPC(self, method, **params):
-        category, cmd = method.split('.', 1)
-        sessionid = params.pop('sessionid')
-        session = self.deamon.getSession(sessionid)
-        return self.daemon.procesRPC(cmd, params, 'j', session, category=category)
 
     # def router(self, environ, start_response):
     #     path = environ["PATH_INFO"].lstrip("/")
