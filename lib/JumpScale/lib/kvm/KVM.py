@@ -294,13 +294,6 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
             print 'Rolling back machine creation...'
             self.destroy(name)
             raise RuntimeError("Couldn't configure guest network")
-        print 'Configuring default route on the guest...'
-        try:
-            self.execute(name, 'ip r a default via 10.0.0.1 dev eth1')
-        except:
-            print 'Rolling back machine creation...'
-            self.destroy(name)
-            raise RuntimeError("Couldn't configure default route on the guest")
         print 'Machine %s created successfully' % name
         mgmt_ip = self.getIp(name)
         print 'Machine IP address is: %s' % mgmt_ip
@@ -360,7 +353,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         machine_hrd.set('bootstrap.ip', mgmtip)
         machine_hrd.set('pub.ip', public_ip)
         try:
-            capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (public_ip, '255.255.255.0', '192.168.66.254')})
+            capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', None), 'eth1': (public_ip, '255.255.255.0', '10.0.0.1')})
         except:
             if not j.system.net.waitConnectionTest(mgmtip, 22, 10):
                 raise RuntimeError('Could not change machine ip address')

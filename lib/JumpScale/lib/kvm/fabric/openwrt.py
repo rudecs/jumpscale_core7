@@ -22,7 +22,10 @@ config interface '%s'
     option ifname '%s'
     option proto 'static'
     option ipaddr '%s'
-    option netmask '%s' ''' % (iface, iface, config[0], config[1])
+    option netmask '%s'
+    ''' % (iface, iface, config[0], config[1])
+            if iface == 'eth1':
+                interfaces += "    option gateway '%s'\n" % config[2]
         run('echo "%s" > /etc/config/network' % interfaces)
         run("/etc/init.d/network restart", timeout=1)
 
