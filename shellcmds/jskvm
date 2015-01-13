@@ -43,15 +43,11 @@ if opts.action == 'list':
     print("## running:")
     for item in running:
         print("  machine: %-25s %s" % (item['name'], kvm.getIp(item['name'])))
-    else:
-        print('No running vmachines')
     print("## stopped:")
     for item in stopped:
         configpath = j.system.fs.joinPaths(kvm.vmpath, item['name'])
         if j.system.fs.exists(path=configpath):
             print("  machine: %-25s" % item['name'])
-    else:
-        print('N/A')
 
 ##########init_network
 if opts.action == 'init_network':
@@ -66,8 +62,6 @@ if opts.action == 'list_images':
     print("## images:")
     for image_name, image_hrd in kvm.images.iteritems():
         print("  image: %-25s %s" % (image_name, image_hrd.get('ostype')))
-    else:
-        print('No installed images')
 
 ##########list_snapshots
 if opts.action == 'list_snapshots':
@@ -75,8 +69,6 @@ if opts.action == 'list_snapshots':
         raise RuntimeError("specify machine name")
     for snapshot in kvm.listSnapshots(opts.name):
         print(snapshot)
-    else:
-        print('vmachine "%s" does not have snapshots' % opts.name)
 
 ##########info
 if opts.action == 'info':
