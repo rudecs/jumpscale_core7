@@ -142,7 +142,7 @@ class KVM(object):
         """
         machines = self.LibvirtUtil.list_domains()
         running = [machine for machine in machines if machine['state'] == 1]
-        stopped = [machine for machine in machines if machine['state'] == 5]
+        stopped = [machine for machine in machines if machine['state'] == 5 and j.system.fs.exists(self.vmpath, machine['name'])]
         return (running, stopped)
 
     def listSnapshots(self, name):
