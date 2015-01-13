@@ -24,7 +24,6 @@ bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
 fabric.module=
-
 shell=
 """
 
@@ -315,7 +314,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
     def _getShellFromConfig(self, name):
         machine_hrd = self.getConfig(name)
         if machine_hrd:
-            return machine_hrd.get('shell', '')
+            return machine_hrd.get('shell', '/bin/bash -l -c')
 
     def destroyAll(self):
         print 'Destroying all created vmachines...'
@@ -448,7 +447,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
 
     def execute(self, name, cmd, sudo=False):
         rapi = self._getSshConnection(name)
-        shell = self._getShellFromConfig(name) or '/bin/bash -l -c'
+        shell = self._getShellFromConfig(name)
         with rapi.fabric.api.settings(shell=shell):
             if not sudo:
                 return rapi.run(cmd, shell=shell)
