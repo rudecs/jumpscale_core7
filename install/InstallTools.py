@@ -1206,13 +1206,10 @@ class InstallTools():
                  extra = "--depth=%s" % depth
             cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             print cmd
-<<<<<<< HEAD
+
             if depth!=None:
                 cmd+=" --depth %s"%depth        
             self.execute(cmd,timeout=600)
-=======
-            self.execute(cmd,timeout=0)
->>>>>>> 16a4e3f3e1b75f34ead4c9f2ea05aee7ef4bc86a
 
         if revision!=None:
             cmd="cd %s;git checkout %s"%(dest,revision)
