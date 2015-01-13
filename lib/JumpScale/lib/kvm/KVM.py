@@ -18,13 +18,12 @@ ostype =
 arch=
 version=
 description=
-
+pub.ip=
 bootstrap.ip=
 bootstrap.login=
 bootstrap.passwd=
 bootstrap.type=ssh
 fabric.module=
-
 shell=
 """
 
@@ -172,7 +171,7 @@ class KVM(object):
         for name in self._getAllVMs():
             hrd = self.getConfig(name)
             if hrd:
-                ips[name] = hrd.get("bootstrap.ip")
+                ips[name] = hrd.get("bootstrap.ip"), hrd.get("pub.ip")
         return ips
 
     def _getAllVMs(self):
@@ -181,17 +180,26 @@ class KVM(object):
         return result
 
     def _findFreeIP(self, name):
+        return self._findFreePubIP(name)
+
+    def _findFreePubIP(self, name, pub=False):
         """        
         find first ip addr which is free
         """
         ips=self._getAllMachinesIps()
         addr=[]
         for key,ip in ips.items():
-            addr.append(int(ip.split(".")[-1].strip()))
+            if pub:
+                addr.append(int(ip[1].split(".")[-1].strip()))
+            else:
+                addr.append(int(ip[0].split(".")[-1].strip()))
         
         for i in range(2,252):
             if i not in addr:
-                return '192.168.66.%s' % i
+                if pub:
+                    return '10.0.0.%s' % i
+                else:
+                    return '192.168.66.%s' % i
 
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
@@ -261,11 +269,12 @@ disk_size=%s
 cpu_count=%s
 shell=%s
 fabric.module=%s
+pub.ip=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
 bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
-        memory, size, cpu_count, imagehrd.get('shell', ''), imagehrd.get('fabric.module'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
+        memory, size, cpu_count, imagehrd.get('shell', ''), imagehrd.get('fabric.module'), imagehrd.get('pub.ip'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
         if not j.system.net.waitConnectionTest(imagehrd.get('bootstrap.ip'), 22, 300):
@@ -278,14 +287,20 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
             print 'Rolling back machine creation...'
             self.destroy(name)
             raise RuntimeError("Couldn't push SSH key to the guest")
-        public_ip = '37.50.210.16'
         print 'Setting network configuration on the guest, this might take some time...'
         try:
-            self.setNetworkInfo(name, public_ip)
+            self.setNetworkInfo(name)
         except:
             print 'Rolling back machine creation...'
             self.destroy(name)
             raise RuntimeError("Couldn't configure guest network")
+        print 'Configuring default route on the guest...'
+        try:
+            self.execute(name, 'ip r a default via 10.0.0.1 dev eth1')
+        except:
+            print 'Rolling back machine creation...'
+            self.destroy(name)
+            raise RuntimeError("Couldn't configure default route on the guest")
         print 'Machine %s created successfully' % name
         mgmt_ip = self.getIp(name)
         print 'Machine IP address is: %s' % mgmt_ip
@@ -299,7 +314,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
     def _getShellFromConfig(self, name):
         machine_hrd = self.getConfig(name)
         if machine_hrd:
-            return machine_hrd.get('shell', '')
+            return machine_hrd.get('shell', '/bin/bash -l -c')
 
     def destroyAll(self):
         print 'Destroying all created vmachines...'
@@ -336,14 +351,16 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         except:
             pass
 
-    def setNetworkInfo(self, name, pubip):
+    def setNetworkInfo(self, name):
         mgmtip = self._findFreeIP(name)
+        public_ip = self._findFreePubIP(name, True)
         capi = self._getSshConnection(name)
         machine_hrd = self.getConfig(name)
         setupmodule = self._getFabricModule(name)
         machine_hrd.set('bootstrap.ip', mgmtip)
+        machine_hrd.set('pub.ip', public_ip)
         try:
-            capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (pubip, '255.255.255.0', '192.168.66.254')})
+            capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (public_ip, '255.255.255.0', '192.168.66.254')})
         except:
             if not j.system.net.waitConnectionTest(mgmtip, 22, 10):
                 raise RuntimeError('Could not change machine ip address')
@@ -430,7 +447,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
 
     def execute(self, name, cmd, sudo=False):
         rapi = self._getSshConnection(name)
-        shell = self._getShellFromConfig(name) or '/bin/bash -l -c'
+        shell = self._getShellFromConfig(name)
         with rapi.fabric.api.settings(shell=shell):
             if not sudo:
                 return rapi.run(cmd, shell=shell)

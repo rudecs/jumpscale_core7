@@ -27,9 +27,6 @@ class LibvirtUtil(object):
         self.templatepath = '/mnt/vmstor/kvm/images'
         self.env = Environment(loader=FileSystemLoader(j.system.fs.joinPaths(j.system.fs.getParent(__file__), 'templates')))
 
-    def __del__(self):
-        self.connection.close()
-
     def _get_domain(self, id):
         try:
             domain = self.connection.lookupByUUIDString(id)
