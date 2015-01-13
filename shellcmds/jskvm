@@ -10,7 +10,7 @@ parser = cmdutils.ArgumentParser()
 parser.add_argument("action", choices=['create', 'list', 'list_images', 'init_network', 'list_snapshots', 'info', 'destroy', 'destroy_all', 'start', 'stop', 'restart', 'snapshot', 'delete_snapshot', 'execute'], help='Command to perform')
 parser.add_argument("-n", '--name', help='machine name')
 parser.add_argument("-b", '--base', help='base to clone from')
-parser.add_argument("-r", '--replace', help='will replace the vm if exists', default=True)
+parser.add_argument("-r", '--replace', help='will replace the vm if exists', default=True, action='store_true')
 parser.add_argument('-m', '--mem', help='max mem in MB', default=512)
 parser.add_argument('-s', '--size', help='disk size in GB', default=10)
 parser.add_argument('-d', '--description', help='vmachine description')
@@ -20,6 +20,7 @@ parser.add_argument("-a", '--pubip', help='set pub ip addr of machine (192.168.1
 parser.add_argument("-g", '--gw', help='set ip gateway of machine (192.168.1.1)', default='')
 parser.add_argument("-i", '--pubiface', help='public interface', default='eth0')
 parser.add_argument("-t", '--snapshotname', help='snapshot name')
+parser.add_argument("-u", '--sudo', help='execute with sudo', default=False, action='store_true')
 
 
 opts = parser.parse_args()
@@ -52,6 +53,7 @@ if opts.action == 'init_network':
         raise RuntimeError('public iface must be specified')
     kvm.initPhysicalBridges(opts.pubiface)
     kvm.initLibvirtNetwork()
+    kvm.initNattingRules()
 
 ##########list_images
 if opts.action == 'list_images':
@@ -77,6 +79,14 @@ if opts.action == 'info':
         print('Name: %s\nBase image: %s\nID: %s\nIP address: %s\nMemory: %s MB\nDisk size: %s GB\n' % (config.get('name'), 
               config.get('image'), config.get('id'), config.get('bootstrap.ip'), 
               config.get('memory'), config.get('disk_size')))
+
+##########execute
+if opts.action == 'execute':
+    if not opts.name:
+        raise RuntimeError("specify machine name")
+    if not opts.cmd:
+        raise RuntimeError("specify command to execute")
+    kvm.execute(opts.name, opts.cmd, opts.sudo)
 
 ##########snapshot
 if opts.action == 'snapshot':

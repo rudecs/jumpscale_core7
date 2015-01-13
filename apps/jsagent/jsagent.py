@@ -130,8 +130,8 @@ class ProcessManager():
             if not jps:
                 j.packages.install(hrddata={"redis.name":"mem","redis.port":9999,"redis.disk":"0","redis.mem":40},instance="mem")
                 jps = j.packages.find('jumpscale', 'redis')
-            jp = jps[0]
-            if not jp.isInstalled(instance="mem") and not j.system.net.tcpPortConnectionTest("localhost",9999):
+            jp = jps[0].getInstance('mem')
+            if not jp.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
                 j.packages.install(hrddata={"redis.name":"mem","redis.port":9999,"redis.disk":"0","redis.mem":40},instance="mem")
             for name in ["mem"]:
                 p=Process()

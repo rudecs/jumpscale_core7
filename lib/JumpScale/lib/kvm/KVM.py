@@ -129,6 +129,13 @@ class KVM(object):
             if br.is_up()==False:
                 br.up()
 
+    def initNattingRules(self):
+        print('Initializing natting rule on the host on "brpub"...')
+        cmd = "iptables -t nat -I POSTROUTING --out-interface brpub -j MASQUERADE"
+        j.system.process.execute(cmd)
+        cmd = "iptables -I FORWARD --in-interface brpub -j ACCEPT"
+        j.system.process.execute(cmd)
+
     def list(self):
         """
         names of running & stopped machines

@@ -198,7 +198,7 @@ class ActionsBase():
         """      
         def do(process):
 
-            ports=self.jp_instance.getTCPPorts()            
+            ports=self.jp_instance.getTCPPorts() or []            
             
             if ports and isinstance(ports[0], str) and ';' in ports[0]:
                 ports = ports[0].split(';')
