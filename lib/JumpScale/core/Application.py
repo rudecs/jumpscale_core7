@@ -140,7 +140,7 @@ class Application:
 
         j.logger.log("***Application started***: %s" % self.appname, level=8, category="jumpscale.app")
 
-    def stop(self, exitcode=0):
+    def stop(self, exitcode=0, stop=True):
 
         '''Stop the application cleanly using a given exitcode
 
@@ -189,8 +189,8 @@ class Application:
         #         obj.epochstop=j.base.time.getTimeEpoch()
         #         obj.active=False
         #         clientprocess.set(obj)
-
-        sys.exit(exitcode)
+        if stop:
+            sys.exit(exitcode)
 
     def _exithandler(self):
         # Abnormal exit
@@ -200,8 +200,9 @@ class Application:
         #@todo can we get the line of code which called sys.exit here?
         
         #j.logger.log("UNCLEAN EXIT OF APPLICATION, SHOULD HAVE USED j.application.stop()", 4)
+        import sys
         if not self._calledexit:
-            self.stop(1)
+            self.stop(stop=False)
 
     def getAppInstanceHRD(self,name,instance,domain="jumpscale"):
         """
