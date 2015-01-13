@@ -211,7 +211,7 @@ class Application:
         if j.packages.type!="c":
             path='%s/%s.%s.%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
         else:
-            path='%s/jumpscale.%s.%s.hrd' % (j.dirs.getHrdDir(),name,instance)
+            path='%s/%s.%s.hrd' % (j.dirs.getHrdDir(),name,instance)
         if not j.system.fs.exists(path=path):
             j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
         return j.core.hrd.get(path)

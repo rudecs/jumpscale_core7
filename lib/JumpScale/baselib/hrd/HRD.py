@@ -37,7 +37,9 @@ class HRDItem():
 
         data=j.tools.text.pythonObjToStr(self.value)
         if not (self.ttype=="dict" or self.ttype=="list"):
-            data=data.strip()
+            # print "'%s'"%data
+            if data.find("\n   ")!=0:
+                data=data.strip()
         else:
             data=data.strip("\n")
             

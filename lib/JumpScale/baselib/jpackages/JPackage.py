@@ -3,11 +3,13 @@ import imp
 import copy
 
 import JumpScale.baselib.actions
+import JumpScale.baselib.packInCode
 
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
     def wrapper(*args2,**kwargs): # class instance in args[0] for method
-        # print "remote wrapper"
+        print "remote wrapper"
+        
         result=None
         jp=args2[0] #this is the self from before
         jp._load(**kwargs)        
@@ -16,9 +18,25 @@ def remote(F): # F is func or method without instance
         if not "node2execute" in kwargs["args"]:
             return F(*args2,**kwargs)
         else:
-            from IPython import embed
-            print "DEBUG NOW wrapper"
-            embed()        
+            codegen=j.tools.packInCode.get4python()
+
+            #put hrd on dest system
+            node=kwargs["args"]["node2execute"]
+            # hrdfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(node=node),jp.name,jp.instance)
+            hrddestfile="%s/%s.%s.%s.hrd"%(j.dirs.getHrdDir(node=node),jp.domain,jp.name,jp.instance)
+            codegen.addHRD("jphrd",jp.hrd,hrddestfile)
+
+            #put action file on dest system
+            actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node),jp.name,jp.instance)
+            actionfiledest="%s/%s__%s__%s.py"%(j.dirs.getJPActionsPath(system=True),jp.domain,jp.name,jp.instance)
+            codegen.addPyFile(actionfile,path2save=actionfiledest)
+
+            # dest="/tmp/%s.%s.%s.py"%(jp.domain,jp.name,jp.instance)
+            # codegen.save(dest)
+
+            toexec=codegen.get()
+
+            jp.execute(shell="python",cmd=toexec)
 
     return wrapper
 
@@ -152,6 +170,8 @@ class JPackageInstance():
                 node=args["node2execute"]
 
             self.hrdpath = self.getHRDPath(node=node)
+
+            j.do.createDir(j.do.getDirName(self.hrdpath))
 
             if j.packages.type=="c":
                 j.system.fs.createDir(j.dirs.getJPActionsPath(node=node))

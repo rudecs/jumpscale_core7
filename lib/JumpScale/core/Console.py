@@ -554,16 +554,10 @@ class Console:
         self.echo("%s:" % question)
         self.echo("(Enter answer over multiple lines, end by typing '%s' (without the quotes) on an empty line)" % escapeString)
         lines = []
-        if sys.version.startswith("2"):
-            user_input = eval(raw_input())
-        else:
-            user_input = eval(input())
+        user_input=raw_input()
         while user_input != escapeString:
             lines.append(user_input)
-            if sys.version.startswith("2"):
-                user_input = eval(raw_input())
-            else:
-                user_input = eval(input())
+            user_input=raw_input()
         lines.append("") # Forces end with newline
         return '\n'.join(lines)
 

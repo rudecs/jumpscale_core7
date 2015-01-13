@@ -122,7 +122,8 @@ class Text:
 
             descr, default & regex can be between '' if spaces inside
 
-            types are: str,float,int,bool,dropdown
+            types are: str,float,int,bool,dropdown,multiline
+            the multiline will open joe as editor
 
             retry means will keep on retrying x times until ask is done properly
 
@@ -211,6 +212,9 @@ class Text:
             # print "type:'%s'"%ttype
             if ttype=="str":
                 result=j.console.askString(question=descr, defaultparam=default, regex=regex, retry=retry)
+
+            elif ttype=="multiline":
+                result=j.console.askMultiline(question=descr)
 
             elif ttype=="float":
                 result=j.console.askString(question=descr, defaultparam=default, regex=None)
@@ -398,9 +402,9 @@ class Text:
             if obj.strip()=="":
                 return ""
             if obj.find("\n")!=-1 and multiline:
-                obj="\n%s"%Text.prefix("    ",obj.strip())
-            if obj.find(":")!=-1 or obj.find(" ")!=-1 or obj.find("/")!=-1 or obj.find(",")!=-1:
-                obj="%s"%obj.strip("'")
+                obj="\n%s"%Text.prefix("    ",obj.strip())                
+            elif obj.find(":")!=-1 or obj.find(" ")!=-1 or obj.find("/")!=-1 or obj.find(",")!=-1:
+                obj="'%s'"%obj.strip("'")
             return obj
         elif j.basetype.integer.check(obj) or j.basetype.float.check(obj):
             return str(obj)
