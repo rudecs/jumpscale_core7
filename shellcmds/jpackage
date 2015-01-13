@@ -123,11 +123,17 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
         #find all instances
         pass
         #@todo
-    
+        
     #@todo fix
     if installed:
-        packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
+        if j.packages.type=="c":
+            packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), '%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
+        else:
+            packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
         # packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
+
+    if packages==[]:
+        raise RuntimeError("Cannot find packages, need at least 1")
 
     return packages
 
@@ -151,6 +157,8 @@ if args.data<>None:
 
 if args.node!=None:
     hrddata["node2execute"]=args.node
+
+
   
 # def askDomains(args):
 #     if args.domain==None:

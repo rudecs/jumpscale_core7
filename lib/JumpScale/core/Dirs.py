@@ -245,10 +245,10 @@ class Dirs(object):
         else:
             return self.hrdDir+"/system"
 
-    def getJPActionsPath(self,node=None):
+    def getJPActionsPath(self,node=None,system=None):
         if self.gitConfigDir=="unknown":
             self.amInGitConfigRepo()
-        if self.gitConfigDir!=None:            
+        if self.gitConfigDir!=None and system==None:            
             if node!=None:
                 return "%s/nodes/%s/actions"%(self.gitConfigDir,node)
             else:
