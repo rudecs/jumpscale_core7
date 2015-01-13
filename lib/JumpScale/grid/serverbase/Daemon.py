@@ -100,7 +100,7 @@ class Daemon(object):
     def __init__(self, name=None):
         j.application.interactive = False # make sure errorhandler does not require input we are daemon
         self.name = name
-        self.cmds = {}
+        self._command_handlers = {}     # A cache used by command_handler()
         self.cmdsInterfaces = {}
         self.cmdsInterfacesProxy = {}
         self._now = 0
@@ -139,6 +139,23 @@ class Daemon(object):
             self.cmdsInterfacesProxy[category]=obj
         self.cmdsInterfaces[category]=obj
 
+    def command_handler(self, command_category, command):
+        """
+        Looks up the callable function responsible for handling the specified command.
+
+        Returns:
+            A callable function or None if the method could not be found.
+        """
+
+        cache_key = "%s_%s" % (command_category, command)
+
+        if cache_key not in self._command_handlers:
+            command_interface = self.cmdsInterfaces.get(command_category, None)
+            self._command_handlers[cache_key] = getattr(command_interface, command, None)
+
+        return self._command_handlers.get(cache_key, None)
+
+
     def processRPC(self, cmd, data, returnformat, session, category=""):
         """
 
@@ -154,25 +171,12 @@ class Daemon(object):
         #     category = category.decode('utf-8', 'ignore')
         # if isinstance(cmd, bytes):
         #     cmd = cmd.decode('utf-8', 'ignore')
+
         inputisdict = isinstance(data, dict)
 
-        # print "process rpc:\n%s"%data
-        cmdkey = "%s_%s" % (category, cmd)
-        # cmd2 = {}
-        if cmdkey in self.cmds:
-            ffunction = self.cmds[cmdkey]
-        else:
-            ffunction = None
-            if category not in self.cmdsInterfaces:
-                return returnCodes.METHOD_NOT_FOUND, "", None
-
-            cmdinterface= self.cmdsInterfaces[category]
-            if hasattr(cmdinterface, cmd):
-                ffunction = getattr(cmdinterface, cmd)
-            else:
-                return returnCodes.METHOD_NOT_FOUND, "", None
-
-            self.cmds[cmdkey] = ffunction
+        ffunction = self.command_handler(command_category=category, command=cmd)
+        if not ffunction:
+            return returnCodes.METHOD_NOT_FOUND, returnformat, ''
 
         try:
             if inputisdict:
@@ -221,14 +225,11 @@ class Daemon(object):
             if len(str(data))>1024:
                 data="too much data to show."
 
-            data2=data
-            try:
-                if "session" in data2:
-                    data2.pop("session")
-            except:
-                pass
-            
-            eco.errormessage = "ERROR IN RPC CALL %s: %s. (from:%s/%s)\nData:%s\n"%(cmdkey,eco.errormessage , session.gid, session.nid,data2)
+            data.pop('session', None)
+
+            eco.errormessage = \
+                "ERROR IN RPC CALL %s: %s. (Session:%s)\nData:%s\n" % (cmdkey, eco.errormessage, session, data)
+
             eco.process()
             eco.__dict__.pop("tb", None)
             eco.tb=None
