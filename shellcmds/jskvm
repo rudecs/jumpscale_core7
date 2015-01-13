@@ -45,7 +45,9 @@ if opts.action == 'list':
         print("  machine: %-25s %s" % (item['name'], kvm.getIp(item['name'])))
     print("## stopped:")
     for item in stopped:
-        print("  machine: %-25s %s" % (item['name'], kvm.getIp(item['name'])))
+        configpath = j.system.fs.joinPaths(kvm.vmpath, item['name'])
+        if j.system.fs.exists(path=configpath):
+            print("  machine: %-25s" % item['name'])
 
 ##########init_network
 if opts.action == 'init_network':
