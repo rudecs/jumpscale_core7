@@ -359,6 +359,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         machine_hrd = self.getConfig(name)
         setupmodule = self._getFabricModule(name)
         machine_hrd.set('bootstrap.ip', mgmtip)
+        machine_hrd.set('pub.ip', public_ip)
         try:
             capi.fabric.api.execute(setupmodule.setupNetwork, ifaces={'eth0': (mgmtip, '255.255.255.0', '192.168.66.254'), 'eth1': (public_ip, '255.255.255.0', '192.168.66.254')})
         except:
