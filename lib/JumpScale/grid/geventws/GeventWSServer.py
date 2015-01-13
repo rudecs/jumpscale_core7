@@ -14,33 +14,31 @@ import gevent
 
 
 def jsonrpc(func):
-    def wrapper(s, environ, start_response):
-        if not environ["REQUEST_METHOD"]=='POST':
-            return s.invalidRequest()
 
-        data = environ['wsgi.input'].read()
-        msg = dict()
+    def wrapper(s, environ, start_response):
+
+        payload = json.loads(environ['wsgi.input'].read())
+
         try:
-            msg = json.loads(data)
+            method_name = payload['method']
+            method_kwargs = payload.get('params', dict())
+            return_code, return_format, data = func(s, method_name, **method_kwargs)
+            if return_code == returnCodes.OK:
+                result = {'result': data, 'id': payload['id'], 'error': None}
+            else:
+                result = {'result': None, 'id': payload['id'], 'error': data}
         except Exception, e:
-            print e
             result = s.invalidRequest()
 
-        if msg:
-            try:
-                returncode, returnformat, data = func(s, msg['method'], **msg['params'])
-                if returncode == returnCodes.OK:
-                    result = {'result': data, 'id': msg['id'], 'error': None}
-                else:
-                    result = {'result': None, 'id': msg['id'], 'error': data}
-            except Exception, e:
-                print e
-                result = s.invalidRequest()
+        statuscode = '200 OK' if not result['error'] else '500 Internal Server Error'
 
-        statuscode = '500 Internal Server Error' if result.get('error') else '200 OK'
-        result = json.dumps(result)
-        start_response(statuscode, (('Content-type', 'application/json-rpc'),))
-        return result
+        start_response(
+            status=statuscode,
+            headers=[('Content-type', 'application/json-rpc')],  # headers must be a mutable list
+        )
+
+        return [json.dumps(result)]
+
     return wrapper
 
 class GeventWSServer():
@@ -122,7 +120,7 @@ class GeventWSServer():
             resultcode, returnformat, result = self.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
             data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
             return self.responseRaw(data3,start_response)
-        elif environ['CONTENT_TYPE'] == 'application/json' and environ["REQUEST_METHOD"] == 'POST':
+        elif environ['CONTENT_TYPE'] == 'application/json-rpc' and environ["REQUEST_METHOD"] == 'POST':
             return self.handleJSONRPC(environ, start_response)
         else:
             return self.responseNotFound(start_response)
@@ -134,9 +132,9 @@ class GeventWSServer():
     @jsonrpc
     def handleJSONRPC(self, method, **params):
         category, cmd = method.split('.', 1)
-        sessionid = params.pop('sessionid')
-        session = self.deamon.getSession(sessionid)
-        return self.daemon.procesRPC(cmd, params, 'j', session, category=category)
+        sessionid = params.pop('sessionid', None)
+        session = self.daemon.getSession(sessionid=sessionid, cmd=cmd)
+        return self.daemon.processRPC(cmd, params, 'j', session, category=category)
 
     # def router(self, environ, start_response):
     #     path = environ["PATH_INFO"].lstrip("/")
