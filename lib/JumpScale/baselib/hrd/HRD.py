@@ -219,6 +219,7 @@ class HRD(HRDBase):
             else:
                 return default
         val= self.items[key].get()
+        val = val.strip() if isinstance(val, basestring) else val
         j.core.hrd.log("hrd get '%s':'%s'"%(key,val))
         return val
 
