@@ -22,7 +22,7 @@ codegen=j.tools.packInCode.get4python()
 
     def unserialize(self,c):
         c=c.replace("\\\"","\"")
-        return c        
+        return c
 
     def addBlock(self,name,block):
         C="""
@@ -30,11 +30,11 @@ $name=\"\"\"
 $block
 \"\"\"
 
-"""     
-        C=C.replace("$block",self._serialize(block))      
-        C=C.replace("$name",name)  
-        self.code+=C    
-        
+"""
+        C=C.replace("$block",self._serialize(block))
+        C=C.replace("$name",name)
+        self.code+=C
+
 
 
     def addDict(self,name,ddict):
@@ -49,6 +49,7 @@ $hrd
 hrdtmp=codegen.unserialize(hrdtmp)
 $name=j.core.hrd.get(content=hrdtmp)
 $name.path=\"$path\"
+j.system.fs.createDir(j.do.getParent(\"$path\"))
 $name.save()
 """
         C=C.replace("$name",name)
