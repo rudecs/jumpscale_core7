@@ -25,6 +25,7 @@ bootstrap.passwd=
 bootstrap.type=ssh
 fabric.module=
 shell=
+root.partitionnr=
 """
 
 class KVM(object):
@@ -264,6 +265,7 @@ ostype=%s
 arch=%s
 version=%s
 description=%s
+root.partitionnr=%s
 memory=%s
 disk_size=%s
 cpu_count=%s
@@ -273,7 +275,7 @@ pub.ip=%s
 bootstrap.ip=%s
 bootstrap.login=%s
 bootstrap.passwd=%s
-bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description,
+bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imagehrd.get('ostype'), imagehrd.get('arch'), imagehrd.get('version'), description, imagehrd.get('root.partitionnr', '1')
         memory, size, cpu_count, imagehrd.get('shell', ''), imagehrd.get('fabric.module'), imagehrd.get('pub.ip'), imagehrd.get('bootstrap.ip'), imagehrd.get('bootstrap.login'), imagehrd.get('bootstrap.passwd'))
         j.system.fs.writeFile(hrdfile, hrdcontents)
         print 'Waiting for SSH connection to be ready...'
@@ -391,11 +393,48 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
             return
         self.LibvirtUtil.deleteSnapshot(machine_hrd.get('id'), snapshotname)
 
-    def mountSnapshot(self,name,snapshotname,location="/mnt/1"):
+    def mountSnapshot(self, name, snapshotname, location='/mnt/1', dev='/dev/nbd1', partitionnr=None):
         """
         try to mount the snapshotted disk to a location
         at least supported btrfs,ext234,ntfs,fat,fat32
         """
+        machine_hrd = self.getConfig(name)
+        if not machine_hrd:
+            raise RuntimeError('Machine "%s" does not exist' % name)
+        if snapshotname not in self.listSnapshots(name):
+            raise RuntimeError('Machine "%s" does not have a snapshot named "%s"' % (name, snapshotname))
+        print('Mounting snapshot "%s" of mahcine "%s" on "%s"' % (snapshotname, name, location))
+        if not j.system.fs.exists(location):
+            print('Location "%s" does not exist, it will be created')
+            j.system.fs.createDir(location)
+        print('Device %s will be used, freeing up first...' % dev)
+        j.system.process.execute('modprobe nbd max_part=8')
+        self._cleanNbdMount(location, dev)
+        qcow2_images = j.system.fs.listFilesInDir(j.system.fs.joinPaths(self.vmpath, name), filter='*.qcow2')
+        snapshot_path = None
+        for qi in qcow2_images:
+            if snapshotname in qi:
+                snapshot_path = qi
+                break
+        if not snapshot_path:
+            raise RuntimeError('Could not find snapshot "%s" path' % snapshotname)
+        j.system.process.execute('qemu-nbd --connect=%s %s' % (dev, snapshot_path))
+        if not partitionnr:
+            partitionnr = machine_hrd.get('root.partitionnr', '1')
+        j.system.process.execute('mount %sp%s %s' % (dev, partitionnr, location))
+        print('Snapshot "%s" of mahcine "%s" was successfully mounted on "%s"' % (snapshotname, name, location))
+
+    def unmountSnapshot(self, location='/mnt/1', dev='/dev/nbd1'):
+        self._cleanNbdMount(location, dev)
+
+    def _cleanNbdMount(self, location, dev):
+        print('Unmounting location "%s"' % location)
+        try:
+            j.system.process.execute('umount %s' % location)
+        except:
+            print('location "%s" is already unmounted' % location)
+        print('Disconnecting dev "%s"' % dev)
+        j.system.process.execute('qemu-nbd -d %s' % dev)
 
     def _getFabricModule(self, name):
         machine_hrd = self.getConfig(name)
