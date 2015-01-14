@@ -24,13 +24,13 @@ def jsonrpc(func):
             method_kwargs = payload.get('params', dict())
             return_code, return_format, data = func(s, method_name, **method_kwargs)
             if return_code == returnCodes.OK:
-                result = {'result': data, 'id': payload['id'], 'error': None}
+                result = {'result': data, 'id': payload['id'], 'jsonrpc': '2.0'}
             else:
-                result = {'result': None, 'id': payload['id'], 'error': data}
+                result = {'result': None, 'id': payload['id'], 'jsonrpc': '2.0', 'error': {'code': 1, 'data': data}}
         except Exception, e:
             result = s.invalidRequest()
 
-        statuscode = '200 OK' if not result['error'] else '500 Internal Server Error'
+        statuscode = '200 OK' if not result.get('error', None) else '500 Internal Server Error'
 
         start_response(
             status=statuscode,

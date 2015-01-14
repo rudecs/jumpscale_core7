@@ -208,8 +208,9 @@ class Daemon(object):
                         else:
                             return returnCodes.OK,returnformat,jobr["result"]
                     else:
-                        data['session'] = session
+
                         data.pop("_agentid")
+                data['session'] = session
                 result = ffunction(**data)
             else:
                 result = ffunction(data, session=session)
