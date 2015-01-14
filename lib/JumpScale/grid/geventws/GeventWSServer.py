@@ -30,7 +30,7 @@ def jsonrpc(func):
         except Exception, e:
             result = s.invalidRequest()
 
-        statuscode = '200 OK' if not result['error'] else '500 Internal Server Error'
+        statuscode = '200 OK' if not result.get('error', None) else '500 Internal Server Error'
 
         start_response(
             status=statuscode,
