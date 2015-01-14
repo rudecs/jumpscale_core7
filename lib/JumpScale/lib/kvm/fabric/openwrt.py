@@ -23,7 +23,7 @@ config interface '%s'
     option proto 'static'
     option ipaddr '%s'
     option netmask '%s'
-    ''' % (iface, iface, config[0], config[1])
+''' % (iface, iface, config[0], config[1])
             if iface == 'eth1':
                 interfaces += "    option gateway '%s'\n" % config[2]
         run('echo "%s" > /etc/config/network' % interfaces)

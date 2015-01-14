@@ -45,7 +45,9 @@ if opts.action == 'list':
         print("  machine: %-25s %s" % (item['name'], kvm.getIp(item['name'])))
     print("## stopped:")
     for item in stopped:
-        print("  machine: %-25s %s" % (item['name'], kvm.getIp(item['name'])))
+        configpath = j.system.fs.joinPaths(kvm.vmpath, item['name'])
+        if j.system.fs.exists(path=configpath):
+            print("  machine: %-25s" % item['name'])
 
 ##########init_network
 if opts.action == 'init_network':
@@ -67,8 +69,6 @@ if opts.action == 'list_snapshots':
         raise RuntimeError("specify machine name")
     for snapshot in kvm.listSnapshots(opts.name):
         print(snapshot)
-    else:
-        print('vmachine %s does not have snapshots' % opts.name)
 
 ##########info
 if opts.action == 'info':
@@ -76,7 +76,7 @@ if opts.action == 'info':
         raise RuntimeError("specify machine name")
     config = kvm.getConfig(opts.name)
     if config:
-        print('Name: %s\nBase image: %s\nID: %s\nIP address: %s\nMemory: %s MB\nDisk size: %s GB\n' % (config.get('name'), 
+        print('Name: %s\nBase image: %s\nID: %s\nIP address: %s\nMemory: %s MB\nDisk size: %s GB\n' % (opts.name, 
               config.get('image'), config.get('id'), config.get('bootstrap.ip'), 
               config.get('memory'), config.get('disk_size')))
 
