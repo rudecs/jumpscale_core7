@@ -105,14 +105,17 @@ class HRDItem():
             items=j.codetools.regex.findAll(r"\$\([\w.]*\)",data)
             if len(items)>0:
                 for item in items:
+                    partial = True
+                    if item == data:
+                        partial = False
                     # print "look for : %s"%item
                     item2=item.strip(" ").strip("$").strip(" ").strip("(").strip(")")
                     if self.hrd.exists(item2):
-                        replacewith=j.tools.text.pythonObjToStr(self.hrd.get(item2),multiline=False)
+                        replacewith = j.tools.text.pythonObjToStr(self.hrd.get(item2), multiline=False, partial=partial)
                         data=data.replace(item,replacewith)                            
                         # data=data.replace("//","/")
                     elif self.hrd.prefixWithName and self.hrd.tree!=None and self.hrd.tree.exists("%s.%s"%(self.hrd.name,item2)):
-                        replacewith=j.tools.text.pythonObjToStr(self.hrd.get("%s.%s"%(self.hrd.name,item2)),multiline=False)
+                        replacewith = j.tools.text.pythonObjToStr(self.hrd.get("%s.%s" % (self.hrd.name,item2)), multiline=False, partial=partial)
                         data=data.replace(item,replacewith)                    
                         # data=data.replace("//","/")
 

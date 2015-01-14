@@ -383,7 +383,7 @@ class Text:
         return Text.pythonObjToStr(obj,False,canBeDict=False)
 
     @staticmethod
-    def pythonObjToStr(obj,multiline=True,canBeDict=True):
+    def pythonObjToStr(obj,multiline=True,canBeDict=True,partial=False):
         """
         try to convert a python object to string representation works for None, bool, integer, float, dict, list
         """
@@ -404,7 +404,10 @@ class Text:
             if obj.find("\n")!=-1 and multiline:
                 obj="\n%s"%Text.prefix("    ",obj.strip())                
             elif obj.find(":")!=-1 or obj.find(" ")!=-1 or obj.find("/")!=-1 or obj.find(",")!=-1:
-                obj="'%s'"%obj.strip("'")
+                if not partial:
+                    obj="'%s'"%obj.strip("'")
+                else:
+                    obj="%s"%obj.strip("'")
             return obj
         elif j.basetype.integer.check(obj) or j.basetype.float.check(obj):
             return str(obj)
