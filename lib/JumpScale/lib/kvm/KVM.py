@@ -405,7 +405,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
             raise RuntimeError('Machine "%s" does not have a snapshot named "%s"' % (name, snapshotname))
         print('Mounting snapshot "%s" of mahcine "%s" on "%s"' % (snapshotname, name, location))
         if not j.system.fs.exists(location):
-            print('Location "%s" does not exist, it will be created')
+            print('Location "%s" does not exist, it will be created' % location)
             j.system.fs.createDir(location)
         print('Device %s will be used, freeing up first...' % dev)
         j.system.process.execute('modprobe nbd max_part=8')
