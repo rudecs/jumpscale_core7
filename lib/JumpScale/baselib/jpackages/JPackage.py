@@ -1,9 +1,16 @@
 from JumpScale import j
 import imp
 import copy
+import sys
 
 import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
+
+def loadmodule(name, path):
+    parentname = ".".join(name.split(".")[:-1])
+    sys.modules[parentname] = __package__
+    mod = imp.load_source(name, path)
+    return mod
 
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
@@ -210,8 +217,8 @@ class JPackageInstance():
 
             self.hrd=j.core.hrd.get(self.hrdpath)
 
-            modulename="%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
-            mod = imp.load_source(modulename, self.actionspath)
+            modulename="JumpScale.jpackages.%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
+            mod = loadmodule(modulename, self.actionspath)
 
             if not "node2execute" in args:
                 self.actions=mod.Actions()
