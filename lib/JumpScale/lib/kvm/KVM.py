@@ -301,11 +301,6 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         print 'Machine IP address is: %s' % mgmt_ip
         return mgmt_ip
 
-    def _getIdFromConfig(self, name):
-        machine_hrd = self.getConfig(name)
-        if machine_hrd:
-            return machine_hrd.get('id')
-
     def _getShellFromConfig(self, name):
         machine_hrd = self.getConfig(name)
         if machine_hrd:
@@ -320,9 +315,8 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
 
     def destroy(self, name):
         print 'Destroying machine "%s"' % name
-        machine_id = self._getIdFromConfig(name)
         try:
-            self.LibvirtUtil.delete_machine(machine_id)
+            self.LibvirtUtil.delete_machine(name)
         except:
             pass
         finally:
@@ -330,18 +324,16 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         
     def stop(self, name):
         print 'Stopping machine "%s"' % name
-        machine_id = self._getIdFromConfig(name)
         try:
-            self.LibvirtUtil.shutdown(machine_id)
+            self.LibvirtUtil.shutdown(name)
             print 'Done'
         except:
             pass
 
     def start(self, name):
         print 'Starting machine "%s"' % name
-        machine_id = self._getIdFromConfig(name)
         try:
-            self.LibvirtUtil.create(machine_id, None)
+            self.LibvirtUtil.create(name, None)
             print 'Done'
         except:
             pass
@@ -391,7 +383,7 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         if snapshotname not in self.listSnapshots(name):
             print "Couldn't find snapshot %s for machine %s" % (snapshotname, name)
             return
-        self.LibvirtUtil.deleteSnapshot(machine_hrd.get('id'), snapshotname)
+        self.LibvirtUtil.deleteSnapshot(name, snapshotname)
 
     def mountSnapshot(self, name, snapshotname, location='/mnt/1', dev='/dev/nbd1', partitionnr=None):
         """

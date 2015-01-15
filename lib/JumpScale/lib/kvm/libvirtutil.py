@@ -29,7 +29,7 @@ class LibvirtUtil(object):
 
     def _get_domain(self, id):
         try:
-            domain = self.connection.lookupByUUIDString(id)
+            domain = self.connection.lookupByName(id)
         except libvirt.libvirtError, e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return None
@@ -86,29 +86,27 @@ class LibvirtUtil(object):
                     make_archive(archive_name, gztar, root_dir)
         return True
 
-    def delete_machine(self, machineid):
-        if self.isCurrentStorageAction(machineid):
+    def delete_machine(self, id):
+        if self.isCurrentStorageAction(id):
             raise Exception("Can't delete a locked machine")
-        domain = self.connection.lookupByUUIDString(machineid)
-        diskfiles = self._get_domain_disk_file_names(domain)
-        if domain.state(0)[0] != libvirt.VIR_DOMAIN_SHUTOFF:
-            domain.destroy()
-        for diskfile in diskfiles:
-            if os.path.exists(diskfile):
-                try:
-                    vol = self.connection.storageVolLookupByPath(diskfile)
-                except:
-                    continue
-                vol.delete(0)
-        poolpath = os.path.join(self.basepath, domain.name())
+
+        domain = self._get_domain(id)
+        if domain:
+            if domain.state(0)[0] != libvirt.VIR_DOMAIN_SHUTOFF:
+                domain.destroy()
+            domain.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA)
+
+        poolpath = os.path.join(self.basepath, id)
         try:
-            diskpool =  self.connection.storagePoolLookupByName(domain.name())
+            diskpool =  self.connection.storagePoolLookupByName(id)
+            for vol in diskpool.listAllVolumes():
+                vol.delete()
             diskpool.destroy()
         except:
             pass
         if os.path.exists(poolpath):
             shutil.rmtree(poolpath)
-        domain.undefineFlags(libvirt.VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA)
+
         return True
 
     def _get_domain_disk_file_names(self, dom):
@@ -238,6 +236,8 @@ class LibvirtUtil(object):
 
     def isCurrentStorageAction(self, domainid):
         domain = self._get_domain(domainid)
+        if not domain:
+            return False
         #at this moment we suppose the machine is following the default naming of disks
         if domain.state()[0] not in [libvirt.VIR_DOMAIN_SHUTDOWN, libvirt.VIR_DOMAIN_SHUTOFF, libvirt.VIR_DOMAIN_CRASHED]:
             status = domain.blockJobInfo('vda',0)

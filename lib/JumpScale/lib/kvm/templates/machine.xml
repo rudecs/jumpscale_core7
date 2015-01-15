@@ -16,7 +16,7 @@
         <on_reboot>restart</on_reboot>
         <on_crash>restart</on_crash>
         <devices>
-            <emulator>/usr/bin/qemu-system-x86_64</emulator>
+            <emulator>/opt/jumpscale7/apps/kvm/bin/qemu-system-x86_64</emulator>
             <disk type='block' device='disk'>
                 <driver name='qemu' type='qcow2' cache='none' io='native'/>
                 <source dev='{{poolpath}}/{{diskname}}'/>
