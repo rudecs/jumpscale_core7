@@ -8,7 +8,7 @@ import random
 from qcow2 import Qcow2
 from JumpScale import j
 from JumpScale.lib.btrfs import *
-
+import atexit
 
 LOCKCREATED = 1
 LOCKREMOVED = 2
@@ -18,14 +18,29 @@ LOCKEXIST = 4
 
 class LibvirtUtil(object):
     def __init__(self, host='localhost'):
-        if host != 'localhost':
-            self.connection = libvirt.open('qemu+ssh://%s/system' % host)
-        else:
-            self.connection = libvirt.open()
-        self.readonly = libvirt.openReadOnly()
+        self._host = host
+        self.open()
+        atexit.register(self.close)
         self.basepath = '/mnt/vmstor/kvm'
         self.templatepath = '/mnt/vmstor/kvm/images'
         self.env = Environment(loader=FileSystemLoader(j.system.fs.joinPaths(j.system.fs.getParent(__file__), 'templates')))
+
+    def open(self):
+        uri = None
+        if self._host != 'localhost':
+            uri = 'qemu+ssh://%s/system' % self._host
+        self.connection = libvirt.open(uri)
+        self.readonly = libvirt.openReadOnly(uri)
+
+    def close(self):
+        def close(con):
+            if con:
+                try:
+                    con.close()
+                except:
+                    pass
+        close(self.connection)
+        close(self.readonly)
 
     def _get_domain(self, id):
         try:
