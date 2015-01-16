@@ -266,7 +266,11 @@ class JPackageInstance():
         self._reposDone[url]=dest
         return dest      
 
-    def getDependencies(self):
+    def getDependencies(self, build=False):
+        """
+        @param build: Include build dependencies
+        @type build: bool
+        """
         res=[]
         for item in self.hrd.getListFromPrefix("dependencies"): 
 
@@ -279,6 +283,9 @@ class JPackageInstance():
                 item["name"]=item2
                 item["domain"]="jumpscale"
                 item["instance"]="main"
+
+            if not build and item.get('type', 'runtime') == 'build':
+                continue
 
             if "args" in item:
                 if isinstance(item['args'], dict):
@@ -332,7 +339,7 @@ class JPackageInstance():
     @deps
     def build(self,args={},deps=True):
         self._load(args=args)
-        for dep in self.getDependencies():
+        for dep in self.getDependencies(build=True):
             if dep.jp.name not in j.packages._justinstalled:
                 if 'args' in dep.__dict__:
                     dep.install(args=dep.args)
