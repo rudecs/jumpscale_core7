@@ -1,0 +1,10 @@
+{% from 'macro.tmpl' import handlerName %}
+
+local app = turbo.web.Application:new({
+    {% for h in handlers %}
+        {"{{h.path}}", {{handlerName(h.name)}}}{% if not loop.last%},{%endif%}
+
+    {% endfor %}
+})
+app:listen({{port}},"0.0.0.0")
+turbo.ioloop.instance():start()
