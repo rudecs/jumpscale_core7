@@ -191,7 +191,7 @@ class ActionsBase():
         """
         pass
 
-    def check_up_local(self,**args):
+    def check_up_local(self, wait=True, **args):
         """
         do checks to see if process(es) is (are) running.
         this happens on system where process is
@@ -209,8 +209,11 @@ class ActionsBase():
                 
                 for port in ports:
                     #need to do port checks
-                    if j.system.net.waitConnectionTest("localhost", port, timeout)==False:                    
-                        return False            
+                    if wait:
+                        if j.system.net.waitConnectionTest("localhost", port, timeout)==False:                    
+                            return False            
+                    elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
+                            return False
             else:
                 #no ports defined 
                 filterstr=process["filterstr"]
@@ -227,7 +230,6 @@ class ActionsBase():
             result=do(process)
             if result==False:
                 return False
-        print ("Process UP")
         return True
 
     def check_down_local(self,**args):

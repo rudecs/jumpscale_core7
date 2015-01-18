@@ -10,7 +10,7 @@ j.application.start('jpackage')
 parser = cmdutils.ArgumentParser()
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
-    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute"]
+    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute", "status"]
 
 help="""
 jpackage commands:
@@ -130,7 +130,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
             packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), '%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
         else:
             packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
-        # packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
+        packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
 
     if packages==[]:
         raise RuntimeError("Cannot find packages, need at least 1")
@@ -260,17 +260,17 @@ elif args.action == 'import':
         package.iimport(url=args.url,deps=args.deps)
 
 elif args.action == 'restart':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True, list=True)
     for package in packages:
         package.restart(args=hrddata,deps=args.deps)
 
 elif args.action == 'start':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True)
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True)
     for package in packages:
         package.start(args=hrddata,deps=args.deps)
 
 elif args.action == 'stop':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True)
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True)
     packages.reverse()
     for package in packages:
         package.stop(args=hrddata,deps=args.deps)
@@ -324,6 +324,32 @@ elif args.action == 'list':
             'debug': debug, 'buildnr': buildNr,'debugInJpackage':debugINJP}
 
     jps=getJPackage(args,list=True,toinstall=args.installed)
+    printJPackages(jps)
+
+elif args.action == 'status':
+    def printJPackages(packages):
+        def sorter(jp1, jp2):
+            prio1 = jp1.getPriority()
+            prio2 = jp2.getPriority()
+            if prio1 != prio2:
+                return cmp(prio1, prio1)
+            else:
+                key1 = "%s_%s" % (jp1.domain, jp2.name)
+                key2 = "%s_%s" % (jp2.domain, jp2.name)
+                return cmp(key1, key2)
+
+        form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s'
+        print form % {'domain': 'DOMAIN', 'name': 'NAME', 'instance': 'Instance', 'prio': 'Prio', 'status': 'Status', \
+            'buildnr':'BUILDNR','debugInJpackage':'DEBUG_JP'}
+        print '=' * 70
+        print ''
+        for package in sorted(packages, cmp=sorter):
+            isrunning = package.actions.check_up_local(wait=False)
+            status = 'RUNNING' if isrunning else 'HALTED'
+            print form % {'name': package.name, 'domain': package.domain, 'instance': package.instance, \
+                    'prio': package.getPriority(), 'status': status}
+
+    jps = packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True,list=True)
     printJPackages(jps)
 
 j.application.stop()

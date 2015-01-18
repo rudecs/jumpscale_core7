@@ -169,6 +169,13 @@ class JPackageInstance():
                     ports.append(item)
         return ports        
 
+
+    def getPriority(self):
+        processes = self.getProcessDicts()
+        if processes:
+            return processes[0].get('prio', 100)
+        return 199
+
     def _load(self,args={},*stdargs,**kwargs):
         if self._loaded==False:
 

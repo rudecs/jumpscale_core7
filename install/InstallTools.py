@@ -65,7 +65,7 @@ class InstallTools():
         embed()
         #@todo not working yet                
 
-    def log(self,msg):
+    def log(self,msg, level=None):
         if self.debug:
             print(msg)
 
@@ -743,9 +743,6 @@ class InstallTools():
     #         raise RuntimeError("Cannot execute cmd:%s, error was %s"%(command,stderr))
 
     #     return stdout
-
-    def log(self,msg,level=0):
-        print(msg)
 
     def isUnix(self):
         if sys.platform.lower().find("linux")!=-1:
