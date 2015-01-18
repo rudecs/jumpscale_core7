@@ -23,31 +23,19 @@
 {% endmacro %}
 
 {% macro paramsBody(params)%}
-{% for p in params.body %}
+{% if 'schema' in params.body %}
+{%for name, descr in (params.body.schema.properties|default({})).iteritems()%}
 {%if loop.first %}
 --[[ body structure
 {%endif%}
-{%if 'properties' in p.schema%}
-{%for name, descr in (p.schema.properties|default({})).iteritems()%}
     {{name}} - {{descr.type}}
 {%endfor%}
-{%endif%}
 {%if loop.last %}
     ]]--
     local body = self.request.body
 {%endif%}
-{%endfor%}
-{% endmacro %}
-
-{#
-{% macro paramsBody(params)%}
-{% for p in params.body %}
-{%if loop.first %}
-local body = self.request.body
 {%endif%}
-{%endfor%}
 {% endmacro %}
-#}
 
 {% macro paramsPath(params)%}{{params.path | map(attribute='name')|join(', ')}}{% endmacro %}
 

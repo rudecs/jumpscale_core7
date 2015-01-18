@@ -2,6 +2,75 @@ from JumpScale import j
 import json as json
 import jinja2
 import urlparse
+from IPython import embed
+import ipdb
+
+ # Datastructure use in the templates
+ # this is a really simple subset of the swagger spec
+ # the types are there just to help when doing the buisness logic implementation
+ # {
+ #     "port" : 80, // port the server listen on
+ #     "handlers" :[//list of handlers
+ #         { //handler definition
+ #             "name":"",
+ #             "path":"",
+ #             "methods": [ //list of methods for this path
+ #                 { // method definition
+ #                     "type" : "", // should be a HTTP verb, get,post,put,...
+ #                     "summary" : "", // optional description of the method
+ #                     "params":{ //parameters of this method definition
+ #                         "body":{
+ #                           "required":true, //boolean
+ #                           "isArray": false,
+ #                           "schema": {
+ #                                "id": {
+ #                                    "type": "integer",
+ #                                    "isArray: False"
+ #                                },
+ #                                "name": {
+ #                                    "type": "string",
+ #                                    "isArray: False"
+ #                                },
+ #                           }
+ #                        }, // object description of the content of the body
+ #                        "query":[ //list of query parameters
+ #                             {
+ #                                 "required":true, //boolean
+ #                                 "name" : "", // string
+ #                                 "type" : "", // string
+ #                                 "isArray": false
+ #                             }
+ #                        ],
+ #                        "form":[ //list of form parameters
+ #                             {
+ #                                 "required":true, //boolean
+ #                                 "name" : "", // string
+ #                                 "type" : "", // string
+ #                                 "isArray": false
+ #                             }
+ #                        ],
+ #                        "header":[ //list of header parameters
+ #                             {
+ #                                 "required":true, //boolean
+ #                                 "name" : "", // string
+ #                                 "type" : "", // string
+ #                                 "isArray": false
+ #                             }
+ #                        ],
+ #                        "path":[ //list of path parameters
+ #                             {
+ #                                 "required":true, //boolean
+ #                                 "name" : "", // string
+ #                                 "type" : "" ,// string
+ #                                 "isArray": false
+ #                             }
+ #                         ]
+ #                     }
+ #                 }
+ #             ],
+ #         }
+ #     ]
+ # }
 
 class SwaggerGen(object):
     def __init__(self):
@@ -12,44 +81,86 @@ class SwaggerGen(object):
         )
         self.spec = None
         self.definitions = {}
-        self.baseURL = ""
-        self.requires = []
-        self.handlers = []
+        self.globalParams = {}
+        self.server = {
+            'requires':[],
+            'baseURL': '',
+            'port':80,
+            'handlers':[]
+        }
+        # spore spec for client generation
+        self.client = {}
         self.output = ""
 
     def loadSpec(self, path):
         content = j.system.fs.fileGetContents(path)
         self.spec = json.loads(content)
 
+    def generate(self, baseURL, serverOuput, clientOutput):
+        self.server['baseURL'] = baseURL
+        self.generateServer(serverOuput)
+        self.generateSporeSpec(clientOutput)
+
     def generateServer(self, outputPath):
-        self._renderRequire()
-        self._renderHandlers()
-        self._renderApplication()
-        j.system.fs.writeFile(outputPath,self.output.strip())
-        j.system.fs.writeFile("handler.json",json.dumps(self.handlers,indent=4))
-        # from IPython import embed;embed()
+        self.server['port'] = self._extractPort(self.spec)
+        self.server['handlers'] = self._generateHandlers(self.spec)
+        server = self._renderServer(self.server)
+        j.system.fs.writeFile(outputPath, server.strip())
 
     def generateSporeSpec(self, outputPath):
-        pass
+        self.client = {
+            'name':'JSLuaSpore',
+            'base_url': self.server['baseURL']
+        }
+        self.client['methods'] = self._clientMethods(self.server['handlers'])
+        j.system.fs.writeFile("client.json", json.dumps(self.client, indent=4))
 
-    def _generateBaseURL(self):
-        url = {}
-        if 'host' in self.spec:
-            if self.spec['host'].find(':') == -1:
-                url['host'] = self.spec['host']+":80"
+    def _clientMethods(self, handlers):
+        methods = {}
+        for h in handlers:
+            for method in h['methods']:
+                sporeMethod = {
+                    'path': self._clientPath(h['path'], method['params']),
+                    'method' : method['type'].upper(),
+                    'optional_params': self._clientParams(method['params'], required=False),
+                    'required_params': self._clientParams(method['params'],  required=True)
+                }
+                name = h['name']+"_"+method['type']
+            methods[name] = sporeMethod
+        return methods
+
+    def _clientPath(self, path, params):
+        path = path.replace('/(.*)','')
+        if 'query' in params:
+            for p in params['path']:
+                path += '/'+':'+p['name']
+        return path
+
+    def _clientParams(self, params, required):
+        output = []
+        for t in params.keys():
+            if t == 'body':
+                pass
             else:
-                url['host'] = self.spec['host']
-        else:
-            url['host'] = "0.0.0.0:80"
-        url['basePath'] = self.spec['basePath'] if 'basePath' in self.spec else "/"
-        url['scheme'] = self.spec['scheme'] if 'scheme' in self.spec else "http"
-        self.baseURL = urlparse.urlparse(url['scheme']+"://"+url['host']+url['basePath'])
+                for p in params[t]:
+                    if p['required'] == required:
+                        output.append(p['name'])
+        return output
 
-    def _generateHandlers(self):
-        if 'definitions' in self.spec:
-            self._generateDefinitions(self.spec['definitions'])
-        paths = self._generatePaths(self.spec['paths'])
-        self.handlers.extend(paths)
+    def _extractPort(self, spec):
+        url = {}
+        if 'host' in spec:
+            url = urlparse.urlparse(spec['host'])
+            return url.port() if url.port is not None else 80
+        else:
+            return 80
+
+    def _generateHandlers(self, spec):
+        handlers = []
+        if 'definitions' in spec:
+            self._generateDefinitions(spec['definitions'])
+        paths = self._generatePaths(spec['paths'])
+        return paths
 
     def _generatePaths(self, specPaths):
         def formatPath(s):
@@ -70,20 +181,20 @@ class SwaggerGen(object):
             p['path'] = formatPath(str(path))
             p['methods'] = self._generateMethods(methods)
             paths.append(p)
-        paths = sorted(paths, key=lambda path: path['path'],reverse=True)   # sort by path
+        paths = sorted(paths, key=lambda path: path['path'],reverse=True)   # sort from precise to generic path, needed for lua router
         return paths
 
     def _generateMethods(self, specMethods):
         methods = []
-        for name,detail in specMethods.iteritems():
+        for httpVerb,detail in specMethods.iteritems():
             m = {
-                'args':{},
+                'params':{},
                 'responses':[],
                 'summary':"",
-                'name':name
+                'type':httpVerb
             }
             if 'parameters' in detail:
-                m['args'] = self._generateParams(detail['parameters'])
+                m['params'] = self._generateParams(detail['parameters'])
             if 'responses' in detail:
                 m['responses'] = self._generateResponses(detail['responses'])
             if 'summary' in detail:
@@ -93,28 +204,75 @@ class SwaggerGen(object):
 
     def _generateParams(self, specParams):
         params = {
-            'body':[],
+            'body':{},
             'query':[],
             'path':[],
             'header':[],
             'formData':[]
         }
         for p in specParams:
-            # replace ref with actual definition
-            if 'schema' in p and '$ref' in p['schema']:
-                ss = p['schema']['$ref'].split('/')
-                p['schema'] = self.definitions[ss[2]]
-            # TODO ref in array
-            # if p['in'] == 'body' and 'type' in p['schema'] and p['schema']['type'] == 'array':
-            #     ss = p['schema']['items']['$ref'].split("/")
-            #     p['schema']['items'] = self.definitions[ss[2]]
-
-            params[str(p['in'])].append(p)
+            location , param = self._processParams(p)
+            if location == 'body':
+                # from IPython import embed;embed()
+                params[location] = param
+            else:
+                params[location].append(param)
         return params
+
+    def _processParams(self, specParams):
+        if '$ref' in  specParams:
+            ss = specParams['$ref'].split("/")
+            _processParams(self.globalParams[ss[2]])
+        else:
+            location =  specParams['in']
+            if location == 'body':
+                return self._processBodyParam(specParams)
+            elif location == 'array':
+                return self._processArrayParam(specParams)
+            else:
+                p = {
+                "required": False if 'required' not in specParams else specParams['required'],
+                "name" : specParams['name'],
+                "type" : specParams['type'],
+                "isArray": False
+                }
+            return location , p
+
+    def _processBodyParam(self, bodyParam):
+        # from IPython import embed;embed()
+        location = bodyParam['in']
+        if 'schema' in bodyParam:
+            # import ipdb;ipdb.set_trace()
+            if 'items' in bodyParam['schema']:
+                schema = bodyParam['schema']['items']
+            else:
+                schema = bodyParam['schema']
+        if '$ref' in schema:
+            ss = schema['$ref'].split("/")
+            schema = self.definitions[ss[2]]
+        p = {
+           "required": bodyParam['required'],
+           "isArray": False,
+           "schema": schema
+        }
+        return location,p
+
+    def _processArrayParam(self, arrayParam):
+        location = arrayParam['in']
+        param = arrayParam['items']
+        if '$ref' in arrayParam['items']:
+            ss = param['$ref'].split("/")
+            param = self.definitions[ss[2]]
+        p = {
+            "required": False if 'required' not in arrayParam['items'] else arrayParam['required'],
+            "name" : arrayParam['name'],
+            "type" : param['type'],
+            "isArray": True
+        }
+        return location,p
 
     def _generateResponses(self, specReponses):
         responses = []
-        # import ipdb; ipdb.set_trace()
         for code, detail in specReponses.iteritems():
             r = {}
             r['code'] = code
@@ -162,64 +320,34 @@ class SwaggerGen(object):
             else:
                 self.definitions[r['defName']]['properties'][r['propName']] = self.definitions[r['ref']]
 
+    def _renderServer(self, serverSpec):
+        output = ""
+        output += self._renderRequire()
+        output += self._renderHandlers(serverSpec['handlers'])
+        output += self._renderApplication(serverSpec['handlers'])
+        return output
+
     def _renderRequire(self):
-        self.requires.append('turbo')
+        self.server['requires'].append('turbo')
 
         tmpl = self.jinjaEnv.get_template('require.tmpl')
-        r = tmpl.render(requires=self.requires)
-        self.output += r
+        output = tmpl.render(requires=self.server['requires'])
+        return output
 
-    def _renderHandlers(self):
-        self._generateHandlers()
+    def _renderHandlers(self, handlers):
         tmpl = self.jinjaEnv.get_template('handler.tmpl')
-        for h in self.handlers:
+        output = ""
+        for h in handlers:
             r = tmpl.render(handler=h)
-            self.output += r
+            output += r
+        return output
 
-    def _renderApplication(self):
-        self._generateBaseURL()
-        if len(self.handlers) == 0:
-            self._generateHandlers()
+    def _renderApplication(self, handlers):
         tmpl = self.jinjaEnv.get_template('application.tmpl')
-        r = tmpl.render(handlers=self.handlers, port=8080,url=self.baseURL.hostname+self.baseURL.path)
-        self.output += r
+        output = tmpl.render(handlers=handlers, port=8080)
+        return output
 
 if __name__ == '__main__':
     gen = SwaggerGen()
     gen.loadSpec("tests/spec2.json")
-    gen.generate('output.lua')
-
-
-# spore = {
-#     'name':'', #required
-#     'authority':'',
-#     'base_url':'',
-#     'formats':[],
-#     'version':'', #required
-#     'authentication':True,
-#     'methods':{}, #required
-#     # methods format
-#     {
-#         'name' :{
-#             'methods': '', #required
-#             "description" : "",
-#             "documentation" : "",
-#             'authentication" : false,
-#             'path': '/example/:args', #required
-#             "optional_params" : [
-#               "param"
-#             ],
-#             "required" : [ #required
-#               "args"
-#             ],
-#             "expected" : [
-#               200,
-#               204
-#             ],
-#              "format" : [
-#               "json",
-#               "xml"
-#             ]
-#         }
-#     }
-# }
+    gen.generate('http://localhost:8080','server.lua', 'client.spore')

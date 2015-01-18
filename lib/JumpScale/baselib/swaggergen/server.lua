@@ -5,7 +5,8 @@ function userslogoutHandler:get()
     
     
     
-    self:write("userslogoutHandler\n")
+    print(userslogoutHandler)
+    self:write("userslogoutHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -26,7 +27,8 @@ function usersloginHandler:get()
 
     
     
-    self:write("usersloginHandler\n")
+    print(usersloginHandler)
+    self:write("usersloginHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -47,10 +49,19 @@ function userscreateWithListHandler:post()
     
     
     --[[ body structure
+    username - string
+    firstName - string
+    lastName - string
+    userStatus - integer
+    email - string
+    phone - string
+    password - string
+    id - integer
     ]]--
     local body = self.request.body
 
-    self:write("userscreateWithListHandler\n")
+    print(userscreateWithListHandler)
+    self:write("userscreateWithListHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -68,10 +79,19 @@ function userscreateWithArrayHandler:post()
     
     
     --[[ body structure
+    username - string
+    firstName - string
+    lastName - string
+    userStatus - integer
+    email - string
+    phone - string
+    password - string
+    id - integer
     ]]--
     local body = self.request.body
 
-    self:write("userscreateWithArrayHandler\n")
+    print(userscreateWithArrayHandler)
+    self:write("userscreateWithArrayHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -100,7 +120,8 @@ function usersusernameHandler:put(username)
     ]]--
     local body = self.request.body
 
-    self:write("usersusernameHandler\n")
+    print(usersusernameHandler)
+    self:write("usersusernameHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -119,7 +140,8 @@ function usersusernameHandler:delete(username)
     
     
     
-    self:write("usersusernameHandler\n")
+    print(usersusernameHandler)
+    self:write("usersusernameHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -138,7 +160,8 @@ function usersusernameHandler:get(username)
     
     
     
-    self:write("usersusernameHandler\n")
+    print(usersusernameHandler)
+    self:write("usersusernameHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -181,7 +204,8 @@ function usersHandler:post()
     ]]--
     local body = self.request.body
 
-    self:write("usersHandler\n")
+    print(usersHandler)
+    self:write("usersHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -199,7 +223,8 @@ function storesorderorderIdHandler:delete(orderId)
     
     
     
-    self:write("storesorderorderIdHandler\n")
+    print(storesorderorderIdHandler)
+    self:write("storesorderorderIdHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -218,7 +243,8 @@ function storesorderorderIdHandler:get(orderId)
     
     
     
-    self:write("storesorderorderIdHandler\n")
+    print(storesorderorderIdHandler)
+    self:write("storesorderorderIdHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -257,7 +283,8 @@ function storesorderHandler:post()
     ]]--
     local body = self.request.body
 
-    self:write("storesorderHandler\n")
+    print(storesorderHandler)
+    self:write("storesorderHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -286,7 +313,8 @@ function petsfindByTagsHandler:get()
 
     
     
-    self:write("petsfindByTagsHandler\n")
+    print(petsfindByTagsHandler)
+    self:write("petsfindByTagsHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -309,7 +337,8 @@ function petsfindByStatusHandler:get()
 
     
     
-    self:write("petsfindByStatusHandler\n")
+    print(petsfindByStatusHandler)
+    self:write("petsfindByStatusHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -330,7 +359,8 @@ function petspetIdHandler:post(petId)
     
     
     
-    self:write("petspetIdHandler\n")
+    print(petspetIdHandler)
+    self:write("petspetIdHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -348,7 +378,8 @@ function petspetIdHandler:delete(petId)
     local h_api_key = self.headers:get("api_key",false)
 
     
-    self:write("petspetIdHandler\n")
+    print(petspetIdHandler)
+    self:write("petspetIdHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -364,7 +395,8 @@ function petspetIdHandler:get(petId)
     
     
     
-    self:write("petspetIdHandler\n")
+    print(petspetIdHandler)
+    self:write("petspetIdHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -403,7 +435,8 @@ function petsHandler:put()
     ]]--
     local body = self.request.body
 
-    self:write("petsHandler\n")
+    print(petsHandler)
+    self:write("petsHandler ")
     self:write("not implmented")
     self:set_status(500)
 
@@ -434,7 +467,8 @@ function petsHandler:post()
     ]]--
     local body = self.request.body
 
-    self:write("petsHandler\n")
+    print(petsHandler)
+    self:write("petsHandler ")
     self:write("not implmented")
     self:set_status(500)
 

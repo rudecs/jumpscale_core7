@@ -8,11 +8,12 @@
 
 local {{handlerName(handler.name)}} = class("{{handlerName(handler.name)}}", turbo.web.RequestHandler)
 {%for method in handler.methods %}
-function {{handlerName(handler.name)}}:{{method.name}}({{paramsPath(method.args)}})
-    {{ paramsQuery(method.args) }}
-    {{ paramsHeader(method.args) }}
-    {{ paramsBody(method.args) }}
-    self:write("{{handlerName(handler.name)}}\n")
+function {{handlerName(handler.name)}}:{{method.type}}({{paramsPath(method.params)}})
+    {{ paramsQuery(method.params) }}
+    {{ paramsHeader(method.params) }}
+    {{ paramsBody(method.params) }}
+    print({{handlerName(handler.name)}})
+    self:write("{{handlerName(handler.name)}} ")
     self:write("not implmented")
     self:set_status(500)
 

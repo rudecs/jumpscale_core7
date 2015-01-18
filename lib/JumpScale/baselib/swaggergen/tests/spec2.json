@@ -13,7 +13,7 @@
             "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         }
     },
-    "host": "172.17.0.30",
+    "host": "172.17.0.2",
     "basePath": "/api",
     "schemes": [
         "http"
