@@ -162,12 +162,15 @@ class JPackageInstance():
     @deps
     def getTCPPorts(self,deps=True, *args, **kwargs):
         self._load()
-        ports=[]
+        ports = set()
         for process in self.getProcessDicts():
             for item in process["ports"]:
-                if item not in ports:
-                    ports.append(item)
-        return ports        
+                if isinstance(item, basestring):
+                    moreports = item.split(";")
+                    for port in moreports:
+                        if port.isdigit():
+                            ports.add(int(port))
+        return list(ports)
 
 
     def getPriority(self):

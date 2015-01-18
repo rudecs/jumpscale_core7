@@ -197,11 +197,7 @@ class ActionsBase():
         this happens on system where process is
         """      
         def do(process):
-
-            ports=self.jp_instance.getTCPPorts() or []            
-            
-            if ports and isinstance(ports[0], str) and ';' in ports[0]:
-                ports = ports[0].split(';')
+            ports=self.jp_instance.getTCPPorts()
             timeout=process["timeout_start"]
             if timeout==0:
                 timeout=2
