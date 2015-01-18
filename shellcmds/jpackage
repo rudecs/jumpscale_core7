@@ -338,16 +338,16 @@ elif args.action == 'status':
                 key2 = "%s_%s" % (jp2.domain, jp2.name)
                 return cmp(key1, key2)
 
-        form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s'
+        form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s %(ports)s'
         print form % {'domain': 'DOMAIN', 'name': 'NAME', 'instance': 'Instance', 'prio': 'Prio', 'status': 'Status', \
-            'buildnr':'BUILDNR','debugInJpackage':'DEBUG_JP'}
+            'ports': 'Ports'}
         print '=' * 70
         print ''
         for package in sorted(packages, cmp=sorter):
             isrunning = package.actions.check_up_local(wait=False)
             status = 'RUNNING' if isrunning else 'HALTED'
-            print form % {'name': package.name, 'domain': package.domain, 'instance': package.instance, \
-                    'prio': package.getPriority(), 'status': status}
+            ports = ', '.join( str(x) for x in package.getTCPPorts() )
+            print form % {'name': package.name, 'domain': package.domain, 'instance': package.instance, 'prio': package.getPriority(), 'status': status, 'ports': ports}
 
     jps = packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True,list=True)
     printJPackages(jps)
