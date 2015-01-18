@@ -159,7 +159,6 @@ class JPackageInstance():
             return True
         return False
 
-    @deps
     def getTCPPorts(self,deps=True, *args, **kwargs):
         self._load()
         ports = set()

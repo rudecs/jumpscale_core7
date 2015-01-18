@@ -344,6 +344,8 @@ elif args.action == 'status':
         print '=' * 70
         print ''
         for package in sorted(packages, cmp=sorter):
+            if not package.getProcessDicts():
+                continue
             isrunning = package.actions.check_up_local(wait=False)
             status = 'RUNNING' if isrunning else 'HALTED'
             ports = ', '.join( str(x) for x in package.getTCPPorts() )
