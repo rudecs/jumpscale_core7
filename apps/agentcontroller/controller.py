@@ -661,11 +661,17 @@ class ControllerCMDS():
             result.append(jobresult)
         return result
 
-    def getAllJumpscripts(self, bz2_compressed=True, session=None):
+    def getJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts'), session=None):
         """
         Returns the available jumpscripts as a Base64-encoded TAR archive that is optionally compressed using bzip2.
+
+        Args:
+            bz2_compressed (boolean): If True then the returned TAR is bzip2-compressed
+            types (sequence of str): A sequence of the types of jumpscripts to be packed in the returned archive.
+                possible values in the sequence are 'processmanager', 'jumpscripts', and 'luajumpscripts'.
         """
-        scripts_tar_content = j.core.jumpscripts.getArchivedJumpscripts(bz2_compressed=bz2_compressed)
+        scripts_tar_content = \
+            j.core.jumpscripts.getArchivedJumpscripts(bz2_compressed=bz2_compressed, types=types)
         return b64encode(scripts_tar_content)
 
 # will reinit for testing everytime, not really needed
