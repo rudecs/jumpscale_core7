@@ -12,7 +12,6 @@ function {{handlerName(handler.name)}}:{{method.type}}({{paramsPath(method.param
     {{ paramsQuery(method.params) }}
     {{ paramsHeader(method.params) }}
     {{ paramsBody(method.params) }}
-    print({{handlerName(handler.name)}})
     self:write("{{handlerName(handler.name)}} ")
     self:write("not implmented")
     self:set_status(500)

@@ -2,8 +2,6 @@ from JumpScale import j
 import json as json
 import jinja2
 import urlparse
-from IPython import embed
-import ipdb
 
  # Datastructure use in the templates
  # this is a really simple subset of the swagger spec
@@ -74,14 +72,15 @@ import ipdb
 
 class SwaggerGen(object):
     def __init__(self):
+        tmplDir = j.system.fs.joinPaths(j.system.fs.getDirName(__file__),'templates')
         self.jinjaEnv = jinja2.Environment(
-            loader=jinja2.FileSystemLoader('templates'),
+            loader=jinja2.FileSystemLoader(tmplDir),
             trim_blocks=True,
             lstrip_blocks=True
         )
         self.spec = None
-        self.definitions = {}
-        self.globalParams = {}
+        self._definitions = {}
+        self._globalParams = {}
         self.server = {
             'requires':[],
             'baseURL': '',
@@ -90,16 +89,18 @@ class SwaggerGen(object):
         }
         # spore spec for client generation
         self.client = {}
-        self.output = ""
 
-    def loadSpec(self, path):
+    def loadSpecFromStr(self, spec):
+        self.spec = json.loads(spec)
+
+    def loadSpecFromFile(self, path):
         content = j.system.fs.fileGetContents(path)
-        self.spec = json.loads(content)
+        self.loadSpecFromStr(content)
 
     def generate(self, baseURL, serverOuput, clientOutput):
         self.server['baseURL'] = baseURL
         self.generateServer(serverOuput)
-        self.generateSporeSpec(clientOutput)
+        self.generateClient(clientOutput)
 
     def generateServer(self, outputPath):
         self.server['port'] = self._extractPort(self.spec)
@@ -107,13 +108,19 @@ class SwaggerGen(object):
         server = self._renderServer(self.server)
         j.system.fs.writeFile(outputPath, server.strip())
 
-    def generateSporeSpec(self, outputPath):
+    def generateClient(self, outputPath):
+        if len(self.server['handlers']) == 0:
+            self._generateHandlers(self.spec)
+        self._generateSporeSpec(outputPath)
+
+    def _generateSporeSpec(self, outputPath):
         self.client = {
             'name':'JSLuaSpore',
             'base_url': self.server['baseURL']
         }
         self.client['methods'] = self._clientMethods(self.server['handlers'])
-        j.system.fs.writeFile("client.json", json.dumps(self.client, indent=4))
+        j.system.fs.writeFile(outputPath, json.dumps(self.client, indent=4))
+        return self.client
 
     def _clientMethods(self, handlers):
         methods = {}
@@ -168,16 +175,17 @@ class SwaggerGen(object):
                 start , end = s.find('{'), s.find('}')
                 if start == -1 or end == -1:
                     if 'basePath' in self.spec:
-                        return self.spec['basePath']+s
+                        return (self.spec['basePath']+s).lower()
                     else:
-                        return s
+                        return s.lower()
                 else:
                     s = s[:start]+"(.*)"+s[end+1:]
-
+        def formatName(s):
+            return s.replace('/','').replace('{','').replace("}","").replace('-','_')
         paths = []
         for path,methods in specPaths.iteritems():
             p = {}
-            p['name'] = path.replace('/','').replace('{','').replace("}","")
+            p['name'] = formatName(path)
             p['path'] = formatPath(str(path))
             p['methods'] = self._generateMethods(methods)
             paths.append(p)
@@ -222,7 +230,7 @@ class SwaggerGen(object):
     def _processParams(self, specParams):
         if '$ref' in  specParams:
             ss = specParams['$ref'].split("/")
-            _processParams(self.globalParams[ss[2]])
+            _processParams(self._globalParams[ss[2]])
         else:
             location =  specParams['in']
             if location == 'body':
@@ -249,7 +257,7 @@ class SwaggerGen(object):
                 schema = bodyParam['schema']
         if '$ref' in schema:
             ss = schema['$ref'].split("/")
-            schema = self.definitions[ss[2]]
+            schema = self._definitions[ss[2]]
         p = {
            "required": bodyParam['required'],
            "isArray": False,
@@ -262,7 +270,7 @@ class SwaggerGen(object):
         param = arrayParam['items']
         if '$ref' in arrayParam['items']:
             ss = param['$ref'].split("/")
-            param = self.definitions[ss[2]]
+            param = self._definitions[ss[2]]
         p = {
             "required": False if 'required' not in arrayParam['items'] else arrayParam['required'],
             "name" : arrayParam['name'],
@@ -284,7 +292,7 @@ class SwaggerGen(object):
             if 'schema' in detail:
                 if '$ref' in detail['schema']:
                     ss = detail['schema']['$ref'].split("/")
-                    r['schema'] = self.definitions[ss[2]]
+                    r['schema'] = self._definitions[ss[2]]
                 else:
                     r['schema'] = detail['schema']
             responses.append(r)
@@ -293,7 +301,7 @@ class SwaggerGen(object):
     def _generateDefinitions(self, specDefinitions):
         refs = [] # keeps the refs that need to be linked when all definitions are loaded
         for name, detail in specDefinitions.iteritems():
-            self.definitions[name] = detail
+            self._definitions[name] = detail
             if 'properties' in detail:
                 for propName, propDetail in detail['properties'].iteritems():
                     if '$ref' in propDetail:
@@ -316,9 +324,9 @@ class SwaggerGen(object):
                         refs.append(r)
         for r in refs:
             if r['isArray']:
-                self.definitions[r['defName']]['properties'][r['propName']]['items'] = self.definitions[r['ref']]
+                self._definitions[r['defName']]['properties'][r['propName']]['items'] = self._definitions[r['ref']]
             else:
-                self.definitions[r['defName']]['properties'][r['propName']] = self.definitions[r['ref']]
+                self._definitions[r['defName']]['properties'][r['propName']] = self._definitions[r['ref']]
 
     def _renderServer(self, serverSpec):
         output = ""
@@ -349,5 +357,5 @@ class SwaggerGen(object):
 
 if __name__ == '__main__':
     gen = SwaggerGen()
-    gen.loadSpec("tests/spec2.json")
-    gen.generate('http://localhost:8080','server.lua', 'client.spore')
+    gen.loadSpecFromFile("tests/spec2.json")
+    gen.generate('http://localhost:8080','server.lua', 'client.json')

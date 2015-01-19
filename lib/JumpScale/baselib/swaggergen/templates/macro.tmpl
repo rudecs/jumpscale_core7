@@ -1,6 +1,6 @@
 {% from 'table.tmpl' import table %}
 
-{% macro handlerName(name) %}{{name}}Handler{%- endmacro %}
+{% macro handlerName(name) %}{{name}}_Handler{%- endmacro %}
 
 {% macro paramsQuery(params)%}
 {% for p in params.query %}
