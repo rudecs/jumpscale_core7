@@ -6,6 +6,8 @@ import inspect
 import JumpScale.baselib.webdis
 import JumpScale.baselib.redis
 import multiprocessing
+import tarfile
+import StringIO
 
 class Jumpscript(object):
     def __init__(self, ddict=None, path=None):
@@ -168,20 +170,23 @@ class JumpscriptFactory:
     def _getWebdisConnection(self):
         return j.clients.webdis.getByInstance()
 
-    def pushToGridMaster(self):
-        webdis = self._getWebdisConnection()
-        #create tar.gz of cmds & monitoring objects & return as binary info
-        #@todo make async with local workers
-        import tarfile
-        ppath=j.system.fs.joinPaths(j.dirs.tmpDir,"processMgrScripts_upload.tar")
-        with tarfile.open(ppath, "w:bz2") as tar:
+    def getArchivedJumpscripts(self, bz2_compressed=True):
+        """
+        Returns the available jumpscripts in TAR format that is optionally compressed using bzip2.
+        """
+        fp = StringIO.StringIO()
+        with tarfile.open(fileobj=fp, mode='w:bz2' if bz2_compressed else 'w') as tar:
             for path in j.system.fs.walkExtended("%s/apps/agentcontroller/processmanager"%j.dirs.baseDir, recurse=1, filePattern="*.py", dirs=False):
                 arcpath="processmanager/%s"%path.split("/processmanager/")[1]
                 tar.add(path,arcpath)
             for path in j.system.fs.walkExtended("%s/apps/agentcontroller/jumpscripts"%j.dirs.baseDir, recurse=1, filePattern="*.py", dirs=False):
-	        arcpath="jumpscripts/%s"%path.split("/jumpscripts/")[1]
+                arcpath="jumpscripts/%s"%path.split("/jumpscripts/")[1]
                 tar.add(path,arcpath)
-        data=j.system.fs.fileGetContents(ppath)
+        return fp.getvalue()
+
+    def pushToGridMaster(self):
+        webdis = self._getWebdisConnection()
+        data = self.getArchivedJumpscripts()
         webdis.set("%s:scripts"%(self.secret),data)
         # scripttgz=webdis.get("%s:scripts"%(self.secret))
         # assert data==scripttgz

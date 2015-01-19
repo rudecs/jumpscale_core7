@@ -40,6 +40,8 @@ from JumpScale.grid.jumpscripts.JumpscriptFactory import Jumpscript
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
+from base64 import b64encode
+
 class JumpscriptHandler(FileSystemEventHandler):
     def __init__(self, agentcontroller):
         self.agentcontroller = agentcontroller
@@ -656,6 +658,13 @@ class ControllerCMDS():
                 jobresult["isactive"] = False
             result.append(jobresult)
         return result
+
+    def getAllJumpscripts(self, bz2_compressed=True, session=None):
+        """
+        Returns the available jumpscripts as a Base64-encoded TAR archive that is optionally compressed using bzip2.
+        """
+        scripts_tar_content = j.core.jumpscripts.getArchivedJumpscripts(bz2_compressed=bz2_compressed)
+        return b64encode(scripts_tar_content)
 
 # will reinit for testing everytime, not really needed
 # j.servers.geventws.initSSL4Server("myorg", "controller1")
