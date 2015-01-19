@@ -274,8 +274,10 @@ class ControllerCMDS():
         node.name = hostname
         node.machineguid = machineguid
         self._updateNetInfo(session.netinfo, node)
-        guid, new, changed = self.nodeclient.set(node)
-        node = self.nodeclient.get(guid)
+        nodeid, new, changed = self.nodeclient.set(node)
+        node = self.nodeclient.get(nodeid)
+        self._setRoles(node.roles, nodeid)
+        self.sessionsUpdateTime[nodeid]=j.base.time.getTimeEpoch()
         result = {'node': node.dump(), 'webdiskey': j.core.jumpscripts.secret}
         return result
 
