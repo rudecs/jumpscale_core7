@@ -1199,7 +1199,7 @@ class InstallTools():
         else:
             print(("git clone %s -> %s"%(url,dest)))
             extra = ""
-            if depth != 0:
+            if depth and depth != 0:
                  extra = "--depth=%s" % depth
             cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             print cmd
