@@ -170,18 +170,24 @@ class JumpscriptFactory:
     def _getWebdisConnection(self):
         return j.clients.webdis.getByInstance()
 
-    def getArchivedJumpscripts(self, bz2_compressed=True):
+    def getArchivedJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts')):
         """
         Returns the available jumpscripts in TAR format that is optionally compressed using bzip2.
+
+        Args:
+            bz2_compressed (boolean): If True then the returned TAR is bzip2-compressed
+            types (sequence of str): A sequence of the types of jumpscripts to be packed in the returned archive.
+                possible values in the sequence are 'processmanager', 'jumpscripts', and 'luajumpscripts'.
         """
         fp = StringIO.StringIO()
         with tarfile.open(fileobj=fp, mode='w:bz2' if bz2_compressed else 'w') as tar:
-            for path in j.system.fs.walkExtended("%s/apps/agentcontroller/processmanager"%j.dirs.baseDir, recurse=1, filePattern="*.py", dirs=False):
-                arcpath="processmanager/%s"%path.split("/processmanager/")[1]
-                tar.add(path,arcpath)
-            for path in j.system.fs.walkExtended("%s/apps/agentcontroller/jumpscripts"%j.dirs.baseDir, recurse=1, filePattern="*.py", dirs=False):
-                arcpath="jumpscripts/%s"%path.split("/jumpscripts/")[1]
-                tar.add(path,arcpath)
+            for jumpscript_type in types:
+                parent_path = '%s/apps/agentcontroller/%s' % (j.dirs.baseDir, jumpscript_type)
+                for allowed_filename_extension in ('py', 'lua'):
+                    for file_path in j.system.fs.walkExtended(parent_path, recurse=1, dirs=False,
+                                                              filePattern='*.' + allowed_filename_extension):
+                        path_in_archive = jumpscript_type + '/' + file_path.split(parent_path)[1]
+                        tar.add(file_path, path_in_archive)
         return fp.getvalue()
 
     def pushToGridMaster(self):
