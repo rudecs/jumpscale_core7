@@ -101,6 +101,7 @@ class Daemon(object):
         j.application.interactive = False # make sure errorhandler does not require input we are daemon
         self.name = name
         self._command_handlers = {}     # A cache used by command_handler()
+        self.cmds = {}
         self.cmdsInterfaces = {}
         self.cmdsInterfacesProxy = {}
         self._now = 0
@@ -167,10 +168,22 @@ class Daemon(object):
             2= method not found
             2+ any other error
         """
-        # if isinstance(category, bytes):
-        #     category = category.decode('utf-8', 'ignore')
-        # if isinstance(cmd, bytes):
-        #     cmd = cmd.decode('utf-8', 'ignore')
+        cmdkey = "%s_%s" % (category, cmd)
+        # cmd2 = {}
+        if cmdkey in self.cmds:
+            ffunction = self.cmds[cmdkey]
+        else:
+            ffunction = None
+            if not self.cmdsInterfaces.has_key(category):
+                return returnCodes.METHOD_NOT_FOUND, "", None
+
+            cmdinterface= self.cmdsInterfaces[category]
+            if hasattr(cmdinterface, cmd):
+                ffunction = getattr(cmdinterface, cmd)
+            else:
+                return returnCodes.METHOD_NOT_FOUND, "", None
+
+            self.cmds[cmdkey] = ffunction
 
         inputisdict = isinstance(data, dict)
 
