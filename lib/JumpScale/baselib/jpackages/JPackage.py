@@ -437,8 +437,6 @@ class JPackageInstance():
     @deps
     @remote
     def install(self,args={},start=True,deps=True):
-        if self.name == 'portal_lib':
-            import ipdb; ipdb.set_trace()
         print "INSTALL:%s"%self
         
         self._load(args=args)
