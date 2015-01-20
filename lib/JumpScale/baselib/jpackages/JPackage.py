@@ -99,8 +99,11 @@ def deps(F): # F is func or method without instance
         result=None
         jp=args2[0] #this is the self from before
 
+        if jp.remote:
+            return
+
         jp._load(**kwargs)
-        if deps and not jp.remote:
+        if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
                 if dep.jp.name not in j.packages._justinstalled:
@@ -149,6 +152,7 @@ class JPackageInstance():
         self._reposDone={}
         self.args={}
         self._init=False
+        self.remote=jp.remote
 
     def _init(self):
         if self._init==False:
