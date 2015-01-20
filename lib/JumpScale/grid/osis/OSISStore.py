@@ -82,11 +82,11 @@ class OSISStore(object):
         if self.db!=None:
             self.db.checkChangeLog()
 
-    def getObject(self, ddict={}):
+    def getObject(self, ddict={}, **kwargs):
         klass=j.core.osis.getOsisModelClass(self.namespace,self.categoryname)
         if klass=="":
             return ddict            
-        obj = klass(ddict=ddict)
+        obj = klass(ddict=ddict, **kwargs)
         return obj
 
     def setObjIds(self,obj):
@@ -381,3 +381,6 @@ class OSISStore(object):
             with open(data_file) as f:
                 obj = json.load(f)
             self.set(obj['guid'], obj)
+
+    search = find
+    new = getObject
