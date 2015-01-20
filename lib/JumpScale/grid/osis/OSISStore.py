@@ -31,10 +31,10 @@ class OSISStore(object):
         self.json=j.db.serializers.getSerializerType("j")
 
         self.path = path
-        self.tasklets = {}
-
-        # for tasklettype in j.system.fs.listDirsInDir(self.path, dirNameOnly=True):
-        #     self.tasklets[tasklettype] = j.core.taskletengine.get(j.system.fs.joinPaths(self.path, tasklettype))
+        self.te = None
+        taskletpath = j.system.fs.joinPaths(self.path, 'tasklets')
+        if j.system.fs.exists(taskletpath):
+            self.te = j.core.taskletengine.get(taskletpath)
 
         self.namespace = namespace
         self.categoryname = categoryname

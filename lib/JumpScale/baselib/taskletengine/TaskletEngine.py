@@ -38,14 +38,14 @@ class Tasklet:
         self.path = ""
         self.groupname = ""
 
-    def checkExecute(self, q, i, params, service, tags):
+    def checkExecute(self, j, params, service, tags):
         if j.basetype.dictionary.check(params):
             params = j.core.params.get(params)
         else:
             if not j.core.params.isParams(params):
                 raise RuntimeError("Params need to be a params object, cannot execute tasklet: %s" % self.path)
-        if not hasattr(self.module, 'match') or self.module.match(j, i, params, service, tags, self):
-            params = self.module.main(q, i, params, service, tags, self)
+        if not hasattr(self.module, 'match') or self.module.match(j, params, service, tags, self):
+            params = self.module.main(j, params, service, tags, self)
         return params
 
     def checkExecuteV2(self, args, params, tags):
@@ -223,7 +223,7 @@ class TaskletEngine():
             if params.get('stop') is True:
                 return params.result
             if params.get('skipstep') is not True:
-                params = tasklet.checkExecute(j, i, params, service, tags)
+                params = tasklet.checkExecute(j, params, service, tags)
 
         return params
 
