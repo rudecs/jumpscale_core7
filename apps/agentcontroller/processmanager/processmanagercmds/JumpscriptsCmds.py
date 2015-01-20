@@ -1,11 +1,11 @@
 from JumpScale import j
-import gevent
 import ujson
 from redis import Redis
 # from rq import Queue
 # import JumpScale.baselib.redisworker
 from JumpScale.baselib.redisworker.RedisWorker import RedisWorkerFactory
 import crontab
+import JumpScale.baselib.stataggregator
 from JumpScale.grid.jumpscripts.JumpscriptFactory import Jumpscript
 
 class JumpscriptsCmds():    
@@ -138,7 +138,7 @@ class JumpscriptsCmds():
             wait = lambda : period
         while True:
             waittime = wait()
-            gevent.sleep(waittime)
+            time.sleep(waittime)
             self._run(period, redisw)
 
     def _configureScheduling(self):

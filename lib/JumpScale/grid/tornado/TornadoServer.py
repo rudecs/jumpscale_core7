@@ -20,7 +20,7 @@ class MainHandlerRPC(tornado.web.RequestHandler):
         start_response('200 OK', [('Content-Type', 'text/plain')])
         return [data]
 
-    def post(self):
+    def post(self, *args, **kwargs):
         data = self.request.body
         data = data.decode('utf-8')
         
@@ -73,7 +73,7 @@ class TornadoServer():
         self.nr = 0
         # self.jobhandler = JobHandler()
         self.daemon = j.servers.base.getDaemon(sslorg=sslorg, ssluser=ssluser, sslkeyvaluestor=sslkeyvaluestor)
-        self.application = tornado.web.Application([(r"/rpc/", MainHandlerRPC, dict(server=self)), ])
+        self.application = tornado.web.Application([(r"(.*)", MainHandlerRPC, dict(server=self)), ])
         self.type = "tornado"
 
     def start(self):
@@ -85,3 +85,7 @@ class TornadoServer():
 
     def addCMDsInterface(self, MyCommands, category=""):
         self.daemon.addCMDsInterface(MyCommands, category)
+
+    def _stack_context_handle_exception(self, *kwargs):
+        print kwargs
+        import ipdb; ipdb.set_trace()

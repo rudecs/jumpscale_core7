@@ -43,7 +43,7 @@ class DaemonCMDS(object):
         """
         # ser=j.db.serializers.getMessagePack()
         # sessiondictstr=ser.loads(data)
-        print(("register session:%s "%session))
+        print("register session:%s "%session)
         # for k, v in list(sessiondata.items()):
         #     if isinstance(k, bytes):
         #         sessiondata.pop(k)
@@ -147,7 +147,6 @@ class Daemon(object):
         Returns:
             A callable function or None if the method could not be found.
         """
-
         cache_key = "%s_%s" % (command_category, command)
 
         if cache_key not in self._command_handlers:
@@ -238,20 +237,11 @@ class Daemon(object):
             # eco.errormessage += "\nfunction arguments were:%s\n" % str(inspect.getargspec(ffunction).args)
             if len(str(data))>1024:
                 data="too much data to show."
-                msg="too much data to show."
-            else:
-                data2 = data.copy()
-                data2.pop('session', None)
-                msg = ujson.dumps(data)
 
-            if session:
-                nid = session.nid
-                gid = session.gid
-            else:
-                nid = 0
-                gid = 0
+            data.pop('session', None)
+
             eco.errormessage = \
-                    "ERROR IN RPC CALL %s: %s. (from:%s:%s)\nData:%s\n" % (cmdkey, eco.errormessage, gid, nid, msg)
+                "ERROR IN RPC CALL %s: %s. (Session:%s)\nData:%s\n" % (cmdkey, eco.errormessage, session, data)
 
             eco.process()
             eco.__dict__.pop("tb", None)

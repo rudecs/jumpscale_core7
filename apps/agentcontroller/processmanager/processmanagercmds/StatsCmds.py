@@ -11,7 +11,7 @@ class StatsCmds():
             return
         self.daemon=daemon
         self._adminAuth=daemon._adminAuth
-        self.manager= j.tools.startupmanager        
+        # self.manager= j.tools.startupmanager        
 
     def listStatKeys(self,prefix="",memonly=False,avgmax=False,session=None):        
         if session<>None:

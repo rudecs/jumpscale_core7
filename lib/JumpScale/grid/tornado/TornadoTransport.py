@@ -2,15 +2,16 @@ from JumpScale import j
 
 import JumpScale.grid.serverbase
 from JumpScale.grid.serverbase.DaemonClient import Transport
+from JumpScale.grid.serverbase.TCPHATransport import TCPHATransport
 import time
 
 
 import requests
 
 class TornadoTransport(Transport):
-    def __init__(self, addr="localhost", port=9999):
+    def __init__(self, addr="127.0.0.1", port=9999, timeout=60):
 
-        self.timeout = 60
+        self.timeout = timeout
         self.url = "http://%s:%s/rpc/" % (addr, port)
         self._id = None
 
@@ -50,7 +51,7 @@ class TornadoTransport(Transport):
                 if now>start+timeout:
                     break
                 try:
-                    rcv = requests.post(self.url, data=data2, headers=headers) #, timeout=timeout)
+                    rcv = requests.post(url=self.url, data=data2, headers=headers, timeout=timeout)
                 except Exception as e:
                     if str(e).find("Connection refused")!=-1:
                         print(("retry connection to %s"%self.url))
@@ -76,3 +77,12 @@ class TornadoTransport(Transport):
 
         content = rcv.content.decode('utf-8')
         return j.servers.base._unserializeBinReturn(content)
+
+
+class TornadoHATransport(TCPHATransport):
+    def __init__(self, connections, timeout=None):
+        TCPHATransport.__init__(self, connections, TornadoTransport, timeout)
+
+    @property
+    def ipaddr(self):
+        return self._connection[0]
