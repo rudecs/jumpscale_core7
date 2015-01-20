@@ -77,7 +77,6 @@ class Tmux:
                 if cmd.find("$")!=-1:
                      cmd=cmd.replace("$","\\$")                              
                 cmd2="tmux send-keys -t '%s' \"%s\" ENTER" % (pane,cmd)
-                print(cmd2)
             if tmuxuser!=None:
                 cmd2 = "sudo -u %s -i %s"%(tmuxuser,cmd2)
             # j.system.process.run(cmd2, env=env)

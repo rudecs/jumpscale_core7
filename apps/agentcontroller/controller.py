@@ -48,7 +48,10 @@ class JumpscriptHandler(FileSystemEventHandler):
 
     def on_any_event(self, event):
         if event.src_path and not event.is_directory and event.src_path.endswith('.py'):
-            self.agentcontroller.reloadjumpscripts()
+            try:
+                self.agentcontroller.reloadjumpscripts()
+            except:
+                pass # reload failed shoudl try again next file change
 
 class ControllerCMDS():
 
@@ -303,10 +306,6 @@ class ControllerCMDS():
         if session<>None:
             self._adminAuth(session.user,session.passwd)
 
-        print "PUSHJUMPSCRIPTS TO WEBDIS"
-        j.core.jumpscripts.pushToGridMaster()
-        print "OK"
-        print "LOADJUMPSCRIPTS in AC & OSIS"
         for path2 in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
 
             if j.system.fs.getDirName(path2,True)[0]=="_": #skip dirs starting with _
@@ -339,7 +338,7 @@ class ControllerCMDS():
             key = "%s_%s" % (t.organization, t.name)
             self.jumpscripts[key] = t
             self.jumpscriptsId[key0] = t
-        print "OK"
+        j.core.jumpscripts.pushToGridMaster()
 
        
     def getJumpscript(self, organization, name,gid=None,reload=False, session=None):

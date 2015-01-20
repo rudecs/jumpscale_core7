@@ -76,11 +76,10 @@ class Process():
         else:
             stdout=None
 
-        stderr = subprocess.STDOUT
         stdin = subprocess.PIPE
-        if opts.debug:
-            stdout = sys.stdout
-            stderr = sys.stderr
+        stdout = sys.stdout
+        stderr = sys.stderr
+        self.cmds.extend(['-lp', self.logpath])
 
         try:            
             self.p = psutil.Popen(self.cmds, env=self.env,cwd=self.workingdir,stdin=stdin, stdout=stdout, stderr=stderr,bufsize=0,shell=False) #f was: subprocess.PIPE
@@ -211,7 +210,7 @@ class ProcessManager():
             self.hrd.set("osis.connection","processmanager")
             verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, args={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
             
-            self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
+            self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename, new=True)
         else:
             self.acclient=None
         
@@ -219,13 +218,8 @@ class ProcessManager():
 
         # self._webserverStart()        
         self._workerStart()
-
         j.core.grid.init()
-
-        processmanagerGevent=True
-
         gevent.spawn(self._processManagerStart)
-
         self.mainloop()
 
     def _webserverStart(self):
@@ -299,7 +293,6 @@ def verifyinstall(domain='jumpscale', name='', instance='main', args={}):
 parser = cmdutils.ArgumentParser()
 parser.add_argument("-i", '--instance', default="0", help='jsagent instance', required=False)
 parser.add_argument("-r", '--reset', action='store_true',help='jsagent reset', required=False,default=False)
-parser.add_argument("-d", '--debug', action='store_true',help='Put JSAgent in debug mode', required=False,default=False)
 parser.add_argument("-s", '--services', help='list of services to run e.g heka, agentcontroller,web', required=False,default="")
 
 opts = parser.parse_args()

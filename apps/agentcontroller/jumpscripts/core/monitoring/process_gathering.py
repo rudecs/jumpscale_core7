@@ -11,6 +11,7 @@ license = "bsd"
 version = "1.0"
 category = "info.gather.process"
 period = 120 #always in sec
+timeout = period * 0.2 # max runtime = 20% of period
 enable=True
 async=True
 queue='process'
@@ -227,6 +228,7 @@ def action():
             j.system.stataggregator.delete(prefix=aggrkey)
             
     j.core.processmanager.monObjects.processobject.monitorobjects=result
+    j.system.stataggregator.clean()
 
 
 if __name__ == '__main__':

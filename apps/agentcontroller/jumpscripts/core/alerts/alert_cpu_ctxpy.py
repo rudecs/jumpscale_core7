@@ -10,6 +10,7 @@ author = "deboeckj@codescalers.com"
 license = "bsd"
 version = "1.0"
 period = 15*60  # always in sec
+timeout = period * 0.2
 startatboot = True
 order = 1
 enable = True
@@ -31,9 +32,9 @@ def action():
         nid = int(nid)
         level = None
         print avgctx
-        if avgctx > 30000:
+        if avgctx > 100000:
             level = 1 
-        elif avgctx > 10000:
+        elif avgctx > 600000:
             level = 2
         if level:
             msg = 'CPU contextswitch is to high current value %s' % avgctx
