@@ -30,20 +30,34 @@ def remote(F): # F is func or method without instance
             #put hrd on dest system
             node=kwargs["args"]["node2execute"]
             # hrdfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(node=node),jp.name,jp.instance)
-            hrddestfile="%s/%s.%s.%s.hrd"%(j.dirs.getHrdDir(node=node),jp.domain,jp.name,jp.instance)
+            hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),jp.name,jp.instance)
             codegen.addHRD("jphrd",jp.hrd,hrddestfile)
 
             #put action file on dest system
-            actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node),jp.name,jp.instance)
-            actionfiledest="%s/%s__%s__%s.py"%(j.dirs.getJPActionsPath(system=True),jp.domain,jp.name,jp.instance)
+            actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
+            actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
             codegen.addPyFile(actionfile,path2save=actionfiledest)
-
             # dest="/tmp/%s.%s.%s.py"%(jp.domain,jp.name,jp.instance)
             # codegen.save(dest)
 
             toexec=codegen.get()
 
-            jp._execute(args={"shell":"jspython","cmd":toexec,"node":node})
+            sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
+            ip = sshHRD.get("param.machine.ssh.ip")
+            port = sshHRD.get("param.machine.ssh.port")
+            keyhrd=j.application.getAppInstanceHRD("sshkey",sshHRD.get('param.ssh.key.name'))
+            j.remote.cuisine.fabric.env["key"] = keyhrd.get('param.ssh.key.priv')
+
+            cl=j.remote.cuisine.connect(ip,port)
+            tmploc = '/tmp/exec.py'
+            cl.file_write(tmploc, toexec)
+            cmd = "jspython %s" % tmploc
+            cl.run(cmd)
+            cl.run('cd /opt/code/git/0-complexity/it_deployment_test')
+            cmd = 'jpackage %s -n %s -i %s --remote' % (F.func_name, jp.name, jp.instance)
+            cl.run(cmd)
+            del j.remote.cuisine.fabric.env["key"]
+            # jp._execute(args={"shell":"jspython","cmd":toexec,"node":node})
 
     return wrapper
 
@@ -86,7 +100,7 @@ def deps(F): # F is func or method without instance
         jp=args2[0] #this is the self from before
 
         jp._load(**kwargs)
-        if deps:
+        if deps and not jp.remote:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
                 if dep.jp.name not in j.packages._justinstalled:
@@ -101,11 +115,12 @@ def deps(F): # F is func or method without instance
 
 class JPackage():
 
-    def __init__(self,domain="",name=""):
+    def __init__(self,domain="",name="",remote=False):
         self.name=name
         self.domain=domain
         self.hrd=None
         self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
+        self.remote=remote
 
         self.hrdpath=""
         self.hrdpath_main=""

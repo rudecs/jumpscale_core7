@@ -117,7 +117,7 @@ class JPackageFactory():
                             # res.append(JPackage(domainfound,namefound))
                 for pkg in setPkg:
                     domain,name = (pkg.split(':'))
-                    res.append(JPackage(domain,name))
+                    res.append(JPackage(domain,name,remote=remote))
         #now name & domain is known
         if maxnr!=None and len(res)>maxnr:
             j.events.inputerror_critical("Found more than %s jpackage for query '%s':'%s'"%(maxnr,domain,name))
