@@ -10,7 +10,7 @@ except ImportError:
     import json
 
 from JumpScale import j
-from .ErrorConditionObject import ErrorConditionObject
+from .ErrorConditionObject import ErrorConditionObject, LEVELMAP
 
 
 class BaseException(Exception):
@@ -80,6 +80,8 @@ class ErrorConditionHandler():
         sys.excepthook = self.excepthook
         self.inException=False
 
+    def getLevelName(self, level):
+        return LEVELMAP.get(level, 'UNKNOWN')
 
     def _handleRaise(self, type, level, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags=""):        
         if pythonExceptionObject!=None:

@@ -15,6 +15,8 @@ import JumpScale.baselib.hash
 import ExtraTools
 
 
+LEVELMAP = {1: 'CRITICAL', 2: 'WARNING', 3: 'INFO', 4: 'DEBUG'}
+
 class ErrorConditionObject():
     """
     @param type #BUG,INPUT,MONITORING,OPERATIONS,PERFORMANCE,UNKNOWN  
@@ -132,9 +134,9 @@ class ErrorConditionObject():
                 self.level=1
                 j.events.inputerror_warning("Errorcondition was thrown with wrong level, needs to be int.\n%s"%str(self),"eco.check.level")
 
-        if self.level>3:
-            j.events.inputerror_warning("Errorcondition was thrown with wrong level, needs to be max 3.\n%s"%str(self),"eco.check.level")
-            self.level=3
+        if self.level>4:
+            j.events.inputerror_warning("Errorcondition was thrown with wrong level, needs to be max 4.\n%s"%str(self),"eco.check.level")
+            self.level=4
 
         res=j.errorconditionhandler._send2Redis(self)
         if res!=None:
