@@ -99,9 +99,6 @@ def deps(F): # F is func or method without instance
         result=None
         jp=args2[0] #this is the self from before
 
-        if jp.remote:
-            return
-
         jp._load(**kwargs)
         if deps:
             j.packages._justinstalled=[]

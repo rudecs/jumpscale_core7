@@ -179,7 +179,7 @@ if args.quiet:
     sys.stdout = NullDevice();
 
 if args.action == 'configure':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.configure(args=hrddata,deps=args.deps)
         package.start(args=hrddata)
