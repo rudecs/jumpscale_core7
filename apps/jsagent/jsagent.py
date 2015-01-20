@@ -81,6 +81,7 @@ class Process():
         if opts.debug:
             stdout = sys.stdout
             stderr = sys.stderr
+            self.cmds.extend(['-lp', self.logpath])
 
         try:            
             self.p = psutil.Popen(self.cmds, env=self.env,cwd=self.workingdir,stdin=stdin, stdout=stdout, stderr=stderr,bufsize=0,shell=False) #f was: subprocess.PIPE
