@@ -66,6 +66,7 @@ group.add_argument('--nodeps',required=False, action='store_true',help='do actio
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
 
 group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
+group.add_argument('--remote',required=False,default=False,action="store_true",help='execute from a remote machine')
 
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
@@ -81,7 +82,7 @@ group.add_argument('--url', required=False, help='uncpath to export to or import
 group = parser.add_argument_group(title="List")
 group.add_argument('--installed', required=False, action='store_true',default=None, help='List installed jpackages')
 
-def getJPackage(args, installed=None,debug=None,update=False,expandInstances=True,toinstall=False,list=False):
+def getJPackage(args, installed=None,debug=None,update=False,expandInstances=True,toinstall=False,list=False,remote=False):
 
     packages=[]
 
@@ -92,7 +93,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
     if name!="" and name.find("*")==-1:
         for pname in args.name.split(","):
             if pname.strip()!="":
-                packages += j.packages.find(name=pname.strip(), domain=args.domain)
+                packages += j.packages.find(name=pname.strip(), domain=args.domain,remote=remote)
     else:        
         packages += j.packages.find(domain=args.domain)
         if len(packages) > 1 and name.find("*")!=-1:
@@ -276,7 +277,7 @@ elif args.action == 'stop':
         package.stop(args=hrddata,deps=args.deps)
 
 elif args.action == 'execute':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True)
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, remote=args.remote)
     for package in packages:
         package.execute(args=hrddata,deps=args.deps)
 

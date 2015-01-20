@@ -16,10 +16,10 @@ def loadmodule(name, path):
 def remote(F): # F is func or method without instance
     def wrapper(*args2,**kwargs): # class instance in args[0] for method
         print "remote wrapper"
-        
+
         result=None
         jp=args2[0] #this is the self from before
-        jp._load(**kwargs)        
+        jp._load(**kwargs)
         if not "args" in kwargs:
             raise RuntimeError("args need to be part of kwargs")
         if not "node2execute" in kwargs["args"]:
@@ -43,13 +43,13 @@ def remote(F): # F is func or method without instance
 
             toexec=codegen.get()
 
-            jp.execute(shell="python",cmd=toexec)
+            jp._execute(args={"shell":"jspython","cmd":toexec,"node":node})
 
     return wrapper
 
 #decorator to get dependencies
 def deps(F): # F is func or method without instance
-    def processresult(result,newresult):        
+    def processresult(result,newresult):
         """
         this makes sure we can concatenate the results in an intelligent way for all deps
         """
@@ -111,7 +111,7 @@ class JPackage():
         self.hrdpath_main=""
 
     def getInstance(self,instance="main"):
-        return JPackageInstance(self,instance)        
+        return JPackageInstance(self,instance)
 
     def __repr__(self):
         return "%-15s:%s"%(self.domain,self.name)
@@ -131,25 +131,25 @@ class JPackageInstance():
         self.hrdpath=""
         self.actions=None
         self._loaded=False
-        self._reposDone={}   
-        self.args={} 
+        self._reposDone={}
+        self.args={}
         self._init=False
 
     def _init(self):
         if self._init==False:
             import JumpScale.baselib.remote.cuisine
-            import JumpScale.lib.docker    
+            import JumpScale.lib.docker
         self._init=True
 
-    def getLogPath(self):   
-        self._load()     
-        logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))        
+    def getLogPath(self):
+        self._load()
+        logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))
         return logpath
 
     def getHRDPath(self,node=None):
         if j.packages.type=="c":
             hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.instance)
-        else:            
+        else:
             hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
         return hrdpath
 
@@ -204,11 +204,11 @@ class JPackageInstance():
             #     j.do.copyFile(source,self.hrdpath)
             # else:
             #     if not j.system.fs.exists(path=source):
-            #         j.do.writeFile(self.hrdpath,"")                
+            #         j.do.writeFile(self.hrdpath,"")
 
             source="%s/actions.py"%self.jp.metapath
             j.do.copyFile(source,self.actionspath)
-            
+
             args["jp.name"]=self.jp.name
             args["jp.domain"]=self.jp.domain
             args["jp.instance"]=self.instance
@@ -217,7 +217,7 @@ class JPackageInstance():
 
             # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
             self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
-            
+
             self.hrd.save()
 
             self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
@@ -248,14 +248,14 @@ class JPackageInstance():
                 login="guest"
         if recipeitem<>None and "passwd" in recipeitem:
             passwd=recipeitem["passwd"]
-        
+
         branch='master'
         if recipeitem<>None and "branch" in recipeitem:
             branch=recipeitem["branch"]
 
         revision=None
         if recipeitem<>None and "revision" in recipeitem:
-            revision=recipeitem["revision"]            
+            revision=recipeitem["revision"]
 
         depth=1
         if recipeitem<>None and "depth" in recipeitem:
@@ -271,9 +271,9 @@ class JPackageInstance():
         if login:
             dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,dest=dest)
         else:
-            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision,dest=dest)  
+            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision,dest=dest)
         self._reposDone[url]=dest
-        return dest      
+        return dest
 
     def getDependencies(self, build=False):
         """
@@ -281,7 +281,7 @@ class JPackageInstance():
         @type build: bool
         """
         res=[]
-        for item in self.hrd.getListFromPrefix("dependencies"): 
+        for item in self.hrd.getListFromPrefix("dependencies"):
 
             if isinstance(item,str):
                 if item.strip()=="":
@@ -325,7 +325,7 @@ class JPackageInstance():
             if instance=="":
                 instance="main"
 
-            jp=j.packages.get(name=name,domain=domain)            
+            jp=j.packages.get(name=name,domain=domain)
             jp=jp.getInstance(instance)
 
             jp.args=args
@@ -333,7 +333,7 @@ class JPackageInstance():
             # if args!={}:
             #     jp._load()
 
-            res.append(jp) 
+            res.append(jp)
 
         return res
 
@@ -365,7 +365,7 @@ class JPackageInstance():
             # print recipeitem
             #pull the required repo
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
-            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)        
+            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
 
         self.actions.build(**args)
 
@@ -388,19 +388,19 @@ class JPackageInstance():
 
         defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
         musthave=["cmd","args","prio","env","cwd","timeout_start","timeout_start","ports","startupmanager","filterstr","name","user"]
-        
+
         procs=self.hrd.getListFromPrefixEachItemDict("process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
         for process in procs:
-            counter+=1                
+            counter+=1
 
-            process["test"]=1            
+            process["test"]=1
 
             if process["name"].strip()=="":
                 process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
 
             if self.hrd.exists("env.process.%s"%counter):
                 process["env"]=self.hrd.getDict("env.process.%s"%counter)
-            
+
             if not isinstance(process["env"],dict):
                 raise RuntimeError("process env needs to be dict")
 
@@ -411,12 +411,12 @@ class JPackageInstance():
         self._load(args=args)
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
             src=src.replace(";",":")
-            if src.strip()!="":     
-                j.system.platform.ubuntu.addSourceUri(src)                
+            if src.strip()!="":
+                j.system.platform.ubuntu.addSourceUri(src)
 
         for src in self.hrd.getListFromPrefix("ubuntu.apt.key.pub"):
             src=src.replace(";",":")
-            if src.strip()!="":            
+            if src.strip()!="":
                 cmd="wget -O - %s | apt-key add -"%src
                 j.do.execute(cmd,dieOnNonZeroExitCode=False)
 
@@ -430,17 +430,17 @@ class JPackageInstance():
         if self.hrd.exists("ubuntu.packages"):
             for jp in self.hrd.getList("ubuntu.packages"):
                 if jp.strip()!="":
-                    j.do.execute("apt-get install %s -f"%jp,dieOnNonZeroExitCode=False)     
+                    j.do.execute("apt-get install %s -f"%jp,dieOnNonZeroExitCode=False)
 
-        self.actions.prepare()  
+        self.actions.prepare()
 
     @deps
     @remote
     def install(self,args={},start=True,deps=True):
         print "INSTALL:%s"%self
-        
+
         self._load(args=args)
-            
+
         self.stop(args=args,deps=deps)
 
         for dep in self.getDependencies():
@@ -450,7 +450,7 @@ class JPackageInstance():
                 else:
                     dep.install()
                 j.packages._justinstalled.append(dep.jp.name)
-        
+
         self.prepare(args=args,deps=deps)
         #download
 
@@ -462,7 +462,7 @@ class JPackageInstance():
             src=src.replace("//","/")
             if "dest" not in recipeitem:
                 raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
-            dest=recipeitem['dest']          
+            dest=recipeitem['dest']
 
             if "link" in recipeitem and str(recipeitem["link"]).lower()=='true':
                 #means we need to only list files & one by one link them
@@ -512,7 +512,7 @@ class JPackageInstance():
                         j.do.copyTree(src,dest)
 
 
-        self.actions.configure()            
+        self.actions.configure()
 
         self.start(args=args)
 
@@ -568,7 +568,7 @@ class JPackageInstance():
     @deps
     def publish(self,args={},deps=True):
         """
-        check which repo's are used & push the info 
+        check which repo's are used & push the info
         this does not use the build repo's
         """
         self._load(args=args)
@@ -582,7 +582,7 @@ class JPackageInstance():
         self.actions.package(**args)
 
     @deps
-    @remote    
+    @remote
     def update(self,args={},deps=True):
         """
         - go over all related repo's & do an update
@@ -619,7 +619,7 @@ class JPackageInstance():
         """
         - remove build repo's !!!
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
-        - remove data of the app        
+        - remove data of the app
         """
         self._load(args=args)
         self.resetstate()
@@ -628,31 +628,37 @@ class JPackageInstance():
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest="/opt/build/%s"%name
             j.do.delete(dest)
-        
+
         self.actions.removedata(**args)
 
     @deps
-    @remote    
+    @remote
     def removedata(self,args={},deps=False):
         """
         - remove build repo's !!!
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
-        - remove data of the app        
+        - remove data of the app
         """
         self._load(args=args)
         self.actions.removedata(**args)
 
     @deps
-    @remote    
+    @remote
     def execute(self,args={},deps=False):
         """
-        execute cmd on jpackage    
+        execute cmd on jpackage
+        """
+        self._execute(args=args,deps=deps)
+
+    def _execute(self,args={},deps=False):
+        """
+        execute cmd on jpackage
         """
         self._load(args=args)
         self.actions.execute(**args)
 
     @deps
-    @remote    
+    @remote
     def uninstall(self,args={},deps=True):
         self._load(args)
         self.reset()
@@ -660,7 +666,7 @@ class JPackageInstance():
         self.actions.uninstall(**args)
 
     @deps
-    @remote    
+    @remote
     def monitor(self,args={},deps=True):
         """
         do all monitor checks and return True if they all succeed
@@ -679,7 +685,7 @@ class JPackageInstance():
 
     @deps
     @remote
-    def export(self,args={},deps=True):        
+    def export(self,args={},deps=True):
         self._load(args=args)
         self.actions.export(url,**args)
 

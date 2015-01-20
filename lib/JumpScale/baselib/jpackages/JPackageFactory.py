@@ -32,14 +32,14 @@ class JPackageFactory():
             j.do.debug=False
 
             if j.system.fs.exists(path="/etc/my_init.d"):
-                self.indocker=True            
+                self.indocker=True
 
             login=j.application.config.get("whoami.git.login").strip()
             passwd=j.application.config.get("whoami.git.passwd").strip()
             if self.type == "n":
                 items=j.application.config.getDictFromPrefix("jpackage.metadata")
-                repos=j.do.getGitReposListLocal()            
-                for domain in items.keys():                
+                repos=j.do.getGitReposListLocal()
+                for domain in items.keys():
                     url=items[domain]
                     domain=domain.rpartition(".url")[0]
                     reponame=url.rpartition("/")[-1]
@@ -63,7 +63,7 @@ class JPackageFactory():
     def getDomains(self):
         return self.domains.keys()
 
-    def find(self,domain="",name="",maxnr=None):
+    def find(self,domain="",name="",maxnr=None,remote=False):
         self._doinit()
 
         #create some shortcuts for fast return
@@ -75,28 +75,54 @@ class JPackageFactory():
                     return []
 
         res=[]
-        for domainfound in self.domains.keys():
-            for namefound in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
-                if namefound in [".git"]:
-                    continue
-                if domain=="" and name=="":
-                    res.append(JPackage(domainfound,namefound))
-                elif domain=="" and name!="":
-                    if name==namefound:
+        if not remote:
+            for domainfound in self.domains.keys():
+                for namefound in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
+                    if namefound in [".git"]:
+                        continue
+                    if domain=="" and name=="":
                         res.append(JPackage(domainfound,namefound))
-                elif domain!="" and name=="":
-                    if domain==domainfound:
-                        res.append(JPackage(domainfound,namefound))
-                else:
-                    if domain==domainfound and name==namefound: 
-                        res.append(JPackage(domainfound,namefound))
-
-
+                    elif domain=="" and name!="":
+                        if name==namefound:
+                            res.append(JPackage(domainfound,namefound))
+                    elif domain!="" and name=="":
+                        if domain==domainfound:
+                            res.append(JPackage(domainfound,namefound))
+                    else:
+                        if domain==domainfound and name==namefound:
+                            res.append(JPackage(domainfound,namefound))
+        else: #remote execution
+            for domainfound in self.domains.keys():
+                parent = j.system.fs.getParent(self.domains[domainfound])
+                actionsPath = j.system.fs.joinPaths(parent,'self/actions')
+                setPkg = set()
+                for namefound in j.system.fs.listFilesInDir(path=actionsPath):
+                    namefound = j.system.fs.getBaseName(namefound).split("__")[0]
+                    if namefound in [".git"]:
+                        continue
+                    if domain=="" and name=="":
+                        # res.append(JPackage(domainfound,namefound))
+                        setPkg.add("%-15s:%s"%(domainfound,namefound))
+                    elif domain=="" and name!="":
+                        if name==namefound:
+                            setPkg.add("%-15s:%s"%(domainfound,namefound))
+                            # res.append(JPackage(domainfound,namefound))
+                    elif domain!="" and name=="":
+                        if domain==domainfound:
+                            setPkg.add("%-15s:%s"%(domainfound,namefound))
+                            # res.append(JPackage(domainfound,namefound))
+                    else:
+                        if domain==domainfound and name==namefound:
+                            setPkg.add("%-15s:%s"%(domainfound,namefound))
+                            # res.append(JPackage(domainfound,namefound))
+                for pkg in setPkg:
+                    domain,name = (pkg.split(':'))
+                    res.append(JPackage(domain,name))
         #now name & domain is known
         if maxnr!=None and len(res)>maxnr:
-            j.events.inputerror_critical("Found more than %s jpackage for query '%s':'%s'"%(maxnr,domain,name))    
+            j.events.inputerror_critical("Found more than %s jpackage for query '%s':'%s'"%(maxnr,domain,name))
 
-        return res    
+        return res
 
     def get(self,domain="",name="",instance="",args={}):
         self._doinit()
@@ -107,7 +133,7 @@ class JPackageFactory():
             jps[0]=jps[0].getInstance(instance)
             jps[0].args=args
         return jps[0]
-        
+
     def install(self,domain="",name="",instance="main",args={}):
         self._doinit()
         jp=self.get(domain,name)
@@ -123,7 +149,7 @@ class JPackageFactory():
             else:
                 source="%s/apps/"%j.dirs.hrdDir
             self.hrd=j.core.hrd.get(source)
-        
+
         return self.hrd
 
     def __str__(self):
