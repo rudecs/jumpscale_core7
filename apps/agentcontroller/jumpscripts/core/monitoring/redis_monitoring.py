@@ -13,6 +13,7 @@ version = "1.0"
 category = "monitor.redis"
 
 period = 300 #always in sec
+timeout = period * 0.2
 enable = False #@todo need other implementation
 async = True
 roles = []

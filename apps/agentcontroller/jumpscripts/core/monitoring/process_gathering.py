@@ -11,6 +11,7 @@ license = "bsd"
 version = "1.0"
 category = "info.gather.process"
 period = 120 #always in sec
+timeout = period * 0.2
 enable=True
 async=True
 queue='process'

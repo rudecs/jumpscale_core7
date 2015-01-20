@@ -10,6 +10,7 @@ author = "deboeckj@codescalers.com"
 license = "bsd"
 version = "1.0"
 period = 15*60  # always in sec
+timeout = period * 0.2
 startatboot = True
 order = 1
 enable = True
