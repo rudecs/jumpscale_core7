@@ -240,8 +240,8 @@ class Worker(object):
                 self.redisw.redis.hdel("workers:jobs",job.id)
 
 
-    def log(self, message, category='',level=5, time=''):
-        if time == '':
+    def log(self, message, category='',level=5, time=None):
+        if time is None:
             time = j.base.time.getLocalTimeHR()
         msg = "%s:worker:%s:%s" % (time, self.queuename, message)
         print(msg)
