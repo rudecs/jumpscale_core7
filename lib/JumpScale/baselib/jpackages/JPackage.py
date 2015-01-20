@@ -29,7 +29,6 @@ def remote(F): # F is func or method without instance
 
             #put hrd on dest system
             node=kwargs["args"]["node2execute"]
-            # hrdfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(node=node),jp.name,jp.instance)
             hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),jp.name,jp.instance)
             codegen.addHRD("jphrd",jp.hrd,hrddestfile)
 
@@ -37,10 +36,10 @@ def remote(F): # F is func or method without instance
             actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
             actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
             codegen.addPyFile(actionfile,path2save=actionfiledest)
-            # dest="/tmp/%s.%s.%s.py"%(jp.domain,jp.name,jp.instance)
-            # codegen.save(dest)
 
             toexec=codegen.get()
+
+            cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
 
             sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
             ip = sshHRD.get("param.machine.ssh.ip")
@@ -49,15 +48,19 @@ def remote(F): # F is func or method without instance
             j.remote.cuisine.fabric.env["key"] = keyhrd.get('param.ssh.key.priv')
 
             cl=j.remote.cuisine.connect(ip,port)
+            # create a .git dir so the directory is seen as a git config repo
+            if not cl.file_exists("%s/.git"%cwd):
+                cmd = "cd %s; mkdir .git" %(cwd)
+                cl.run(cmd)
+            # install hrd and action file on remote system
             tmploc = '/tmp/exec.py'
             cl.file_write(tmploc, toexec)
             cmd = "jspython %s" % tmploc
+            # then run the jpackage command on the remote system
             cl.run(cmd)
-            cl.run('cd /opt/code/git/0-complexity/it_deployment_test')
-            cmd = 'jpackage %s -n %s -i %s --remote' % (F.func_name, jp.name, jp.instance)
+            cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, F.func_name, jp.name, jp.instance)
             cl.run(cmd)
             del j.remote.cuisine.fabric.env["key"]
-            # jp._execute(args={"shell":"jspython","cmd":toexec,"node":node})
 
     return wrapper
 
@@ -215,8 +218,6 @@ class JPackageInstance():
 
             args.update(self.args)
 
-            
-
             # source="%s/instance.hrd"%self.jp.metapath
             # if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
             #     j.do.copyFile(source,self.hrdpath)
@@ -228,7 +229,7 @@ class JPackageInstance():
             args["jp.domain"]=self.jp.domain
             args["jp.instance"]=self.instance
 
-            if not remote:
+            if not self.remote:
                 source="%s/actions.py"%self.jp.metapath
                 j.do.copyFile(source,self.actionspath)
 
