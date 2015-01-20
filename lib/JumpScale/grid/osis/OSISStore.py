@@ -382,5 +382,7 @@ class OSISStore(object):
                 obj = json.load(f)
             self.set(obj['guid'], obj)
 
-    search = find
     new = getObject
+
+    def search(self, *args, **kwargs):
+        return self.find(*args, **kwargs)
