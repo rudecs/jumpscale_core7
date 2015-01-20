@@ -186,7 +186,7 @@ if args.action == 'configure':
 
 elif args.action == 'install':
 
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True, remote=args.remote)
        
     # if args.instance<>0 and len(packages)>1:        
     #     j.events.inputerror_critical("Cannot find more jpackages if instance is given.")

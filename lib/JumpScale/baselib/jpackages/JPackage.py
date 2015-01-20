@@ -5,6 +5,7 @@ import sys
 
 import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
+import JumpScale.baselib.remote.cuisine
 
 def loadmodule(name, path):
     parentname = ".".join(name.split(".")[:-1])
@@ -46,7 +47,7 @@ def remote(F): # F is func or method without instance
                 # codegen.addHRD("jphrd",jp.hrd,hrddestfile)
 
                 #put action file on dest system
-                actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
+                actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=node),jp.name,jp.instance)
                 content = j.system.fs.fileGetContents(actionfile)
                 actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
                 cl.file_write(actionfiledest,content)
