@@ -36,7 +36,7 @@ class Stat():
         tot=0.0
         nr=0
         m=0 #max
-        for key in list(self.results.keys()):
+        for key in self.results.keys():
             tot+=self.results[key]
             nr+=1
             if self.results[key]>m:
@@ -50,8 +50,8 @@ class Stat():
             return [0,0]
 
     def clean(self,now):
-        for key in list(self.results.keys()):
-            if key<now-self.period:
+        for key in self.results.keys():
+            if float(key) < now-self.period:
                 self.results.pop(key)
 
 class StatDiffPerSec(Stat):
@@ -92,7 +92,7 @@ class StatDiffPerSec(Stat):
         tot=0.0
         nr=0
         m=0 #max
-        for key in list(self.results.keys()):
+        for key in self.results.keys():
             if self.results[key]>0:
                 tot+=self.results[key]
                 nr+=1
@@ -191,24 +191,28 @@ class StatAggregator():
         return stat
 
     def clean(self):
-        for key in self.stats:
+        for key in self.stats.keys():
             stat=self.loadStat(key)
             stat.clean(self.getTime())
+            if not stat.results:
+                self.stats.pop(key)
+            else:
+                self.stats[key] = stat.dump()
 
     def delete(self,prefix):
-        for key in list(self.stats.keys()):
+        for key in self.stats.keys():
             if key.startswith(prefix):
                 self.stats.pop(key)
-                print(("DELETE:%s"%key))
+                print "DELETE:%s"%key
                 
 
     def list(self,prefix="",memonly=False,avgmax=False):
         result={}
-        for key in list(self.stats.keys()):
+        for key in self.stats.keys():
             stat=self.loadStat(key)
             if prefix=="" or key.startswith(prefix):
                 if memonly==None or stat.memonly==memonly:
-                    if "lastPoll" in stat.__dict__:
+                    if stat.__dict__.has_key("lastPoll"):
                         ttype="D"
                     else:
                         ttype="N"
@@ -221,7 +225,7 @@ class StatAggregator():
 
     def send2carbon(self):
         out=""
-        for key in list(self.stats.keys()):
+        for key in self.stats.keys():
             stat=self.stats[key]
             if stat.memonly:
                 # print "MEMONLY:%s"%key
