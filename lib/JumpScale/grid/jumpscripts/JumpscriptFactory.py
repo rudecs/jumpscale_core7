@@ -8,6 +8,8 @@ import JumpScale.baselib.redis
 import multiprocessing
 import tarfile
 import StringIO
+import collections
+import os
 
 class Jumpscript(object):
     def __init__(self, ddict=None, path=None):
@@ -150,6 +152,13 @@ from JumpScale import j
         return result
 
 
+"""
+Metadata about a Lua Jumpscript.
+"""
+LuaJumpscript = collections.namedtuple('LuaJumpscript', field_names=(
+    'name', 'path', 'organization', 'queue', 'log', 'id',
+))
+
 class JumpscriptFactory:
 
     """
@@ -228,3 +237,33 @@ class JumpscriptFactory:
                     tar.extract(tarinfo.name, self.basedir)
 
         j.system.fs.remove(ppath)
+
+    @staticmethod
+    def introspectLuaJumpscript(path):
+        """
+        Introspects for a Lua Jumpscript at the given path and returns a LuaJumpscript object with the results.
+
+        Raises:
+            IOError if the file at the path could not be opened.
+        """
+
+        if not os.path.exists(path):
+            raise IOError(path + ' does not exist')
+
+        # The Lua Jumpscript metadata is inferred conventionally using each file's path as follows:
+        # luajumpscripts/ORGANIZATION[/IRRELEVANT_SUBPATH]/JUMPSCRIPT_NAME.lua
+        #
+        # Note: The IRRELEVANT_SUBPATH is optional and is not used.
+
+        path_components = path.split('/')
+        jumpscript_name = os.path.splitext(path_components[-1])[0]
+        jumpscript_organization = path_components[1]
+
+        return LuaJumpscript(
+            name=jumpscript_name,
+            path=path,
+            organization=jumpscript_organization,
+            queue=None,
+            log=True,
+            id=None,
+        )
