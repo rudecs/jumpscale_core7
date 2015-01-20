@@ -39,21 +39,18 @@ def remote(F): # F is func or method without instance
                 cl.run(cmd)
 
             else: # execution of a jpackage action
-                # codegen=j.tools.packInCode.get4python()
+                codegen=j.tools.packInCode.get4python()
 
                 #put hrd on dest system
                 hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),jp.name,jp.instance)
-                cl.file_write(hrddestfile,str(jp.hrd))
-                # codegen.addHRD("jphrd",jp.hrd,hrddestfile)
+                codegen.addHRD("jphrd",jp.hrd,hrddestfile)
 
                 #put action file on dest system
                 actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=node),jp.name,jp.instance)
-                content = j.system.fs.fileGetContents(actionfile)
                 actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
-                cl.file_write(actionfiledest,content)
-                # codegen.addPyFile(actionfile,path2save=actionfiledest)
+                codegen.addPyFile(actionfile,path2save=actionfiledest)
 
-                # toexec=codegen.get()
+                toexec=codegen.get()
 
                 cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
 
@@ -66,12 +63,11 @@ def remote(F): # F is func or method without instance
                     cl.run(cmd)
 
                 # install hrd and action file on remote system
-                # tmploc = '/tmp/exec.py'
-                # from ipdb import set_trace;set_trace()
-                # cl.file_write(tmploc, toexec)
-                # cmd = "jspython %s" % tmploc
+                tmploc = '/tmp/exec.py'
+                cl.file_write(tmploc, toexec)
+                cmd = "jspython %s" % tmploc
+                cl.run(cmd)
                 # then run the jpackage command on the remote system
-                # cl.run(cmd)
                 cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, F.func_name, jp.name, jp.instance)
                 cl.run(cmd)
                 del j.remote.cuisine.fabric.env["key"]
