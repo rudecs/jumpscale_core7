@@ -15,7 +15,7 @@ def loadmodule(name, path):
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
     def wrapper(*args2,**kwargs): # class instance in args[0] for method
-        print "remote wrapper"
+        print "remote wrapper start"
 
         result=None
         jp=args2[0] #this is the self from before
@@ -25,42 +25,55 @@ def remote(F): # F is func or method without instance
         if not "node2execute" in kwargs["args"]:
             return F(*args2,**kwargs)
         else:
-            codegen=j.tools.packInCode.get4python()
-
-            #put hrd on dest system
             node=kwargs["args"]["node2execute"]
-            hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),jp.name,jp.instance)
-            codegen.addHRD("jphrd",jp.hrd,hrddestfile)
-
-            #put action file on dest system
-            actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
-            actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
-            codegen.addPyFile(actionfile,path2save=actionfiledest)
-
-            toexec=codegen.get()
-
-            cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
-
             sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
             ip = sshHRD.get("param.machine.ssh.ip")
             port = sshHRD.get("param.machine.ssh.port")
             keyhrd=j.application.getAppInstanceHRD("sshkey",sshHRD.get('param.ssh.key.name'))
             j.remote.cuisine.fabric.env["key"] = keyhrd.get('param.ssh.key.priv')
-
             cl=j.remote.cuisine.connect(ip,port)
-            # create a .git dir so the directory is seen as a git config repo
-            if not cl.file_exists("%s/.git"%cwd):
-                cmd = "cd %s; mkdir .git" %(cwd)
+
+            if 'cmd' in kwargs['args']: # execution of a cmd passed into the data argument of jpackage command
+                cmd = kwargs['args']['cmd']
                 cl.run(cmd)
-            # install hrd and action file on remote system
-            tmploc = '/tmp/exec.py'
-            cl.file_write(tmploc, toexec)
-            cmd = "jspython %s" % tmploc
-            # then run the jpackage command on the remote system
-            cl.run(cmd)
-            cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, F.func_name, jp.name, jp.instance)
-            cl.run(cmd)
-            del j.remote.cuisine.fabric.env["key"]
+
+            else: # execution of a jpackage action
+                # codegen=j.tools.packInCode.get4python()
+
+                #put hrd on dest system
+                hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),jp.name,jp.instance)
+                cl.file_write(hrddestfile,str(jp.hrd))
+                # codegen.addHRD("jphrd",jp.hrd,hrddestfile)
+
+                #put action file on dest system
+                actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
+                content = j.system.fs.fileGetContents(actionfile)
+                actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
+                cl.file_write(actionfiledest,content)
+                # codegen.addPyFile(actionfile,path2save=actionfiledest)
+
+                # toexec=codegen.get()
+
+                cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
+
+                # create a .git dir so the directory is seen as a git config repo
+                if not cl.file_exists("%s/.git"%cwd):
+                    cmd = "cd %s; mkdir .git" %(cwd)
+                    cl.run(cmd)
+                if not cl.file_exists("%s/jp"%cwd):
+                    cmd = "cd %s; mkdir jp" %(cwd)
+                    cl.run(cmd)
+
+                # install hrd and action file on remote system
+                # tmploc = '/tmp/exec.py'
+                # from ipdb import set_trace;set_trace()
+                # cl.file_write(tmploc, toexec)
+                # cmd = "jspython %s" % tmploc
+                # then run the jpackage command on the remote system
+                # cl.run(cmd)
+                cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, F.func_name, jp.name, jp.instance)
+                cl.run(cmd)
+                del j.remote.cuisine.fabric.env["key"]
 
     return wrapper
 
@@ -123,7 +136,7 @@ class JPackage():
         self.domain=domain
         self.hrd=None
         self.remote=remote
-        if remote:
+        if self.remote:
             parent = j.system.fs.getParent(j.packages.domains[self.domain])
             self.metapath = j.system.fs.joinPaths(parent,'self')
         else:
