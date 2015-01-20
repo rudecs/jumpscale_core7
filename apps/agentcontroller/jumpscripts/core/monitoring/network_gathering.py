@@ -29,7 +29,7 @@ def action():
     for netitem in netinfo:
         name = netitem['name']
         if pattern and j.codetools.regex.match(pattern,name) == False:
-                continue
+            continue
 
         ipaddr = netitem.get('ip', [])
 
