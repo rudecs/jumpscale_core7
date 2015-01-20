@@ -29,7 +29,7 @@ class GridHealthChecker(object):
     def _addError(self, nid, result, category=""):
         self._errors.setdefault(nid, {})
         self._errors[nid].setdefault(category, list())
-        if isinstance(result, str):
+        if isinstance(result, basestring):
             self._errors[nid][category].append({'errormessage': result})
         else:
             self._errors[nid][category].append(result)
@@ -160,6 +160,8 @@ class GridHealthChecker(object):
 
     def runAllOnNode(self, nid):
         self._clean()
+        self._nids = [nid]
+        self.checkHeartbeatsAllNodes(clean=False, nid=nid)
         self.ping(nid=nid, clean=False)
         self.checkRedis(nid, clean=False)
         self.pingasync(nid=nid, clean=False)
@@ -167,6 +169,7 @@ class GridHealthChecker(object):
         self.checkDisks(nid, clean=False)
         if self._tostdout:
             self._printResults()
+        return self._status, self._errors
 
     def _printResults(self):
         form = '%(gid)-8s %(nid)-8s %(name)-10s %(status)-8s %(issues)s'
@@ -270,7 +273,7 @@ class GridHealthChecker(object):
 
     def getWikiStatus(self, status):
         colormap = {'RUNNING': 'green', 'HALTED': 'red', 'UNKNOWN': 'orange',
-                    'BROKEN': 'red', 'OK': 'green', 'NOT OK': 'red'}
+                'BROKEN': 'red', 'OK': 'green', 'NOT OK': 'red', 'WARNING': 'orange'}
         return '{color:%s}*%s*{color}' % (colormap.get(status, 'orange'), status)
 
     def checkRedis(self, nid, clean=True):
@@ -288,12 +291,14 @@ class GridHealthChecker(object):
 
         for port, result in list(redis.items()):
             size, unit = j.tools.units.bytes.converToBestUnit(result['memory_usage'])
+            msize, munit = j.tools.units.bytes.converToBestUnit(result['memory_max'])
             result['memory_usage'] = '%.2f %sB' % (size, unit)
+            result['memory_max'] = '%.2f %sB' % (msize, munit)
             result['port'] = port
             if result['state'] == 'RUNNING':
                 results.append((nid, result, 'redis'))
             else:
-                errormessage.append('Redis port "%(port)s" is %(state)s. Memory usage = %(memory_usage)s' % result)
+                errormessage.append('Redis port "%(port)s" is %(state)s. Memory usage = %(memory_usage)s/ %(memory_max)s' % result)
                 errors.append((nid, result, 'redis'))
         if errormessage:
             errors.append((nid, ','.join(errormessage), 'redis'))
@@ -353,7 +358,7 @@ class GridHealthChecker(object):
             return self._status, self._errors
 
 
-    def checkHeartbeatsAllNodes(self, clean=True):
+    def checkHeartbeatsAllNodes(self, clean=True, nid=None):
         if clean:
             self._clean()
         if self._nids==[]:
@@ -361,7 +366,10 @@ class GridHealthChecker(object):
         print('CHECKING HEARTBEATS...')
         print("\tget all heartbeats (just query from OSIS):")
         print("OK")
-        heartbeats = self._heartbeatcl.simpleSearch({})
+        query = {}
+        if nid:
+            query['nid'] = nid
+        heartbeats = self._heartbeatcl.simpleSearch(query)
         for heartbeat in heartbeats:
             if heartbeat['nid'] not in self._nids and  heartbeat['nid']  not in self._nidsNonActive:
                 self._addError(heartbeat['nid'], "found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'],"heartbeat")
@@ -371,9 +379,11 @@ class GridHealthChecker(object):
             if nid not in self._nidsNonActive:
                 if nid in nid2hb:
                     lastchecked = nid2hb[nid]
+                    hago = j.base.time.getSecondsInHR(j.base.time.getTimeEpoch()-lastchecked)
                     if not j.base.time.getEpochAgo('-2m') < lastchecked:
-                        hago = round(float(j.base.time.getTimeEpoch()-lastchecked)/3600,1)
-                        self._addError(nid, "Last heartbeat %s hours ago" % hago,"heartbeat")    
+                        self._addError(nid, "Last heartbeat %s ago" % hago,"heartbeat")
+                    else:
+                        self._addResult(nid, "Last heartbeat %s ago" % hago,"heartbeat")
                 else:
                     self._addError(nid, "found heartbeat node when not in grid nodes.","heartbeat")
         if clean:

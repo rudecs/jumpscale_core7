@@ -31,11 +31,14 @@ def action():
     for port in ports:
         pids = j.system.process.getPidsByPort(port)
         if not pids:
-            result[port] = {'state': 'HALTED', 'memory_usage': 0}
+            result[port] = {'state': 'HALTED', 'memory_usage': 0, 'memory_max': 0}
         else:
-            rproc = j.system.process.getProcessObject(pids[0])
             rcl = j.clients.redis.getRedisClient('127.0.0.1', port)
             state = 'RUNNING' if rcl.ping() else 'BROKEN'
-            result[port] = {'state': state, 'memory_usage': rproc.get_memory_info()[0]}
+            maxmemory = float(rcl.config_get('maxmemory').get('maxmemory', 0))
+            used_memory = rcl.info()['used_memory']
+            if (used_memory / maxmemory) * 100 > 90:
+                state = 'WARNING'
+            result[port] = {'state': state, 'memory_usage': used_memory, 'memory_max': maxmemory}
 
     return result
