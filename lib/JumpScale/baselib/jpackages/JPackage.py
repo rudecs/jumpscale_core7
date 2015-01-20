@@ -122,9 +122,12 @@ class JPackage():
         self.name=name
         self.domain=domain
         self.hrd=None
-        self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
         self.remote=remote
-
+        if remote:
+            parent = j.system.fs.getParent(j.packages.domains[self.domain])
+            self.metapath = j.system.fs.joinPaths(parent,'self')
+        else:
+            self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
         self.hrdpath=""
         self.hrdpath_main=""
 
@@ -199,7 +202,6 @@ class JPackageInstance():
 
     def _load(self,args={},*stdargs,**kwargs):
         if self._loaded==False:
-
             node=None
             if "node2execute" in args:
                 node=args["node2execute"]
@@ -216,7 +218,7 @@ class JPackageInstance():
 
             args.update(self.args)
 
-
+            
 
             # source="%s/instance.hrd"%self.jp.metapath
             # if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
@@ -225,23 +227,24 @@ class JPackageInstance():
             #     if not j.system.fs.exists(path=source):
             #         j.do.writeFile(self.hrdpath,"")
 
-            source="%s/actions.py"%self.jp.metapath
-            j.do.copyFile(source,self.actionspath)
-
             args["jp.name"]=self.jp.name
             args["jp.domain"]=self.jp.domain
             args["jp.instance"]=self.instance
 
-            hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
+            if not remote:
+                source="%s/actions.py"%self.jp.metapath
+                j.do.copyFile(source,self.actionspath)
 
-            # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
-            self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
+                hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
 
-            self.hrd.save()
+                # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
+                self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
 
-            self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
-            j.application.config.applyOnFile(self.actionspath, additionalArgs=args)
-            j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
+                self.hrd.save()
+
+                self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
+                j.application.config.applyOnFile(self.actionspath, additionalArgs=args)
+                j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
 
             self.hrd=j.core.hrd.get(self.hrdpath)
 
