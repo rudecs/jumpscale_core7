@@ -191,7 +191,11 @@ class MS1(object):
         # self.session.save()
 
         ssdsize=int(ssdsize)
-        memsize=int(memsize)
+        try:
+            memsize=int(memsize)
+        except:
+            # support for 0.5 memsize
+            memsize=float(memsize)
         ssdsizes={}
         ssdsizes[10]=10
         ssdsizes[20]=20
