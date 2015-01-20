@@ -201,6 +201,8 @@ class ActionsBase():
             timeout=process["timeout_start"]
             if timeout==0:
                 timeout=2
+            if not wait:
+                timeout = 0
             if len(ports)>0:
                 
                 for port in ports:
@@ -216,7 +218,7 @@ class ActionsBase():
 
                 start=j.base.time.getTimeEpoch()
                 now=start
-                while now<start+timeout:
+                while now<=start+timeout:
                     if j.system.process.checkProcessRunning(filterstr):
                         return True
                     now=j.base.time.getTimeEpoch()
