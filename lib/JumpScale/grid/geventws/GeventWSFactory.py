@@ -50,12 +50,12 @@ class GeventWSFactory():
         self.cachecat[keycat]=cl.getCmdClient(category)
         return self.cachecat[keycat]
 
-    def getHAClient(self, connections, category="core", org="myorg", user="root", passwd="passwd", ssl=False, roles=[],id=None,timeout=60):
+    def getHAClient(self, connections, category="core", org="myorg", user="root", passwd="passwd", ssl=False, roles=[],id=None,timeout=60, reconnect=False):
 
         key="%s"%(connections)
         keycat="%s_%s"%(connections,category)
         
-        if keycat in self.cachecat:
+        if keycat in self.cachecat and not reconnect:
             return self.cachecat[keycat]
 
         if False and key in self.cache:

@@ -8,14 +8,14 @@ class AgentControllerFactory(object):
         self._agentControllerClients={}
         self._agentControllerProxyClients={}
 
-    def get(self,addr=None, port=PORT, login='root', passwd=None):
+    def get(self,addr=None, port=PORT, login='root', passwd=None, new=False):
         """
         @if None will be same as master
         """
         if addr is None:
             addr, port, login, passwd = self._getConnectionTuple('main')
         connection = (addr, port, login, passwd)
-        if connection not in self._agentControllerClients:
+        if connection not in self._agentControllerClients or new:
             self._agentControllerClients[connection]=AgentControllerClient(addr, port, login, passwd)
         return self._agentControllerClients[connection]
 
@@ -44,9 +44,9 @@ class AgentControllerFactory(object):
             result[attrib] = value
         return result
 
-    def getByInstance(self, instance=None):
+    def getByInstance(self, instance=None, new=False):
         config = self.getInstanceConfig(instance)
-        return self.get(**config)
+        return self.get(new=new, **config)
 
     def getClientProxy(self,category="jpackages", addr=None, port=PORT, login='root', passwd=None):
         if addr is None:
@@ -90,7 +90,7 @@ class AgentControllerClient():
             passwd = j.application.config.get("grid.master.superadminpasswd")
         if login == 'node' and passwd is None:
             passwd = j.application.getUniqueMachineId()
-        client= j.servers.geventws.getHAClient(connections, user=login, passwd=passwd,category="agent")
+        client= j.servers.geventws.getHAClient(connections, user=login, passwd=passwd,category="agent", reconnect=True)
         self.__dict__.update(client.__dict__)
 
     def execute(self,organization,name,role=None,nid=None,gid=None,timeout=60,wait=True,queue="",dieOnFailure=True,errorreport=True, args=None):

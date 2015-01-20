@@ -211,7 +211,7 @@ class ProcessManager():
             self.hrd.set("osis.connection","processmanager")
             verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, args={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
             
-            self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
+            self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename, new=True)
         else:
             self.acclient=None
         
@@ -219,13 +219,8 @@ class ProcessManager():
 
         # self._webserverStart()        
         self._workerStart()
-
         j.core.grid.init()
-
-        processmanagerGevent=True
-
         gevent.spawn(self._processManagerStart)
-
         self.mainloop()
 
     def _webserverStart(self):
