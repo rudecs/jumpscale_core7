@@ -66,6 +66,7 @@ group.add_argument('--nodeps',required=False, action='store_true',help='do actio
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
 
 group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
+group.add_argument('--remote',required=False,default=False,action="store_true",help='execute from a remote machine')
 
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
@@ -81,7 +82,7 @@ group.add_argument('--url', required=False, help='uncpath to export to or import
 group = parser.add_argument_group(title="List")
 group.add_argument('--installed', required=False, action='store_true',default=None, help='List installed jpackages')
 
-def getJPackage(args, installed=None,debug=None,update=False,expandInstances=True,toinstall=False,list=False):
+def getJPackage(args, installed=None,debug=None,update=False,expandInstances=True,toinstall=False,list=False,remote=False):
 
     packages=[]
 
@@ -92,7 +93,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
     if name!="" and name.find("*")==-1:
         for pname in args.name.split(","):
             if pname.strip()!="":
-                packages += j.packages.find(name=pname.strip(), domain=args.domain)
+                packages += j.packages.find(name=pname.strip(), domain=args.domain,remote=remote)
     else:        
         packages += j.packages.find(domain=args.domain)
         if len(packages) > 1 and name.find("*")!=-1:
@@ -178,14 +179,14 @@ if args.quiet:
     sys.stdout = NullDevice();
 
 if args.action == 'configure':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.configure(args=hrddata,deps=args.deps)
         package.start(args=hrddata)
 
 elif args.action == 'install':
 
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True, remote=args.remote)
        
     # if args.instance<>0 and len(packages)>1:        
     #     j.events.inputerror_critical("Cannot find more jpackages if instance is given.")
@@ -203,12 +204,12 @@ elif args.action == 'install':
         package.install(args=hrddata,deps=args.deps)
 
 elif args.action == 'update':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.update(args=hrddata,deps=args.deps)
 
 elif args.action == 'monitor':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     result=[]
     for package in packages:
         if package.monitor(args={},deps=args.deps)==True:
@@ -230,17 +231,17 @@ elif args.action == 'publish':
         package.publish(args={},deps=args.deps)
 
 elif args.action == 'reset':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.reset(args={},deps=args.deps)
 
 elif args.action == 'removedata':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.removedata(args={},deps=args.deps)
 
 elif args.action == 'resetstate':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.resetstate(args={},deps=args.deps)
 
@@ -260,33 +261,33 @@ elif args.action == 'import':
         package.iimport(url=args.url,deps=args.deps)
 
 elif args.action == 'restart':
-    packages = getJPackage(args,expandInstances=True,toinstall=True, list=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True, list=True,remote=args.remote)
     for package in packages:
         package.restart(args=hrddata,deps=args.deps)
 
 elif args.action == 'start':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True)
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True,remote=args.remote)
     for package in packages:
         package.start(args=hrddata,deps=args.deps)
 
 elif args.action == 'stop':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True)
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True,remote=args.remote)
     packages.reverse()
     for package in packages:
         package.stop(args=hrddata,deps=args.deps)
 
 elif args.action == 'execute':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True)
+    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, remote=args.remote)
     for package in packages:
         package.execute(args=hrddata,deps=args.deps)
 
 elif args.action == 'build':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.build(args=hrddata,deps=args.deps)
 
 elif args.action == 'uninstall':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
     for package in packages:
         package.uninstall(args=hrddata,deps=args.deps)
 

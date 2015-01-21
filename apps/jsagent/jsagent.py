@@ -232,7 +232,7 @@ class ProcessManager(tornado.web.RequestHandler):
         j.core.grid.init()
 
         # loop = tornado.ioloop.IOLoop.instance()
-        response = yield tornado.gen.Task(self._processManagerStart)
+        response = self._processManagerStart()
         print response
         # yield loop.add_future(self._processManagerStart, callback=self.callback)
         # gevent.spawn(self._processManagerStart)
@@ -258,8 +258,9 @@ class ProcessManager(tornado.web.RequestHandler):
         p.start()
         self.processes.append(p)
 
-    def _processManagerStart(self, callback):
-        self.callback(j.core.processmanager.start())
+    @tornado.gen.coroutine
+    def _processManagerStart(self):
+        yield tornado.gen.Task(j.core.processmanager.start())
 
     def _workerStart(self):
         pwd = '/opt/jumpscale7/apps/jsagent/lib'
