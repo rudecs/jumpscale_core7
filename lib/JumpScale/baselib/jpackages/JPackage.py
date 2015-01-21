@@ -296,7 +296,7 @@ class JPackageInstance():
                 depth=int(depth)
 
         login = j.application.config.get("whoami.git.login").strip()
-        passwd = j.application.config.get("whoami.git.passwd").strip()
+        passwd = j.application.config.getStr("whoami.git.passwd").strip()
 
         if login:
             dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,dest=dest)

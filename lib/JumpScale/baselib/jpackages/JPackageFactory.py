@@ -35,7 +35,7 @@ class JPackageFactory():
                 self.indocker=True
 
             login=j.application.config.get("whoami.git.login").strip()
-            passwd=j.application.config.get("whoami.git.passwd").strip()
+            passwd=j.application.config.getStr("whoami.git.passwd").strip()
             if self.type == "n":
                 items=j.application.config.getDictFromPrefix("jpackage.metadata")
                 repos=j.do.getGitReposListLocal()
