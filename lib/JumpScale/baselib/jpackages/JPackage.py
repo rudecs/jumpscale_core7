@@ -458,9 +458,10 @@ class JPackageInstance():
             j.do.execute("apt-get upgrade -y",dieOnNonZeroExitCode=False)
 
         if self.hrd.exists("ubuntu.packages"):
-            for jp in self.hrd.getList("ubuntu.packages"):
-                if jp.strip()!="":
-                    j.do.execute("apt-get install %s -f"%jp,dieOnNonZeroExitCode=False)
+            packages = self.hrd.getList("ubuntu.packages")
+            packages = [ pkg.strip() for pkg in packages if pkg.strip() != "" ]
+            if packages:
+                j.do.execute("apt-get install -y -f %s"% " ".join(packages) ,dieOnNonZeroExitCode=True)
 
         self.actions.prepare()
 
