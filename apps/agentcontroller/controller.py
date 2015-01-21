@@ -19,6 +19,8 @@ except:
     import json
 import time
 
+import JumpScale.grid.jumpscripts   # To make j.core.jumpscripts available
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--instance', help="Agentcontroller instance", required=True)
 opts = parser.parse_args()
@@ -167,6 +169,7 @@ class ControllerCMDS():
         self.jumpscriptsFromKeys = {}
         self.jumpscriptsId={}        
         self.loadJumpscripts()
+        self.loadLuaJumpscripts()
         print "want processmanagers to reload js:",
         for item in self.osisclient.list("system","node"):
             gid,nid=item.split("_")
@@ -218,7 +221,7 @@ class ControllerCMDS():
         """
         is qeueue where commands are scheduled for processmanager to be picked up
         """
-        if not gid or not (nid or role):
+        if gid is None or (nid is None and not role):
             raise RuntimeError("gid or nid cannot be None")
         if session==None:
             self._log("get cmd queue NOSESSION")
@@ -301,6 +304,23 @@ class ControllerCMDS():
         if isinstance(eco, dict):
             eco = j.errorconditionhandler.getErrorConditionObject(eco)
         eco.process()
+
+    def loadLuaJumpscripts(self):
+        """
+        Like self.loadJumpscripts() but for Lua jumpscripts.
+        """
+        lua_jumpscript_path = 'luajumpscripts'
+        available_jumpscripts =\
+            j.system.fs.listFilesInDir(path=lua_jumpscript_path, recursive=True, filter='*.lua', followSymlinks=True)
+
+        for jumpscript_path in available_jumpscripts:
+            jumpscript_metadata = j.core.jumpscripts.introspectLuaJumpscript(jumpscript_path)
+
+            key = "%(organization)s_%(name)s" % {
+                'organization': jumpscript_metadata.organization,
+                'name': jumpscript_metadata.name
+            }
+            self.jumpscripts[key] = jumpscript_metadata
 
     def loadJumpscripts(self, path="jumpscripts", session=None):
         if session<>None:
@@ -432,7 +452,7 @@ class ControllerCMDS():
             role = role.lower()
             if role in self.roles2agents:
                 if not all:
-                    job=self.scheduleCmd(gid,None,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait)
+                    job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait)
                     if wait:
                         return self.waitJumpscript(job=job,session=session)
                 else:
