@@ -1,6 +1,6 @@
 
 --
--- An echo jumpscript that write the passed message argument to STDOUT.
+-- An echo jumpscript that returns the passed message argument it received.
 --
 -- Keyword args:
 --  message (str): the message to be echoed back
@@ -9,7 +9,7 @@
 M = {}
 
 function M.main(args)
-  print(args.message)
+  return args.message
 end
 
 return M
