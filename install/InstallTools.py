@@ -1427,7 +1427,9 @@ git.passwd              = @ASK descr:'passwd for github'
 
         C="""
 #here domain=jumpscale, change name for more domains
-metadata.jumpscale.url='https://github.com/Jumpscale/jp_jumpscale7'
+metadata.jumpscale = 
+    url:'https://github.com/Jumpscale/jp_jumpscale7',
+
 """
         hpath="%s/hrd/system/jpackage.hrd"%basedir
         if not self.exists(path=hpath):

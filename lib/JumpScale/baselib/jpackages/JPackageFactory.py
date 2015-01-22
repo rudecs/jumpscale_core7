@@ -40,15 +40,15 @@ class JPackageFactory():
                 items=j.application.config.getDictFromPrefix("jpackage.metadata")
                 repos=j.do.getGitReposListLocal()
                 for domain in items.keys():
-                    url=items[domain]
-                    domain=domain.rpartition(".url")[0]
+                    url=items[domain]['url']
+                    branch=items[domain].get('branch', 'master')
                     reponame=url.rpartition("/")[-1]
                     if not reponame in repos.keys():
                         #means git has not been pulled yet
                         if login!="":
-                            dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch="master")
+                            dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch=branch)
                         else:
-                            dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch="master")
+                            dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch=branch)
                     dest=repos[reponame]
                     self.domains[domain]=dest
             else:
