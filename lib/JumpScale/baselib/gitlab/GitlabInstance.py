@@ -4,52 +4,30 @@ except:
     import json
     
 from JumpScale import j
-from JumpScale.core.baseclasses import BaseEnumeration
 
-# from GitlabConfigManagement import *
-# import urllib
-# import requests
-# from requests.auth import HTTPBasicAuth
-from . import gitlab
 import os
 
-from .gitlab import Gitlab
+import gitlab
 import JumpScale.baselib.git
 
-class GitlabInstance(Gitlab):
+class GitlabInstance():
 
-    def __init__(self,account ):
+    def __init__(self,addr="",login="",passwd="",instance="main"):
 
-        id=0
-        for key in j.application.config.getKeysFromPrefix("gitlabclient.server"):
-            # key=key.replace("gitlabclient.server.","")
-            if key.find("name")!=-1:
-                if j.application.config.get(key)==account:
-                    key2=key.replace("gitlabclient.server.","")
-                    id=key2.split(".")[0]
-        if id==0:
-            raise RuntimeError("Did not find account:%s for gitlab"%account)
-        prefix="gitlabclient.server.%s"%id
-        self.addr=j.application.config.get("%s.addr"%prefix)
+        if addr=="":
+            hrd=j.application.getAppInstanceHRD("gitlab_client",instance)
+            self.addr=hrd.get("gitlab.addr")
+            self.login=hrd.get("gitlab.login")
+            self.passwd=hrd.get("gitlab.passwd")            
+        else:
+            self.addr=addr
+            self.login=login
+            self.passwd=passwd
 
-        # self.accountPathLocal = j.system.fs.joinPaths("/opt/code",accountName)
-        # j.system.fs.createDir(self.accountPathLocal)
-        # self._gitlab = gitlab.Gitlab(self.addr)
-        login=j.application.config.get("%s.login"%prefix)
-        passwd=j.application.config.get("%s.passwd"%prefix)
-        self.passwd=passwd
-        if passwd!="":
-            
-            Gitlab.__init__(self, self.addr)#, token=token)
-            self.login(login, passwd)
-            self.load()
-        # for item in dir(self._gitlab):
-        #     if item[0] != "_":
-        #         setattr(self,item,getattr(self._gitlab,item))
-        self.gitclients={}
-            
-        self.loginName=login
-        self.port=80
+        self.gitlab=gitlab.Gitlab(host=self.addr)
+        self.gitlab.login(user=self.login, password=self.passwd)
+
+
 
     def getGitClient(self, accountName, repoName="", branch="master", clean=False,path=None):
         """

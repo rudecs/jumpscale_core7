@@ -10,7 +10,7 @@ j.application.start('jpackage')
 parser = cmdutils.ArgumentParser()
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
-    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute"]
+    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create"]
 
 help="""
 jpackage commands:
@@ -51,7 +51,9 @@ jpackage commands:
     cleanup
     - remote old logfiles, ...
     export/import
-- use --url to specify where to import from or export to
+    - use --url to specify where to import from or export to
+    create
+    - interactively create a jpackage
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
@@ -294,6 +296,21 @@ elif args.action == 'push':
     packages = getJPackage(args,expandInstances=True,toinstall=True)
     for package in packages:
         package.push(args=hrddata,deps=args.deps)
+
+elif args.action == 'create':
+    for instance in j.application.getAppInstanceHRDs("gitlab_client"):
+        from IPython import embed
+        print "DEBUG NOW oo"
+        embed()
+        p
+        
+
+    import JumpScale.baselib.gitlab
+    gl=j.clients.gitlab.get()
+    from IPython import embed
+    print "DEBUG NOW id"
+    embed()
+    
 
 
 elif args.action == 'mdupdate':
