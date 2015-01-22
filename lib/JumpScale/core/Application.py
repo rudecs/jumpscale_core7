@@ -215,7 +215,34 @@ class Application:
         if not j.system.fs.exists(path=path):
             j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
         return j.core.hrd.get(path)
-        
+
+    def getAppInstanceHRDs(self,name,domain="jumpscale"):
+        """
+        returns list of hrd instances for specified app
+        """
+        res=[]
+        for instance in self.getAppHRDInstanceNames(name,domain):
+            res.append(self.getAppInstanceHRD(name,instance,domain))
+        return res
+
+    def getAppHRDInstanceNames(self,name,domain="jumpscale"):
+        """
+        returns hrd instance names for specific appname (default domain=jumpscale)
+        """
+
+        names=[j.system.fs.getBaseName(item)[:-4] for item in j.system.fs.listFilesInDir(j.dirs.getHrdDir(),False)]
+        res=[]
+        for name1 in names:
+            if j.packages.type!="c":
+                if name1.startswith(domain):
+                    name1=name1[len(domain)+1:]
+            if name1.startswith(name):
+                instance=name1[len(name)+1:]
+                if instance not in res:
+                    res.append(instance)
+                
+        res.sort()
+        return res
 
     def getCPUUsage(self):
         """

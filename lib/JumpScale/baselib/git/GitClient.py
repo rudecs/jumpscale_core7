@@ -114,14 +114,8 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
-bin/
-build/
 develop-eggs/
-dist/
 eggs/
-lib64/
-parts/
 sdist/
 var/
 *.egg-info/
@@ -155,7 +149,8 @@ coverage.xml
 *.pot
 
 # Sphinx documentation
-docs/_build/'''
+docs/_build/
+'''
         ignorefilepath = j.system.fs.joinPaths(self.baseDir, '.gitignore')
         if not j.system.fs.exists(ignorefilepath):
             j.system.fs.writeFile(ignorefilepath, gitignore)
