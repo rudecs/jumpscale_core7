@@ -159,6 +159,9 @@ class OSISClientForCat():
                 if v['name'] not in myranges:
                     myranges = {v['name']: dict()}
                 myranges[v['name']] = {v['eq']: v['value']}
+            elif isinstance(v, list):
+                terms = {'terms': {k:v}}
+                query['query']['bool']['must'].append(terms)
             elif v:
                 if isinstance(v, str):
                     # v = v.lower()

@@ -68,7 +68,16 @@ class OSISStoreMongo(OSISStore):
         seq = counter.find_one({'_id': self.categoryname})
         return seq["seq"]
 
-    def setPreSave(self, value):
+    def runTasklet(self, action, value, session):
+        if self.te:
+            params = j.core.params.get()
+            params.value = value
+            params.session = session
+            params.action = action
+            self.te.execute(params, service=self)
+
+    def setPreSave(self, value, session):
+        self.runTasklet('set', value, session)
         return value
 
     def set(self, key, value, session=None, *args,**kwargs):
@@ -112,8 +121,8 @@ class OSISStoreMongo(OSISStore):
                 objInDB.update(value)
                 update(objInDB)
                 updateTTL(objInDB)
-                objInDB = self.setPreSave(objInDB)
-                changed = oldckey != obj.getContentKey()
+                objInDB = self.setPreSave(objInDB, session)
+                changed = oldckey != self.getObject(objInDB).getContentKey()
                 if changed:
                     db.save(objInDB)
                 return (objInDB["guid"], False, changed)
@@ -127,7 +136,7 @@ class OSISStoreMongo(OSISStore):
             updateTTL(value)
 
             value['_id'] = value['guid'] if ukey is None else ukey
-            value = self.setPreSave(value)
+            value = self.setPreSave(value, session)
 
             db.save(value)
             return (value["guid"], True, True)
@@ -135,6 +144,7 @@ class OSISStoreMongo(OSISStore):
             raise RuntimeError("value can only be dict")
 
     def get(self, key, full=False, session=None):
+        self.runTasklet('get', key, session)
         db, counter = self._getMongoDB(session)
         if j.basetype.string.check(key):
             key=key.replace("-","")
@@ -146,7 +156,7 @@ class OSISStoreMongo(OSISStore):
 
         # res["guid"]=str(res["_id"])
         if not res:
-            raise KeyError("Key %s doesn't exist" % key)
+            j.errorconditionhandler.raiseBug(message="Key %s doesn't exist" % key, level=4)
 
         if not full:
             res.pop("_id")
@@ -157,6 +167,7 @@ class OSISStoreMongo(OSISStore):
         """
         get dict value
         """
+        self.runTasklet('exists', key, session)
         db, counter = self._getMongoDB(session)
         if j.basetype.string.check(key) or isinstance(key, unicode):
             key = key.replace('-', '')
@@ -169,6 +180,7 @@ class OSISStoreMongo(OSISStore):
         return
 
     def delete(self, key, session=None):
+        self.runTasklet('delete', key, session)
         db, counter = self._getMongoDB(session)
         try:
             res = self.get(key, True, session=session)

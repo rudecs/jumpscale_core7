@@ -65,7 +65,7 @@ class InstallTools():
         embed()
         #@todo not working yet                
 
-    def log(self,msg):
+    def log(self,msg, level=None):
         if self.debug:
             print(msg)
 
@@ -744,9 +744,6 @@ class InstallTools():
 
     #     return stdout
 
-    def log(self,msg,level=0):
-        print(msg)
-
     def isUnix(self):
         if sys.platform.lower().find("linux")!=-1:
             return True
@@ -1151,21 +1148,20 @@ class InstallTools():
                 raise RuntimeError("Url needs to start with 'http(s)://'")
 
             url2=url2.rstrip("/")
-            if not url2.find(".git")==(len(url2)-4):
+            if not url2.endswith(".git"):
                 #no .git at end
                 url2+=".git"
 
-            if dest==None:
-                url3=url2.strip(" /")
-                ttype,account,repo=url3.split("/",3)
-                if ttype.find(".")!=-1:
-                    ttype=ttype.split(".",1)[0]
-                ttype=ttype.lower()
-                account=account.lower()
-                repo=repo.lower()
-                dest="/opt/code/%s/%s/%s/"%(ttype,account,repo.replace(".git",""))
+            
+            if not url.endswith(".git"):
+                #no .git at end
+                url+=".git"
 
-            if login!=None and login!="guest":            
+
+            if login == 'ssh':
+                splits = url2.split('/')
+                url = 'git@%s:%s' % (splits[0], '/'.join(splits[1:]))
+            elif login!=None and login!="guest":
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
             else:
                 url=url2
@@ -1220,7 +1216,7 @@ class InstallTools():
         else:
             print(("git clone %s -> %s"%(url,dest)))
             extra = ""
-            if depth != 0:
+            if depth and depth != 0:
                  extra = "--depth=%s" % depth
             cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             print cmd
@@ -1445,7 +1441,9 @@ git.passwd              = @ASK descr:'passwd for github'
 
         C="""
 #here domain=jumpscale, change name for more domains
-metadata.jumpscale.url='https://github.com/Jumpscale/jp_jumpscale7'
+metadata.jumpscale = 
+    url:'https://github.com/Jumpscale/jp_jumpscale7',
+
 """
         hpath="%s/hrd/system/jpackage.hrd"%basedir
         if not self.exists(path=hpath):

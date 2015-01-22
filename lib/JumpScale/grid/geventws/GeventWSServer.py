@@ -120,7 +120,7 @@ class GeventWSServer():
             resultcode, returnformat, result = self.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
             data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
             return self.responseRaw(data3,start_response)
-        elif environ['CONTENT_TYPE'] == 'application/json-rpc' and environ["REQUEST_METHOD"] == 'POST':
+        elif environ['CONTENT_TYPE'].startswith('application/json') and environ["REQUEST_METHOD"] == 'POST':
             return self.handleJSONRPC(environ, start_response)
         else:
             return self.responseNotFound(start_response)

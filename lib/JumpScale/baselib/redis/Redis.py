@@ -54,6 +54,9 @@ class Redis(redis.Redis):
     def getDict(self, key):
         return RedisDict(self, key)
 
+    def getQueue(self, name, namespace="queues"):
+        return RedisQueue(self, name, namespace=namespace)
+
 class GeventRedis(Redis):
     def hgetall(self, name):
         "Return a Python dict of the hash's name/value pairs"

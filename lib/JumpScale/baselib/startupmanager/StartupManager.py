@@ -576,7 +576,7 @@ class StartupManager:
         redis=j.packages.findNewest("jumpscale","redis")
         redis.instance="system"        
                    
-        redis.install(reinstall=True,hrddata={"redis.name":"system","redis.port":"9999","redis.disk":"0","redis.mem":20},instance="system")
+        redis.install(reinstall=True,hrddata={"redis.name":"system","redis.port":"9999","redis.disk":"0","redis.mem":100},instance="system")
         redis.instance="system"
         redis.start()
 

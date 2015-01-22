@@ -46,3 +46,6 @@ target/
 #Eclipse
 .pydevproject
 .project
+
+#VIM
+*.swp

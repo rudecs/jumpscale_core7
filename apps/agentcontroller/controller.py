@@ -19,6 +19,8 @@ except:
     import json
 import time
 
+import JumpScale.grid.jumpscripts   # To make j.core.jumpscripts available
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--instance', help="Agentcontroller instance", required=True)
 opts = parser.parse_args()
@@ -40,13 +42,18 @@ from JumpScale.grid.jumpscripts.JumpscriptFactory import Jumpscript
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
+from base64 import b64encode
+
 class JumpscriptHandler(FileSystemEventHandler):
     def __init__(self, agentcontroller):
         self.agentcontroller = agentcontroller
 
     def on_any_event(self, event):
         if event.src_path and not event.is_directory and event.src_path.endswith('.py'):
-            self.agentcontroller.reloadjumpscripts()
+            try:
+                self.agentcontroller.reloadjumpscripts()
+            except:
+                pass # reload failed shoudl try again next file change
 
 class ControllerCMDS():
 
@@ -162,6 +169,7 @@ class ControllerCMDS():
         self.jumpscriptsFromKeys = {}
         self.jumpscriptsId={}        
         self.loadJumpscripts()
+        self.loadLuaJumpscripts()
         print "want processmanagers to reload js:",
         for item in self.osisclient.list("system","node"):
             gid,nid=item.split("_")
@@ -213,7 +221,7 @@ class ControllerCMDS():
         """
         is qeueue where commands are scheduled for processmanager to be picked up
         """
-        if not gid or not (nid or role):
+        if gid is None or (nid is None and not role):
             raise RuntimeError("gid or nid cannot be None")
         if session==None:
             self._log("get cmd queue NOSESSION")
@@ -272,8 +280,10 @@ class ControllerCMDS():
         node.name = hostname
         node.machineguid = machineguid
         self._updateNetInfo(session.netinfo, node)
-        guid, new, changed = self.nodeclient.set(node)
-        node = self.nodeclient.get(guid)
+        nodeid, new, changed = self.nodeclient.set(node)
+        node = self.nodeclient.get(nodeid)
+        self._setRoles(node.roles, nodeid)
+        self.sessionsUpdateTime[nodeid]=j.base.time.getTimeEpoch()
         result = {'node': node.dump(), 'webdiskey': j.core.jumpscripts.secret}
         return result
 
@@ -295,14 +305,27 @@ class ControllerCMDS():
             eco = j.errorconditionhandler.getErrorConditionObject(eco)
         eco.process()
 
+    def loadLuaJumpscripts(self):
+        """
+        Like self.loadJumpscripts() but for Lua jumpscripts.
+        """
+        lua_jumpscript_path = 'luajumpscripts'
+        available_jumpscripts =\
+            j.system.fs.listFilesInDir(path=lua_jumpscript_path, recursive=True, filter='*.lua', followSymlinks=True)
+
+        for jumpscript_path in available_jumpscripts:
+            jumpscript_metadata = j.core.jumpscripts.introspectLuaJumpscript(jumpscript_path)
+
+            key = "%(organization)s_%(name)s" % {
+                'organization': jumpscript_metadata.organization,
+                'name': jumpscript_metadata.name
+            }
+            self.jumpscripts[key] = jumpscript_metadata
+
     def loadJumpscripts(self, path="jumpscripts", session=None):
         if session<>None:
             self._adminAuth(session.user,session.passwd)
 
-        print "PUSHJUMPSCRIPTS TO WEBDIS"
-        j.core.jumpscripts.pushToGridMaster()
-        print "OK"
-        print "LOADJUMPSCRIPTS in AC & OSIS"
         for path2 in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
 
             if j.system.fs.getDirName(path2,True)[0]=="_": #skip dirs starting with _
@@ -335,7 +358,7 @@ class ControllerCMDS():
             key = "%s_%s" % (t.organization, t.name)
             self.jumpscripts[key] = t
             self.jumpscriptsId[key0] = t
-        print "OK"
+        j.core.jumpscripts.pushToGridMaster()
 
        
     def getJumpscript(self, organization, name,gid=None,reload=False, session=None):
@@ -429,7 +452,7 @@ class ControllerCMDS():
             role = role.lower()
             if role in self.roles2agents:
                 if not all:
-                    job=self.scheduleCmd(gid,None,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait)
+                    job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait)
                     if wait:
                         return self.waitJumpscript(job=job,session=session)
                 else:
@@ -656,6 +679,19 @@ class ControllerCMDS():
                 jobresult["isactive"] = False
             result.append(jobresult)
         return result
+
+    def getJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts'), session=None):
+        """
+        Returns the available jumpscripts as a Base64-encoded TAR archive that is optionally compressed using bzip2.
+
+        Args:
+            bz2_compressed (boolean): If True then the returned TAR is bzip2-compressed
+            types (sequence of str): A sequence of the types of jumpscripts to be packed in the returned archive.
+                possible values in the sequence are 'processmanager', 'jumpscripts', and 'luajumpscripts'.
+        """
+        scripts_tar_content = \
+            j.core.jumpscripts.getArchivedJumpscripts(bz2_compressed=bz2_compressed, types=types)
+        return b64encode(scripts_tar_content)
 
 # will reinit for testing everytime, not really needed
 # j.servers.geventws.initSSL4Server("myorg", "controller1")

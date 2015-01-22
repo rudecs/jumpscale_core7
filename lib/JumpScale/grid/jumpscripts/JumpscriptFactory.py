@@ -6,6 +6,10 @@ import inspect
 import JumpScale.baselib.webdis
 import JumpScale.baselib.redis
 import multiprocessing
+import tarfile
+import StringIO
+import collections
+import os
 
 class Jumpscript(object):
     def __init__(self, ddict=None, path=None):
@@ -21,7 +25,7 @@ class Jumpscript(object):
         self.startatboot = False
         self.path = path
         self.debug=False
-        self.timeout=60
+        self.timeout = None
         if ddict:
             ddict.pop('path', None)
             self.__dict__.update(ddict)
@@ -74,6 +78,7 @@ from JumpScale import j
         self.source=source
         self.descr=self.module.descr
         self.queue=getattr(self.module, 'queue', "")
+        self.timeout=getattr(self.module, 'timeout', None)
         self.async = getattr(self.module, 'async',False)
         self.period=getattr(self.module, 'period',0)
         self.order=getattr(self.module, 'order', 1)
@@ -96,28 +101,44 @@ from JumpScale import j
             return result
         else:
             def helper(pipe):
-                result = self.executeInProcess(*args, **kwargs)
-                pipe.send(result)
+                try:
+                    result = self.executeInProcess(*args, **kwargs)
+                    pipe.send(result)
+                except Exception as e:
+                    result = "ERROR"
+                    try:
+                        result = self._getECO(e)
+                    except:
+                        pass
+                    pipe.send((False, result))
 
             ppipe, cpipe = multiprocessing.Pipe()
             proc = multiprocessing.Process(target=helper, args=(cpipe,))
             proc.start()
-            proc.join()
+            proc.join(self.timeout)
+            if proc.is_alive():
+                proc.terminate()
+                return False, "TIMEOUT"
             return ppipe.recv()
+
+    def _getECO(self, e):
+        eco = j.errorconditionhandler.parsePythonErrorObject(e)
+        eco.tb = None
+        eco.errormessage='Exec error procmgr jumpscr:%s_%s on node:%s_%s %s'%(self.organization,self.name, \
+                j.application.whoAmI.gid, j.application.whoAmI.nid,eco.errormessage)
+        eco.tags="jscategory:%s"%self.category
+        eco.jid = j.application.jid
+        eco.tags+=" jsorganization:%s"%self.organization
+        eco.tags+=" jsname:%s"%self.name
+        return eco
 
     def executeInProcess(self, *args, **kwargs):
         try:
             return True, self.module.action(*args, **kwargs)
         except Exception as e:
-            print("error in jumpscript factory: execute in process.")
-            eco = j.errorconditionhandler.parsePythonErrorObject(e)
-            eco.tb = None
-            eco.errormessage='Exec error procmgr jumpscr:%s_%s on node:%s_%s %s'%(self.organization,self.name, \
-                    j.application.whoAmI.gid, j.application.whoAmI.nid,eco.errormessage)
-            eco.tags="jscategory:%s"%self.category
-            eco.jid = j.application.jid
-            eco.tags+=" jsorganization:%s"%self.organization
-            eco.tags+=" jsname:%s"%self.name
+            print "error in jumpscript factory: execute in process."
+            eco = self._getECO(e)
+            print eco
             j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
             print(eco)
             return False, eco
@@ -144,9 +165,16 @@ from JumpScale import j
 
         self.lastrun = time.time()
         if result!=None:
-            print(("ok:%s"%self.name))
+            print("ok:%s"%self.name)
         return result
 
+
+"""
+Metadata about a Lua Jumpscript.
+"""
+LuaJumpscript = collections.namedtuple('LuaJumpscript', field_names=(
+    'name', 'path', 'organization', 'queue', 'log', 'id',
+))
 
 class JumpscriptFactory:
 
@@ -168,26 +196,35 @@ class JumpscriptFactory:
     def _getWebdisConnection(self):
         return j.clients.webdis.getByInstance()
 
+    def getArchivedJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts')):
+        """
+        Returns the available jumpscripts in TAR format that is optionally compressed using bzip2.
+
+        Args:
+            bz2_compressed (boolean): If True then the returned TAR is bzip2-compressed
+            types (sequence of str): A sequence of the types of jumpscripts to be packed in the returned archive.
+                possible values in the sequence are 'processmanager', 'jumpscripts', and 'luajumpscripts'.
+        """
+        fp = StringIO.StringIO()
+        with tarfile.open(fileobj=fp, mode='w:bz2' if bz2_compressed else 'w') as tar:
+            for jumpscript_type in types:
+                parent_path = '%s/apps/agentcontroller/%s' % (j.dirs.baseDir, jumpscript_type)
+                for allowed_filename_extension in ('py', 'lua'):
+                    for file_path in j.system.fs.walkExtended(parent_path, recurse=1, dirs=False,
+                                                              filePattern='*.' + allowed_filename_extension):
+                        path_in_archive = jumpscript_type + '/' + file_path.split(parent_path)[1]
+                        tar.add(file_path, path_in_archive)
+        return fp.getvalue()
+
     def pushToGridMaster(self):
         webdis = self._getWebdisConnection()
-        #create tar.gz of cmds & monitoring objects & return as binary info
-        #@todo make async with local workers
-        import tarfile
-        ppath=j.system.fs.joinPaths(j.dirs.tmpDir,"processMgrScripts_upload.tar")
-        with tarfile.open(ppath, "w:bz2") as tar:
-            for path in j.system.fs.walkExtended("%s/apps/agentcontroller/processmanager"%j.dirs.baseDir, recurse=1, filePattern="*.py", dirs=False):
-                arcpath="processmanager/%s"%path.split("/processmanager/")[1]
-                tar.add(path,arcpath)
-            for path in j.system.fs.walkExtended("%s/apps/agentcontroller/jumpscripts"%j.dirs.baseDir, recurse=1, filePattern="*.py", dirs=False):
-	        arcpath="jumpscripts/%s"%path.split("/jumpscripts/")[1]
-                tar.add(path,arcpath)
-        data=j.system.fs.fileGetContents(ppath)
+        data = self.getArchivedJumpscripts()
         webdis.set("%s:scripts"%(self.secret),data)
         # scripttgz=webdis.get("%s:scripts"%(self.secret))
         # assert data==scripttgz
 
     def loadFromGridMaster(self):
-        print("load processmanager code from master")
+        print "load processmanager code from master"
         webdis = self._getWebdisConnection()
 
         #delete previous scripts
@@ -208,12 +245,40 @@ class JumpscriptFactory:
 
         for tarinfo in tar:
             if tarinfo.isfile():
-                print((tarinfo.name))
+                print(tarinfo.name)
                 if tarinfo.name.find("processmanager/")==0:
-                    # dest=tarinfo.name.replace("processmanager/","")
                     tar.extract(tarinfo.name, j.system.fs.getParent(self.basedir))
                 if tarinfo.name.find("jumpscripts/")==0:
-                    # dest=tarinfo.name.replace("processmanager/","")
                     tar.extract(tarinfo.name, self.basedir)
 
         j.system.fs.remove(ppath)
+
+    @staticmethod
+    def introspectLuaJumpscript(path):
+        """
+        Introspects for a Lua Jumpscript at the given path and returns a LuaJumpscript object with the results.
+
+        Raises:
+            IOError if the file at the path could not be opened.
+        """
+
+        if not os.path.exists(path):
+            raise IOError(path + ' does not exist')
+
+        # The Lua Jumpscript metadata is inferred conventionally using each file's path as follows:
+        # luajumpscripts/ORGANIZATION[/IRRELEVANT_SUBPATH]/JUMPSCRIPT_NAME.lua
+        #
+        # Note: The IRRELEVANT_SUBPATH is optional and is not used.
+
+        path_components = path.split('/')
+        jumpscript_name = os.path.splitext(path_components[-1])[0]
+        jumpscript_organization = path_components[1]
+
+        return LuaJumpscript(
+            name=jumpscript_name,
+            path=path,
+            organization=jumpscript_organization,
+            queue=None,
+            log=True,
+            id=None,
+        )

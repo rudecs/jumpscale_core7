@@ -248,10 +248,8 @@ class LogHandler(object):
                 for consolecat in self.consolelogCategories:
                     if log.category.find(consolecat)!=-1:
                         ccat=log.category
-                        while len(ccat)<25:
-                            ccat+=" "
                         ccat=ccat[0:25]
-                        j.console.echo("%s :: %s"%(ccat,log.message), log=False)
+                        j.console.echo("%s - %-25s - %s"%(j.base.time.epoch2HRDateTime(log.epoch), ccat,log.message), log=False)
                         break
             else:
                 j.console.echo(str(log), log=False)

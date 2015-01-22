@@ -35,7 +35,7 @@ def restart_program():
 
 class Worker(object):
 
-    def __init__(self,queuename):
+    def __init__(self,queuename, logpath):
         self.actions={}
         self.clients = dict()
         self.acclient = None
@@ -43,6 +43,10 @@ class Worker(object):
         self.queuename=queuename
         self.init()
         self.starttime = time.time()
+        self.logpath = logpath
+        self.logFile = None
+        if self.logpath:
+            self.logFile = open(self.logpath, 'w', 0)
 
     def getClient(self, job):
         ipaddr = getattr(job, 'achost', None)
@@ -158,37 +162,40 @@ class Worker(object):
                         job.state="OK"
                         job.resultcode=0
                     else:
-                        eco = result
-                        agentid=j.application.getAgentId()
-                        msg="Could not execute jscript:%s %s_%s on agent:%s\nError: %s"%(jscript.id,jscript.organization,jscript.name,agentid, eco.errormessage)
-                        eco.errormessage = msg
-                        eco.jid = job.guid
-                        eco.code=jscript.source
-                        eco.category = "workers.executejob"
-
-                        out=""
-                        tocheck=["\"worker.py\"","jscript.executeInWorker","return self.module.action","JumpscriptFactory.py"]
-                        for line in eco.backtrace.split("\n"):
-                            found=False
-                            for check in tocheck:
-                                if line.find(check)!=-1:
-                                    found=True
-                                    break
-                            if found==False:
-                                out+="%s\n"%line
-
-                        eco.backtrace=out
-
-                        if job.id<1000000 and job.errorreport==True:
-                            eco.process()
+                        if isinstance(result, basestring):
+                            job.state = result
                         else:
-                            self.log(eco)
-                        # j.events.bug_warning(msg,category="worker.jscript.notexecute")
-                        # self.loghandler.logECO(eco)
-                        job.state="ERROR"
-                        eco.tb = None
-                        job.result=eco.__dict__
-                        job.resultcode=1
+                            eco = result
+                            agentid=j.application.getAgentId()
+                            msg="Could not execute jscript:%s %s_%s on agent:%s\nError: %s"%(jscript.id,jscript.organization,jscript.name,agentid, eco.errormessage)
+                            eco.errormessage = msg
+                            eco.jid = job.guid
+                            eco.code=jscript.source
+                            eco.category = "workers.executejob"
+
+                            out=""
+                            tocheck=["\"worker.py\"","jscript.executeInWorker","return self.module.action","JumpscriptFactory.py"]
+                            for line in eco.backtrace.split("\n"):
+                                found=False
+                                for check in tocheck:
+                                    if line.find(check)<>-1:
+                                        found=True
+                                        break
+                                if found==False:
+                                    out+="%s\n"%line
+
+                            eco.backtrace=out
+
+                            if job.id<1000000 and job.errorreport==True:
+                                eco.process()
+                            else:
+                                self.log(eco)
+                            # j.events.bug_warning(msg,category="worker.jscript.notexecute")
+                            # self.loghandler.logECO(eco)
+                            job.state="ERROR"
+                            eco.tb = None
+                            job.result=eco.__dict__
+                            job.resultcode=1
 
                     #ok or not ok, need to remove from queue test
                     #thisin queue test is done to now execute script multiple time
@@ -199,10 +206,6 @@ class Worker(object):
 
     def notifyWorkCompleted(self,job):
         job.timeStop=int(time.time())
-
-        # if job.state[0:2] != "OK":
-        #     self.log("result:%s"%job.result)
-
 
         if job.jscriptid>1000000:
             #means is internal job
@@ -236,15 +239,20 @@ class Worker(object):
                 self.redisw.redis.hdel("workers:jobs",job.id)
 
 
-    def log(self, message, category='',level=5):
-        #queue saving logs        
-        # j.logger.log(message,category=category,level=level)
-        print("worker:%s:%s" % (self.queuename, message))
+    def log(self, message, category='',level=5, time=None):
+        if time is None:
+            time = j.base.time.getLocalTimeHR()
+        msg = "%s:worker:%s:%s" % (time, self.queuename, message)
+        print(msg)
+        if self.logFile != None:
+            msg = msg+"\n"
+            self.logFile.write(msg)
 
 if __name__ == '__main__':
     parser = cmdutils.ArgumentParser()
     parser.add_argument("-qn", '--queuename', help='Queue name', required=True)
     parser.add_argument("-i", '--instance', help='JSAgent instance', required=True)
+    parser.add_argument("-lp", '--logpath', help='Logging file path', required=False, default=None)
 
     opts = parser.parse_args()
 
@@ -260,7 +268,5 @@ if __name__ == '__main__':
     j.logger.consoleloglevel = 2
     j.logger.maxlevel=7
 
-    worker=Worker(opts.queuename)
+    worker=Worker(opts.queuename, opts.logpath)
     worker.run()
-
-

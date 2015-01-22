@@ -4,6 +4,14 @@ from JumpScale import j
 import time
 import struct
 
+TIMES = {'s': 1,
+ 'm': 60,
+ 'h': 3600,
+ 'd': 3600 * 24,
+ 'w': 3600 * 24 * 7
+}
+
+
 class Time:
     """
     generic provider of time functions
@@ -100,6 +108,22 @@ class Time:
         """
         return int(self.getMinuteId(epoch)/(60*24))
 
+
+    def getDeltaTime(self, txt):
+        """
+        only supported now is -3m, -3d and -3h (ofcourse 3 can be any int)
+        and an int which would be just be returned
+        means 3 days ago 3 hours ago
+        if 0 or '' then is now
+        """
+        txt = txt.strip()
+        unit = txt[-1]
+        if txt[-1] not in TIMES.keys():
+            raise RuntimeError("Cannot find time, needs to be in format have time indicator %s " % TIMES.keys())
+        value = float(txt[:-1])
+        return value * TIMES[unit]
+
+
     def getEpochAgo(self,txt):
         """
         only supported now is -3m, -3d and -3h  (ofcourse 3 can be any int)
@@ -109,22 +133,7 @@ class Time:
         """
         if txt==None or str(txt).strip()=="0":
             return self.getTimeEpoch()
-        if j.basetype.string.check(txt):
-            txt=txt.lower()
-            if txt.find("-")==-1:
-                raise RuntimeError("Cannot find time, needs to be in format -3d and -3h  (ofcourse 3 can be any int)")
-            if txt.find("m")!=-1:
-                ago=int(txt.replace("m","").replace("-",""))
-                return self.getTimeEpoch()-(ago*60)
-            if txt.find("d")!=-1:
-                ago=int(txt.replace("d","").replace("-",""))
-                return self.getTimeEpoch()-(ago*60*60*24)
-            if txt.find("h")!=-1:
-                ago=int(txt.replace("h","").replace("-",""))
-                return self.getTimeEpoch()-(ago*60*60)
-            raise RuntimeError("Cannot find time, needs to be in format -3d and -3h  (ofcourse 3 can be any int)")
-        else:
-            return int(txt)
+        return self.getTimeEpoch() + self.getDeltaTime(txt)
 
     def getEpochFuture(self,txt):
         """
@@ -135,19 +144,7 @@ class Time:
         """
         if txt==None or str(txt).strip()=="0":
             return self.getTimeEpoch()
-        if j.basetype.string.check(txt):
-            txt=txt.lower()
-            if txt.find("+")==-1:
-                raise RuntimeError("Cannot find time, needs to be in format +3d and +3h  (ofcourse 3 can be any int)")
-            if txt.find("d")!=-1:
-                future=int(txt.replace("d","").replace("+",""))
-                return self.getTimeEpoch()+(future*60*60*24)
-            if txt.find("h")!=-1:
-                future=int(txt.replace("h","").replace("+",""))
-                return self.getTimeEpoch()+(future*60*60)
-            raise RuntimeError("Cannot find time, needs to be in format +3d and +3h  (ofcourse 3 can be any int)")
-        else:
-            return int(txt)
+        return self.getTimeEpoch() + self.getDeltaTime(txt)
                 
     def HRDatetoEpoch(self,datestr,local=True):
         """

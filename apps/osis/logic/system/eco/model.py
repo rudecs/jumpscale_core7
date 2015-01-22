@@ -1,5 +1,4 @@
 from JumpScale import j
-
 OsisBaseObject=j.core.osis.getOsisBaseObjectClass()
 
 class ECO(OsisBaseObject):
@@ -52,14 +51,7 @@ class ECO(OsisBaseObject):
 
             self.type=str(type)
 
-            self.state="NEW" #["NEW","ALERT","CLOSED"]
-
-            self.lasttime=0 #last time there was an error condition linked to this alert
-            self.closetime=0  #alert is closed, no longer active
-
-            self.occurrences=1 #nr of times this error condition happened
-       
-
+            
     def getUniqueKey(self):
         """
         return unique key for object, is used to define unique id

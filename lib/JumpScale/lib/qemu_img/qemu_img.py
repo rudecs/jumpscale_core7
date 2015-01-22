@@ -150,7 +150,7 @@ class QemuImg(object):
         if not exitCode == 0:
             raise RuntimeError('Command %s exited with code %s, output %s' % (command, exitCode, output))
 
-    def info(self, fileName, diskImageFormat=None):
+    def info(self, fileName, diskImageFormat=None, chain=False):
         """
         Give information about the disk image <fileName>. Use it in particular to know the size reserved on
         disk which can be different from the displayed size. If VM snapshots are stored in the disk image,
@@ -168,6 +168,8 @@ class QemuImg(object):
 
         if diskImageFormat:
             command = '%s -f %s' % (command, diskImageFormat)
+        if chain:
+            command += " --backing-chain "
 
         command = '%s "%s"' % (command, fileName)
 
@@ -176,15 +178,23 @@ class QemuImg(object):
         if not exitCode == 0:
             raise RuntimeError('Command %s exited with code %s, output %s' % (command, exitCode, output))
 
-        result = dict()
-        for match in inforec.finditer(output):
-            value = match.group('value')
-            sizematch = sizerec.match(value)
-            if sizematch:
-                value = j.tools.units.bytes.toSize(float(sizematch.group('size')), sizematch.group('unit'), 'K')
-            result[match.group('key')] = value
+        def getresult(output):
+            result = dict()
+            for match in inforec.finditer(output):
+                value = match.group('value')
+                sizematch = sizerec.match(value)
+                if sizematch:
+                    value = j.tools.units.bytes.toSize(float(sizematch.group('size')), sizematch.group('unit'), 'K')
+                result[match.group('key')] = value
+            return result
 
-        return result
+        if chain:
+            result = list()
+            for img in output.split('\n\n'):
+                result.append(getresult(img))
+            return result
+        else:
+            return getresult(output)
 
     def _getBinary(self):
         return 'qemu-img'

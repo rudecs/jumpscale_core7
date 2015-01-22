@@ -191,33 +191,34 @@ class ActionsBase():
         """
         pass
 
-    def check_up_local(self,**args):
+    def check_up_local(self, wait=True, **args):
         """
         do checks to see if process(es) is (are) running.
         this happens on system where process is
         """      
         def do(process):
-
-            ports=self.jp_instance.getTCPPorts() or []            
-            
-            if ports and isinstance(ports[0], str) and ';' in ports[0]:
-                ports = ports[0].split(';')
+            ports=self.jp_instance.getTCPPorts()
             timeout=process["timeout_start"]
             if timeout==0:
                 timeout=2
+            if not wait:
+                timeout = 0
             if len(ports)>0:
                 
                 for port in ports:
                     #need to do port checks
-                    if j.system.net.waitConnectionTest("localhost", port, timeout)==False:                    
-                        return False            
+                    if wait:
+                        if j.system.net.waitConnectionTest("localhost", port, timeout)==False:                    
+                            return False            
+                    elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
+                            return False
             else:
                 #no ports defined 
                 filterstr=process["filterstr"]
 
                 start=j.base.time.getTimeEpoch()
                 now=start
-                while now<start+timeout:
+                while now<=start+timeout:
                     if j.system.process.checkProcessRunning(filterstr):
                         return True
                     now=j.base.time.getTimeEpoch()
@@ -227,7 +228,6 @@ class ActionsBase():
             result=do(process)
             if result==False:
                 return False
-        print ("Process UP")
         return True
 
     def check_down_local(self,**args):
