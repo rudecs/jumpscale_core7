@@ -26,51 +26,13 @@ def remote(F): # F is func or method without instance
         if not "node2execute" in kwargs["args"]:
             return F(*args2,**kwargs)
         else:
-            node=kwargs["args"]["node2execute"]
-            sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
-            ip = sshHRD.get("param.machine.ssh.ip")
-            port = sshHRD.get("param.machine.ssh.port")
-            keyhrd=j.application.getAppInstanceHRD("sshkey",sshHRD.get('param.ssh.key.name'))
-            j.remote.cuisine.fabric.env["key"] = keyhrd.get('param.ssh.key.priv')
-            cl=j.remote.cuisine.connect(ip,port)
+            node = kwargs['args']['node2execute']
+            if kwargs['args']['lua']:
+                cl = j.packages.remote.sshLua(jp, node)
+            else:
+                cl = j.packages.remote.sshPython(jp, node)
 
-            if 'cmd' in kwargs['args']: # execution of a cmd passed into the data argument of jpackage command
-                cmd = kwargs['args']['cmd']
-                cl.run(cmd)
-
-            else: # execution of a jpackage action
-                codegen=j.tools.packInCode.get4python()
-
-                #put hrd on dest system
-                hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),jp.name,jp.instance)
-                codegen.addHRD("jphrd",jp.hrd,hrddestfile)
-
-                #put action file on dest system
-                actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=node),jp.name,jp.instance)
-                actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
-                codegen.addPyFile(actionfile,path2save=actionfiledest)
-
-                toexec=codegen.get()
-
-                cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
-
-                # create a .git dir so the directory is seen as a git config repo
-                if not cl.file_exists("%s/.git"%cwd):
-                    cmd = "cd %s; mkdir .git" %(cwd)
-                    cl.run(cmd)
-                if not cl.file_exists("%s/jp"%cwd):
-                    cmd = "cd %s; mkdir jp" %(cwd)
-                    cl.run(cmd)
-
-                # install hrd and action file on remote system
-                tmploc = '/tmp/exec.py'
-                cl.file_write(tmploc, toexec)
-                cmd = "jspython %s" % tmploc
-                cl.run(cmd)
-                # then run the jpackage command on the remote system
-                cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, F.func_name, jp.name, jp.instance)
-                cl.run(cmd)
-                del j.remote.cuisine.fabric.env["key"]
+            cl.execute(F.func_name)
 
     return wrapper
 
@@ -158,7 +120,7 @@ class JPackageInstance():
         self.domain=self.jp.domain
         self.name=self.jp.name
         self.hrd=None
-        self.metapath=""
+        self.metapath=jp.metapath
         self.hrdpath=""
         self.actions=None
         self._loaded=False
@@ -222,9 +184,9 @@ class JPackageInstance():
 
             if j.packages.type=="c":
                 j.system.fs.createDir(j.dirs.getJPActionsPath(node=node))
-                self.actionspath="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=node),self.jp.name,self.instance)
+                self.actionspath="%s/%s__%s"%(j.dirs.getJPActionsPath(node=node),self.jp.name,self.instance)
             else:
-                self.actionspath="%s/%s__%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
+                self.actionspath="%s/%s__%s__%s"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
 
             args.update(self.args)
 
@@ -241,7 +203,10 @@ class JPackageInstance():
 
             if not self.remote:
                 source="%s/actions.py"%self.jp.metapath
-                j.do.copyFile(source,self.actionspath)
+                j.do.copyFile(source,self.actionspath+".py")
+                source="%s/actions.lua"%self.jp.metapath
+                if j.system.fs.exists(source):
+                    j.do.copyFile(source,self.actionspath+".lua")
 
                 hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
 
@@ -250,10 +215,18 @@ class JPackageInstance():
 
                 self.hrd.save()
 
-                self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
-                j.application.config.applyOnFile(self.actionspath, additionalArgs=args)
+                actionPy = self.actionspath+".py"
+                self.hrd.applyOnFile(actionPy, additionalArgs=args)
+                j.application.config.applyOnFile(actionPy, additionalArgs=args)
+
+                actionLua = self.actionspath+".lua"
+                if j.system.fs.exists(source):
+                    self.hrd.applyOnFile(actionLua, additionalArgs=args)
+                    j.application.config.applyOnFile(actionLua, additionalArgs=args)
+
                 j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
 
+            self.actionspath+=".py"
             self.hrd=j.core.hrd.get(self.hrdpath)
 
             modulename="JumpScale.jpackages.%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
@@ -376,6 +349,7 @@ class JPackageInstance():
             self.actions.halt(**args)
 
     @deps
+    @remote
     def build(self,args={},deps=True):
         self._load(args=args)
         for dep in self.getDependencies(build=True):
@@ -411,8 +385,11 @@ class JPackageInstance():
         self.stop(args=args)
         self.start(args=args)
 
-    def getProcessDicts(self,deps=True):
-        self._load()
+    def getProcessDicts(self,deps=True,args={}):
+        loadArg = {}
+        if args.node!= None:
+            loadArg["node2execute"] = args.node
+        self._load(loadArg)
         res=[]
         counter=0
 
