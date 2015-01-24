@@ -301,19 +301,30 @@ elif args.action == 'push':
         package.push(args=hrddata,deps=args.deps)
 
 elif args.action == 'create':
-    for instance in j.application.getAppInstanceHRDs("gitlab_client"):
-        from IPython import embed
-        print "DEBUG NOW create"
-        embed()
-        p
-        
 
-    import JumpScale.baselib.gitlab
-    gl=j.clients.gitlab.get()
-    from IPython import embed
-    print "DEBUG NOW id"
-    embed()
-    
+    if args.name=="":
+        args.name=j.console.askString("name of repo")
+
+    if j.console.askYesNo("Do you want to create a binary repo on gitlab?"):
+
+        if j.application.getAppInstanceHRDs("gitlab_client")==[]:
+            #gitlab client not installed yet
+            j.packages.install(name="gitlab_client")
+        
+        choice=[]
+        for instance in j.application.getAppInstanceHRDs("gitlab_client"):
+            choice.append(instance.get("gitlab.client.url"))
+
+        gitlabInstanceName=j.console.askChoice(descr="Choose gitlab instance",choicearray=choice)
+        
+        instance=[item for item in j.application.getAppInstanceHRDs("gitlab_client") if gitlabInstanceName==instance.get("gitlab.client.url")][0]
+
+        import JumpScale.baselib.gitlab
+
+        gl=j.clients.gitlab.get(instance=instance.get("jp.instance"))
+
+        binname=j.console.askString("name of binary repo",args.name)
+        proj,path=gl.create( "binary", binname, public=True)
 
 
 elif args.action == 'mdupdate':

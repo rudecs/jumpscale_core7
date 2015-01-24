@@ -1218,7 +1218,7 @@ class InstallTools():
                 if branch!=None:
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
                 else:
-                    cmd="cd %s;git -c http.sslVerify=false pull"
+                    cmd="cd %s;git -c http.sslVerify=false pull"%dest
                 self.execute(cmd,timeout=600)
         else:
             print(("git clone %s -> %s"%(url,dest)))
