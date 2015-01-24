@@ -16,11 +16,15 @@ def loadmodule(name, path):
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
     def wrapper(*args2,**kwargs): # class instance in args[0] for method
-        print "remote wrapper start"
+        # print "remote wrapper start"
 
         result=None
         jp=args2[0] #this is the self from before
-        jp._load(**kwargs)
+        if not isinstance(kwargs["args"],dict):
+            raise RuntimeError("args need to be dict")      
+
+        jp._load(args=kwargs["args"])
+        
         if not "args" in kwargs:
             raise RuntimeError("args need to be part of kwargs")
         if not "node2execute" in kwargs["args"]:
@@ -74,7 +78,10 @@ def deps(F): # F is func or method without instance
         result=None
         jp=args2[0] #this is the self from before
 
-        jp._load(**kwargs)
+        if not isinstance(kwargs["args"],dict):
+            raise RuntimeError("args need to be dict")      
+
+        jp._load(args=kwargs["args"])
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
@@ -172,7 +179,7 @@ class JPackageInstance():
             return processes[0].get('prio', 100)
         return 199
 
-    def _load(self,args={},*stdargs,**kwargs):
+    def _load(self,args={}):#,*stdargs,**kwargs):  @question why this (despiegk) removed it again
         if self._loaded==False:
             node=None
             if "node2execute" in args:
@@ -387,9 +394,8 @@ class JPackageInstance():
 
     def getProcessDicts(self,deps=True,args={}):
         loadArg = {}
-        if args.node!= None:
-            loadArg["node2execute"] = args.node
-        self._load(loadArg)
+
+        self._load(args=args)
         res=[]
         counter=0
 

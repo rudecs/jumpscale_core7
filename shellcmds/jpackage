@@ -10,11 +10,7 @@ j.application.start('jpackage')
 parser = cmdutils.ArgumentParser()
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
-<<<<<<< HEAD
-    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create"]
-=======
-    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute", "status"]
->>>>>>> ea1a21e16ca23490afbcad2bb96ed3e87e333321
+    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create", "status"]
 
 help="""
 jpackage commands:
@@ -307,7 +303,7 @@ elif args.action == 'push':
 elif args.action == 'create':
     for instance in j.application.getAppInstanceHRDs("gitlab_client"):
         from IPython import embed
-        print "DEBUG NOW oo"
+        print "DEBUG NOW create"
         embed()
         p
         

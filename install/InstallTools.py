@@ -1151,27 +1151,31 @@ class InstallTools():
             if not url2.endswith(".git"):
                 #no .git at end
                 url2+=".git"
-
             
             if not url.endswith(".git"):
                 #no .git at end
                 url+=".git"
 
-
-            if login == 'ssh':
-                splits = url2.split('/')
-                url = 'git@%s:%s' % (splits[0], '/'.join(splits[1:]))
-            elif login!=None and login!="guest":
+            #@TODO redo support for ssh, there seems to be conflicts now in code (merging issues)
+            # if login == 'ssh':
+            #     splits = url2.split('/')
+            #     url = 'git@%s:%s' % (splits[0], '/'.join(splits[1:]))
+            
+            if login!=None and login!="guest":
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
             else:
-                url=url2
-        else:
+                url="%s@%s"%(pre,url2)
+
             if dest==None:
-                url3=url.strip(" /")
+                url3=url2.strip(" /")
+
                 ttype,account,repo=url3.split("/",3)
                 if ttype.find(".")!=-1:
                     ttype=ttype.split(".",1)[0]
-                dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo.lower().replace(".git",""))                
+                repo=repo.lower().replace(".git","")
+                dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo)    
+        else:
+            raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")            
 
         if reset:
             if url=="":
@@ -1181,6 +1185,9 @@ class InstallTools():
         self.createDir(dest)
 
         base=url2.split("/",1)[0]
+
+
+        
 
         return base,ttype,account,repo,dest,url        
 
@@ -1207,7 +1214,7 @@ class InstallTools():
                     self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
             else:
                 #pull
-                print(("git pull %s -> %s"%(url2,dest)))
+                print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
                 else:
