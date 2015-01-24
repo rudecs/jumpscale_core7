@@ -44,7 +44,7 @@ class RemotePython(object):
         # create a .git dir so the directory is seen as a git config repo
         if not self.cl.file_exists("%s/.git"%cwd):
             cmd = "cd %s; mkdir .git" %(cwd)
-            self.self.cl.run(cmd)
+            self.cl.run(cmd)
         if not self.cl.file_exists("%s/jp"%cwd):
             cmd = "cd %s; mkdir jp" %(cwd)
             self.cl.run(cmd)
