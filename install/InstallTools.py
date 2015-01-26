@@ -1151,17 +1151,15 @@ class InstallTools():
             if not url2.endswith(".git"):
                 #no .git at end
                 url2+=".git"
-            
+
             if not url.endswith(".git"):
                 #no .git at end
                 url+=".git"
 
-            #@TODO redo support for ssh, there seems to be conflicts now in code (merging issues)
-            # if login == 'ssh':
-            #     splits = url2.split('/')
-            #     url = 'git@%s:%s' % (splits[0], '/'.join(splits[1:]))
-            
-            if login!=None and login!="guest":
+            if login == 'ssh':
+                splits = url2.split('/')
+                url = 'git@%s:%s' % (splits[0], '/'.join(splits[1:]))
+            elif login!=None and login!="guest":
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
             else:
                 url="%s@%s"%(pre,url2)
