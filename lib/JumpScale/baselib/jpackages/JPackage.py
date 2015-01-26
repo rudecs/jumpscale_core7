@@ -167,9 +167,11 @@ class JPackageInstance():
             for item in process["ports"]:
                 if isinstance(item, basestring):
                     moreports = item.split(";")
-                    for port in moreports:
-                        if port.isdigit():
-                            ports.add(int(port))
+                elif isinstance(item, int):
+                    moreports = [item]
+                for port in moreports:
+                    if isinstance(port, int) or port.isdigit():
+                        ports.add(int(port))
         return list(ports)
 
 
