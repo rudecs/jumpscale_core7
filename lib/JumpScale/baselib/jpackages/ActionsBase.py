@@ -55,7 +55,6 @@ class ActionsBase():
                 j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
 
                 for port in process["ports"]:
-                    print ("KILL: %s (%s)"%(name,port))
                     j.system.process.killProcessByPort(port)
 
                 cmd2="%s %s"%(tcmd,targs)
@@ -72,7 +71,6 @@ class ActionsBase():
                 j.do.writeFile(path2,C)
                 j.do.chmod(path2,0o770)            
                 j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
-                print "put in init:%s"%name
             
             elif startupmethod=="upstart":
                 raise RuntimeError("not implemented")
@@ -137,8 +135,6 @@ class ActionsBase():
             else:
                 j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")            
 
-        print "STARTED OK"
-
     def stop(self,**args):
         """
         if you want a gracefull shutdown implement this method
@@ -166,7 +162,6 @@ class ActionsBase():
         """
         def do(process):
             cwd=process["cwd"]
-            print "HARDKILL"
             for port in self.jp_instance.getTCPPorts():
                 j.system.process.killProcessByPort(port)
             if not self.check_down_local(**args):
@@ -259,7 +254,6 @@ class ActionsBase():
             result=do(process)
             if result==False:
                 return False            
-        print ("Process DOWN")
         return True        
 
     def check_requirements(self,**args):
