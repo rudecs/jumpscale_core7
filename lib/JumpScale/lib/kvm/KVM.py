@@ -301,11 +301,6 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
         print 'Machine IP address is: %s' % mgmt_ip
         return mgmt_ip
 
-    def _getShellFromConfig(self, name):
-        machine_hrd = self.getConfig(name)
-        if machine_hrd:
-            return machine_hrd.get('shell', '/bin/bash -l -c')
-
     def destroyAll(self):
         print 'Destroying all created vmachines...'
         running, stopped = self.list()
@@ -471,9 +466,14 @@ bootstrap.type=ssh''' % (domain.UUIDString(), name, imagehrd.get('name'), imageh
 
     def execute(self, name, cmd, sudo=False):
         rapi = self._getSshConnection(name)
-        shell = self._getShellFromConfig(name)
-        with rapi.fabric.api.settings(shell=shell):
-            if not sudo:
-                return rapi.run(cmd, shell=shell)
-            else:
-                return rapi.sudo(cmd, shell=shell)
+        machine_hrd = self.getConfig(name)
+        if machine_hrd:
+            shell = machine_hrd.get('shell', '/bin/bash -l -c')
+            user = machine_hrd.get('bootstrap.login', 'root')
+            with rapi.fabric.api.settings(shell=shell, user=user):
+                if not sudo:
+                    return rapi.run(cmd, shell=shell)
+                else:
+                    return rapi.sudo(cmd, shell=shell)
+        else:
+            raise RuntimeError('Machine "%s" does not exist' % name)
