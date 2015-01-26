@@ -19,6 +19,16 @@ class ActionsBase():
         """
         return True
 
+    def _getDomainName(self, process):
+        domain=self.jp_instance.jp.domain
+        if process["name"]!="":
+            name=process["name"]
+        else:
+            name=self.jp_instance.jp.name
+            if self.jp_instance.instance!="main":
+                name+="__%s"%self.jp_instance.instance
+        return domain, name
+
     def start(self,**args):
         """
         start happens because of info from main.hrd file but we can overrule this
@@ -39,24 +49,13 @@ class ActionsBase():
                 tuser="root"
             tlog=self.jp_instance.hrd.getBool("process.log",default=True)
             env=process["env"]
-            domain=self.jp_instance.jp.domain
-            if process["name"]!="":
-                name=process["name"]
-            else:
-                name=self.jp_instance.jp.name
-                if self.jp_instance.instance!="main":
-                    name+="__%s"%self.jp_instance.instance
 
             startupmethod=process["startupmanager"]
+            domain, name = self._getDomainName(process)
 
             j.do.delete(self.jp_instance.getLogPath())
 
             if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
-                j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
-
-                for port in process["ports"]:
-                    j.system.process.killProcessByPort(port)
-
                 cmd2="%s %s"%(tcmd,targs)
                 extracmds=""
                 if cmd2.find(";")!=-1:
@@ -84,10 +83,6 @@ class ActionsBase():
                 j.system.process.executeIndependant(cmd2)            
 
             elif startupmethod=="tmux":
-                for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
-                    if tmuxname==name:
-                        j.system.platform.screen.killWindow(domain,name)
-
                 j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
 
                 if tlog:
@@ -115,12 +110,14 @@ class ActionsBase():
                 # self.raiseError(msg)
                 # return
 
+        isrunning=self.check_up_local(wait=False)
+        if isrunning:
+            return
         for process in self.jp_instance.getProcessDicts():
             start2(process)
 
         isrunning=self.check_up_local()
-
-        if isrunning==False:            
+        if isrunning==False:
             if j.system.fs.exists(path=self.jp_instance.getLogPath()):
                 log=j.do.readFile(self.jp_instance.getLogPath()).strip()
             else:
@@ -141,12 +138,19 @@ class ActionsBase():
         a uptime check will be done afterwards (local)
         return True if stop was ok, if not this step will have failed & halt will be executed.
         """
-        
-        
         def _stop(process):
             ports = process.get('ports', [])
             for port in ports:
                 j.system.process.killProcessByPort(port)
+
+            startupmethod=process["startupmanager"]
+            domain, name = self._getDomainName(process)
+            if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
+                j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
+            elif startupmethod=="tmux":
+                for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
+                    if tmuxname==name:
+                        j.system.platform.screen.killWindow(domain,name)
 
         if self.jp_instance.jp.name == 'redis':
             j.logger.redislogging = None

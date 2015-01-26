@@ -110,8 +110,30 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
-    def getInstance(self,instance="main"):
-        return JPackageInstance(self,instance)
+    def getInstance(self,instance=None):
+        # get first installed or main
+        if instance is None:
+            instances = self.listInstances()
+            if instances:
+                instance = instances[0]
+            else:
+                instance = 'main'
+        return JPackageInstance(self, instance)
+
+    def listInstances(self, node=None):
+        hrdfolder = j.dirs.getHrdDir(node=node)
+        files = j.system.fs.find(hrdfolder, self.getHRDPattern(node))
+        instances = list()
+        for path in files:
+            instances.append(path.split('.')[-2])
+        return instances
+
+    def getHRDPattern(self,node=None):
+        if j.packages.type=="c":
+            hrdpath = "%s.*.hrd" % (self.name)
+        else:
+            hrdpath = "%s.%s.*.hrd" % (self.domain, self.name)
+        return hrdpath
 
     def __repr__(self):
         return "%-15s:%s"%(self.domain,self.name)
@@ -126,7 +148,7 @@ class JPackageInstance():
         self.jp=jp
         self.domain=self.jp.domain
         self.name=self.jp.name
-        self.hrd=None
+        self._hrd=None
         self.metapath=jp.metapath
         self.hrdpath=""
         self.actions=None
@@ -135,6 +157,11 @@ class JPackageInstance():
         self.args={}
         self._init=False
         self.remote=jp.remote
+
+    @property
+    def hrd(self):
+        self._load()
+        return self.hrd
 
     def _init(self):
         if self._init==False:

@@ -335,7 +335,7 @@ class HRD(HRDBase):
                             ttype = hrdtemplateitem.ttype
                         self.set(hrdtemplateitem.name,val,comments=hrdtemplateitem.comments,persistent=False,ttype=ttype)
                     else:
-                        self.set(hrdtemplateitem.name,hrdtemplateitem.get(),comments=hrdtemplateitem.comments,persistent=False,ttype=ttype)
+                        self.set(hrdtemplateitem.name,hrdtemplateitem.get(),comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
         
 
         for key in self.args:

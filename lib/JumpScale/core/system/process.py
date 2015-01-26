@@ -1734,7 +1734,6 @@ class SystemProcess:
 
     def killProcessByPort(self,port):
         for pid in self.getPidsByPort(port):
-            print "kill:%s"%port
             kill(pid)
 
 
