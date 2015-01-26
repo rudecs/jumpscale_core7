@@ -21,10 +21,9 @@ def remote(F): # F is func or method without instance
         result=None
         jp=args2[0] #this is the self from before
         if not isinstance(kwargs["args"],dict):
-            raise RuntimeError("args need to be dict")      
+            raise RuntimeError("args need to be dict")
 
         jp._load(args=kwargs["args"])
-        
         if not "args" in kwargs:
             raise RuntimeError("args need to be part of kwargs")
         if not "node2execute" in kwargs["args"]:
@@ -80,7 +79,7 @@ def deps(F): # F is func or method without instance
 
         loadargs = kwargs.get('args', {})
         if not isinstance(loadargs, dict):
-            raise RuntimeError("args need to be dict")      
+            raise RuntimeError("args need to be dict")
 
         jp._load(args=loadargs)
         if deps:
@@ -191,7 +190,6 @@ class JPackageInstance():
             self.hrdpath = self.getHRDPath(node=node)
 
             j.do.createDir(j.do.getDirName(self.hrdpath))
-
             if j.packages.type=="c":
                 j.system.fs.createDir(j.dirs.getJPActionsPath(node=node))
                 self.actionspath="%s/%s__%s"%(j.dirs.getJPActionsPath(node=node),self.jp.name,self.instance)

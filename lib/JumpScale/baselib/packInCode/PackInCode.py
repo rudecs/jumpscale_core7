@@ -47,8 +47,7 @@ hrdtmp=\"\"\"
 $hrd
 \"\"\"
 hrdtmp=codegen.unserialize(hrdtmp)
-$name=j.core.hrd.get(content=hrdtmp)
-$name.path=\"$path\"
+$name=j.core.hrd.get(path=\"$path\",content=hrdtmp)
 j.system.fs.createDir(j.do.getParent(\"$path\"))
 $name.save()
 """

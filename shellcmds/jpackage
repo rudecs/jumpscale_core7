@@ -96,7 +96,7 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
     if name!="" and name.find("*")==-1:
         for pname in args.name.split(","):
             if pname.strip()!="":
-                packages += j.packages.find(name=pname.strip(), domain=args.domain)
+                packages += j.packages.find(name=pname.strip(), domain=args.domain,remote=args.remote)
     else:        
         packages += j.packages.find(domain=args.domain)
         if len(packages) > 1 and name.find("*")!=-1:
