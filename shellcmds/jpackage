@@ -15,20 +15,20 @@ commands = ['install','list','stop','start','restart','build',"mdupdate","update
 help="""
 jpackage commands:
 
-    install: 
+    install:
     - download all related git repo's (if not downloaded yet, otherwise update)
     - prepare & copyfiles & configure
     - start the app
     list:
     - list the jpackages
-    stop-start-restart 
+    stop-start-restart
     build
     - if build instructions are given the build repo's will be downloaded & build started
     - build happens to production dir
     package
     - copy the files which are relevant from building back to the binary repo
     mdupdate
-    - update all git repo's which have jpackage metadata 
+    - update all git repo's which have jpackage metadata
     update
     - go over all related repo's & do an update
     - copy the files again
@@ -103,13 +103,13 @@ def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=Fal
     name=args.name.strip()
     if name=="*":
         name=""
-    
+
     if name!="" and name.find("*")==-1:
         for pname in args.name.split(","):
             if pname.strip()!="":
                 packages += j.packages.find(name=pname.strip(), domain=args.domain,remote=args.remote)
-    else:        
-        packages += j.packages.find(domain=args.domain)
+    else:
+        packages += j.packages.find(domain=args.domain,remote=args.remote)
         if len(packages) > 1 and name.find("*")!=-1:
             tofind=name.replace("*","")
             packages=[item for item in packages if item.name.find(tofind)!=-1]
@@ -130,7 +130,7 @@ def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=Fal
 
     if toinstall and args.instance<>"main" and len(packages)>1:
         raise RuntimeError("Can only get jpackage instances if only 1 jpackage when instance set or more jpackages when instance=main")
-    
+
     if toinstall:
         packages=[jp.getInstance(args.instance) for jp in packages]
         expandInstances = False
@@ -159,8 +159,8 @@ args = parser.parse_args()
 args.deps=not args.nodeps
 
 hrddata={}
-if args.data<>None:    
-    if args.data.find("#")<>-1:        
+if args.data<>None:
+    if args.data.find("#")<>-1:
         for line in args.data.split("#"):
             if line.find("=")<>-1:
                 var,data=line.split("=",1)
@@ -174,7 +174,7 @@ if args.node!=None:
 if args.lua!=None:
     hrddata["lua"]=args.lua
 
-  
+
 # def askDomains(args):
 #     if args.domain==None:
 #         return j.console.askChoiceMultiple(j.packages.getDomainNames())
@@ -201,8 +201,8 @@ if args.action == 'configure':
 elif args.action == 'install':
 
     packages = getJPackage(args,toinstall=True)
-       
-    # if args.instance<>0 and len(packages)>1:        
+
+    # if args.instance<>0 and len(packages)>1:
     #     j.events.inputerror_critical("Cannot find more jpackages if instance is given.")
 
     for package in packages:
@@ -319,13 +319,13 @@ elif args.action == 'create':
         if j.application.getAppInstanceHRDs("gitlab_client")==[]:
             #gitlab client not installed yet
             j.packages.install(name="gitlab_client")
-        
+
         choice=[]
         for instance in j.application.getAppInstanceHRDs("gitlab_client"):
             choice.append(instance.get("gitlab.client.url"))
 
         gitlabInstanceName=j.console.askChoice(descr="Choose gitlab instance",choicearray=choice)
-        
+
         instance=[item for item in j.application.getAppInstanceHRDs("gitlab_client") if gitlabInstanceName==instance.get("gitlab.client.url")][0]
 
         import JumpScale.baselib.gitlab
@@ -343,7 +343,7 @@ elif args.action == 'mdupdate':
     else:
         if args.domain<>None:
             j.packages.updateMetaData(force=args.force,domain=args.domain)
-        else:        
+        else:
             j.packages.updateMetaData(force=args.force)
 
 elif args.action == 'list':
