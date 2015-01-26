@@ -129,12 +129,15 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
         #@todo
         
     #@todo fix
+    jpargs = {}
+    if args.node:
+        jpargs['node2execute'] = args.node
     if installed:
         if j.packages.type=="c":
             packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), '%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
         else:
-            packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
-        packages = sorted(packages, key=lambda jp: jp.getProcessDicts(args=args)[0].get('prio', 100) if jp.getProcessDicts(args=args) else 100)
+            packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), '%s.%s.*' % (jp.domain, jp.name))]
+        packages = sorted(packages, key=lambda jp: jp.getProcessDicts(args=jpargs)[0].get('prio', 100) if jp.getProcessDicts(args=jpargs) else 100)
 
     if packages==[]:
         raise RuntimeError("Cannot find packages, need at least 1")

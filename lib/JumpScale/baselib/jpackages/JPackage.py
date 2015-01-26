@@ -78,10 +78,11 @@ def deps(F): # F is func or method without instance
         result=None
         jp=args2[0] #this is the self from before
 
-        if not isinstance(kwargs["args"],dict):
+        loadargs = kwargs.get('args', {})
+        if not isinstance(loadargs, dict):
             raise RuntimeError("args need to be dict")      
 
-        jp._load(args=kwargs["args"])
+        jp._load(args=loadargs)
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
@@ -395,10 +396,7 @@ class JPackageInstance():
         self.start(args=args)
 
     def getProcessDicts(self,deps=True,args={}):
-        loadArg = {}
-
         self._load(args=args)
-        res=[]
         counter=0
 
         defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
