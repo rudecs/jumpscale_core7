@@ -16,5 +16,5 @@ def setupNetwork(ifaces):
 @task
 def pushSshKey(sshkey):
     with settings(user='Administrator'):
-        run('touch /etc/authorized_keys; echo "%s" > /etc/authorized_keys' %
+        run('mkdir ~/.ssh; touch ~/.ssh/authorized_keys; echo "%s" > ~/.ssh/authorized_keys' %
             sshkey)
