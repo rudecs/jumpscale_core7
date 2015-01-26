@@ -127,7 +127,7 @@ class JPackageInstance():
         self.jp=jp
         self.domain=self.jp.domain
         self.name=self.jp.name
-        self.hrd=None
+        self._hrd=None
         self.metapath=jp.metapath
         self.hrdpath=""
         self.actions=None
@@ -136,6 +136,11 @@ class JPackageInstance():
         self.args={}
         self._init=False
         self.remote=jp.remote
+
+    @property
+    def hrd(self):
+        self._load()
+        return self.hrd
 
     def _init(self):
         if self._init==False:

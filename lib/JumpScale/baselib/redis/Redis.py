@@ -93,17 +93,14 @@ class RedisFactory:
         return self.redis[key]
 
     def getByInstanceName(self, instance, gevent=False):
-        jp_redis = j.packages.findNewest('jumpscale','redis')
-        if instance not in jp_redis.getInstanceNames():
-            raise RuntimeError('Redis instance %s is not installed' % instance)
-        jp_redis_config = jp_redis.load(instance=instance).hrd_instance
-        password = jp_redis_config.get('redis.passwd')
-        password = None if password.isspace() else password
+        jp = j.packages.find('jumpscale','redis')[0].getInstance(instance)
+        password = jp.hrd.get('param.passwd')
+        port = jp.hrd.getInt('param.port')
+        password = None if not password.strip() else password
         if gevent:
-            return GeventRedis('localhost', jp_redis_config.getInt('redis.port'), password=password)
+            return GeventRedis('localhost', port, password=password)
         else:
-            return Redis('localhost', jp_redis_config.getInt('redis.port'), password=password)
-
+            return Redis('localhost', port, password=password)
 
     def getRedisQueue(self, ipaddr, port, name, namespace="queues", fromcache=True):
         if not fromcache:
