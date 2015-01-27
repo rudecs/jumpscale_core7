@@ -129,8 +129,8 @@ class OSISFactory:
 
     def getClient(self, ipaddr=None, port=5544,user=None,passwd=None,ssl=False,gevent=False):
         if ipaddr==None or user==None or passwd==None:
-            osisjp=j.packages.findNewest(name="osis_client",domain="jumpscale")
-            inames=osisjp.getInstanceNames()
+            osisjp=j.packages.find(name="osis_client",domain="jumpscale")[0]
+            inames=osisjp.listInstances()
             if len(inames)==1:
                 osisjp=osisjp.load(instance=inames[0])
                 hrd=osisjp.hrd_instance
