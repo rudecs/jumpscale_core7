@@ -134,9 +134,10 @@ class Text:
         """        
         content=Text.eval(content)
         if content.strip()=="":
-            return content
+            return None, content
 
         endlf=content[-1]=="\n"
+        ttype = None
         
         out=""
         for line in content.split("\n"):
@@ -181,7 +182,7 @@ class Text:
                 descr=tags.tagGet("descr")
             else:
                 if name!="":
-                    descr="Please provide value for %s"%name
+                    descr="Please provide value for %s of type %s"% (name, ttype)
                 else:
                     descr="Please provide value"
 
@@ -198,14 +199,14 @@ class Text:
             if tags.tagExists("retry"):
                 retry = int(tags.tagGet("retry"))
             else:
-                retry = None
+                retry = -1
 
             if tags.tagExists("regex"):
                 regex = tags.tagGet("regex")
             else:
                 regex = None
 
-            if len(descr)>30:
+            if len(descr)>30 and ttype not in ('dict', 'multiline'):
                 print (descr)
                 descr=""
 
@@ -256,6 +257,12 @@ class Text:
                     j.events.inputerror_critical("When type is dropdown in ask, then dropdownvals needs to be specified as well.")
                 choicearray=[item.strip() for item in dropdownvals.split(",")]
                 result=j.console.askChoice(choicearray, descr=descr, sort=True)
+            elif ttype == 'dict':
+                rawresult = j.console.askMultiline(question=descr)
+                result = "\n"
+                for line in rawresult.splitlines():
+                    result += "    %s,\n" % line.strip().strip(',')
+
             else:
                 j.events.inputerror_critical("Input type:%s is invalid (only: bool,int,str,string,dropdown,float)"%ttype)
 
@@ -263,8 +270,7 @@ class Text:
 
         # if endlf==False:
         out=out[:-1]
-
-        return out
+        return ttype, out
 
     @staticmethod
     def getMacroCandidates( txt):

@@ -2,6 +2,7 @@ from JumpScale import j
 
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
+import json
 
 class JPackageRemoteFactory(object):
     def sshPython(self, jp, node):
@@ -67,11 +68,21 @@ class RemoteLua(object):
         self.cl = _sshConnect(node)
 
     def execute(self, action):
+        # add hrd content into actions file
+        # the hrd is converted into a lua table
+        dictHRD = self.jp.hrd.getHRDAsDict()
+        jsonHRD = json.dumps(dictHRD)
+        content = """local json = require 'json'
+        local hrd = json.decode.decode('%s')
+
+        """ % jsonHRD
 
         #put action file on dest system
         actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
-        content = j.system.fs.fileGetContents(actionfile)
-        content+= "\n%s()"%action # add the call to the wanted function into the lua file
+        content += j.system.fs.fileGetContents(actionfile)
+        # add the call to the wanted function into the lua file
+        # and pass the args table we construct from the hrd
+        content+= "\n%s(hrd)"%action
         actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.jp.name,self.jp.instance)
         self.cl.file_write(actionfiledest,content)
 

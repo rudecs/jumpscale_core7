@@ -92,14 +92,15 @@ class RedisFactory:
             self.redis[key] = Redis(ipaddr, port, password=password)
         return self.redis[key]
 
-    def getGeventRedisClientByInstanceName(self, instance):
-        jp_redis = j.packages.findNewest('jumpscale','redis')
-        if instance not in jp_redis.getInstanceNames():
-            raise RuntimeError('Redis instance %s is not installed' % instance)
-        jp_redis_config = jp_redis.load(instance=instance).hrd_instance
-        password = jp_redis_config.get('redis.passwd')
-        password = None if password.isspace() else password
-        return GeventRedis('localhost', jp_redis_config.getInt('redis.port'), password=password)
+    def getByInstanceName(self, instance, gevent=False):
+        jp = j.packages.find('jumpscale','redis')[0].getInstance(instance)
+        password = jp.hrd.get('param.passwd')
+        port = jp.hrd.getInt('param.port')
+        password = None if not password.strip() else password
+        if gevent:
+            return GeventRedis('localhost', port, password=password)
+        else:
+            return Redis('localhost', port, password=password)
 
     def getRedisQueue(self, ipaddr, port, name, namespace="queues", fromcache=True):
         if not fromcache:
@@ -196,7 +197,7 @@ class RedisFactory:
         j.system.fs.createDir(dpath)
         self.startInstance(name)
 
-    def configureInstance(self, name, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None):
+    def configureInstance(self, name, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None,unixsocket=False):
         """
         @param maxram = MB of ram
         slave example: (192.168.10.10,8888,asecret)   (ip,port,secret)
@@ -765,6 +766,10 @@ aof-rewrite-incremental-fsync yes
 
         if ismaster:
             slave=False
+
+        if unixsocket:
+            C = C.replace("# unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir, "unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir)
+            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
 
         if appendonly or ismaster:
             C = C.replace("$appendonly", "yes")

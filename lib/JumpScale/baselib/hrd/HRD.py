@@ -125,7 +125,10 @@ class HRDItem():
             # print ("%s CHANGED"%self)
             self.hrd.changed=True        
 
-        data=j.tools.text.ask(data,self.name,args=self.hrd.args)
+        ttype, data=j.tools.text.ask(data,self.name,args=self.hrd.args)
+        self.data = data
+        if self.ttype == "base" and ttype:
+            self.ttype = ttype
 
         if self.ttype=="str" or self.ttype=="base":
             self.value=data.strip().strip("'")
@@ -327,8 +330,10 @@ class HRD(HRDBase):
                     change=True
                     hrdtemplateitem=hrdtemplate.items[key]
                     if hrdtemplateitem.data.find("@ASK")!=-1:
-                        val=j.tools.text.ask(hrdtemplateitem.data,name=key,args=self.args)
-                        self.set(hrdtemplateitem.name,val,comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
+                        ttype, val=j.tools.text.ask(hrdtemplateitem.data,name=key,args=self.args)
+                        if not ttype:
+                            ttype = hrdtemplateitem.ttype
+                        self.set(hrdtemplateitem.name,val,comments=hrdtemplateitem.comments,persistent=False,ttype=ttype)
                     else:
                         self.set(hrdtemplateitem.name,hrdtemplateitem.get(),comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
         

@@ -1095,7 +1095,7 @@ class SystemNet:
         '''Download a url to a file or a directory, supported protocols: http, https, ftp, file
         @param url: URL to download from
         @type url: string
-        @param localpath: filename or directory to download the url to
+        @param localpath: filename or directory to download the url to pass - to return data
         @type localpath: string
         @param username: username for the url if it requires authentication
         @type username: string
@@ -1107,6 +1107,8 @@ class SystemNet:
         if not localpath:
             raise ValueError('Local path to download the url to can not be None or empty string')
         filename = ''
+        if localpath == '-':
+            filename = '-'
         if j.system.fs.isDir(localpath):
             filename = j.system.fs.joinPaths(localpath, j.system.fs.getBaseName(url))
         else:
@@ -1115,8 +1117,8 @@ class SystemNet:
             else:
                 raise ValueError('Local path is an invalid path')
         j.logger.log('Downloading url %s to local path %s'%(url, filename), 4)
-        from urllib.request import FancyURLopener
-        from urllib.parse import splittype
+        from urllib import FancyURLopener
+        from urllib import splittype
         class myURLOpener(FancyURLopener):
             # read a URL, with automatic HTTP authentication
             def __init__(self, user, passwd):
@@ -1136,8 +1138,11 @@ class SystemNet:
         urlopener = myURLOpener(username, passwd)
         if username and passwd and splittype(url)[0] == 'ftp':
             url = url.split('://')[0]+'://%s:%s@'%(username,passwd)+url.split('://')[1]
-        urlopener.retrieve(url, filename, None, None)
-        j.logger.log('URL %s is downloaded to local path %s'%(url, filename), 4)
+        if filename != '-':
+            urlopener.retrieve(url, filename, None, None)
+            j.logger.log('URL %s is downloaded to local path %s'%(url, filename), 4)
+        else:
+            return urlopener.open(url).read()
 
     def getDomainName(self):
         """
