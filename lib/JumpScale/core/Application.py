@@ -53,6 +53,9 @@ class Application:
 
         self.connectRedis()
 
+    def loadConfig(self):
+        self.config = j.core.hrd.get(path="%s/system" % j.dirs.hrdDir)
+
     def connectRedis(self):
 
         if j.system.net.tcpPortConnectionTest("127.0.0.1",9999):
