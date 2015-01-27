@@ -102,11 +102,7 @@ class JPackage():
         self.domain=domain
         self.hrd=None
         self.remote=remote
-        if self.remote:
-            parent = j.system.fs.getParent(j.packages.domains[self.domain])
-            self.metapath = j.system.fs.joinPaths(parent,'self')
-        else:
-            self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
+        self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
         self.hrdpath=""
         self.hrdpath_main=""
 

@@ -27,7 +27,7 @@ class JPackageFactory():
     def type(self, value):
         self._type=value
 
-    def _doinit(self):
+    def _doinit(self, remote=False):
         if self._init==False:
             j.do.debug=False
 
@@ -64,7 +64,7 @@ class JPackageFactory():
         return self.domains.keys()
 
     def find(self,domain="",name="",maxnr=None,remote=False):
-        self._doinit()
+        self._doinit(remote=remote)
 
         #create some shortcuts for fast return
         if domain!="":
@@ -92,32 +92,35 @@ class JPackageFactory():
                         if domain==domainfound and name==namefound:
                             res.append(JPackage(domainfound,namefound))
         else: #remote execution
-            for domainfound in self.domains.keys():
-                parent = j.system.fs.getParent(self.domains[domainfound])
-                actionsPath = j.system.fs.joinPaths(parent,'self/actions')
-                setPkg = set()
-                for namefound in j.system.fs.listFilesInDir(path=actionsPath):
-                    namefound = j.system.fs.getBaseName(namefound).split("__")[0]
-                    if namefound in [".git"]:
-                        continue
-                    if domain=="" and name=="":
-                        # res.append(JPackage(domainfound,namefound))
+            # for domainfound in self.domains.keys():
+            # from ipdb import set_trace;set_trace()
+            actionsPath = j.dirs.getJPActionsPath()
+            setPkg = set()
+            for namefound in j.system.fs.listFilesInDir(path=actionsPath):
+                split = j.system.fs.getBaseName(namefound).split("__")
+                domainfound = split[0]
+                namefound = split[1]
+                if namefound in [".git"]:
+                    continue
+                if domain=="" and name=="":
+                    # res.append(JPackage(domainfound,namefound))
+                    setPkg.add("%-15s:%s"%(domainfound,namefound))
+                elif domain=="" and name!="":
+                    if name==namefound:
                         setPkg.add("%-15s:%s"%(domainfound,namefound))
-                    elif domain=="" and name!="":
-                        if name==namefound:
-                            setPkg.add("%-15s:%s"%(domainfound,namefound))
-                            # res.append(JPackage(domainfound,namefound))
-                    elif domain!="" and name=="":
-                        if domain==domainfound:
-                            setPkg.add("%-15s:%s"%(domainfound,namefound))
-                            # res.append(JPackage(domainfound,namefound))
-                    else:
-                        if domain==domainfound and name==namefound:
-                            setPkg.add("%-15s:%s"%(domainfound,namefound))
-                            # res.append(JPackage(domainfound,namefound))
-                for pkg in setPkg:
-                    domain,name = (pkg.split(':'))
-                    res.append(JPackage(domain,name,remote=True))
+                        # res.append(JPackage(domainfound,namefound))
+                elif domain!="" and name=="":
+                    if domain==domainfound:
+                        setPkg.add("%-15s:%s"%(domainfound,namefound))
+                        # res.append(JPackage(domainfound,namefound))
+                else:
+                    if domain==domainfound and name==namefound:
+                        setPkg.add("%-15s:%s"%(domainfound,namefound))
+                        # res.append(JPackage(domainfound,namefound))
+            from ipdb import set_trace;set_trace()
+            for pkg in setPkg:
+                domain,name = (pkg.split(':'))
+                res.append(JPackage(domain.strip(),name.strip(),remote=True))
         #now name & domain is known
         if maxnr!=None and len(res)>maxnr:
             j.events.inputerror_critical("Found more than %s jpackage for query '%s':'%s'"%(maxnr,domain,name))

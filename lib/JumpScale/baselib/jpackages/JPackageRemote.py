@@ -30,25 +30,25 @@ class RemotePython(object):
         codegen=j.tools.packInCode.get4python()
 
         #put hrd on dest system
-        hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),self.jp.name,self.jp.instance)
+        hrddestfile="%s/%s.%s.%s.hrd"%(j.dirs.getHrdDir(system=True),self.jp.domain,self.jp.name,self.jp.instance)
         codegen.addHRD("jphrd",self.jp.hrd,hrddestfile)
 
         #put action file on dest system
-        actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
-        actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.name,self.jp.instance)
+        actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(self.node),self.jp.name,self.jp.instance)
+        actionfiledest="%s/%s__%s__%s.py"%(j.dirs.getJPActionsPath(system=True),self.jp.domain,self.jp.name,self.jp.instance)
         codegen.addPyFile(actionfile,path2save=actionfiledest)
-
+        # from ipdb import set_trace;set_trace()
         toexec=codegen.get()
 
         cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
 
         # create a .git dir so the directory is seen as a git config repo
-        if not self.cl.file_exists("%s/.git"%cwd):
-            cmd = "cd %s; mkdir .git" %(cwd)
-            self.cl.run(cmd)
-        if not self.cl.file_exists("%s/jp"%cwd):
-            cmd = "cd %s; mkdir jp" %(cwd)
-            self.cl.run(cmd)
+        # if not self.cl.file_exists("%s/.git"%cwd):
+        #     cmd = "cd %s; mkdir .git" %(cwd)
+        #     self.cl.run(cmd)
+        # if not self.cl.file_exists("%s/jp"%cwd):
+        #     cmd = "cd %s; mkdir jp" %(cwd)
+        #     self.cl.run(cmd)
 
         # install hrd and action file on remote system
         tmploc = '/tmp/exec.py'
@@ -56,7 +56,8 @@ class RemotePython(object):
         cmd = "jspython %s" % tmploc
         self.cl.run(cmd)
         # then run the jpackage command on the remote system
-        cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, action, self.jp.name, self.jp.instance)
+        # cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, action, self.self.jp.name, self.self.jp.instance)
+        cmd = 'jpackage %s -n %s -i %s --remote' % (action, self.jp.name, self.jp.instance)
         self.cl.run(cmd)
         del j.remote.cuisine.fabric.env["key"]
 
@@ -70,7 +71,8 @@ class RemoteLua(object):
     def execute(self, action):
         # add hrd content into actions file
         # the hrd is converted into a lua table
-        dictHRD = self.jp.hrd.getHRDAsDict()
+        dictHRD = self.self.jp.hrd.getHRDAsDict()
+        from ipdb import set_trace;set_trace()
         jsonHRD = json.dumps(dictHRD)
         content = """local json = require 'json'
         local hrd = json.decode.decode('%s')
@@ -78,14 +80,14 @@ class RemoteLua(object):
         """ % jsonHRD
 
         #put action file on dest system
-        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
+        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.self.jp.name,self.self.jp.instance)
         content += j.system.fs.fileGetContents(actionfile)
         # add the call to the wanted function into the lua file
         # and pass the args table we construct from the hrd
         content+= "\n%s(hrd)"%action
-        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.jp.name,self.jp.instance)
+        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.self.jp.name,self.self.jp.instance)
         self.cl.file_write(actionfiledest,content)
-
-        cmd = 'luajit %s' % (actionfiledest)
+        j.system.fs.writeFile("/opt/code/action.lua",content)
+        cmd = 'lua %s' % (actionfiledest)
         self.cl.run(cmd)
         del j.remote.cuisine.fabric.env["key"]
