@@ -197,7 +197,7 @@ class RedisFactory:
         j.system.fs.createDir(dpath)
         self.startInstance(name)
 
-    def configureInstance(self, name, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None,prog=None):
+    def configureInstance(self, name, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None,unixsocket=False):
         """
         @param maxram = MB of ram
         slave example: (192.168.10.10,8888,asecret)   (ip,port,secret)
@@ -766,6 +766,10 @@ aof-rewrite-incremental-fsync yes
 
         if ismaster:
             slave=False
+
+        if unixsocket:
+            C = C.replace("# unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir, "unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir)
+            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
 
         if appendonly or ismaster:
             C = C.replace("$appendonly", "yes")
