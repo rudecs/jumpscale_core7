@@ -9,7 +9,7 @@ from JumpScale.core.baseclasses import BaseEnumeration
 # import urllib
 # import requests
 # from requests.auth import HTTPBasicAuth
-from . import gitlab
+# from . import gitlab
 import os
 
 from .GitlabInstance import *
@@ -25,8 +25,8 @@ class GitlabFactory:
         self.connections={}
         j.logger.consolelogCategories.append("gitlab")
 
-    def get(self,account):        
-        return GitlabInstance(account)
+    def get(self,addr="",login="",passwd="",instance="main"):        
+        return GitlabInstance(addr,login,passwd,instance)
 
     def log(self,msg,category="",level=5):
         category="gitlab.%s"%category

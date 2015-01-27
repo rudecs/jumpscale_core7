@@ -101,6 +101,8 @@ class ServerBaseFactory():
         lensessionid = len(sessionid)
         # packed = struct.pack("<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid).decode('utf-32')
         packed = '%s:%s:%s:%s:%s:%s:' % (lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid)
+        if 'register' in cmd:
+            print packed + category + cmd + data + sendformat + returnformat + sessionid
         return packed + category + cmd + data + sendformat + returnformat + sessionid
 
     def _unserializeBinSend(self, data):

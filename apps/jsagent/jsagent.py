@@ -1,7 +1,7 @@
 # gevent monkey patching should be done as soon as possible dont move!
-import gevent
-import gevent.monkey
-gevent.monkey.patch_all()
+# import gevent
+# import gevent.monkey
+# gevent.monkey.patch_all()
 
 from JumpScale import j
 
@@ -13,10 +13,13 @@ import psutil
 import os
 import select
 import subprocess
+import tornado
+from tornado.concurrent import run_on_executor
+import JumpScale.grid.processmanager
 from JumpScale.baselib import cmdutils
 import JumpScale.grid.agentcontroller
 
-
+import tornado.ioloop
 import socket
 
 
@@ -107,7 +110,7 @@ class Process():
     __repr__=__str__
 
 
-class ProcessManager():
+class ProcessManager(tornado.web.RequestHandler):
     def __init__(self,reset=False):
 
         self.processes = list()
@@ -145,14 +148,14 @@ class ProcessManager():
             if j.system.net.waitConnectionTest("localhost",9999,10)==False:
                 j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 
-        self.redis_mem=j.clients.redis.getGeventRedisClient("localhost",9999)
+        self.redis_mem=j.clients.redis.getRedisClient("localhost",9999)
         # self.redis_disk=j.clients.redis.getGeventRedisClient("localhost",9998)
 
         self.redis_queues={}
-        self.redis_queues["io"] = j.clients.redis.getGeventRedisQueue("localhost",9999,"workers:work:io")
-        self.redis_queues["hypervisor"] = j.clients.redis.getGeventRedisQueue("localhost",9999,"workers:work:hypervisor")
-        self.redis_queues["default"] = j.clients.redis.getGeventRedisQueue("localhost",9999,"workers:work:default")
-        self.redis_queues["process"] = j.clients.redis.getGeventRedisQueue("localhost",9999,"workers:work:process")        
+        self.redis_queues["io"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:io")
+        self.redis_queues["hypervisor"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:hypervisor")
+        self.redis_queues["default"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:default")
+        self.redis_queues["process"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:process")        
 
         j.processmanager=self
 
@@ -210,17 +213,35 @@ class ProcessManager():
             self.hrd.set("osis.connection","processmanager")
             verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, args={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
             
-            self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename, new=True)
+            self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
             self.acclient=None
+
+
+    def _stack_context_handle_exception(self, *kwargs):
+        print kwargs
+        import ipdb; ipdb.set_trace()
         
+    @tornado.web.asynchronous
+    @tornado.gen.coroutine
     def start(self):
 
         # self._webserverStart()        
         self._workerStart()
+
         j.core.grid.init()
-        gevent.spawn(self._processManagerStart)
+
+        # loop = tornado.ioloop.IOLoop.instance()
+        response = self._processManagerStart()
+        print response
+        # yield loop.add_future(self._processManagerStart, callback=self.callback)
+        # gevent.spawn(self._processManagerStart)
+
         self.mainloop()
+
+
+    def callback(self):
+        import ipdb; ipdb.set_trace()
 
     def _webserverStart(self):
         #start webserver
@@ -237,8 +258,9 @@ class ProcessManager():
         p.start()
         self.processes.append(p)
 
+    @tornado.gen.coroutine
     def _processManagerStart(self):
-        j.core.processmanager.start()
+        yield tornado.gen.Task(j.core.processmanager.start())
 
     def _workerStart(self):
         pwd = '/opt/jumpscale7/apps/jsagent/lib'
@@ -307,12 +329,12 @@ processes=pm.processes
 pm.services=[item.strip().lower() for item in opts.services.split(",")]
 
 
-from lib.worker import Worker
+# from lib.worker import Worker
 
 #I had to do this in mother process otherwise weird issues caused by gevent !!!!!!!
 j.core.osis.client = j.core.osis.getClientByInstance()
 
-from gevent.pywsgi import WSGIServer
+# from gevent.pywsgi import WSGIServer
 
 pm.start()
 

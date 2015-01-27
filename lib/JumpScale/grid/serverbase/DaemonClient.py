@@ -260,7 +260,6 @@ class Klass(object):
             params += ",transporttimeout=5"
             params += ",_agentid=0"
             strmethod = strmethod % (params, spec['doc'], key, ", ".join(args), )
-            strmethod=strmethod.replace(", ,",",")
             # try:
             ns = dict()
             exec(compile(strmethod, '<string>', 'exec'), ns)

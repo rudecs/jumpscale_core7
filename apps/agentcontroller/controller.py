@@ -1,14 +1,15 @@
 #this must be in the beginning so things are patched before ever imported by other libraries
-from gevent import monkey
-import gevent
-monkey.patch_socket()
-monkey.patch_thread()
-monkey.patch_time()
+# from gevent import monkey
+# import gevent
+# monkey.patch_socket()
+# monkey.patch_thread()
+# monkey.patch_time()
 
 from JumpScale import j
 from JumpScale.baselib.cmdutils import argparse
-import JumpScale.grid.geventws
+import tornado
 import JumpScale.grid.osis
+from tornado.concurrent import run_on_executor
 import importlib
 import sys
 import copy
@@ -55,7 +56,7 @@ class JumpscriptHandler(FileSystemEventHandler):
             except:
                 pass # reload failed shoudl try again next file change
 
-class ControllerCMDS():
+class ControllerCMDS(tornado.web.RequestHandler):
 
     def __init__(self, daemon):
         self.debug = False # set true for verbose output
@@ -68,25 +69,45 @@ class ControllerCMDS():
         self.jumpscriptsFromKeys = {}
         self.jumpscriptsId={}
 
-        self.osisclient = j.core.osis.getClientByInstance(gevent=True)
+        self.osisclient = j.core.osis.getClientByInstance()
         self.jobclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'job')
         self.nodeclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'node')
         self.jumpscriptclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'jumpscript')
 
         self.redisport=9999
-        self.redis = j.clients.redis.getGeventRedisClient("127.0.0.1", self.redisport)
+        self.redis = j.clients.redis.getRedisClient("127.0.0.1", self.redisport)
         self.roles2agents = dict()
         self.sessionsUpdateTime = dict()
         self.agents2roles = dict()
 
         self.start()
 
+    def _stack_context_handle_exception(self, *kwargs):
+        print kwargs
+        import ipdb; ipdb.set_trace()
+
+    @tornado.web.asynchronous
+    @tornado.gen.engine
     def start(self):
-        gevent.spawn(self._cleanScheduledJobs, 3600*24)
+
+        self.ioloop = tornado.ioloop.IOLoop.instance()
+        tornado.gen.Task(self._cleanScheduledJobs, 36000*24)
+
+        # self._cleanScheduledJobs(3600*24)
+        # self.ioloop.add_future(self._cleanScheduledJobs, self._callback)
+        # self.pipe = p = os.popen('sleep 5; cat /etc/mime.types')
+        # self._cleanScheduledJobs, 3600*24)
+ 
+        # self.ioloop.remove_handler(fd)
+        # self.finish()
+        # gevent.spawn(self._cleanScheduledJobs, 3600*24)
         observer = Observer()
         handler = JumpscriptHandler(self)
         observer.schedule(handler, "jumpscripts", recursive=True)
         observer.start()
+
+    def _callback(self, **kwargs):
+        print kwargs
 
     def _adminAuth(self,user,passwd):
         return self.nodeclient.authenticate(user, passwd)
@@ -139,6 +160,7 @@ class ControllerCMDS():
         self._log("schedule done")
         return jobdict
 
+    # @tornado.gen.coroutine
     def _cleanScheduledJobs(self, expiretime):
         while True:
             self.cleanScheduledJobs(expiretime)
@@ -228,10 +250,10 @@ class ControllerCMDS():
         qname = role or nid
         self._log("get cmd queue for %s %s"%(gid,qname))
         queuename = "commands:queue:%s:%s" % (gid, qname)
-        return j.clients.redis.getGeventRedisQueue("127.0.0.1", self.redisport, queuename, fromcache=True)
+        return j.clients.redis.getRedisQueue("127.0.0.1", self.redisport, queuename, fromcache=True)
 
     def _getWorkQueue(self, session):
-        cl = j.clients.redis.getGeventRedisClient("127.0.0.1", self.redisport)
+        cl = j.clients.redis.getRedisClient("127.0.0.1", self.redisport)
         class MultiKeyQueue(object):
             def __init__(self, keys):
                 self.keys = keys
@@ -253,7 +275,7 @@ class ControllerCMDS():
     def _getJobQueue(self, jobguid):
         queuename = "jobqueue:%s" % jobguid
         self._log("get job queue for job:%s"%(jobguid))
-        return j.clients.redis.getGeventRedisQueue("127.0.0.1", self.redisport, queuename, fromcache=False)
+        return j.clients.redis.getRedisQueue("127.0.0.1", self.redisport, queuename, fromcache=False)
         
     def _setRoles(self,roles, agent):
         for role, agents in self.roles2agents.iteritems():
@@ -680,7 +702,7 @@ class ControllerCMDS():
             result.append(jobresult)
         return result
 
-    def getJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts'), session=None):
+    def getAllJumpscripts(self, bz2_compressed=True, session=None):
         """
         Returns the available jumpscripts as a Base64-encoded TAR archive that is optionally compressed using bzip2.
 
@@ -697,7 +719,7 @@ class ControllerCMDS():
 # j.servers.geventws.initSSL4Server("myorg", "controller1")
 
 port = 4444
-daemon = j.servers.geventws.getServer(port=port)
+daemon = j.servers.tornado.getServer(port=port)
 daemon.addCMDsInterface(ControllerCMDS, category="agent")  # pass as class not as object !!! chose category if only 1 then can leave ""
 
 print "load processmanager cmds"
@@ -711,7 +733,7 @@ for item in j.system.fs.listFilesInDir("processmanager/processmanagercmds",filte
         classs = getattr(module, name)
         print "load cmds:%s"%name
         tmp=classs()
-        daemon.addCMDsInterface(classs, category="processmanager_%s"%tmp._name,proxy=True)
+        daemon.addCMDsInterface(classs, category="processmanager_%s"%tmp._name)
 
 # j.system.fs.changeDir("..")
 

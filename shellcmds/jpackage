@@ -10,25 +10,25 @@ j.application.start('jpackage')
 parser = cmdutils.ArgumentParser()
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
-    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute", "status"]
+    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create", "status"]
 
 help="""
 jpackage commands:
 
-    install: 
+    install:
     - download all related git repo's (if not downloaded yet, otherwise update)
     - prepare & copyfiles & configure
     - start the app
     list:
     - list the jpackages
-    stop-start-restart 
+    stop-start-restart
     build
     - if build instructions are given the build repo's will be downloaded & build started
     - build happens to production dir
     package
     - copy the files which are relevant from building back to the binary repo
     mdupdate
-    - update all git repo's which have jpackage metadata 
+    - update all git repo's which have jpackage metadata
     update
     - go over all related repo's & do an update
     - copy the files again
@@ -51,7 +51,9 @@ jpackage commands:
     cleanup
     - remote old logfiles, ...
     export/import
-- use --url to specify where to import from or export to
+    - use --url to specify where to import from or export to
+    create
+    - interactively create a jpackage
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
@@ -60,13 +62,14 @@ group = parser.add_argument_group(title="Package Selection")
 group.add_argument('-q','--quiet', required=False, action='store_true', help='Put in quiet mode')
 group.add_argument('-n','--name',required=False, help='Name of jpackage to be installed',default="")
 group.add_argument('-d','--domain',required=False, help='Name of jpackage domain to be installed',default="")
-group.add_argument('-i','--instance',required=False, help='Instance of jpackage (default main)',default="main")
+group.add_argument('-i','--instance',required=False, help='Instance of jpackage (default main)',default=None)
 group.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
 group.add_argument('--nodeps',required=False, action='store_true',help='do action on dependencies, default True',default=False)
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
 
 group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
 group.add_argument('--remote',required=False,default=False,action="store_true",help='execute from a remote machine')
+group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
 
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
@@ -82,20 +85,31 @@ group.add_argument('--url', required=False, help='uncpath to export to or import
 group = parser.add_argument_group(title="List")
 group.add_argument('--installed', required=False, action='store_true',default=None, help='List installed jpackages')
 
-def getJPackage(args, installed=None,debug=None,update=False,expandInstances=True,toinstall=False,list=False,remote=False):
 
+
+def sorter(jp1, jp2):
+    prio1 = jp1.getPriority()
+    prio2 = jp2.getPriority()
+    if prio1 != prio2:
+        return cmp(prio1, prio2)
+    else:
+        key1 = "%s_%s" % (jp1.domain, jp2.name)
+        key2 = "%s_%s" % (jp2.domain, jp2.name)
+        return cmp(key1, key2)
+
+def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=False,list=False):
     packages=[]
 
     name=args.name.strip()
     if name=="*":
         name=""
-    
+
     if name!="" and name.find("*")==-1:
         for pname in args.name.split(","):
             if pname.strip()!="":
-                packages += j.packages.find(name=pname.strip(), domain=args.domain,remote=remote)
-    else:        
-        packages += j.packages.find(domain=args.domain)
+                packages += j.packages.find(name=pname.strip(), domain=args.domain,remote=args.remote)
+    else:
+        packages += j.packages.find(domain=args.domain,remote=args.remote)
         if len(packages) > 1 and name.find("*")!=-1:
             tofind=name.replace("*","")
             packages=[item for item in packages if item.name.find(tofind)!=-1]
@@ -116,22 +130,24 @@ def getJPackage(args, installed=None,debug=None,update=False,expandInstances=Tru
 
     if toinstall and args.instance<>"main" and len(packages)>1:
         raise RuntimeError("Can only get jpackage instances if only 1 jpackage when instance set or more jpackages when instance=main")
-    
+
     if toinstall:
         packages=[jp.getInstance(args.instance) for jp in packages]
+        expandInstances = False
 
     if expandInstances:
-        #find all instances
-        pass
-        #@todo
-        
-    #@todo fix
-    if installed:
-        if j.packages.type=="c":
-            packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), '%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
-        else:
-            packages = [jp for jp in packages if j.system.fs.find(j.dirs.getHrdDir(), 'jumpscale.%s.*' % (jp.name if hasattr(jp, 'name') else jp.jp.name))]
-        packages = sorted(packages, key=lambda jp: jp.getProcessDicts()[0].get('prio', 100) if jp.getProcessDicts() else 100)
+        rawjps = packages
+        packages = []
+        for jp in rawjps:
+            if args.instance is None:
+                for instance in jp.listInstances():
+                    packages.append(jp.getInstance(instance))
+            else:
+                packages.append(jp.getInstance(args.instance))
+
+    jpargs = {}
+    if args.node:
+        jpargs['node2execute'] = args.node
 
     if packages==[]:
         raise RuntimeError("Cannot find packages, need at least 1")
@@ -146,8 +162,8 @@ args = parser.parse_args()
 args.deps=not args.nodeps
 
 hrddata={}
-if args.data<>None:    
-    if args.data.find("#")<>-1:        
+if args.data<>None:
+    if args.data.find("#")<>-1:
         for line in args.data.split("#"):
             if line.find("=")<>-1:
                 var,data=line.split("=",1)
@@ -158,9 +174,10 @@ if args.data<>None:
 
 if args.node!=None:
     hrddata["node2execute"]=args.node
+if args.lua!=None:
+    hrddata["lua"]=args.lua
 
 
-  
 # def askDomains(args):
 #     if args.domain==None:
 #         return j.console.askChoiceMultiple(j.packages.getDomainNames())
@@ -179,16 +196,16 @@ if args.quiet:
     sys.stdout = NullDevice();
 
 if args.action == 'configure':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.configure(args=hrddata,deps=args.deps)
         package.start(args=hrddata)
 
 elif args.action == 'install':
 
-    packages = getJPackage(args,expandInstances=True,toinstall=True, remote=args.remote)
-       
-    # if args.instance<>0 and len(packages)>1:        
+    packages = getJPackage(args,toinstall=True)
+
+    # if args.instance<>0 and len(packages)>1:
     #     j.events.inputerror_critical("Cannot find more jpackages if instance is given.")
 
     for package in packages:
@@ -204,12 +221,12 @@ elif args.action == 'install':
         package.install(args=hrddata,deps=args.deps)
 
 elif args.action == 'update':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.update(args=hrddata,deps=args.deps)
 
 elif args.action == 'monitor':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     result=[]
     for package in packages:
         if package.monitor(args={},deps=args.deps)==True:
@@ -221,80 +238,105 @@ elif args.action == 'monitor':
     print "\n".join(result)
 
 elif args.action == 'package':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.package(args={},deps=args.deps)
 
 elif args.action == 'publish':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.publish(args={},deps=args.deps)
 
 elif args.action == 'reset':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.reset(args={},deps=args.deps)
 
 elif args.action == 'removedata':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.removedata(args={},deps=args.deps)
 
 elif args.action == 'resetstate':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.resetstate(args={},deps=args.deps)
 
 elif args.action == 'publish':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.publish(args={},deps=args.deps)
 
 elif args.action == 'export':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.export(url=args.url,deps=args.deps)
 
 elif args.action == 'import':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.iimport(url=args.url,deps=args.deps)
 
 elif args.action == 'restart':
-    packages = getJPackage(args,expandInstances=True,toinstall=True, list=True,remote=args.remote)
+    packages = getJPackage(args,expandInstances=True, list=True)
     for package in packages:
         package.restart(args=hrddata,deps=args.deps)
 
 elif args.action == 'start':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True,remote=args.remote)
-    for package in packages:
+    packages = getJPackage(args,expandInstances=True, list=True)
+    for package in sorted(packages, cmp=sorter):
         package.start(args=hrddata,deps=args.deps)
 
 elif args.action == 'stop':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, list=True,remote=args.remote)
-    packages.reverse()
-    for package in packages:
-        package.stop(args=hrddata,deps=args.deps)
+    packages = getJPackage(args,expandInstances=True, list=True)
+    for package in sorted(packages, cmp=sorter, reverse=True):
+        package.stop(args=hrddata,deps=False)
 
 elif args.action == 'execute':
-    packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True, remote=args.remote)
+    packages = getJPackage(args,expandInstances=True)
     for package in packages:
         package.execute(args=hrddata,deps=args.deps)
 
 elif args.action == 'build':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.build(args=hrddata,deps=args.deps)
 
 elif args.action == 'uninstall':
-    packages = getJPackage(args,expandInstances=True,toinstall=True,remote=args.remote)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.uninstall(args=hrddata,deps=args.deps)
 
 elif args.action == 'push':
-    packages = getJPackage(args,expandInstances=True,toinstall=True)
+    packages = getJPackage(args,toinstall=True)
     for package in packages:
         package.push(args=hrddata,deps=args.deps)
+
+elif args.action == 'create':
+
+    if args.name=="":
+        args.name=j.console.askString("name of repo")
+
+    if j.console.askYesNo("Do you want to create a binary repo on gitlab?"):
+
+        if j.application.getAppInstanceHRDs("gitlab_client")==[]:
+            #gitlab client not installed yet
+            j.packages.install(name="gitlab_client")
+
+        choice=[]
+        for instance in j.application.getAppInstanceHRDs("gitlab_client"):
+            choice.append(instance.get("gitlab.client.url"))
+
+        gitlabInstanceName=j.console.askChoice(descr="Choose gitlab instance",choicearray=choice)
+
+        instance=[item for item in j.application.getAppInstanceHRDs("gitlab_client") if gitlabInstanceName==instance.get("gitlab.client.url")][0]
+
+        import JumpScale.baselib.gitlab
+
+        gl=j.clients.gitlab.get(instance=instance.get("jp.instance"))
+
+        binname=j.console.askString("name of binary repo",args.name)
+        proj,path=gl.create( "binary", binname, public=True)
 
 
 elif args.action == 'mdupdate':
@@ -304,7 +346,7 @@ elif args.action == 'mdupdate':
     else:
         if args.domain<>None:
             j.packages.updateMetaData(force=args.force,domain=args.domain)
-        else:        
+        else:
             j.packages.updateMetaData(force=args.force)
 
 elif args.action == 'list':
@@ -324,20 +366,11 @@ elif args.action == 'list':
             print form % {'name': package.name, 'domain': package.domain, 'version': version, \
             'debug': debug, 'buildnr': buildNr,'debugInJpackage':debugINJP}
 
-    jps=getJPackage(args,list=True,toinstall=args.installed)
+    jps=getJPackage(args,list=True,expandInstances=args.installed)
     printJPackages(jps)
 
 elif args.action == 'status':
     def printJPackages(packages):
-        def sorter(jp1, jp2):
-            prio1 = jp1.getPriority()
-            prio2 = jp2.getPriority()
-            if prio1 != prio2:
-                return cmp(prio1, prio1)
-            else:
-                key1 = "%s_%s" % (jp1.domain, jp2.name)
-                key2 = "%s_%s" % (jp2.domain, jp2.name)
-                return cmp(key1, key2)
 
         form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s %(ports)s'
         print form % {'domain': 'DOMAIN', 'name': 'NAME', 'instance': 'Instance', 'prio': 'Prio', 'status': 'Status', \
@@ -352,7 +385,7 @@ elif args.action == 'status':
             ports = ', '.join( str(x) for x in package.getTCPPorts() )
             print form % {'name': package.name, 'domain': package.domain, 'instance': package.instance, 'prio': package.getPriority(), 'status': status, 'ports': ports}
 
-    jps = packages = getJPackage(args,expandInstances=True, installed=True, toinstall=True,list=True)
+    jps = packages = getJPackage(args,expandInstances=True, toinstall=False,list=True)
     printJPackages(jps)
 
 j.application.stop()

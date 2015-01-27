@@ -1134,12 +1134,9 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch='master',revision=None):
-        """
-        will clone or update repo
-        if dest == None then clone underneath: /opt/code/$type/$account/$repo
-        will ignore changes !!!!!!!!!!!
-        """
+    def getGitRepoArgs(self,url="",dest=None,login=None,passwd=None,reset=False):
+
+        url2=""
         if url!="":
             if url.startswith("https://"):
                 pre="https://"
@@ -1154,7 +1151,7 @@ class InstallTools():
             if not url2.endswith(".git"):
                 #no .git at end
                 url2+=".git"
-            
+
             if not url.endswith(".git"):
                 #no .git at end
                 url+=".git"
@@ -1164,23 +1161,45 @@ class InstallTools():
                 url = 'git@%s:%s' % (splits[0], '/'.join(splits[1:]))
             elif login!=None and login!="guest":
                 url="%s%s:%s@%s"%(pre,login,passwd,url2)
+            else:
+                url="%s@%s"%(pre,url2)
 
             if dest==None:
                 url3=url2.strip(" /")
+
                 ttype,account,repo=url3.split("/",3)
                 if ttype.find(".")!=-1:
                     ttype=ttype.split(".",1)[0]
-                dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo.lower().replace(".git",""))
+                repo=repo.lower().replace(".git","")
+                dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo)    
+        else:
+            raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")            
 
         if reset:
             if url=="":
                 raise RuntimeError("cannot reset a repo when url not specified")
             self.delete(dest)
 
-        if dest=="" and branch==None:
+        self.createDir(dest)
+
+        base=url2.split("/",1)[0]
+
+
+        
+
+        return base,ttype,account,repo,dest,url        
+
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch=None,revision=None):
+        """
+        will clone or update repo
+        if dest == None then clone underneath: /opt/code/$type/$account/$repo
+        will ignore changes !!!!!!!!!!!
+        """
+        base,ttype,account,repo,dest,url=self.getGitRepoArgs(url,dest,login,passwd,reset=reset)
+
+        if dest==None and branch==None:
             branch="master"
 
-        self.createDir(dest)
         checkdir="%s/.git"%(dest)
         if self.exists(checkdir):
             if ignorelocalchanges:
@@ -1193,18 +1212,21 @@ class InstallTools():
                     self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
             else:
                 #pull
-                print(("git pull %s -> %s"%(url2,dest)))
+                print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
                 else:
-                    cmd="cd %s;git -c http.sslVerify=false pull"
+                    cmd="cd %s;git -c http.sslVerify=false pull"%dest
                 self.execute(cmd,timeout=600)
         else:
             print(("git clone %s -> %s"%(url,dest)))
             extra = ""
             if depth and depth != 0:
                  extra = "--depth=%s" % depth
-            cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
+            if branch!=None:
+                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
+            else:
+                cmd="cd %s;git -c http.sslVerify=false clone %s  %s %s"%(self.getParent(dest),extra,url,dest)
             print cmd
 
             if depth!=None:

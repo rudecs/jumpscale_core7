@@ -34,6 +34,15 @@ class TornadoFactory():
         cl = DaemonClient(org=org, user=user, passwd=passwd, ssl=ssl, transport=trans)
         return cl.getCmdClient(category)
 
+
+    def getHAClient(self, connections, category="core", org="myorg", user="root", passwd="passwd", ssl=False, roles=[],id=None,timeout=60, reconnect=False):
+        from .TornadoTransport import TornadoHATransport
+        from JumpScale.grid.serverbase.DaemonClient import DaemonClient
+        trans = TornadoHATransport(connections, timeout)
+        cl = DaemonClient(org=org, user=user, passwd=passwd, ssl=ssl, transport=trans)
+
+        return cl.getCmdClient(category)
+
     def initSSL4Server(self, organization, serveruser, sslkeyvaluestor=None):
         """
         use this to init your ssl keys for the server (they can be used over all transports)

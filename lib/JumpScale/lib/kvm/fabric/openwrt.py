@@ -1,5 +1,6 @@
 from fabric.api import task, run, settings
 
+
 @task
 def setupNetwork(ifaces):
     with settings(shell='ash -c'):
@@ -29,7 +30,9 @@ config interface '%s'
         run('echo "%s" > /etc/config/network' % interfaces)
         run("/etc/init.d/network restart", timeout=1)
 
+
 @task
 def pushSshKey(sshkey):
     with settings(shell='ash -c'):
-        run('touch /etc/dropbear/authorized_keys; echo "%s" > /etc/dropbear/authorized_keys' % sshkey)
+        run('touch /etc/dropbear/authorized_keys; echo "%s" > /etc/dropbear/authorized_keys' %
+            sshkey)

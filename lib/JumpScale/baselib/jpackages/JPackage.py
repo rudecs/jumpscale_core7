@@ -16,61 +16,26 @@ def loadmodule(name, path):
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
     def wrapper(*args2,**kwargs): # class instance in args[0] for method
-        print "remote wrapper start"
+        # print "remote wrapper start"
 
         result=None
         jp=args2[0] #this is the self from before
-        jp._load(**kwargs)
+        if not isinstance(kwargs["args"],dict):
+            raise RuntimeError("args need to be dict")
+
+        jp._load(args=kwargs["args"])
         if not "args" in kwargs:
             raise RuntimeError("args need to be part of kwargs")
         if not "node2execute" in kwargs["args"]:
             return F(*args2,**kwargs)
         else:
-            node=kwargs["args"]["node2execute"]
-            sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
-            ip = sshHRD.get("param.machine.ssh.ip")
-            port = sshHRD.get("param.machine.ssh.port")
-            keyhrd=j.application.getAppInstanceHRD("sshkey",sshHRD.get('param.ssh.key.name'))
-            j.remote.cuisine.fabric.env["key"] = keyhrd.get('param.ssh.key.priv')
-            cl=j.remote.cuisine.connect(ip,port)
+            node = kwargs['args']['node2execute']
+            if kwargs['args']['lua']:
+                cl = j.packages.remote.sshLua(jp, node)
+            else:
+                cl = j.packages.remote.sshPython(jp, node)
 
-            if 'cmd' in kwargs['args']: # execution of a cmd passed into the data argument of jpackage command
-                cmd = kwargs['args']['cmd']
-                cl.run(cmd)
-
-            else: # execution of a jpackage action
-                codegen=j.tools.packInCode.get4python()
-
-                #put hrd on dest system
-                hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),jp.name,jp.instance)
-                codegen.addHRD("jphrd",jp.hrd,hrddestfile)
-
-                #put action file on dest system
-                actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=node),jp.name,jp.instance)
-                actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),jp.name,jp.instance)
-                codegen.addPyFile(actionfile,path2save=actionfiledest)
-
-                toexec=codegen.get()
-
-                cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
-
-                # create a .git dir so the directory is seen as a git config repo
-                if not cl.file_exists("%s/.git"%cwd):
-                    cmd = "cd %s; mkdir .git" %(cwd)
-                    cl.run(cmd)
-                if not cl.file_exists("%s/jp"%cwd):
-                    cmd = "cd %s; mkdir jp" %(cwd)
-                    cl.run(cmd)
-
-                # install hrd and action file on remote system
-                tmploc = '/tmp/exec.py'
-                cl.file_write(tmploc, toexec)
-                cmd = "jspython %s" % tmploc
-                cl.run(cmd)
-                # then run the jpackage command on the remote system
-                cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, F.func_name, jp.name, jp.instance)
-                cl.run(cmd)
-                del j.remote.cuisine.fabric.env["key"]
+            cl.execute(F.func_name)
 
     return wrapper
 
@@ -112,7 +77,11 @@ def deps(F): # F is func or method without instance
         result=None
         jp=args2[0] #this is the self from before
 
-        jp._load(**kwargs)
+        loadargs = kwargs.get('args', {})
+        if not isinstance(loadargs, dict):
+            raise RuntimeError("args need to be dict")
+
+        jp._load(args=loadargs)
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
@@ -141,8 +110,30 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
-    def getInstance(self,instance="main"):
-        return JPackageInstance(self,instance)
+    def getInstance(self,instance=None):
+        # get first installed or main
+        if instance is None:
+            instances = self.listInstances()
+            if instances:
+                instance = instances[0]
+            else:
+                instance = 'main'
+        return JPackageInstance(self, instance)
+
+    def listInstances(self, node=None):
+        hrdfolder = j.dirs.getHrdDir(node=node)
+        files = j.system.fs.find(hrdfolder, self.getHRDPattern(node))
+        instances = list()
+        for path in files:
+            instances.append(path.split('.')[-2])
+        return instances
+
+    def getHRDPattern(self,node=None):
+        if j.packages.type=="c":
+            hrdpath = "%s.*.hrd" % (self.name)
+        else:
+            hrdpath = "%s.%s.*.hrd" % (self.domain, self.name)
+        return hrdpath
 
     def __repr__(self):
         return "%-15s:%s"%(self.domain,self.name)
@@ -157,8 +148,8 @@ class JPackageInstance():
         self.jp=jp
         self.domain=self.jp.domain
         self.name=self.jp.name
-        self.hrd=None
-        self.metapath=""
+        self._hrd=None
+        self.metapath=jp.metapath
         self.hrdpath=""
         self.actions=None
         self._loaded=False
@@ -166,6 +157,11 @@ class JPackageInstance():
         self.args={}
         self._init=False
         self.remote=jp.remote
+
+    @property
+    def hrd(self):
+        self._load()
+        return self.hrd
 
     def _init(self):
         if self._init==False:
@@ -198,9 +194,11 @@ class JPackageInstance():
             for item in process["ports"]:
                 if isinstance(item, basestring):
                     moreports = item.split(";")
-                    for port in moreports:
-                        if port.isdigit():
-                            ports.add(int(port))
+                elif isinstance(item, int):
+                    moreports = [item]
+                for port in moreports:
+                    if isinstance(port, int) or port.isdigit():
+                        ports.add(int(port))
         return list(ports)
 
 
@@ -210,7 +208,7 @@ class JPackageInstance():
             return processes[0].get('prio', 100)
         return 199
 
-    def _load(self,args={},*stdargs,**kwargs):
+    def _load(self,args={}):#,*stdargs,**kwargs):  @question why this (despiegk) removed it again
         if self._loaded==False:
             node=None
             if "node2execute" in args:
@@ -219,12 +217,11 @@ class JPackageInstance():
             self.hrdpath = self.getHRDPath(node=node)
 
             j.do.createDir(j.do.getDirName(self.hrdpath))
-
             if j.packages.type=="c":
                 j.system.fs.createDir(j.dirs.getJPActionsPath(node=node))
-                self.actionspath="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=node),self.jp.name,self.instance)
+                self.actionspath="%s/%s__%s"%(j.dirs.getJPActionsPath(node=node),self.jp.name,self.instance)
             else:
-                self.actionspath="%s/%s__%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
+                self.actionspath="%s/%s__%s__%s"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
 
             args.update(self.args)
 
@@ -241,7 +238,10 @@ class JPackageInstance():
 
             if not self.remote:
                 source="%s/actions.py"%self.jp.metapath
-                j.do.copyFile(source,self.actionspath)
+                j.do.copyFile(source,self.actionspath+".py")
+                source="%s/actions.lua"%self.jp.metapath
+                if j.system.fs.exists(source):
+                    j.do.copyFile(source,self.actionspath+".lua")
 
                 hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
 
@@ -250,10 +250,18 @@ class JPackageInstance():
 
                 self.hrd.save()
 
-                self.hrd.applyOnFile(self.actionspath, additionalArgs=args)
-                j.application.config.applyOnFile(self.actionspath, additionalArgs=args)
+                actionPy = self.actionspath+".py"
+                self.hrd.applyOnFile(actionPy, additionalArgs=args)
+                j.application.config.applyOnFile(actionPy, additionalArgs=args)
+
+                actionLua = self.actionspath+".lua"
+                if j.system.fs.exists(source):
+                    self.hrd.applyOnFile(actionLua, additionalArgs=args)
+                    j.application.config.applyOnFile(actionLua, additionalArgs=args)
+
                 j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
 
+            self.actionspath+=".py"
             self.hrd=j.core.hrd.get(self.hrdpath)
 
             modulename="JumpScale.jpackages.%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
@@ -376,6 +384,7 @@ class JPackageInstance():
             self.actions.halt(**args)
 
     @deps
+    @remote
     def build(self,args={},deps=True):
         self._load(args=args)
         for dep in self.getDependencies(build=True):
@@ -411,9 +420,8 @@ class JPackageInstance():
         self.stop(args=args)
         self.start(args=args)
 
-    def getProcessDicts(self,deps=True):
-        self._load()
-        res=[]
+    def getProcessDicts(self,deps=True,args={}):
+        self._load(args=args)
         counter=0
 
         defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
@@ -484,6 +492,24 @@ class JPackageInstance():
 
         self.prepare(args=args,deps=deps)
         #download
+        for recipeitem in self.hrd.getListFromPrefix("web.export"):
+            if "dest" not in recipeitem:
+                raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
+            fullurl = "%s/%s" % (recipeitem['url'], recipeitem['source'].lstrip('/'))
+            dest = recipeitem['dest']
+            destdir = j.system.fs.getDirName(dest)
+            j.system.fs.createDir(destdir)
+            # validate md5sum
+            if recipeitem.get('checkmd5', 'false').lower() == 'true' and j.system.fs.exists(dest):
+                remotemd5 = j.system.net.download('%s.md5sum' % fullurl, '-').split()[0]
+                localmd5 = j.tools.hash.md5(dest)
+                if remotemd5 != localmd5:
+                    j.system.fs.remove(dest)
+                else:
+                    continue
+            elif j.system.fs.exists(dest):
+                j.system.fs.remove(dest)
+            j.system.net.download(fullurl, dest)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             # print recipeitem
