@@ -492,6 +492,24 @@ class JPackageInstance():
 
         self.prepare(args=args,deps=deps)
         #download
+        for recipeitem in self.hrd.getListFromPrefix("web.export"):
+            if "dest" not in recipeitem:
+                raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
+            fullurl = "%s/%s" % (recipeitem['url'], recipeitem['source'].lstrip('/'))
+            dest = recipeitem['dest']
+            destdir = j.system.fs.getDirName(dest)
+            j.system.fs.createDir(destdir)
+            # validate md5sum
+            if recipeitem.get('checkmd5', 'false').lower() == 'true' and j.system.fs.exists(dest):
+                remotemd5 = j.system.net.download('%s.md5sum' % fullurl, '-').split()[0]
+                localmd5 = j.tools.hash.md5(dest)
+                if remotemd5 != localmd5:
+                    j.system.fs.remove(dest)
+                else:
+                    continue
+            elif j.system.fs.exists(dest):
+                j.system.fs.remove(dest)
+            j.system.net.download(fullurl, dest)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             # print recipeitem
