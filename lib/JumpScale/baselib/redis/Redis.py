@@ -196,7 +196,7 @@ class RedisFactory:
         j.system.fs.createDir(dpath)
         self.startInstance(name)
 
-    def configureInstance(self, name, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None):
+    def configureInstance(self, name, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None,prog=None):
         """
         @param maxram = MB of ram
         slave example: (192.168.10.10,8888,asecret)   (ip,port,secret)
@@ -757,6 +757,10 @@ aof-rewrite-incremental-fsync yes
 # include /path/to/local.conf
 # include /path/to/other.conf
 """
+
+        if prog=='gitlab':
+            C = C.replace("# unixsocket $vardir/redis/$name/redis.sock", "unixsocket $vardir/redis/$name/redis.sock")
+            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
 
         C = C.replace("$name", name)
         C = C.replace("$maxram", str(maxram))
