@@ -117,7 +117,6 @@ class JPackageFactory():
                     if domain==domainfound and name==namefound:
                         setPkg.add("%-15s:%s"%(domainfound,namefound))
                         # res.append(JPackage(domainfound,namefound))
-            from ipdb import set_trace;set_trace()
             for pkg in setPkg:
                 domain,name = (pkg.split(':'))
                 res.append(JPackage(domain.strip(),name.strip(),remote=True))
