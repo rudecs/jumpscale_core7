@@ -1184,10 +1184,7 @@ class InstallTools():
 
         self.createDir(dest)
 
-        base=url2.split("/",1)[0]
-
-
-        
+        base=url2.split("/",1)[0]        
 
         return base,ttype,account,repo,dest,url        
 
