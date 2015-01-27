@@ -139,8 +139,11 @@ def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=Fal
         rawjps = packages
         packages = []
         for jp in rawjps:
-            for instance in jp.listInstances():
-                packages.append(jp.getInstance(instance))
+            if args.instance is None:
+                for instance in jp.listInstances():
+                    packages.append(jp.getInstance(instance))
+            else:
+                packages.append(jp.getInstance(args.instance))
 
     jpargs = {}
     if args.node:
