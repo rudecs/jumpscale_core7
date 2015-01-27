@@ -759,10 +759,6 @@ aof-rewrite-incremental-fsync yes
 # include /path/to/other.conf
 """
 
-        if prog=='gitlab':
-            C = C.replace("# unixsocket $vardir/redis/$name/redis.sock", "unixsocket $vardir/redis/$name/redis.sock")
-            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
-
         C = C.replace("$name", name)
         C = C.replace("$maxram", str(maxram))
         C = C.replace("$port", str(port))
