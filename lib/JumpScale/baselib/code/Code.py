@@ -215,8 +215,6 @@ class Code():
         data={}
 
         def todict(obj,data,ignoreKeys):
-            if hasattr(obj, '__dict__'):
-                return todict(obj.__dict__, {}, ignoreKeys)
             if isinstance(obj, dict):
                 value={}
                 for key in list(obj.keys()):
