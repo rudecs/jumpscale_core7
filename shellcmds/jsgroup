@@ -66,15 +66,14 @@ if opts.action =='add':
 if opts.action =='list':
     out=""
     print("\n%-20s %-25s %s"%("name","domain","users"))
-    print("="*80, end=' ')
+    print("="*80)
     for item in groupclient.simpleSearch({"domain":opts.domain}):
         out+="%-20s %-25s %s\n"%(item["id"],item["domain"],",".join(item["users"]))
     out=out.split("\n")
     out.sort()
     out="\n".join(out)
     print(out)
-    print()
-            
+
 if opts.action =='delete':
     if opts.group==None:
         opts.group=j.console.askString("group to delete")
