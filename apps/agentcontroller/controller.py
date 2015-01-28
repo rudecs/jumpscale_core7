@@ -27,7 +27,7 @@ parser.add_argument('-i', '--instance', help="Agentcontroller instance", require
 opts = parser.parse_args()
 j.application.instanceconfig = j.application.getAppInstanceHRD(name="agentcontroller",instance=opts.instance)
 
-while j.clients.redis.isRunning('system'):
+while not j.clients.redis.isRunning('system'):
     time.sleep(0.1)
     print "cannot connect to redis system, will keep on trying forever, please start redis system"
 
@@ -378,9 +378,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
             key = "%s_%s" % (t.organization, t.name)
             self.jumpscripts[key] = t
             self.jumpscriptsId[key0] = t
-        j.core.jumpscripts.pushToGridMaster()
 
-       
     def getJumpscript(self, organization, name,gid=None,reload=False, session=None):
         if session<>None:
             self._adminAuth(session.user,session.passwd)
@@ -700,7 +698,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
             result.append(jobresult)
         return result
 
-    def getAllJumpscripts(self, bz2_compressed=True, session=None):
+    def getAllJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts'), session=None):
         """
         Returns the available jumpscripts as a Base64-encoded TAR archive that is optionally compressed using bzip2.
 

@@ -41,7 +41,7 @@ class JumpscriptsCmds():
         self.jumpscripts={}
 
         import JumpScale.grid.jumpscripts
-        j.core.jumpscripts.loadFromGridMaster()
+        j.core.jumpscripts.loadFromAC(self.agentcontroller_client)
 
         jspath = j.system.fs.joinPaths(j.dirs.baseDir, 'apps', 'processmanager', 'jumpscripts')
         if not j.system.fs.exists(path=jspath):
