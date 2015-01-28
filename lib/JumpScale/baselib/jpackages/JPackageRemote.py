@@ -3,62 +3,144 @@ from JumpScale import j
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
 import json
+import time
 
 class JPackageRemoteFactory(object):
+
     def sshPython(self, jp, node):
         return RemotePython(jp,node)
 
     def sshLua(self, jp, node):
         return RemoteLua(jp,node)
 
-def _sshConnect(node):
-    sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
-    ip = sshHRD.get("param.machine.ssh.ip")
-    port = sshHRD.get("param.machine.ssh.port")
-    keyhrd=j.application.getAppInstanceHRD("sshkey",sshHRD.get('param.ssh.key.name'))
-    j.remote.cuisine.fabric.env["key"] = keyhrd.get('param.ssh.key.priv')
-    cl=j.remote.cuisine.connect(ip,port)
-    return cl
 
 class RemotePython(object):
     def __init__(self, jp, node):
         self.node = node
         self.jp = jp
-        self.cl = _sshConnect(node)
+        self.ip = None
+        self.port = None
+        self.keyname = None
+        self._keyhrd = None
+        self.cl = self._sshConnect(node)
+
+
+    def _generateUniq(self,name):
+        epoch = int(time.time())
+        return "%s_%s_%s_%s" % (epoch,self.jp.name,self.jp.instance,name)
+
+    def _sshConnect(self,node):
+        sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
+        self.ip = sshHRD.get("param.machine.ssh.ip")
+        self.port = sshHRD.get("param.machine.ssh.port")
+        self.keyname = sshHRD.get('param.ssh.key.name')
+        self._keyhrd = j.application.getAppInstanceHRD("sshkey",self.keyname)
+        j.remote.cuisine.fabric.env["key"] = self._keyhrd.get('param.ssh.key.priv')
+        cl=j.remote.cuisine.connect(self.ip,self.port)
+        return cl
+
+    def copyTree(self,src,dest):
+        keyloc = "/tmp/%s" % self._generateUniq('id_dsa')
+        j.system.fs.writeFile(keyloc,self._keyhrd.get("param.ssh.key.priv"))
+        j.system.fs.chmod(keyloc,0o600)
+        destdir = dest.split(':')[1]
+        if not self.cl.file_exists(destdir):
+            cmd = "mkdir -p %s" % destdir
+            self.cl.run(cmd)
+        print("send %s to %s" %(src,dest))
+        j.do.copyTree(src,dest,sshkey=keyloc)
 
     def execute(self, action):
         codegen=j.tools.packInCode.get4python()
 
-        #put hrd on dest system
-        hrddestfile="%s/%s.%s.hrd"%(j.dirs.getHrdDir(),self.jp.name,self.jp.instance)
-        codegen.addHRD("jphrd",self.jp.hrd,hrddestfile)
-
-        #put action file on dest system
         actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
-        actionfiledest="%s/%s__%s.py"%(j.dirs.getJPActionsPath(),self.jp.name,self.jp.instance)
-        codegen.addPyFile(actionfile,path2save=actionfiledest)
+        actionContent = j.system.fs.fileGetContents(actionfile)
+        codegen.code +="""
+class JPackageInstanceMock(object):
+    def __init__(self, domain,name,instance):
+        self.domain = domain
+        self.name = name
+        self.instance = instance
+"""
+        codegen.code +="""
+class JPackageMock(object):
 
-        toexec=codegen.get()
+    def __init__(self,hrd,domain,name,instance):
+        self.hrd = hrd
+        self.jp = JPackageInstanceMock(domain,name,instance)
 
-        cwd = j.system.fs.getParent(j.system.fs.getParent(j.system.fs.getParent(hrddestfile)))
+    def getLogPath(self):
+        logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.jp.instance))
+        return logpath
 
-        # create a .git dir so the directory is seen as a git config repo
-        if not self.cl.file_exists("%s/.git"%cwd):
-            cmd = "cd %s; mkdir .git" %(cwd)
-            self.cl.run(cmd)
-        if not self.cl.file_exists("%s/jp"%cwd):
-            cmd = "cd %s; mkdir jp" %(cwd)
-            self.cl.run(cmd)
+    def getHRDPath(self,node=None):
+        if j.packages.type=="c":
+            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.jp.instance)
+        else:
+            hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.jp.instance)
+        return hrdpath
 
-        # install hrd and action file on remote system
-        tmploc = '/tmp/exec.py'
-        self.cl.file_write(tmploc, toexec)
-        cmd = "jspython %s" % tmploc
+    def isInstalled(self):
+        hrdpath = self.getHRDPath()
+        if j.system.fs.exists(hrdpath):
+            return True
+        return False
+
+    def getTCPPorts(self,deps=True, *args, **kwargs):
+        ports = set()
+        for process in self.getProcessDicts():
+            for item in process["ports"]:
+                if isinstance(item, basestring):
+                    moreports = item.split(";")
+                elif isinstance(item, int):
+                    moreports = [item]
+                for port in moreports:
+                    if isinstance(port, int) or port.isdigit():
+                        ports.add(int(port))
+        return list(ports)
+
+
+    def getPriority(self):
+        processes = self.getProcessDicts()
+        if processes:
+            return processes[0].get('prio', 100)
+        return 199
+
+    def getProcessDicts(self,deps=True,args={}):
+        counter = 0
+        defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
+        musthave=["cmd","args","prio","env","cwd","timeout_start","timeout_start","ports","startupmanager","filterstr","name","user"]
+
+        procs=self.hrd.getListFromPrefixEachItemDict("process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
+        for process in procs:
+            counter+=1
+
+            process["test"]=1
+
+            if process["name"].strip()=="":
+                process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
+
+            if self.hrd.exists("env.process.%s"%counter):
+                process["env"]=self.hrd.getDict("env.process.%s"%counter)
+
+            if not isinstance(process["env"],dict):
+                raise RuntimeError("process env needs to be dict")
+
+        return procs
+\n
+        """
+        codegen.addHRD(name="hrd",hrd=self.jp.hrd)
+        codegen.code += actionContent
+        codegen.code += "\naction = Actions()\n"
+        codegen.code += "action.jp_instance = JPackageMock(hrd,'%s','%s','%s')\n" %(self.jp.domain,self.jp.name,self.jp.instance)
+        codegen.code += "action.%s()\n"%action
+
+        code = codegen.get()
+        codeloc = "/tmp/%s" % self._generateUniq('exec.py')
+        self.cl.file_write(codeloc, code)
+        cmd = "jspython %s" % codeloc
+        print "RUN %s" % action
         self.cl.run(cmd)
-        # then run the jpackage command on the remote system
-        cmd = 'cd %s; jpackage %s -n %s -i %s --remote' % (cwd, action, self.jp.name, self.jp.instance)
-        self.cl.run(cmd)
-        del j.remote.cuisine.fabric.env["key"]
 
 
 class RemoteLua(object):

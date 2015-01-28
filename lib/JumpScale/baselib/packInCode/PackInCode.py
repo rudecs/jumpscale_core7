@@ -41,19 +41,16 @@ $block
         code=json.dumps(obj=ddict, sort_keys=True,indent=4, separators=(',', ': '))
         self.code+="%s=\"\"\"\n%s\n\"\"\"\n\n"%(name,code)
 
-    def addHRD(self,name,hrd,path):
+    def addHRD(self,name,hrd):
         C="""
 hrdtmp=\"\"\"
 $hrd
 \"\"\"
 hrdtmp=codegen.unserialize(hrdtmp)
-$name=j.core.hrd.get(path=\"$path\",content=hrdtmp)
-j.system.fs.createDir(j.do.getParent(\"$path\"))
-$name.save()
+$name=j.core.hrd.get(content=hrdtmp)
 """
         C=C.replace("$name",name)
         C=C.replace("$hrd",self._serialize(str(hrd)))
-        C=C.replace("$path",path)
         self.code+="%s\n"%C
 
     def addPyFile(self,path2add,path2save=None):
