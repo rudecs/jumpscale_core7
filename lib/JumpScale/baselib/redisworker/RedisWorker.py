@@ -96,7 +96,7 @@ class RedisWorkerFactory(object):
     @property
     def redis(self):
         if self._redis is None:
-            self._redis=j.clients.redis.getGeventRedisClient("127.0.0.1", 9999, False)
+            self._redis=j.clients.redis.getByInstanceName("system")
             self._redis.delete("workers:sessions")
             #local jumpscripts start at 10000
             if not self._redis.exists("workers:jumpscriptlastid") or int(self._redis.get("workers:jumpscriptlastid"))<1000000:
@@ -109,10 +109,10 @@ class RedisWorkerFactory(object):
     def queue(self):
         if self._queue is None:
             self._queue={}
-            self._queue["io"] = j.clients.redis.getGeventRedisQueue("127.0.0.1",9999,"workers:work:io", fromcache=False)
-            self._queue["hypervisor"] = j.clients.redis.getGeventRedisQueue("127.0.0.1",9999,"workers:work:hypervisor", fromcache=False)
-            self._queue["default"] = j.clients.redis.getGeventRedisQueue("127.0.0.1",9999,"workers:work:default", fromcache=False)
-            self._queue["process"] = j.clients.redis.getGeventRedisQueue("127.0.0.1",9999,"workers:work:process", fromcache=False)
+            self._queue["io"] = self.redis.getQueue("system")
+            self._queue["hypervisor"] = self.redis.getQueue("workers:work:hypervisor") #, fromcache=False)
+            self._queue["default"] = self.redis.getQueue("workers:work:default" ) #, fromcache=False)
+            self._queue["process"] = self.redis.getQueue("workers:work:process") #, fromcache=False)
         return self._queue
 
     def _getJob(self, jscriptid=None,args={}, timeout=60,log=True, queue="default",ddict={}):

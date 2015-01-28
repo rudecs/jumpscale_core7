@@ -10,6 +10,7 @@ import tarfile
 import StringIO
 import collections
 import os
+import base64
 
 class Jumpscript(object):
     def __init__(self, ddict=None, path=None):
@@ -193,9 +194,6 @@ class JumpscriptFactory:
     def getJSClass(self):
         return Jumpscript
 
-    def _getWebdisConnection(self):
-        return j.clients.webdis.getByInstance()
-
     def getArchivedJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts')):
         """
         Returns the available jumpscripts in TAR format that is optionally compressed using bzip2.
@@ -216,32 +214,19 @@ class JumpscriptFactory:
                         tar.add(file_path, path_in_archive)
         return fp.getvalue()
 
-    def pushToGridMaster(self):
-        webdis = self._getWebdisConnection()
-        data = self.getArchivedJumpscripts()
-        webdis.set("%s:scripts"%(self.secret),data)
-        # scripttgz=webdis.get("%s:scripts"%(self.secret))
-        # assert data==scripttgz
+    def loadFromAC(self, acl=None):
+        if acl is None:
+            acl = j.clients.agentcontroller.getByInstance()
+        tar = base64.decodestring(acl.getAllJumpscripts())
+        self.loadFromTar(tar, 'bz2')
 
-    def loadFromGridMaster(self):
-        print "load processmanager code from master"
-        webdis = self._getWebdisConnection()
-
-        #delete previous scripts
-        item=["eventhandling","loghandling","monitoringobjects","processmanagercmds","jumpscripts"]
-        for delitem in item:
-            j.system.fs.removeDirTree( j.system.fs.joinPaths(self.basedir, delitem))
-
-        #import new code
-        #download all monitoring & cmd scripts
-
-
+    def loadFromTar(self, tarcontent, type):
         import tarfile
-        scripttgz=webdis.get("%s:scripts"%(self.secret))
-        ppath=j.system.fs.joinPaths(j.dirs.tmpDir,"processMgrScripts_download.tar")
-
-        j.system.fs.writeFile(ppath,scripttgz)
-        tar = tarfile.open(ppath, "r:bz2")
+        fp = StringIO.StringIO()
+        fp.write(tarcontent)
+        fp.seek(0)
+        mode = "r:%s" % type
+        tar = tarfile.open(fileobj=fp, mode=mode)
 
         for tarinfo in tar:
             if tarinfo.isfile():
@@ -250,8 +235,6 @@ class JumpscriptFactory:
                     tar.extract(tarinfo.name, j.system.fs.getParent(self.basedir))
                 if tarinfo.name.find("jumpscripts/")==0:
                     tar.extract(tarinfo.name, self.basedir)
-
-        j.system.fs.remove(ppath)
 
     @staticmethod
     def introspectLuaJumpscript(path):

@@ -29,9 +29,8 @@ parser.add_argument('--roles', dest='roles', required=False, type=str, help='Use
 
 
 #check redis is there if not try to start
-if not j.system.net.tcpPortConnectionTest("127.0.0.1",9999):
-    j.packages.findNewest(name="redis").install()
-    j.packages.findNewest(name="redis").start()
+if not j.clients.redis.isRunning('system'):
+    raise RuntimeError("System redis is not installed")
 
 
 opts = parser.parse_args()
@@ -126,7 +125,7 @@ if opts.action == 'restartprocessmgrs':
 
 if opts.action == 'restartworkers':
     import JumpScale.baselib.redis
-    rcl = j.clients.redis.getRedisClient('127.0.0.1', 9999)
+    rcl = j.clients.redis.getByInstanceName('system')
     for proc in j.tools.startupmanager.getProcessDefs('workers'):
         for num in range(1, proc.numprocesses +1):
             name = "%s_%s" % (proc.name, num)

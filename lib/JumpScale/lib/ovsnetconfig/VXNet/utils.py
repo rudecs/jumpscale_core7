@@ -102,15 +102,29 @@ def VlanPatch(parentbridge, vlanbridge, vlanid):
 
 
 def addVlanPatch(parbr,vlbr,id, mtu=None):
+    def bridge_exists(br):
+        brexist = "{0} br-exists {1}".format(vsctl, br)
+        r,s,e = doexec(brexist.split())
+        return r == 0
+
+    def port_exists(br, port):
+        listprts = "{0} list-ports {1}".format(vsctl, br)
+        r,s,e = doexec(listprts.split())
+        return port in s.read()
+
     parport = "{}-{!s}".format(vlbr,id)
     brport  = "{}-{!s}".format(parbr,id)
-    c = "{0} add-br {1} -- add-port {1} {3} -- set Interface {3} type=patch options:peer={2}".format(vsctl,vlbr,parport,brport)
-    c = c + " -- add-port {0} {2} tag={3!s} -- set Interface {2} type=patch options:peer={1}".format(parbr,brport,parport,id)
-    r,s,e = doexec(c.split())
+    if not bridge_exists(vlbr):
+        brcreate = "{0} add-br {1}".format(vsctl, vlbr)
+        r,s,e = doexec(brcreate.split())
+    if not port_exists(vlbr, brport):
+        addport = "{0} add-port {1} {3} -- set Interface {3} type=patch options:peer={2}".format(vsctl,vlbr,parport,brport)
+        r,s,e = doexec(addport.split())
+    if not port_exists(parbr, parport):
+        c = "{4} add-port {0} {2} tag={3!s} -- set Interface {2} type=patch options:peer={1}".format(parbr,brport,parport,id, vsctl)
+        r,s,e = doexec(c.split())
     if mtu:
         ip_link_set(vlbr,'mtu {0}'.format(mtu))
-    if r:
-        raise RuntimeError("Add extra vlan pair failed %s" % (e.readlines()))
 
 
 def createNameSpace(name):

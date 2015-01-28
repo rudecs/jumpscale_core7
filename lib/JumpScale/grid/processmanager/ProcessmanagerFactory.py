@@ -49,7 +49,7 @@ class ProcessmanagerFactory:
 
     def start(self):
 
-        j.core.jumpscripts.loadFromGridMaster()
+        j.core.jumpscripts.loadFromAC()
 
         osis = self.daemon.osis
         self.daemon = j.servers.geventws.getServer(port=4446)  #@todo no longer needed I think, it should not longer be a socket server, lets check first

@@ -110,7 +110,7 @@ class StatDiffPerSec(Stat):
 class StatAggregator():
 
     def __init__(self):
-        redis = j.clients.redis.getRedisClient('127.0.0.1', 9999)
+        redis = j.clients.redis.getByInstanceName('system')
         self.stats = redis.getDict("stataggregator")
         self.log=False
         if self.log:

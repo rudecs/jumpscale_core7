@@ -1780,9 +1780,13 @@ class SystemFS:
         @param fileregex: The regex pattern to match
         @type fileregex: string
         """
-        j.system.fs.changeDir(startDir)
-        import glob
-        return glob.glob(fileregex)
+        pwd = j.system.fs.getcwd()
+        try:
+            self.changeDir(startDir)
+            import glob
+            return glob.glob(fileregex)
+        finally:
+            self.changeDir(pwd)
 
     def grep(self, fileregex, lineregex):
         """Search for lines matching a given regex in all files matching a regex

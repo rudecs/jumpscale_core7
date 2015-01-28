@@ -121,41 +121,21 @@ class ProcessManager(tornado.web.RequestHandler):
         self.dir_actions=j.system.fs.joinPaths(self.dir_data,"actions")
         j.system.fs.createDir(self.dir_data)
 
-        #check there is a redis on port 9998 & 9999 (the new port for all)
-        for port in [9998,8001]:
-            if j.system.net.tcpPortConnectionTest("localhost",port):
-                j.system.process.killProcessByPort(port)
-
-
         if j.system.net.tcpPortConnectionTest("localhost",9999)==False:
             jps = j.packages.find('jumpscale', "redis")
-            if not jps:
-                j.packages.install(hrddata={"redis.name":"mem","redis.port":9999,"redis.disk":"0","redis.mem":40},instance="mem")
-                jps = j.packages.find('jumpscale', 'redis')
-            jp = jps[0].getInstance('mem')
+            jp = jps[0].getInstance('system')
             if not jp.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
-                j.packages.install(hrddata={"redis.name":"mem","redis.port":9999,"redis.disk":"0","redis.mem":40},instance="mem")
-            for name in ["mem"]:
-                p=Process()
-                p.domain="jumpscale"
-                p.name="redis_%s"%name
-                p.instance=name
-                p.workingdir="/"
-                p.cmds=[j.dirs.replaceTxtDirVars("$base/apps/redis/redis-server"),j.dirs.replaceTxtDirVars("$vardir/redis/%s/redis.conf"%name)]
-                p.logpath=j.dirs.replaceTxtDirVars("$vardir/redis/%s/redis.log"%name)
-                p.start()
-                self.processes.append(p)
+                j.packages.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40},instance="system")
             if j.system.net.waitConnectionTest("localhost",9999,10)==False:
                 j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 
-        self.redis_mem=j.clients.redis.getRedisClient("localhost",9999)
-        # self.redis_disk=j.clients.redis.getGeventRedisClient("localhost",9998)
+        self.redis_mem=j.clients.redis.getByInstanceName('system')
 
         self.redis_queues={}
-        self.redis_queues["io"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:io")
-        self.redis_queues["hypervisor"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:hypervisor")
-        self.redis_queues["default"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:default")
-        self.redis_queues["process"] = j.clients.redis.getRedisQueue("localhost",9999,"workers:work:process")        
+        self.redis_queues["io"] = self.redis_mem.getQueue("workers:work:io")
+        self.redis_queues["hypervisor"] = self.redis_mem.getQueue("workers:work:hypervisor")
+        self.redis_queues["default"] = self.redis_mem.getQueue("workers:work:default")
+        self.redis_queues["process"] = self.redis_mem.getQueue("workers:work:process")
 
         j.processmanager=self
 
@@ -220,7 +200,6 @@ class ProcessManager(tornado.web.RequestHandler):
 
     def _stack_context_handle_exception(self, *kwargs):
         print kwargs
-        import ipdb; ipdb.set_trace()
         
     @tornado.web.asynchronous
     @tornado.gen.coroutine
