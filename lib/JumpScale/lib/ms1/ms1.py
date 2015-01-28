@@ -49,7 +49,7 @@ class MS1(object):
     def __init__(self):
         self.secret = ''
         self.IMAGE_NAME = 'Ubuntu 14.04'
-        self.redis_cl = j.clients.redis.getGeventRedisClient('localhost', 9999)
+        self.redis_cl = j.clients.redis.getByInstanceName('system')
         self.stdout=Output()
         self.stdout.ms1=self
         self.stdout.prevout=sys.stdout

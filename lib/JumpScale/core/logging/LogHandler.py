@@ -159,9 +159,9 @@ class LogHandler(object):
         self.connectRedis()
 
     def connectRedis(self):
-        if j.system.net.tcpPortConnectionTest("127.0.0.1",9999):    
-            import JumpScale.baselib.redis
-            self.redis=j.clients.redis.getRedisClient("127.0.0.1",9999)
+        import JumpScale.baselib.redis
+        if j.clients.redis.isRunning('system'):
+            self.redis=j.clients.redis.getByInstanceName('system')
             luapath="%s/core/logging/logs.lua"%j.dirs.jsLibDir
             if j.system.fs.exists(path=luapath):
                 lua=j.system.fs.fileGetContents(luapath)

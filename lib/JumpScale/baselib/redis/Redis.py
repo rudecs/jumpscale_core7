@@ -141,15 +141,9 @@ class RedisFactory:
             j.system.fs.createDir(path)
             path=j.system.fs.joinPaths(j.dirs.varDir,"redis",pd.name,"redis.log")
             j.system.fs.remove(path)
-            pd.start()            
-
-    # def deleteAllInstances(self):
-    #     path = "/opt/redis/"
-    #     for name in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-    #         self.deleteInstance(name)
+            pd.start()
 
     def getPort(self, name):
-        self.getProcessPids(name)
         _, cpath = self._getPaths(name)
         config = j.system.fs.fileGetContents(cpath)
         for line in config.split("\n"):
@@ -158,8 +152,18 @@ class RedisFactory:
                 return port
         raise RuntimeError("Could not find redis port in config file %s" % cpath)
 
+    def isRunning(self, name):
+        jpd = j.packages.find('jumpscale','redis')[0]
+        if name not in jpd.listInstances():
+            return False
+        try:
+            self.getByInstanceName('system').ping()
+            return True
+        except:
+            return False
+
     def _getPaths(self, name):
-        dpath = "/opt/redis/%s" % name
+        dpath = j.system.fs.joinPaths(j.dirs.varDir, 'redis', name)
         return dpath, j.system.fs.joinPaths(dpath, "redis.conf")
 
     def getProcessPids(self, name):

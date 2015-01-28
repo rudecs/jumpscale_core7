@@ -27,7 +27,7 @@ def timeago(t):
     return "%ss"%ago
 
 redism=j.application.redis
-redisp=j.clients.redis.getRedisClient("127.0.0.1",9999) #redis production
+redisp=j.clients.redis.getByInstanceName("system")
 
 if opts.action =='workerwatchdog':
     print("hget:workers:watchdog")
@@ -54,18 +54,16 @@ elif opts.action =='appsreset':
     redism.delete("application")
 
 elif opts.action =='keys':
-    redis = j.clients.credis.getRedisClient("127.0.0.1", 9999)
-    print("\n".join(list(redis.keys())))
+    print("\n".join(list(redisp.keys())))
     
 elif opts.action =='clearjobqueue':
-    redis = j.clients.credis.getRedisClient("127.0.0.1", 9999)
-    keys = redis.keys('queues:jobqueue*')
-    keys.extend(redis.keys('queues:commmands*'))
+    keys = redisp.keys('queues:jobqueue*')
+    keys.extend(redisp.keys('queues:commmands*'))
     keys.append('jobs:%s' % j.application.whoAmI.gid)
     total = len(keys)
     for idx, key in enumerate(keys):
-        print('\rRemoving keys %s/%s %s' % (idx+1, total, key), end=' ')
-        redis.delete(key)
+        print('\rRemoving keys %s/%s %s' % (idx+1, total, key))
+        redisp.delete(key)
     print('\nDone')
     
 

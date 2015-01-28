@@ -209,7 +209,6 @@ class Worker(object):
 
         if job.jscriptid>1000000:
             #means is internal job
-            # q=j.clients.redis.getGeventRedisQueue("127.0.0.1",9999,"workers:return:%s"%jobid)
             self.redisw.redis.hset("workers:jobs",job.id, json.dumps(job.__dict__))
             self.redisw.redis.rpush("workers:return:%s"%job.id,time.time())            
         else:
