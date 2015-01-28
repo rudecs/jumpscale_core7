@@ -373,9 +373,14 @@ class JPackageInstance():
             self.actions.halt(**args)
 
     @deps
-    @remote
     def build(self,args={},deps=True):
         self._load(args=args)
+
+        if "node2execute" in args:
+            node = j.packages.remote.sshPython(jp=self.jp,node=args['node2execute'])
+        else:
+            node = None
+
         for dep in self.getDependencies(build=True):
             if dep.jp.name not in j.packages._justinstalled:
                 if 'args' in dep.__dict__:
@@ -388,14 +393,21 @@ class JPackageInstance():
             # print recipeitem
             #pull the required repo
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
-
+        from ipdb import set_trace;set_trace()
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
             # print recipeitem
             #pull the required repo
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
 
-        self.actions.build(**args)
+        if node:
+            self._build(args=args)
+        else:
+            self.actions.build(**args)
+
+    @remote
+    def _build(self,args={},deps=True):
+        self.action.build(**args)
 
     @deps
     @remote
@@ -704,12 +716,6 @@ class JPackageInstance():
     @deps
     @remote
     def execute(self,args={},deps=False):
-        """
-        execute cmd on jpackage
-        """
-        self._execute(args=args,deps=deps)
-
-    def _execute(self,args={},deps=False):
         """
         execute cmd on jpackage
         """

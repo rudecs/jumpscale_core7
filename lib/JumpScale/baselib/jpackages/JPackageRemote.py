@@ -27,7 +27,7 @@ class RemotePython(object):
 
     def _generateUniq(self,name):
         epoch = int(time.time())
-        return "%s_%s_%s_%s" % (epoch,self.jp.name,self.jp.instance,name)
+        return "%s_%s_%s" % (epoch,self.jp.name,name)
 
     def _sshConnect(self,node):
         sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
@@ -51,6 +51,7 @@ class RemotePython(object):
         j.do.copyTree(src,dest,sshkey=keyloc)
 
     def execute(self, action):
+        action = action.replace("_","") # make sure the action name is correcte
         codegen=j.tools.packInCode.get4python()
 
         actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
