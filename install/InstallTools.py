@@ -1214,15 +1214,15 @@ class InstallTools():
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
-                    cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
+                    cmd="cd %s;git -c http.sslVerify=false pull %s origin %s"%(dest,url, branch)
                 else:
-                    cmd="cd %s;git -c http.sslVerify=false pull"%dest
+                    cmd="cd %s;git -c http.sslVerify=false pull %s" % (dest, url)
                 self.execute(cmd,timeout=600)
         else:
             print(("git clone %s -> %s"%(url,dest)))
             extra = ""
             if depth and depth != 0:
-                 extra = "--depth=%s" % depth
+                extra = "--depth=%s" % depth
             if branch!=None:
                 cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             else:
