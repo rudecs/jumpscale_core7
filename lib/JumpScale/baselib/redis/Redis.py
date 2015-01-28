@@ -763,6 +763,10 @@ aof-rewrite-incremental-fsync yes
 # include /path/to/other.conf
 """
 
+        if unixsocket:
+            C = C.replace("# unixsocket $vardir/redis/$name/redis.sock", "unixsocket $vardir/redis/$name/redis.sock")
+            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
+
         C = C.replace("$name", name)
         C = C.replace("$maxram", str(maxram))
         C = C.replace("$port", str(port))
@@ -771,9 +775,9 @@ aof-rewrite-incremental-fsync yes
         if ismaster:
             slave=False
 
-        if unixsocket:
-            C = C.replace("# unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir, "unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir)
-            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
+#        if unixsocket:
+#            C = C.replace("# unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir, "unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir)
+#            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
 
         if appendonly or ismaster:
             C = C.replace("$appendonly", "yes")
