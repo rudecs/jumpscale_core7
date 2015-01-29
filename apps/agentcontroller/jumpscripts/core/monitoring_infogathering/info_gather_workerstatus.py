@@ -18,7 +18,7 @@ roles = []
 log=False
 
 def action():
-    rediscl = j.clients.redis.getByInstanceName('system', gevent=True)
+    rediscl = j.clients.redis.getByInstance('system')
     timemap = {'default': '-2m', 'io': '-2h', 'hypervisor': '-10m','process':'-1m'}
     result = dict()
     for queue in ('io', 'hypervisor', 'default', 'process'):

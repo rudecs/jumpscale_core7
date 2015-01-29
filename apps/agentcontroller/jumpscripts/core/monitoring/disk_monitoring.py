@@ -26,7 +26,7 @@ def action():
     import psutil
 
     dcl = j.core.osis.getClientForCategory(j.core.osis.client, "system", "disk")
-    rediscl = j.clients.redis.getByInstanceName('system')
+    rediscl = j.clients.redis.getByInstance('system')
     stats = statsd.StatsClient()
     pipe = stats.pipeline()
 

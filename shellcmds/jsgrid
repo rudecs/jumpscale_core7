@@ -125,7 +125,7 @@ if opts.action == 'restartprocessmgrs':
 
 if opts.action == 'restartworkers':
     import JumpScale.baselib.redis
-    rcl = j.clients.redis.getByInstanceName('system')
+    rcl = j.clients.redis.getByInstance('system')
     for proc in j.tools.startupmanager.getProcessDefs('workers'):
         for num in range(1, proc.numprocesses +1):
             name = "%s_%s" % (proc.name, num)

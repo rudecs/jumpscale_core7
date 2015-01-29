@@ -3,8 +3,7 @@ from JumpScale import j
 from .Daemon import Daemon
 import time
 import struct
-import ujson as json
-import codecs
+
 
 class ServerBaseFactory():
 
@@ -99,25 +98,19 @@ class ServerBaseFactory():
         lenreturnformat = len(returnformat)
         lensendformat = len(sendformat)
         lensessionid = len(sessionid)
-        # packed = struct.pack("<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid).decode('utf-32')
-        packed = '%s:%s:%s:%s:%s:%s:' % (lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid)
-        if 'register' in cmd:
-            print packed + category + cmd + data + sendformat + returnformat + sessionid
-        return packed + category + cmd + data + sendformat + returnformat + sessionid
+        return struct.pack("<IIIIII", lencategory, lencmd, lendata, lensendformat, lenreturnformat, lensessionid) + category + cmd + data + sendformat + returnformat + sessionid
 
     def _unserializeBinSend(self, data):
         """
         return cmd,data,sendformat,returnformat,sessionid
         """
-        # fformat = "<IIIIII"
-        # size = struct.calcsize(fformat)
-        # datasizes = struct.unpack(fformat, bytearray(data[0:size], 'utf-32'))
-        data = data.split(':', 6)
-        lengths, data = data[:-1], data[-1]
-        lengths = [int(length) for length in lengths]
-        for length in lengths:
-            res = data[0:length]
-            data = data[length:]
+        fformat = "<IIIIII"
+        size = struct.calcsize(fformat)
+        datasizes = struct.unpack(fformat, data[0:size])
+        data = data[size:]
+        for size in datasizes:
+            res = data[0:size]
+            data = data[size:]
             yield res
 
     def _serializeBinReturn(self, resultcode, returnformat, result):
@@ -125,13 +118,12 @@ class ServerBaseFactory():
         if resultcode == None:
             resultcode = '\x00'
         lenreturnformat = len(returnformat)
-        # packed = struct.pack("<II", lenreturnformat, lendata)
-        packed = ':%s:%s:' % (lenreturnformat, lendata)
-        return resultcode + packed + returnformat + result
+        return str(resultcode)+struct.pack("<II", lenreturnformat, lendata) + returnformat + result
 
     def _unserializeBinReturn(self, data):
         """
         return resultcode,returnformat,result
         """
-        resultcode, lenreturnformat, lendata, restofdata = data.split(':', 3)
-        return (resultcode, restofdata[:int(lenreturnformat)], restofdata[int(lenreturnformat):])
+        resultcode=data[0]
+        lenreturnformat, lendata = struct.unpack("<II", str(data[1:9]))
+        return (resultcode, data[9:lenreturnformat + 9], data[lenreturnformat + 9:])

@@ -119,7 +119,7 @@ class OSISFactory:
         if self.superadminpasswd=="":
              j.events.inputerror_critical("cannot start osis, superadminpasswd needs to be specified")
 
-        daemon = j.servers.tornado.getServer(port=port)
+        daemon = j.servers.geventws.getServer(port=port)
         OSISCMDS.dbconnections = dbconnections
         daemon.addCMDsInterface(OSISCMDS, category="osis")  # pass as class not as object !!!
         daemon.daemon.cmdsInterfaces["osis"].init(path=path)#,esip=elasticsearchip,esport=elasticsearchport,db=db)
@@ -167,7 +167,7 @@ class OSISFactory:
 
         with j.logger.nostdout():
             #client = j.core.zdaemon.getZDaemonHAClient(connections, category="osis", user=user, passwd=passwd,ssl=ssl,sendformat="j", returnformat="j",gevent=gevent)
-            client= j.servers.tornado.getClient(connections[0][0], connections[0][1], user=user, passwd=passwd,category="osis")
+            client= j.servers.geventws.getClient(connections[0][0], connections[0][1], user=user, passwd=passwd,category="osis")
         self.osisConnections[key] = client
         return client
 

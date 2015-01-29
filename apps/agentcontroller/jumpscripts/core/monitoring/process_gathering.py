@@ -25,7 +25,7 @@ def action():
 
     import time
     import psutil
-    rediscl = j.clients.redis.getByInstanceName('system')
+    rediscl = j.clients.redis.getByInstance('system')
 
     result={}
     

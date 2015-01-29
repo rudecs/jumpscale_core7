@@ -30,7 +30,7 @@ import JumpScale.grid.osis
 
 def action():
 
-    rediscl = j.clients.redis.getByInstanceName("system")
+    rediscl = j.clients.redis.getByInstance("system")
     logqueue = rediscl.getQueue('logs')
     ecoqueue = rediscl.getQueue('eco')
 

@@ -45,7 +45,7 @@ class ErrorConditionHandler():
         if self.redis==None:
             if j.clients.redis.isRunning('system'):
                 import JumpScale.baselib.redis
-                self.redis=j.clients.redis.getByInstanceName("system")
+                self.redis=j.clients.redis.getByInstance("system", gevent=True)
                 luapath="%s/core/errorhandling/eco.lua"%j.dirs.jsLibDir
                 if j.system.fs.exists(path=luapath):
                     lua=j.system.fs.fileGetContents(luapath)

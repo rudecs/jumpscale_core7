@@ -59,7 +59,7 @@ class Application:
     def connectRedis(self):
         import JumpScale.baselib.redis
         if j.clients.redis.isRunning('system'):
-            self.redis = j.clients.redis.getByInstanceName('system')
+            self.redis = j.clients.redis.getByInstance('system')
         else:
             self.redis=None
 

@@ -16,8 +16,6 @@ def loadmodule(name, path):
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
     def wrapper(*args2,**kwargs): # class instance in args[0] for method
-        # print "remote wrapper start"
-
         result=None
         jp=args2[0] #this is the self from before
         if not isinstance(kwargs["args"],dict):

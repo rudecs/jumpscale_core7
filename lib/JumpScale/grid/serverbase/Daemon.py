@@ -107,7 +107,7 @@ class Daemon(object):
         self._now = 0
         self.sessions = {}
         self.key = ""
-        self.errorconditionserializer = j.db.serializers.getSerializerType("j")
+        self.errorconditionserializer = j.db.serializers.getSerializerType("m")
         self.addCMDsInterface(DaemonCMDS, "core")
 
     def getTime(self):
@@ -263,7 +263,7 @@ class Daemon(object):
             else:
                 error = "Authentication  or Session error, session not known with id:%s" % sessionid
                 eco = j.errorconditionhandler.getErrorConditionObject(msg=error)
-                return returnCodes.AUTHERROR, "j", self.errorconditionserializer.dumps(eco.__dict__)
+                return returnCodes.AUTHERROR, "m", self.errorconditionserializer.dumps(eco.__dict__)
         return session
 
     def processRPCUnSerialized(self, cmd, informat, returnformat, data, sessionid, category=""):
@@ -288,7 +288,7 @@ class Daemon(object):
         except Exception as e:
             eco=j.errorconditionhandler.parsePythonErrorObject(e)
             eco.tb=""
-            return returnCodes.SERIALIZATIONERRORIN, "j", self.errorconditionserializer.dumps(eco.__dict__)
+            return returnCodes.SERIALIZATIONERRORIN, "m", self.errorconditionserializer.dumps(eco.__dict__)
 
         parts = self.processRPC(cmd, data, returnformat=returnformat, session=session, category=category)
         returnformat = parts[1]  # return format as comes back from processRPC
@@ -306,7 +306,7 @@ class Daemon(object):
                     data = self.encrypt(returnser.dumps(parts[2].__dict__), session)
                 except:
                     eco = j.errorconditionhandler.getErrorConditionObject(msg="could not serialize result from %s"%cmd)
-                    return returnCodes.SERIALIZATIONERROROUT, "j", self.errorconditionserializer.dumps(eco.__dict__)
+                    return returnCodes.SERIALIZATIONERROROUT, "m", self.errorconditionserializer.dumps(eco.__dict__)
         else:
             data = parts[2]
 

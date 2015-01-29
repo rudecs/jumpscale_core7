@@ -28,7 +28,7 @@ except:
 
 def action():
     syscl = j.core.osis.getClientForNamespace("system")
-    rediscl = j.clients.redis.getByInstanceName('system')
+    rediscl = j.clients.redis.getByInstance('system')
 
     con = libvirt.open('qemu:///system')
     #con = libvirt.open('qemu+ssh://10.101.190.24/system')

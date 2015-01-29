@@ -6,7 +6,7 @@ import JumpScale.baselib.screen
 class JailFactory(object):
 
     def __init__(self):
-        self.redis=j.clients.redis.getByInstanceName('system')
+        self.redis=j.clients.redis.getByInstance('system')
         self.base="/opt/jsbox"
         if not j.system.fs.exists(path=self.base):
             raise RuntimeError("Please install jsbox (sandbox install for jumpscale)")

@@ -16,7 +16,7 @@ class AgentCmds():
         self.daemon=daemon
         self._adminAuth=daemon._adminAuth
 
-        self.redis = j.clients.redis.getByInstanceName('system')
+        self.redis = j.clients.redis.getByInstance('system')
         self.queue={}
         self.queue["io"] = self.redis.getQueue("workers:work:io")
         self.queue["hypervisor"] = self.redis.getQueue("workers:work:hypervisor")

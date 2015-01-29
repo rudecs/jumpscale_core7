@@ -20,7 +20,7 @@ log=False
 
 def action():
     ncl = j.core.osis.getClientForCategory(j.core.osis.client, "system", "nic")
-    rediscl = j.clients.redis.getByInstanceName('system')
+    rediscl = j.clients.redis.getByInstance('system')
     netinfo=j.system.net.getNetworkInfo()
     results = dict()
     pattern = None
