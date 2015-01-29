@@ -215,7 +215,6 @@ class HRD(HRDBase):
             self.items[key].set(value,persistent=persistent,comments=comments,temp=temp)
 
     def get(self,key,default=None,):
-        key=key.lower()
         if key not in self.items:
             if default==None:
                 j.events.inputerror_critical("Cannot find value with key %s in tree %s."%(key,self.path),"hrd.get.notexist")
