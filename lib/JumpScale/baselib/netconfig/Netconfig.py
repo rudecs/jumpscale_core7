@@ -242,10 +242,10 @@ iface $int:$aliasnr inet static
             cmd="ifup %s"%devToApplyTo
             j.system.process.execute(cmd)
 
-            if devToApplyTo<>dev:
+            if not devToApplyTo.startswith(dev):
                 print(("restart:%s"%dev))
                 cmd="ifdown %s"%dev
-                j.system.process.dev(cmd) 
+                j.system.process.execute(cmd) 
                 cmd="ifup %s"%dev
                 j.system.process.execute(cmd)
                 
