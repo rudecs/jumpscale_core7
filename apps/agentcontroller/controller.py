@@ -418,7 +418,7 @@ class ControllerCMDS():
             if cat and entry.category != cat:
                 return False
             return True
-        return [[t.id,t.organization, t.name, t.category, t.descr] for t in filter(myfilter, self.jumpscripts.values()) ]
+        return [[t.id,t.organization, t.name] for t in filter(myfilter, self.jumpscripts.values()) ]
 
     def executeJumpscript(self, organization, name, nid=None, role=None, args={},all=False, \
         timeout=600,wait=True,queue="", gid=None,errorreport=True, session=None):

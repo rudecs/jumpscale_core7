@@ -66,7 +66,7 @@ class JumpscriptsCmds():
     def _loadFromPath(self, path):
         self.startatboot = list()
         jumpscripts = self.agentcontroller_client.listJumpscripts()
-        iddict = { (org, name): jsid for jsid, org, name, _,_ in jumpscripts }
+        iddict = { (org, name): jsid for jsid, org, name in jumpscripts }
         for jscriptpath in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
             js = Jumpscript(path=jscriptpath)
             js.id = iddict.get((js.organization, js.name))
