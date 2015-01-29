@@ -49,6 +49,9 @@ class JPackageFactory():
                             dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch=branch)
                         else:
                             dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch=branch)
+
+                    repos=j.do.getGitReposListLocal()
+                    
                     dest=repos[reponame]
                     self.domains[domain]=dest
             else:
