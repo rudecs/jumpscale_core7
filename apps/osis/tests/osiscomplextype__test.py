@@ -20,8 +20,8 @@ import JumpScale.grid.osis
 class TEST(unittest.TestCase):
 
     def setUp(self):
-        self.client = j.core.osis.getClientByInstance('main')
-        self.osisclient =j.core.osis.getClientForCategory(self.client, 'test_complextype', 'project')
+        self.client = j.core.osis.getByInstance('main')
+        self.osisclient =j.core.osis.getCategory(self.client, 'test_complextype', 'project')
    
     def test_set(self):
         # We first set some elements and verify the reponse

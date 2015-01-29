@@ -3,7 +3,7 @@ def populate():
     import random, time
     from JumpScale import j
     import JumpScale.grid.osis
-    syscl = j.core.osis.getClientForNamespace('system')
+    syscl = j.core.osis.getNamespace('system')
     client = syscl.alert
 
     for i in range(10):

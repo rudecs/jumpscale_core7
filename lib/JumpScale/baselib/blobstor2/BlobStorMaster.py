@@ -217,7 +217,7 @@ class BlobStorMaster:
             j.packages.findNewest(name="redis").start()
 
         def checkosis():
-            self.osis = j.core.osis.getClientByInstance('main')
+            self.osis = j.core.osis.getByInstance('main')
 
         if 'jumpscale__osis' in j.tools.startupmanager.listProcesses():
             j.tools.startupmanager.startProcess("jumpscale","osis")
@@ -248,11 +248,11 @@ class BlobStorMaster:
         daemon.daemon.cmdsInterfaces["blobstormaster"].osis=OsisGroup()
         osis=daemon.daemon.cmdsInterfaces["blobstormaster"].osis
 
-        osis.node=j.core.osis.getClientForCategory(self.osis,"blobstor","bsnode")
-        osis.namespace=j.core.osis.getClientForCategory(self.osis,"blobstor","bsnamespace")
-        osis.disk=j.core.osis.getClientForCategory(self.osis,"blobstor","bsdisk")
-        osis.mdset=j.core.osis.getClientForCategory(self.osis,"blobstor","mdset")
-        osis.gridnode=j.core.osis.getClientForCategory(self.osis,"system","node")
+        osis.node=j.core.osis.getCategory(self.osis,"blobstor","bsnode")
+        osis.namespace=j.core.osis.getCategory(self.osis,"blobstor","bsnamespace")
+        osis.disk=j.core.osis.getCategory(self.osis,"blobstor","bsdisk")
+        osis.mdset=j.core.osis.getCategory(self.osis,"blobstor","mdset")
+        osis.gridnode=j.core.osis.getCategory(self.osis,"system","node")
 
 
         daemon.start()

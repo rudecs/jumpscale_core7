@@ -23,7 +23,7 @@ class DummyDaemon():
     def osis(self):
         if not self._osis:
             try:
-                self._osis = j.core.osis.getClientByInstance()
+                self._osis = j.core.osis.getByInstance()
             except KeyError:
                 return None
         return self._osis

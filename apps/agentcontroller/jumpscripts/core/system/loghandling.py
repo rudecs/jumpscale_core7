@@ -36,8 +36,8 @@ def action():
 
     OSISclient = j.core.osis.client
 
-    OSISclientLogger = j.core.osis.getClientForCategory(OSISclient, "system", "log")
-    OSISclientEco = j.core.osis.getClientForCategory(OSISclient, "system", "eco")
+    OSISclientLogger = j.core.osis.getCategory(OSISclient, "system", "log")
+    OSISclientEco = j.core.osis.getCategory(OSISclient, "system", "eco")
 
     log = None
     path = "%s/apps/processmanager/loghandling/"%j.dirs.baseDir
@@ -82,5 +82,5 @@ def action():
         ecoguid=ecoqueue.get_nowait()
 
 if __name__ == '__main__':
-    j.core.osis.client = j.core.osis.getClientByInstance('main')
+    j.core.osis.client = j.core.osis.getByInstance('main')
     action()

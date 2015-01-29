@@ -48,7 +48,7 @@ class AgentControllerFactory(object):
         config = self.getInstanceConfig(instance)
         return self.get(new=new, **config)
 
-    def getClientProxy(self,category="jpackages", addr=None, port=PORT, login='root', passwd=None):
+    def getProxy(self,category="jpackages", addr=None, port=PORT, login='root', passwd=None):
         if addr is None:
             addr, port, login, passwd = self._getConnectionTuple('main')
         connection = (addr, port, login, passwd)

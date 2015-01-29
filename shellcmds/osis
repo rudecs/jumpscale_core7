@@ -63,7 +63,7 @@ if opts.action =='delete':
     import JumpScale.grid.osis
     import JumpScale.baselib.elasticsearch
     es = j.clients.elasticsearch.get()
-    cl=j.core.osis.getClientByInstance('main')
+    cl=j.core.osis.getByInstance('main')
 
     if opts.namespace==None:
         print("Namespace:")
@@ -88,7 +88,7 @@ if opts.action =='delete':
 ############export
 if opts.action =='export':
     import JumpScale.grid.osis
-    cl = j.core.osis.getClientByInstance('main')
+    cl = j.core.osis.getByInstance('main')
 
     if not opts.namespace:
         print("Namespace: ")
@@ -116,7 +116,7 @@ if opts.action =='export':
 if opts.action =='exportall':
     print('This command might take a few minutes to finish...')
     import JumpScale.grid.osis
-    cl = j.core.osis.getClientByInstance('main')
+    cl = j.core.osis.getByInstance('main')
 
     if not opts.outputpath:
         outputpath = j.console.askString("Output path")
@@ -142,7 +142,7 @@ if opts.action =='exportall':
 if opts.action =='importall':
     print('This command might take a few minutes to finish...')
     import JumpScale.grid.osis
-    cl = j.core.osis.getClientByInstance('main')
+    cl = j.core.osis.getByInstance('main')
 
     if not opts.path:
         path = j.console.askString("Path")
@@ -160,7 +160,7 @@ if opts.action =='importall':
 ############import
 if opts.action =='import':
     import JumpScale.grid.osis
-    cl = j.core.osis.getClientByInstance('main')
+    cl = j.core.osis.getByInstance('main')
 
     if not opts.namespace:
         print("Namespace: ")

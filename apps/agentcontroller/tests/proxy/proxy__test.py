@@ -14,7 +14,7 @@ priority = 1
 class TEST(unittest.TestCase):
     def setUp(self):
         import JumpScale.grid.agentcontroller
-        self.cl = j.clients.agentcontroller.getClientProxy(category='tests')
+        self.cl = j.clients.agentcontroller.getProxy(category='tests')
         self.msg = 'a test message'
 
     def test_echo(self):

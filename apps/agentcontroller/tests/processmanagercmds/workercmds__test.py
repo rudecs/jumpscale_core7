@@ -25,7 +25,7 @@ class TEST(unittest.TestCase):
     def setUp(self):
         import JumpScale.grid.agentcontroller
         import JumpScale.baselib.redis
-        self.workercmds = j.clients.agentcontroller.getClientProxy('worker', '127.0.0.1')
+        self.workercmds = j.clients.agentcontroller.getProxy('worker', '127.0.0.1')
         redisport=9999
         self.redis = j.clients.redis.getGeventRedisClient("127.0.0.1", redisport)
 

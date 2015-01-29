@@ -25,8 +25,8 @@ def action():
     except Exception:
         return
     import JumpScale.grid.osis
-    ocl = j.core.osis.getClientByInstance('main')
-    scl = j.core.osis.getClientForCategory(ocl, 'system', 'stats')
+    ocl = j.core.osis.getByInstance('main')
+    scl = j.core.osis.getCategory(ocl, 'system', 'stats')
 
     #@todo needs to be redone with stataggregator
     j.system.stataggregator

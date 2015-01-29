@@ -292,7 +292,7 @@ pm.services=[item.strip().lower() for item in opts.services.split(",")]
 from lib.worker import Worker
 
 #I had to do this in mother process otherwise weird issues caused by gevent !!!!!!!
-j.core.osis.client = j.core.osis.getClientByInstance()
+j.core.osis.client = j.core.osis.getByInstance()
 
 from gevent.pywsgi import WSGIServer
 

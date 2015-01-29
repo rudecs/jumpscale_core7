@@ -24,7 +24,7 @@ def action():
     timestamp = j.base.time.getTimeEpoch()
     timestamp = j.base.time.formatTime(timestamp, "%Y%m%d_%H%M%S")
     try:
-        oscl = j.core.osis.getClientByInstance('main')
+        oscl = j.core.osis.getByInstance('main')
         namespaces = oscl.listNamespaces()
         if j.system.fs.exists(backuppath):
             j.system.fs.removeDirTree(backuppath)

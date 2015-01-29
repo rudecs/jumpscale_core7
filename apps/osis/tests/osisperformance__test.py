@@ -33,7 +33,7 @@ class TEST():
 
     def setUp(self):
         self.client = j.core.osis.getClient()
-        self.nodeclient =j.core.osis.getClientForCategory(self.client, 'system', 'fake4test')
+        self.nodeclient =j.core.osis.getCategory(self.client, 'system', 'fake4test')
         self.prefix = time.time()
 
     def test_set(self):

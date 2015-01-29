@@ -56,7 +56,7 @@ class ProcessCmds():
         esc = j.clients.elasticsearch.get()
         health = esc.health().get('status', 'N/A')
 
-        hrd = j.core.hrd.getHRD(j.system.fs.joinPaths(j.dirs.cfgDir, 'startup', 'jumpscale__elasticsearch.hrd'))
+        hrd = j.core.hrd.get(j.system.fs.joinPaths(j.dirs.cfgDir, 'startup', 'jumpscale__elasticsearch.hrd'))
         path = hrd.get('process.args').rsplit('es.config=')[1]
         configdata = j.system.fs.fileGetUncommentedContents(path)
         configs = dict()

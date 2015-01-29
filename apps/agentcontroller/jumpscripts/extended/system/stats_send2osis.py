@@ -18,7 +18,7 @@ roles = []
 
 def action():
     statskeys = ('system', 'disk', 'nic')
-    OSISclient=j.core.osis.getClientForNamespace("system")
+    OSISclient=j.core.osis.getNamespace("system")
     allstats = dict()
     for key in statskeys:
         stats = j.system.redisstataggregator.popStats(key)
