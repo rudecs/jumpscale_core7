@@ -8,8 +8,6 @@ import JumpScale.baselib.hash
 import JumpScale.grid.osis
 import JumpScale.baselib.redis
 
-import JumpScale.baselib.redis
-
 from .Job import Job
 
 class JobHandler(object):
@@ -22,8 +20,8 @@ class JobHandler(object):
 
     def _send2Redis(self,job):
         if self._redis==None:
-            if j.system.net.tcpPortConnectionTest("127.0.0.1",9999):    
-                self._redis=j.clients.redis.getRedisClient("127.0.0.1",9999)
+            if j.clients.redis.isRunning('system'):
+                self._redis=j.clients.redis.getByInstanceName('system')
                 luapath="%s/core/jobmanager/job.lua"%j.dirs.jsLibDir
                 if j.system.fs.exists(path=luapath):
                     lua=j.system.fs.fileGetContents(luapath)

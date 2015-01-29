@@ -15,7 +15,14 @@ class HRDBase():
                     knownkey=".".join(knownkey.split(".")[0:depth])
                 if knownkey not in result:                    
                     result.append(knownkey)
-        result.sort()
+
+        def sorter(key):
+            parts = key.split('.')
+            if parts[-1].isdigit():
+                return int(parts[-1])
+            return key
+
+        result.sort(key=sorter)
         return result
 
     def prefixexists(self,key):

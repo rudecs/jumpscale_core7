@@ -4,7 +4,6 @@ def main(q, args, params, tags, tasklet):
     params.result=args["eco"]
 
     eco=args["eco"]
-    # redis=j.clients.redis.getRedisClient("127.0.0.1",9999)
 
     eco.gid = int(eco.gid)
 

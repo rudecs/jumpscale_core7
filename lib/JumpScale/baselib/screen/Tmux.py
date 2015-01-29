@@ -52,6 +52,9 @@ class Tmux:
         for name, value in list(env.items()):
             envstr += "export %s=%s\n" % (name, value)
 
+        # Escape the double quote character in cmd
+        cmd = cmd.replace('"', r'\"')
+
         if cmd.strip():
             self.createWindow(sessionname, screenname,user=tmuxuser)
             pane = self._getPane(sessionname, screenname,user=tmuxuser)

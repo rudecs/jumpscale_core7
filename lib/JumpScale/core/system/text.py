@@ -13,7 +13,8 @@ class Text:
     def toStr(value, codec='utf-8'):
         if isinstance(value, unicode):
             value=unicodedata.normalize('NFKD',value)
-        return value.encode(codec)
+            value = value.encode(codec)
+        return bytes(value)
 
     @staticmethod
     def toAscii(value,maxlen=0):

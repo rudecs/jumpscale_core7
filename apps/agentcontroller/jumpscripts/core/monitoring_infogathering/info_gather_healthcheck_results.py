@@ -29,11 +29,11 @@ def action():
             return status, lastcheck
 
 
-    redisclient = j.clients.redis.getGeventRedisClient('127.0.0.1', 9999)
+    redisclient = j.clients.redis.getByInstanceName('system')
+    redisport = j.clients.redis.getPort('system')
     result['disks'] = get('disks')
-    for port in [9999]:
-        check = 'redis:%s' % port
-        result[check] = get(check)
+    check = 'redis:%s' % redisport
+    result[check] = get(check)
         
     for worker in ['worker_hypervisor_0', 'worker_default_0', 'worker_default_1', 'worker_io_0']:
         check = 'workers:%s' % worker
