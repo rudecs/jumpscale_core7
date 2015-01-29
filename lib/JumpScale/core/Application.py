@@ -303,7 +303,7 @@ class Application:
         uniquekey = 'grid.node.machineguid'
         if j.application.config.exists(uniquekey):
             machineguid = j.application.config.get(uniquekey)
-            if machineguid:
+            if machineguid.strip():
                 return machineguid
 
         nics = j.system.net.getNics()
