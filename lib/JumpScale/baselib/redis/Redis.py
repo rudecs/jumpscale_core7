@@ -94,8 +94,8 @@ class RedisFactory:
 
     def getByInstance(self, instance, gevent=False):
         jp = j.packages.find('jumpscale','redis')[0].getInstance(instance)
-        password = jp.hrd.get('param.passwd', None)
-        port = jp.hrd.getInt('param.port', 9999)
+        password = jp.hrd.get('param.passwd')
+        port = jp.hrd.getInt('param.port')
         password = None if not password.strip() else password
         if gevent:
             return GeventRedis('localhost', port, password=password)
@@ -153,7 +153,7 @@ class RedisFactory:
         raise RuntimeError("Could not find redis port in config file %s" % cpath)
 
     def isRunning(self, name):
-        jpd = j.packages.find('jumpscale','redis')[0]
+        jpd = j.packages.find('','redis')[0]
         if name not in jpd.listInstances():
             return False
         try:
@@ -763,6 +763,10 @@ aof-rewrite-incremental-fsync yes
 # include /path/to/other.conf
 """
 
+        if unixsocket:
+            C = C.replace("# unixsocket $vardir/redis/$name/redis.sock", "unixsocket $vardir/redis/$name/redis.sock")
+            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
+
         C = C.replace("$name", name)
         C = C.replace("$maxram", str(maxram))
         C = C.replace("$port", str(port))
@@ -771,9 +775,9 @@ aof-rewrite-incremental-fsync yes
         if ismaster:
             slave=False
 
-        if unixsocket:
-            C = C.replace("# unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir, "unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir)
-            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
+#        if unixsocket:
+#            C = C.replace("# unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir, "unixsocket %s/redis/$name/redis.sock" % j.dirs.varDir)
+#            C = C.replace("# unixsocketperm 755", "unixsocketperm 770")
 
         if appendonly or ismaster:
             C = C.replace("$appendonly", "yes")

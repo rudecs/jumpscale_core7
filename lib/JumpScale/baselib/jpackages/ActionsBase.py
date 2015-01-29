@@ -41,7 +41,7 @@ class ActionsBase():
 
             tcmd=process["cmd"]
             if tcmd=="jspython":
-                tcmd="source %s/env.sh;jspython"%(j.dirs.baseDir)                
+                tcmd="source %s/env.sh;jspython"%(j.dirs.baseDir)
 
             targs=process["args"]
             tuser=process["user"]
@@ -62,25 +62,25 @@ class ActionsBase():
                     parts=cmd2.split(";")
                     extracmds="\n".join(parts[:-1])
                     cmd2=parts[-1]
-                    
+
                 C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\n%s\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,extracmds,cmd2,name)
                 j.do.delete("/var/log/%s.log"%name)
                 j.do.createDir("/etc/service/%s"%name)
                 path2="/etc/service/%s/run"%name
                 j.do.writeFile(path2,C)
-                j.do.chmod(path2,0o770)            
+                j.do.chmod(path2,0o770)
                 j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
-            
+
             elif startupmethod=="upstart":
                 raise RuntimeError("not implemented")
                 spath="/etc/init/%s.conf"%name
                 if j.system.fs.exists(path=spath):
                     j.system.platform.ubuntu.stopService(self.name)
                     if j.tools.startupmanager.upstart==False:
-                        j.system.fs.remove(spath)  
+                        j.system.fs.remove(spath)
                 cmd2="%s %s"%(tcmd,targs)  #@todo no support for working dir yet
                 j.system.fs.writeFile(self.logfile,"start cmd:\n%s\n"%cmd2,True)#append
-                j.system.process.executeIndependant(cmd2)            
+                j.system.process.executeIndependant(cmd2)
 
             elif startupmethod=="tmux":
                 j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
@@ -103,8 +103,8 @@ class ActionsBase():
                 #         test=j.system.process.isPidAlive(pid)
                 #         if test==False:
                 #             msg="Could not start, pid:%s was not alive."%pid
-                
-                # if log!="":                
+
+                # if log!="":
                 #     msg="%s\nlog:\n%s\n"%(msg,log)
 
                 # self.raiseError(msg)
@@ -125,12 +125,14 @@ class ActionsBase():
 
             msg=""
 
-            if self.jp_instance.getTCPPorts()!=[]:
+            if self.jp_instance.getTCPPorts()==[0]:
+                print 'Done ...'
+            elif self.jp_instance.getTCPPorts()!=[]:
                 ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
                 msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
                 j.events.opserror_critical(msg,"jp.start.failed.ports")
             else:
-                j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")            
+                j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")
 
     def stop(self,**args):
         """
@@ -169,7 +171,7 @@ class ActionsBase():
             for port in self.jp_instance.getTCPPorts():
                 j.system.process.killProcessByPort(port)
             if not self.check_down_local(**args):
-                j.system.process.killProcessByName(process["filterstr"])         
+                j.system.process.killProcessByName(process["filterstr"])
             if not self.check_down_local(**args):
                 j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
 
@@ -181,12 +183,12 @@ class ActionsBase():
     def build(self,**args):
         """
         build instructions for the jpackage, make sure the builded jpackage ends up in right directory, this means where otherwise binaries would run from
-        """        
+        """
         pass
 
     def package(self,**args):
         """
-        copy the files from the production location on the filesystem to the appropriate binary git repo      
+        copy the files from the production location on the filesystem to the appropriate binary git repo
         """
         pass
 
@@ -194,7 +196,7 @@ class ActionsBase():
         """
         do checks to see if process(es) is (are) running.
         this happens on system where process is
-        """      
+        """
         def do(process):
             ports=self.jp_instance.getTCPPorts()
             timeout=process["timeout_start"]
@@ -203,16 +205,16 @@ class ActionsBase():
             if not wait:
                 timeout = 0
             if len(ports)>0:
-                
+
                 for port in ports:
                     #need to do port checks
                     if wait:
-                        if j.system.net.waitConnectionTest("localhost", port, timeout)==False:                    
-                            return False            
+                        if j.system.net.waitConnectionTest("localhost", port, timeout)==False:
+                            return False
                     elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
                             return False
             else:
-                #no ports defined 
+                #no ports defined
                 filterstr=process["filterstr"]
 
                 start=j.base.time.getTimeEpoch()
@@ -222,7 +224,7 @@ class ActionsBase():
                         return True
                     now=j.base.time.getTimeEpoch()
                 return False
-        
+
         for process in self.jp_instance.getProcessDicts():
             result=do(process)
             if result==False:
@@ -234,8 +236,8 @@ class ActionsBase():
         do checks to see if process(es) are all down
         this happens on system where process is
         return True when down
-        """        
-        def do(process):        
+        """
+        def do(process):
             if not self.jp_instance.hrd.exists("process.cwd"):
                 return
 
@@ -250,15 +252,15 @@ class ActionsBase():
                     if j.system.net.waitConnectionTestStopped("localhost", port, timeout)==False:
                         return False
             else:
-                #no ports defined 
+                #no ports defined
                 filterstr=process["filterstr"]
                 return j.system.process.checkProcessRunning(filterstr)==False
 
         for process in self.jp_instance.getProcessDicts():
             result=do(process)
             if result==False:
-                return False            
-        return True        
+                return False
+        return True
 
     def check_requirements(self,**args):
         """

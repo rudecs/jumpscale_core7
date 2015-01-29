@@ -1091,6 +1091,35 @@ class SystemNet:
         j.system.fs.writeFile(hostsfile, filecontents)
 
 
+    def downloadIfNonExistent(self, url, destination_file_path, md5_checksum=None,
+                                 http_auth_username=None, http_auth_password=None):
+        """
+        Downloads the file from the specified url to the specified destination if it is not already there
+        or if the target file checksum doesn't match the expected checksum.
+        """
+
+        if j.system.fs.exists(destination_file_path):
+
+            if md5_checksum:
+
+                if j.tools.hash.md5(destination_file_path) == md5_checksum:
+                    # File exists locally and its checksum checks out!
+                    return
+
+                # On invalid checksum, delete the local file
+                j.system.fs.remove(destination_file_path)
+
+            else:
+                # It exists but no checksum is provided so any existence of the local file suffices.
+                return
+
+        # If reached here then downloading is inevitable
+        self.download(url, localpath=destination_file_path, username=http_auth_username, passwd=http_auth_password)
+
+        # Now check if the downloaded file matches the provided checksum
+        if md5_checksum and not j.tools.hash.md5(destination_file_path) == md5_checksum:
+            raise RuntimeError('The provided MD5 checksum did not match that of a freshly-downloaded file!')
+
     def download(self, url, localpath, username=None, passwd=None):
         '''Download a url to a file or a directory, supported protocols: http, https, ftp, file
         @param url: URL to download from
