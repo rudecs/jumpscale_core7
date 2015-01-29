@@ -1201,9 +1201,6 @@ class InstallTools():
             }
             dest = dest.lower()
 
-        base=url2.split("/",1)[0]        
-
-
         if reset:
             self.delete(dest)
 
