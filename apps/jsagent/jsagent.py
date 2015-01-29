@@ -175,14 +175,11 @@ class ProcessManager():
 
             nid=res["node"]["id"]
             webdiskey=res["webdiskey"]
-            self.hrd.set("grid.node.id",nid)
+            j.application.config.set("grid.node.id",nid)
 
             self.hrd.set("agentcontroller.webdiskey",webdiskey)
-            self.hrd.set("grid.id",res["node"]["gid"])
-            self.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
-            self.hrd.set("grid.master.ip",acip)
-            if aclogin=="root":
-                self.hrd.set("grid.master.superadminpasswd",acpasswd)
+            j.application.config.set("grid.id",res["node"]["gid"])
+            j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
 
             verifyinstall('jumpscale', 'webdis_client', args={"addr":acip,"port":7779})
             verifyinstall('jumpscale', 'osis_client', instance='processmanager', args={"osis.client.addr":acip,"osis.client.port":5544,"osis.client.login":aclogin,"osis.client.passwd":acpasswd})

@@ -207,6 +207,8 @@ class HRD(HRDBase):
         """
         """
         key=key.lower()
+        if self.prefixWithName:
+            key = key.replace('%s.' % self.name, '')
         if key not in self.items:
             self.items[key]=HRDItem(name=key,hrd=self,ttype=ttype,data=value,comments="")
         if data!="":
