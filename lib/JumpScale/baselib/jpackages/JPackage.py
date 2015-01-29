@@ -97,11 +97,10 @@ def deps(F): # F is func or method without instance
 
 class JPackage():
 
-    def __init__(self,domain="",name="",remote=False):
+    def __init__(self,domain="",name=""):
         self.name=name
         self.domain=domain
         self.hrd=None
-        self.remote=remote
         self.metapath="%s/%s"%(j.packages.domains[self.domain],self.name)
         self.hrdpath=""
         self.hrdpath_main=""
@@ -152,7 +151,6 @@ class JPackageInstance():
         self._reposDone={}
         self.args={}
         self._init=False
-        self.remote=jp.remote
 
     @property
     def hrd(self):
@@ -231,31 +229,29 @@ class JPackageInstance():
             args["jp.name"]=self.jp.name
             args["jp.domain"]=self.jp.domain
             args["jp.instance"]=self.instance
+            source="%s/actions.py"%self.jp.metapath
+            j.do.copyFile(source,self.actionspath+".py")
+            source="%s/actions.lua"%self.jp.metapath
+            if j.system.fs.exists(source):
+                j.do.copyFile(source,self.actionspath+".lua")
 
-            if not self.remote:
-                source="%s/actions.py"%self.jp.metapath
-                j.do.copyFile(source,self.actionspath+".py")
-                source="%s/actions.lua"%self.jp.metapath
-                if j.system.fs.exists(source):
-                    j.do.copyFile(source,self.actionspath+".lua")
+            hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
 
-                hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
+            # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
+            self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
 
-                # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
-                self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
+            self.hrd.save()
 
-                self.hrd.save()
+            actionPy = self.actionspath+".py"
+            self.hrd.applyOnFile(actionPy, additionalArgs=args)
+            j.application.config.applyOnFile(actionPy, additionalArgs=args)
 
-                actionPy = self.actionspath+".py"
-                self.hrd.applyOnFile(actionPy, additionalArgs=args)
-                j.application.config.applyOnFile(actionPy, additionalArgs=args)
+            actionLua = self.actionspath+".lua"
+            if j.system.fs.exists(source):
+                self.hrd.applyOnFile(actionLua, additionalArgs=args)
+                j.application.config.applyOnFile(actionLua, additionalArgs=args)
 
-                actionLua = self.actionspath+".lua"
-                if j.system.fs.exists(source):
-                    self.hrd.applyOnFile(actionLua, additionalArgs=args)
-                    j.application.config.applyOnFile(actionLua, additionalArgs=args)
-
-                j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
+            j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
 
             self.actionspath+=".py"
             self.hrd=j.core.hrd.get(self.hrdpath)
@@ -263,11 +259,8 @@ class JPackageInstance():
             modulename="JumpScale.jpackages.%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
             mod = loadmodule(modulename, self.actionspath)
 
-            if not "node2execute" in args:
-                self.actions=mod.Actions()
-                self.actions.jp_instance=self
-            else:
-                self.actions=None
+            self.actions=mod.Actions()
+            self.actions.jp_instance=self
             self._loaded=True
 
     def _getRepo(self,url,recipeitem=None,dest=None):
@@ -380,9 +373,14 @@ class JPackageInstance():
             self.actions.halt(**args)
 
     @deps
-    @remote
     def build(self,args={},deps=True):
         self._load(args=args)
+
+        if "node2execute" in args:
+            node = j.packages.remote.sshPython(jp=self.jp,node=args['node2execute'])
+        else:
+            node = None
+
         for dep in self.getDependencies(build=True):
             if dep.jp.name not in j.packages._justinstalled:
                 if 'args' in dep.__dict__:
@@ -399,10 +397,20 @@ class JPackageInstance():
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
             # print recipeitem
             #pull the required repo
+            from ipdb import set_trace;set_trace()
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
+            if node:
+                dest = "root@%s:%s" %(node.ip, "/opt/build/%s"%name)
+                node.copyTree("/opt/build/%s"%name, )
+        if node:
+            self._build(args=args)
+        else:
+            self.actions.build(**args)
 
-        self.actions.build(**args)
+    @remote
+    def _build(self,args={},deps=True):
+        self.action.build(**args)
 
     @deps
     @remote
@@ -470,7 +478,6 @@ class JPackageInstance():
         self.actions.prepare()
 
     @deps
-    @remote
     def install(self,args={},start=True,deps=True):
         print "INSTALL:%s"%self
 
@@ -487,6 +494,12 @@ class JPackageInstance():
                 j.packages._justinstalled.append(dep.jp.name)
 
         self.prepare(args=args,deps=deps)
+
+        if "node2execute" in args:
+            node = j.packages.remote.sshPython(jp=self.jp,node=args['node2execute'])
+        else:
+            node = None
+
         #download
         for recipeitem in self.hrd.getListFromPrefix("web.export"):
             if "dest" not in recipeitem:
@@ -506,6 +519,9 @@ class JPackageInstance():
             elif j.system.fs.exists(dest):
                 j.system.fs.remove(dest)
             j.system.net.download(fullurl, dest)
+            if node:
+                remoteDest = "root@%s:%s" %(node.ip,dest)
+                node.copyTree(dest,remoteDest)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             # print recipeitem
@@ -544,28 +560,33 @@ class JPackageInstance():
                     raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
                 if dest[0]!="/":
                     dest="/%s"%dest
-                if link:
-                    if not j.system.fs.exists(dest):
-                        j.system.fs.createDir(j.do.getParent(dest))
-                        j.do.symlink(src, dest)
+                if node:
+                    # copy file on remote node with rsync
+                    dest = "root@%s:%s" %(node.ip,dest)
+                    node.copyTree(src,dest)
                 else:
-                    if j.system.fs.exists(path=dest):
-                        if not "delete" in recipeitem:
-                            recipeitem["delete"]="false"
-                        if recipeitem["delete"].lower()=="true":
-                            print ("copy: %s->%s"%(src,dest))
-                            j.do.delete(dest)
-                            j.system.fs.createDir(dest)
-                        else:
-                            print ("merge: %s->%s"%(src,dest))
-                        j.do.copyTree(src,dest)
+                    if link:
+                        if not j.system.fs.exists(dest):
+                            j.system.fs.createDir(j.do.getParent(dest))
+                            j.do.symlink(src, dest)
                     else:
-                        print ("copy: %s->%s"%(src,dest))
-                        j.system.fs.createDir(dest)
-                        j.do.copyTree(src,dest)
+                        if j.system.fs.exists(path=dest):
+                            if not "delete" in recipeitem:
+                                recipeitem["delete"]="false"
+                            if recipeitem["delete"].lower()=="true":
+                                print ("copy: %s->%s"%(src,dest))
+                                j.do.delete(dest)
+                                j.system.fs.createDir(dest)
+                            else:
+                                print ("merge: %s->%s"%(src,dest))
+                            j.do.copyTree(src,dest)
+                        else:
+                            print ("copy: %s->%s"%(src,dest))
+                            j.system.fs.createDir(dest)
+                            j.do.copyTree(src,dest)
 
 
-        self.actions.configure()
+        self.configure(args=args)
 
         self.start(args=args)
 
@@ -698,12 +719,6 @@ class JPackageInstance():
     @deps
     @remote
     def execute(self,args={},deps=False):
-        """
-        execute cmd on jpackage
-        """
-        self._execute(args=args,deps=deps)
-
-    def _execute(self,args={},deps=False):
         """
         execute cmd on jpackage
         """

@@ -68,7 +68,6 @@ group.add_argument('--nodeps',required=False, action='store_true',help='Don\'t p
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
 
 group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
-group.add_argument('--remote',required=False,default=False,action="store_true",help='command use internaly for remote execution, you don\'t need to use it')
 group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
 
 #install

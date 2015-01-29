@@ -27,7 +27,7 @@ class JPackageFactory():
     def type(self, value):
         self._type=value
 
-    def _doinit(self, remote=False):
+    def _doinit(self):
         if self._init==False:
             j.do.debug=False
 
@@ -63,8 +63,8 @@ class JPackageFactory():
     def getDomains(self):
         return self.domains.keys()
 
-    def find(self,domain="",name="",maxnr=None,remote=False):
-        self._doinit(remote=remote)
+    def find(self,domain="",name="",maxnr=None):
+        self._doinit()
 
         #create some shortcuts for fast return
         if domain!="":
@@ -75,51 +75,21 @@ class JPackageFactory():
                     return []
 
         res=[]
-        if not remote:
-            for domainfound in self.domains.keys():
-                for namefound in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
-                    if namefound in [".git"]:
-                        continue
-                    if domain=="" and name=="":
-                        res.append(JPackage(domainfound,namefound))
-                    elif domain=="" and name!="":
-                        if name==namefound:
-                            res.append(JPackage(domainfound,namefound))
-                    elif domain!="" and name=="":
-                        if domain==domainfound:
-                            res.append(JPackage(domainfound,namefound))
-                    else:
-                        if domain==domainfound and name==namefound:
-                            res.append(JPackage(domainfound,namefound))
-        else: #remote execution
-            # for domainfound in self.domains.keys():
-            # from ipdb import set_trace;set_trace()
-            actionsPath = j.dirs.getJPActionsPath()
-            setPkg = set()
-            for namefound in j.system.fs.listFilesInDir(path=actionsPath):
-                split = j.system.fs.getBaseName(namefound).split("__")
-                domainfound = split[0]
-                namefound = split[1]
+        for domainfound in self.domains.keys():
+            for namefound in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
                 if namefound in [".git"]:
                     continue
                 if domain=="" and name=="":
-                    # res.append(JPackage(domainfound,namefound))
-                    setPkg.add("%-15s:%s"%(domainfound,namefound))
+                    res.append(JPackage(domainfound,namefound))
                 elif domain=="" and name!="":
                     if name==namefound:
-                        setPkg.add("%-15s:%s"%(domainfound,namefound))
-                        # res.append(JPackage(domainfound,namefound))
+                        res.append(JPackage(domainfound,namefound))
                 elif domain!="" and name=="":
                     if domain==domainfound:
-                        setPkg.add("%-15s:%s"%(domainfound,namefound))
-                        # res.append(JPackage(domainfound,namefound))
+                        res.append(JPackage(domainfound,namefound))
                 else:
                     if domain==domainfound and name==namefound:
-                        setPkg.add("%-15s:%s"%(domainfound,namefound))
-                        # res.append(JPackage(domainfound,namefound))
-            for pkg in setPkg:
-                domain,name = (pkg.split(':'))
-                res.append(JPackage(domain.strip(),name.strip(),remote=True))
+                        res.append(JPackage(domainfound,namefound))
         #now name & domain is known
         if maxnr!=None and len(res)>maxnr:
             j.events.inputerror_critical("Found more than %s jpackage for query '%s':'%s'"%(maxnr,domain,name))

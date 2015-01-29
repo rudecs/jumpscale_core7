@@ -115,7 +115,7 @@ class InstallTools():
     #         print("copy %s %s" % (source,dest))
     #     shutil.copytree(source,dest)
 
-    def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"],rsync=True):
+    def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"],rsync=True,sshkey=None):
         if self.debug:
             print("copy %s %s" % (source,dest))
         if not self.exists(source):
@@ -135,7 +135,10 @@ class InstallTools():
                 if source[-1]!="/":
                     source+="/"
                 self.createDir(dest)
-            cmd="rsync -a --no-compress --max-delete=0 %s %s %s"%(excl,source,dest)                 
+            cmd="rsync "
+            if sshkey:
+                cmd += "-e 'ssh -i %s'" % sshkey
+            cmd+=" -a --no-compress --max-delete=0 %s %s %s"%(excl,source,dest)                 
             self.execute(cmd)
             return()
         else:

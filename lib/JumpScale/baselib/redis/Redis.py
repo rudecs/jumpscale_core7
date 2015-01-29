@@ -153,7 +153,7 @@ class RedisFactory:
         raise RuntimeError("Could not find redis port in config file %s" % cpath)
 
     def isRunning(self, name):
-        jpd = j.packages.find('jumpscale','redis')[0]
+        jpd = j.packages.find('','redis')[0]
         if name not in jpd.listInstances():
             return False
         try:
