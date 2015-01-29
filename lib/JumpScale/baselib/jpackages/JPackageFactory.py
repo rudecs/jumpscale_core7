@@ -27,7 +27,7 @@ class JPackageFactory():
     def type(self, value):
         self._type=value
 
-    def _doinit(self, remote=False):
+    def _doinit(self):
         if self._init==False:
             j.do.debug=False
 
