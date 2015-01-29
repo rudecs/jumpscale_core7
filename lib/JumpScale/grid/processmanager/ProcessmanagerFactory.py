@@ -45,7 +45,7 @@ class ProcessmanagerFactory:
         if j.__dict__.has_key("processmanager") and j.processmanager.__dict__.has_key("redis_queues"):
             self.redis=j.processmanager.redis_mem
         else:
-            self.redis = j.clients.redis.getGeventRedisClient("127.0.0.1", 9999)
+            self.redis = j.clients.redis.getByInstance("system")
 
     def start(self):
 
