@@ -1201,15 +1201,13 @@ class InstallTools():
             }
             dest = dest.lower()
 
-<<<<<<< HEAD
         base=url2.split("/",1)[0]        
-=======
+
 
         if reset:
             self.delete(dest)
 
         self.createDir(dest)
->>>>>>> ca8ec0e523150490c60a942c84b5e2c52b3df628
 
         return repository_host, repository_type, repository_account, repository_name, dest, repository_url
 
