@@ -27,7 +27,7 @@ def action(nid=None):
     except:
         import json
 
-    rediscl = j.clients.credis.getRedisClient('127.0.0.1', 9999)
+    rediscl = j.clients.credis.getByInstanceName('system')
     if nid is None:
         results, errors = j.core.grid.healthchecker.runAll()
         rediscl.hset('healthcheck:monitoring', 'results', json.dumps(results))

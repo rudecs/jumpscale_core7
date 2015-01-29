@@ -27,9 +27,9 @@ parser.add_argument('-i', '--instance', help="Agentcontroller instance", require
 opts = parser.parse_args()
 j.application.instanceconfig = j.application.getAppInstanceHRD(name="agentcontroller",instance=opts.instance)
 
-while j.system.net.tcpPortConnectionTest("127.0.0.1",9999)==False:
+while not j.clients.redis.isRunning('system'):
     time.sleep(0.1)
-    print "cannot connect to redis main, will keep on trying forever, please start redis production (port 9999)"
+    print "cannot connect to redis system, will keep on trying forever, please start redis system"
 
 j.application.start("jumpscale:agentcontroller")
 j.application.initGrid()
@@ -74,8 +74,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
         self.nodeclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'node')
         self.jumpscriptclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'jumpscript')
 
-        self.redisport=9999
-        self.redis = j.clients.redis.getRedisClient("127.0.0.1", self.redisport)
+        self.redis = j.clients.redis.getByInstanceName('system')
         self.roles2agents = dict()
         self.sessionsUpdateTime = dict()
         self.agents2roles = dict()
@@ -250,16 +249,15 @@ class ControllerCMDS(tornado.web.RequestHandler):
         qname = role or nid
         self._log("get cmd queue for %s %s"%(gid,qname))
         queuename = "commands:queue:%s:%s" % (gid, qname)
-        return j.clients.redis.getRedisQueue("127.0.0.1", self.redisport, queuename, fromcache=True)
+        return self.redis.getQueue(queuename)
 
     def _getWorkQueue(self, session):
-        cl = j.clients.redis.getRedisClient("127.0.0.1", self.redisport)
         class MultiKeyQueue(object):
             def __init__(self, keys):
                 self.keys = keys
 
             def get(self, timeout=None):
-                data = cl.blpop(self.keys, timeout=timeout)
+                data = self.redis.blpop(self.keys, timeout=timeout)
                 if data:
                     return data[1]
                 return None
@@ -275,8 +273,8 @@ class ControllerCMDS(tornado.web.RequestHandler):
     def _getJobQueue(self, jobguid):
         queuename = "jobqueue:%s" % jobguid
         self._log("get job queue for job:%s"%(jobguid))
-        return j.clients.redis.getRedisQueue("127.0.0.1", self.redisport, queuename, fromcache=False)
-        
+        return self.redis.getQueue(queuename) #fromcache=False)c
+
     def _setRoles(self,roles, agent):
         for role, agents in self.roles2agents.iteritems():
             if agent in agents:
@@ -380,9 +378,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
             key = "%s_%s" % (t.organization, t.name)
             self.jumpscripts[key] = t
             self.jumpscriptsId[key0] = t
-        j.core.jumpscripts.pushToGridMaster()
 
-       
     def getJumpscript(self, organization, name,gid=None,reload=False, session=None):
         if session<>None:
             self._adminAuth(session.user,session.passwd)
@@ -702,7 +698,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
             result.append(jobresult)
         return result
 
-    def getAllJumpscripts(self, bz2_compressed=True, session=None):
+    def getAllJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts'), session=None):
         """
         Returns the available jumpscripts as a Base64-encoded TAR archive that is optionally compressed using bzip2.
 

@@ -6,7 +6,7 @@ def main(q, args, params, tags, tasklet):
 
 
     log=args["logobj"]
-    redis=j.clients.redis.getRedisClient("127.0.0.1",9999)
+    redis=j.clients.redis.getByInstanceName('system')
 
     log.gid = int(log.gid)
 

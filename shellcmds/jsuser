@@ -189,8 +189,6 @@ if opts.action =='list':
     out.sort()
     out="\n".join(out)
     print(out)
-    print()
-            
 
 
 j.application.stop()

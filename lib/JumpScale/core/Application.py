@@ -57,10 +57,9 @@ class Application:
         self.config = j.core.hrd.get(path="%s/system" % j.dirs.hrdDir)
 
     def connectRedis(self):
-
-        if j.system.net.tcpPortConnectionTest("127.0.0.1",9999):
-            import JumpScale.baselib.credis # leave import here to make bootrap work
-            self.redis=j.clients.credis.getRedisClient("127.0.0.1",9999)
+        import JumpScale.baselib.redis
+        if j.clients.redis.isRunning('system'):
+            self.redis = j.clients.redis.getByInstanceName('system')
         else:
             self.redis=None
 

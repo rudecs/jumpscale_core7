@@ -1,6 +1,5 @@
 from JumpScale import j
 import ujson
-from redis import Redis
 # from rq import Queue
 # import JumpScale.baselib.redisworker
 from JumpScale.baselib.redisworker.RedisWorker import RedisWorkerFactory
@@ -26,7 +25,7 @@ class JumpscriptsCmds():
         # self.lastMonitorResult=None
         self.lastMonitorTime=None
 
-        self.redis = Redis("127.0.0.1", 9999, password=None)
+        self.redis = j.clients.redis.getByInstanceName("system")
 
     def _init(self):
         self.loadJumpscripts(init=True)
@@ -42,7 +41,7 @@ class JumpscriptsCmds():
         self.jumpscripts={}
 
         import JumpScale.grid.jumpscripts
-        j.core.jumpscripts.loadFromGridMaster()
+        j.core.jumpscripts.loadFromAC(self.agentcontroller_client)
 
         jspath = j.system.fs.joinPaths(j.dirs.baseDir, 'apps', 'processmanager', 'jumpscripts')
         if not j.system.fs.exists(path=jspath):

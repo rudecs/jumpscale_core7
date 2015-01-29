@@ -64,7 +64,7 @@ group.add_argument('-n','--name',required=False, help='Name of jpackage to be in
 group.add_argument('-d','--domain',required=False, help='Name of jpackage domain to be installed',default="")
 group.add_argument('-i','--instance',required=False, help='Instance of jpackage (default main)',default=None)
 group.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
-group.add_argument('--nodeps',required=False, action='store_true',help='do action on dependencies, default True',default=False)
+group.add_argument('--nodeps',required=False, action='store_true',help='Don\'t perfomr action on dependencies, default False',default=False)
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
 
 group.add_argument('--node',required=False,default=None,help='node on which to execute the action')

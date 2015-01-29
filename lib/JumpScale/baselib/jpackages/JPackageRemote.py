@@ -153,7 +153,8 @@ class RemoteLua(object):
     def execute(self, action):
         # add hrd content into actions file
         # the hrd is converted into a lua table
-        dictHRD = self.jp.hrd.getHRDAsDict()
+        dictHRD = self.self.jp.hrd.getHRDAsDict()
+        from ipdb import set_trace;set_trace()
         jsonHRD = json.dumps(dictHRD)
         content = """local json = require 'json'
         local hrd = json.decode.decode('%s')
@@ -161,14 +162,14 @@ class RemoteLua(object):
         """ % jsonHRD
 
         #put action file on dest system
-        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
+        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.self.jp.name,self.self.jp.instance)
         content += j.system.fs.fileGetContents(actionfile)
         # add the call to the wanted function into the lua file
         # and pass the args table we construct from the hrd
         content+= "\n%s(hrd)"%action
-        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.jp.name,self.jp.instance)
+        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.self.jp.name,self.self.jp.instance)
         self.cl.file_write(actionfiledest,content)
-
-        cmd = 'luajit %s' % (actionfiledest)
+        j.system.fs.writeFile("/opt/code/action.lua",content)
+        cmd = 'lua %s' % (actionfiledest)
         self.cl.run(cmd)
         del j.remote.cuisine.fabric.env["key"]

@@ -21,6 +21,7 @@ from threading import Thread
 import Queue
 import os
 import smtplib
+import re
 
 # from JumpScale import j
 
@@ -1137,60 +1138,76 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def getGitRepoArgs(self,url="",dest=None,login=None,passwd=None,reset=False):
+    def getGitRepoArgs(self, url="", dest=None, login=None, passwd=None, reset=False):
+        """
+        Extracts and returns data useful in cloning a Git repository.
 
-        url2=""
-        if url!="":
-            if url.startswith("https://"):
-                pre="https://"
-                url2=url[len(pre):]
-            elif url.startswith("http://"):
-                pre="http://"
-                url2=url[len(pre):]
-            else:
-                raise RuntimeError("Url needs to start with 'http(s)://'")
+        Args:
+            url (str): the HTTP URL of the Git repository to clone from. ex: 'https://github.com/odoo/odoo.git'
+            dest (str): the local filesystem path to clone to
+            login (str): authentication login name
+            passwd (str): authentication login password
+            reset (boolean): if True, any cached clone of the Git repository will be removed
 
-            url2=url2.rstrip("/")
-            if not url2.endswith(".git"):
-                #no .git at end
-                url2+=".git"
+        Returns:
+            (repository_host, repository_type, repository_account, repository_name, repository_url)
+        """
 
-            if not url.endswith(".git"):
-                #no .git at end
-                url+=".git"
+        if not url:
+            raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
 
-            if login == 'ssh':
-                splits = url2.split('/')
-                url = 'git@%s:%s' % (splits[0], '/'.join(splits[1:]))
-            elif login!=None and login!="guest":
-                url="%s%s:%s@%s"%(pre,login,passwd,url2)
-            else:
-                url="%s@%s"%(pre,url2)
+        url_pattern = re.compile('^(https?://)(.*?)/(.*?)/(.*?)/?$')
+        match = url_pattern.match(url)
+        if not match:
+            raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
 
-            if dest==None:
-                url3=url2.strip(" /")
+        protocol, repository_host, repository_account, repository_name = match.groups()
 
-                ttype,account,repo=url3.split("/",3)
-                if ttype.find(".")!=-1:
-                    ttype=ttype.split(".",1)[0]
-                repo=repo.lower().replace(".git","")
-                dest="/opt/code/%s/%s/%s/"%(ttype.lower(),account.lower(),repo)    
+        if not repository_name.endswith('.git'):
+            repository_name += '.git'
+
+        if login == 'ssh':
+            repository_url = 'git@%(host)s:%(account)s/%(name)s' % {
+                'host': repository_host,
+                'account': repository_account,
+                'name': repository_name,
+            }
+
+        elif login and login != 'guest':
+            repository_url = '%(protocol)s%(login)s:%(password)s@%(host)s/%(account)s/%(repo)s' % {
+                'protocol': protocol,
+                'login': login,
+                'password': passwd,
+                'host': repository_host,
+                'account': repository_account,
+                'repo': repository_name,
+            }
+
         else:
-            raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")            
+            repository_url = '%(protocol)s%(host)s/%(account)s/%(repo)s' % {
+                'protocol': protocol,
+                'host': repository_host,
+                'account': repository_account,
+                'repo': repository_name,
+            }
+
+        repository_type = repository_host.split('.')[0] if '.' in repository_host else repository_host
+
+        if not dest:
+            dest = '/opt/code/%(type)s/%(account)s/%(repo_name)s' % {
+                'type': repository_type,
+                'account': repository_account,
+                'repo_name': repository_name[:-4],  # Remove the trailling '.git'
+            }
+            dest = dest.lower()
+
 
         if reset:
-            if url=="":
-                raise RuntimeError("cannot reset a repo when url not specified")
             self.delete(dest)
 
         self.createDir(dest)
 
-        base=url2.split("/",1)[0]
-
-
-        
-
-        return base,ttype,account,repo,dest,url        
+        return repository_host, repository_type, repository_account, repository_name, dest, repository_url
 
     def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch=None,revision=None):
         """
@@ -1217,15 +1234,15 @@ class InstallTools():
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
-                    cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
+                    cmd="cd %s;git -c http.sslVerify=false pull %s origin %s"%(dest,url, branch)
                 else:
-                    cmd="cd %s;git -c http.sslVerify=false pull"%dest
+                    cmd="cd %s;git -c http.sslVerify=false pull %s" % (dest, url)
                 self.execute(cmd,timeout=600)
         else:
             print(("git clone %s -> %s"%(url,dest)))
             extra = ""
             if depth and depth != 0:
-                 extra = "--depth=%s" % depth
+                extra = "--depth=%s" % depth
             if branch!=None:
                 cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
             else:

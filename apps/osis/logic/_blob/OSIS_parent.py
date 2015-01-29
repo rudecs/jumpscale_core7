@@ -19,6 +19,7 @@ class mainclass(OSISStoreMongo):
             changed = False
             new = True
         key = key.replace('-', '')
+        value = j.tools.text.toStr(value)
         dbval = {"_id": key, "guid": key, "value": bson.Binary(value)}
         db.save(dbval)
         return [key, new, changed]

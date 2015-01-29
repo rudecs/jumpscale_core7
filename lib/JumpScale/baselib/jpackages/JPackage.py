@@ -393,13 +393,16 @@ class JPackageInstance():
             # print recipeitem
             #pull the required repo
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
-        from ipdb import set_trace;set_trace()
+
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
             # print recipeitem
             #pull the required repo
+            from ipdb import set_trace;set_trace()
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
-
+            if node:
+                dest = "root@%s:%s" %(node.ip, "/opt/build/%s"%name)
+                node.copyTree("/opt/build/%s"%name, )
         if node:
             self._build(args=args)
         else:
