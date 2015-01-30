@@ -71,14 +71,20 @@ class Ubuntu:
             return False
         return True
 
-    def createUser(self,name,passwd,home=None,creategroup=True):
+    def createUser(self,name,passwd,home=None,creategroup=True,deletefirst=False):
         # quietly add a user without password
+
+        if deletefirst:
+            cmd='deluser %s'%(name)
+            j.do.execute(cmd,outputStdout=False, outputStderr=False, dieOnNonZeroExitCode=False)
+
         if self.existsUser(name)==False:
             cmd='adduser --quiet --disabled-password -shell /bin/bash --home /home/%s --gecos "User" %s'%(name,name)
             j.do.execute(cmd)
 
-        # set password
         cmd='echo "%s:%s" | chpasswd'%(name,passwd)
+
+        # set password
         j.do.execute(cmd)
 
         if creategroup and not self.existsGroup(name):
