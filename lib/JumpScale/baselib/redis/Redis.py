@@ -92,7 +92,7 @@ class RedisFactory:
             self.redis[key] = Redis(ipaddr, port, password=password)
         return self.redis[key]
 
-    def getByInstanceName(self, instance, gevent=False):
+    def getByInstance(self, instance, gevent=False):
         jp = j.packages.find('jumpscale','redis')[0].getInstance(instance)
         password = jp.hrd.get('param.passwd')
         port = jp.hrd.getInt('param.port')
@@ -157,7 +157,7 @@ class RedisFactory:
         if name not in jpd.listInstances():
             return False
         try:
-            self.getByInstanceName('system').ping()
+            self.getByInstance('system').ping()
             return True
         except:
             return False

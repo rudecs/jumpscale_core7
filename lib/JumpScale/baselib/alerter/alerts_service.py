@@ -32,10 +32,10 @@ class Handler(object):
 class AlertService(object):
 
     def __init__(self):
-        self.rediscl = j.clients.redis.getByInstanceName('system')
+        self.rediscl = j.clients.redis.getByInstance('system')
         self.alertqueue = self.rediscl.getQueue('alerts')
-        self.alerts_client = j.core.portal.getClientByInstance('main').actors.system.alerts
-        self.scl = j.core.osis.getClientForNamespace('system')
+        self.alerts_client = j.core.portal.getByInstance('main').actors.system.alerts
+        self.scl = j.core.osis.getNamespace('system')
         self.handlers = list()
         self.timers = dict()
         self.loadHandlers()

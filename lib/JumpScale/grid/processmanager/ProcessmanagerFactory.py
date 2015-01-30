@@ -23,7 +23,7 @@ class DummyDaemon():
     def osis(self):
         if not self._osis:
             try:
-                self._osis = j.core.osis.getClientByInstance()
+                self._osis = j.core.osis.getByInstance()
             except KeyError:
                 return None
         return self._osis
@@ -45,7 +45,7 @@ class ProcessmanagerFactory:
         if j.__dict__.has_key("processmanager") and j.processmanager.__dict__.has_key("redis_queues"):
             self.redis=j.processmanager.redis_mem
         else:
-            self.redis = j.clients.redis.getGeventRedisClient("127.0.0.1", 9999)
+            self.redis = j.clients.redis.getByInstance("system")
 
     def start(self):
 

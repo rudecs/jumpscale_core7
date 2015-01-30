@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     j.application.instanceconfig = j.application.getAppInstanceHRD(name="jsagent",instance=opts.instance)
 
-    j.core.osis.client = j.core.osis.getClientByInstance(die=False)
+    j.core.osis.client = j.core.osis.getByInstance(die=False)
 
     j.application.start("jumpscale:worker:%s" % opts.queuename)
 

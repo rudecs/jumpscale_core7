@@ -29,7 +29,7 @@ def action():
             return status, lastcheck
 
 
-    redisclient = j.clients.redis.getByInstanceName('system')
+    redisclient = j.clients.redis.getByInstance('system')
     redisport = j.clients.redis.getPort('system')
     result['disks'] = get('disks')
     check = 'redis:%s' % redisport

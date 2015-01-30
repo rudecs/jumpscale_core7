@@ -30,7 +30,7 @@ class NameSpaceClient(object):
         self._client = client
         self._namespace = namespace
         for category in client.listNamespaceCategories(namespace):
-            cclient = j.core.osis.getClientForCategory(self._client, self._namespace, category)
+            cclient = j.core.osis.getCategory(self._client, self._namespace, category)
             setattr(self, category, cclient)
 
     def __getattr__(self, category):
@@ -38,7 +38,7 @@ class NameSpaceClient(object):
         if category not in categories:
             raise AttributeError("Category %s does not exists in namespace %s" % (category, self._namespace))
 
-        cclient = j.core.osis.getClientForCategory(self._client, self._namespace, category)
+        cclient = j.core.osis.getCategory(self._client, self._namespace, category)
         setattr(self, category, cclient)
         return cclient
 
@@ -119,7 +119,7 @@ class OSISFactory:
         if self.superadminpasswd=="":
              j.events.inputerror_critical("cannot start osis, superadminpasswd needs to be specified")
 
-        daemon = j.servers.tornado.getServer(port=port)
+        daemon = j.servers.geventws.getServer(port=port)
         OSISCMDS.dbconnections = dbconnections
         daemon.addCMDsInterface(OSISCMDS, category="osis")  # pass as class not as object !!!
         daemon.daemon.cmdsInterfaces["osis"].init(path=path)#,esip=elasticsearchip,esport=elasticsearchport,db=db)
@@ -167,11 +167,11 @@ class OSISFactory:
 
         with j.logger.nostdout():
             #client = j.core.zdaemon.getZDaemonHAClient(connections, category="osis", user=user, passwd=passwd,ssl=ssl,sendformat="j", returnformat="j",gevent=gevent)
-            client= j.servers.tornado.getClient(connections[0][0], connections[0][1], user=user, passwd=passwd,category="osis")
+            client= j.servers.geventws.getClient(connections[0][0], connections[0][1], user=user, passwd=passwd,category="osis")
         self.osisConnections[key] = client
         return client
 
-    def getClientByInstance(self, instance=None, ssl=False, gevent=False,die=True):
+    def getByInstance(self, instance=None, ssl=False, gevent=False,die=True):
         if instance is None:
             if hasattr(j.application, 'instanceconfig'):
                 instance = j.application.instanceconfig.get('osis.connection')
@@ -191,20 +191,20 @@ class OSISFactory:
         if die:
             j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)
 
-    def getClientForNamespace(self, namespace, client=None):
+    def getNamespace(self, namespace, client=None):
         if client==None:
-            client = self.getClientByInstance('main')
+            client = self.getByInstance('main')
         return NameSpaceClient(client, namespace)
 
-    def getClientForCategory(self, client, namespace, category):
+    def getCategory(self, client, namespace, category):
         """
         how to use
 
-        client=j.core.osis.getClientByInstance('main')
-        client4node=j.core.osis.getClientForCategory(client,"system","node")
+        client=j.core.osis.getByInstance('main')
+        client4node=j.core.osis.getCategory(client,"system","node")
         """
         if client==None:
-            raise RuntimeError("Client cannot be None: getClientForCategory %s/%s"%(namespace, category))
+            raise RuntimeError("Client cannot be None: getCategory %s/%s"%(namespace, category))
         return OSISClientForCat(client, namespace, category)
 
     def getOsisBaseObjectClass(self):

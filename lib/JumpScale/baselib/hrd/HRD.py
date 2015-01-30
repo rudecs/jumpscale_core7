@@ -207,6 +207,8 @@ class HRD(HRDBase):
         """
         """
         key=key.lower()
+        if self.prefixWithName:
+            key = key.replace('%s.' % self.name, '')
         if key not in self.items:
             self.items[key]=HRDItem(name=key,hrd=self,ttype=ttype,data=value,comments="")
         if data!="":
@@ -215,7 +217,6 @@ class HRD(HRDBase):
             self.items[key].set(value,persistent=persistent,comments=comments,temp=temp)
 
     def get(self,key,default=None,):
-        key=key.lower()
         if key not in self.items:
             if default==None:
                 j.events.inputerror_critical("Cannot find value with key %s in tree %s."%(key,self.path),"hrd.get.notexist")

@@ -1,4 +1,5 @@
 from JumpScale import j
+import gevent
 import ujson
 # from rq import Queue
 # import JumpScale.baselib.redisworker
@@ -25,7 +26,7 @@ class JumpscriptsCmds():
         # self.lastMonitorResult=None
         self.lastMonitorTime=None
 
-        self.redis = j.clients.redis.getByInstanceName("system")
+        self.redis = j.clients.redis.getByInstance("system", gevent=True)
 
     def _init(self):
         self.loadJumpscripts(init=True)
@@ -65,10 +66,10 @@ class JumpscriptsCmds():
     def _loadFromPath(self, path):
         self.startatboot = list()
         jumpscripts = self.agentcontroller_client.listJumpscripts()
-        iddict = { (org, name): jsid for jsid, org, name, _,_ in jumpscripts }
+        iddict = { (org, name): jsid for jsid, org, name in jumpscripts }
         for jscriptpath in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
             js = Jumpscript(path=jscriptpath)
-            js.id = iddict[(js.organization, js.name)]
+            js.id = iddict.get((js.organization, js.name))
             # print "from local:",
             self._processJumpscript(js, self.startatboot)
 
@@ -137,7 +138,7 @@ class JumpscriptsCmds():
             wait = lambda : period
         while True:
             waittime = wait()
-            time.sleep(waittime)
+            gevent.sleep(waittime)
             self._run(period, redisw)
 
     def _configureScheduling(self):

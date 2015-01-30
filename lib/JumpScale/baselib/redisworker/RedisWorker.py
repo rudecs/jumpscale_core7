@@ -96,7 +96,7 @@ class RedisWorkerFactory(object):
     @property
     def redis(self):
         if self._redis is None:
-            self._redis=j.clients.redis.getByInstanceName("system")
+            self._redis=j.clients.redis.getByInstance("system", gevent=True)
             self._redis.delete("workers:sessions")
             #local jumpscripts start at 10000
             if not self._redis.exists("workers:jumpscriptlastid") or int(self._redis.get("workers:jumpscriptlastid"))<1000000:

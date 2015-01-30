@@ -25,8 +25,8 @@ def action():
     import statsd
     import psutil
 
-    dcl = j.core.osis.getClientForCategory(j.core.osis.client, "system", "disk")
-    rediscl = j.clients.redis.getByInstanceName('system')
+    dcl = j.core.osis.getCategory(j.core.osis.client, "system", "disk")
+    rediscl = j.clients.redis.getByInstance('system')
     stats = statsd.StatsClient()
     pipe = stats.pipeline()
 
@@ -79,5 +79,5 @@ def action():
 
 if __name__ == '__main__':
     import JumpScale.grid.osis
-    j.core.osis.client = j.core.osis.getClientByInstance('processmanager')
+    j.core.osis.client = j.core.osis.getByInstance('processmanager')
     action()

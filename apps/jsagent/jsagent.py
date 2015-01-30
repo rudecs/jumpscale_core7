@@ -1,7 +1,7 @@
 # gevent monkey patching should be done as soon as possible dont move!
-# import gevent
-# import gevent.monkey
-# gevent.monkey.patch_all()
+import gevent
+import gevent.monkey
+gevent.monkey.patch_all()
 
 from JumpScale import j
 
@@ -13,13 +13,9 @@ import psutil
 import os
 import select
 import subprocess
-import tornado
-from tornado.concurrent import run_on_executor
 import JumpScale.grid.processmanager
 from JumpScale.baselib import cmdutils
 import JumpScale.grid.agentcontroller
-
-import tornado.ioloop
 import socket
 
 
@@ -110,7 +106,7 @@ class Process():
     __repr__=__str__
 
 
-class ProcessManager(tornado.web.RequestHandler):
+class ProcessManager():
     def __init__(self,reset=False):
 
         self.processes = list()
@@ -129,7 +125,7 @@ class ProcessManager(tornado.web.RequestHandler):
             if j.system.net.waitConnectionTest("localhost",9999,10)==False:
                 j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 
-        self.redis_mem=j.clients.redis.getByInstanceName('system')
+        self.redis_mem=j.clients.redis.getByInstance('system')
 
         self.redis_queues={}
         self.redis_queues["io"] = self.redis_mem.getQueue("workers:work:io")
@@ -174,19 +170,16 @@ class ProcessManager(tornado.web.RequestHandler):
                 print("cannot connect to agentcontroller, will retry forever: '%s:%s'"%(acip,acport))
 
             #now register to agentcontroller
-            self.acclient = j.clients.agentcontroller.get(acip, login=aclogin, passwd=acpasswd)
+            self.acclient = j.clients.agentcontroller.get(acip, login=aclogin, passwd=acpasswd, new=True)
             res=self.acclient.registerNode(hostname=socket.gethostname(), machineguid=j.application.getUniqueMachineId())
 
             nid=res["node"]["id"]
             webdiskey=res["webdiskey"]
-            self.hrd.set("grid.node.id",nid)
+            j.application.config.set("grid.node.id",nid)
 
             self.hrd.set("agentcontroller.webdiskey",webdiskey)
-            self.hrd.set("grid.id",res["node"]["gid"])
-            self.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
-            self.hrd.set("grid.master.ip",acip)
-            if aclogin=="root":
-                self.hrd.set("grid.master.superadminpasswd",acpasswd)
+            j.application.config.set("grid.id",res["node"]["gid"])
+            j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
 
             verifyinstall('jumpscale', 'webdis_client', args={"addr":acip,"port":7779})
             verifyinstall('jumpscale', 'osis_client', instance='processmanager', args={"osis.client.addr":acip,"osis.client.port":5544,"osis.client.login":aclogin,"osis.client.passwd":acpasswd})
@@ -198,29 +191,15 @@ class ProcessManager(tornado.web.RequestHandler):
             self.acclient=None
 
 
-    def _stack_context_handle_exception(self, *kwargs):
-        print kwargs
-        
-    @tornado.web.asynchronous
-    @tornado.gen.coroutine
     def start(self):
 
         # self._webserverStart()        
         self._workerStart()
 
         j.core.grid.init()
-
-        # loop = tornado.ioloop.IOLoop.instance()
-        response = self._processManagerStart()
-        print response
-        # yield loop.add_future(self._processManagerStart, callback=self.callback)
-        # gevent.spawn(self._processManagerStart)
+        gevent.spawn(self._processManagerStart)
 
         self.mainloop()
-
-
-    def callback(self):
-        import ipdb; ipdb.set_trace()
 
     def _webserverStart(self):
         #start webserver
@@ -237,9 +216,8 @@ class ProcessManager(tornado.web.RequestHandler):
         p.start()
         self.processes.append(p)
 
-    @tornado.gen.coroutine
     def _processManagerStart(self):
-        yield tornado.gen.Task(j.core.processmanager.start())
+        j.core.processmanager.start()
 
     def _workerStart(self):
         pwd = '/opt/jumpscale7/apps/jsagent/lib'
@@ -308,12 +286,12 @@ processes=pm.processes
 pm.services=[item.strip().lower() for item in opts.services.split(",")]
 
 
-# from lib.worker import Worker
+from lib.worker import Worker
 
 #I had to do this in mother process otherwise weird issues caused by gevent !!!!!!!
-j.core.osis.client = j.core.osis.getClientByInstance()
+j.core.osis.client = j.core.osis.getByInstance()
 
-# from gevent.pywsgi import WSGIServer
+from gevent.pywsgi import WSGIServer
 
 pm.start()
 

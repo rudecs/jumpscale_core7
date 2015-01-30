@@ -27,7 +27,7 @@ def timeago(t):
     return "%ss"%ago
 
 redism=j.application.redis
-redisp=j.clients.redis.getByInstanceName("system")
+redisp=j.clients.redis.getByInstance("system", gevent=True)
 
 if opts.action =='workerwatchdog':
     print("hget:workers:watchdog")

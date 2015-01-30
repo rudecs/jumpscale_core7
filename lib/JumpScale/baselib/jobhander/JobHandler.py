@@ -21,7 +21,7 @@ class JobHandler(object):
     def _send2Redis(self,job):
         if self._redis==None:
             if j.clients.redis.isRunning('system'):
-                self._redis=j.clients.redis.getByInstanceName('system')
+                self._redis=j.clients.redis.getByInstance('system')
                 luapath="%s/core/jobmanager/job.lua"%j.dirs.jsLibDir
                 if j.system.fs.exists(path=luapath):
                     lua=j.system.fs.fileGetContents(luapath)

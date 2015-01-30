@@ -23,7 +23,7 @@ if __name__ == '__main__':
         print("Next time you can use %s as secret" % newsecret)
         cl = j.core.portal.getClient(opts.host, opts.port, newsecret)
     else:
-        cl = j.core.portal.getClientByInstance(opts.portclientinstance)
+        cl = j.core.portal.getByInstance(opts.portclientinstance)
         portalcfgpath = j.system.fs.joinPaths(j.dirs.baseDir, 'apps', 'cloudbroker', 'cfg', 'portal')
     j.apps = cl.actors
 

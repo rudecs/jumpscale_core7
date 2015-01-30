@@ -45,5 +45,5 @@ def action():
 
 if __name__ == '__main__':
     import JumpScale.grid.osis
-    j.core.osis.client = j.core.osis.getClientByInstance('main')
+    j.core.osis.client = j.core.osis.getByInstance('main')
     action()

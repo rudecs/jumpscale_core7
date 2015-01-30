@@ -27,8 +27,8 @@ except:
     enable=False
 
 def action():
-    syscl = j.core.osis.getClientForNamespace("system")
-    rediscl = j.clients.redis.getByInstanceName('system')
+    syscl = j.core.osis.getNamespace("system")
+    rediscl = j.clients.redis.getByInstance('system')
 
     con = libvirt.open('qemu:///system')
     #con = libvirt.open('qemu+ssh://10.101.190.24/system')
@@ -109,5 +109,5 @@ def action():
 
 if __name__ == '__main__':
     import JumpScale.grid.osis
-    j.core.osis.client = j.core.osis.getClientByInstance('processmanager')
+    j.core.osis.client = j.core.osis.getByInstance('processmanager')
     action()

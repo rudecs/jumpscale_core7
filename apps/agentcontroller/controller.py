@@ -1,15 +1,14 @@
 #this must be in the beginning so things are patched before ever imported by other libraries
-# from gevent import monkey
-# import gevent
-# monkey.patch_socket()
-# monkey.patch_thread()
-# monkey.patch_time()
+from gevent import monkey
+import gevent
+monkey.patch_socket()
+monkey.patch_thread()
+monkey.patch_time()
 
 from JumpScale import j
 from JumpScale.baselib.cmdutils import argparse
-import tornado
+import JumpScale.grid.geventws
 import JumpScale.grid.osis
-from tornado.concurrent import run_on_executor
 import importlib
 import sys
 import copy
@@ -56,7 +55,7 @@ class JumpscriptHandler(FileSystemEventHandler):
             except:
                 pass # reload failed shoudl try again next file change
 
-class ControllerCMDS(tornado.web.RequestHandler):
+class ControllerCMDS():
 
     def __init__(self, daemon):
         self.debug = False # set true for verbose output
@@ -69,44 +68,24 @@ class ControllerCMDS(tornado.web.RequestHandler):
         self.jumpscriptsFromKeys = {}
         self.jumpscriptsId={}
 
-        self.osisclient = j.core.osis.getClientByInstance()
-        self.jobclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'job')
-        self.nodeclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'node')
-        self.jumpscriptclient = j.core.osis.getClientForCategory(self.osisclient, 'system', 'jumpscript')
+        self.osisclient = j.core.osis.getByInstance(gevent=True)
+        self.jobclient = j.core.osis.getCategory(self.osisclient, 'system', 'job')
+        self.nodeclient = j.core.osis.getCategory(self.osisclient, 'system', 'node')
+        self.jumpscriptclient = j.core.osis.getCategory(self.osisclient, 'system', 'jumpscript')
 
-        self.redis = j.clients.redis.getByInstanceName('system')
+        self.redis = j.clients.redis.getByInstance('system')
         self.roles2agents = dict()
         self.sessionsUpdateTime = dict()
         self.agents2roles = dict()
 
         self.start()
 
-    def _stack_context_handle_exception(self, *kwargs):
-        print kwargs
-        import ipdb; ipdb.set_trace()
-
-    @tornado.web.asynchronous
-    @tornado.gen.engine
     def start(self):
-
-        self.ioloop = tornado.ioloop.IOLoop.instance()
-        tornado.gen.Task(self._cleanScheduledJobs, 36000*24)
-
-        # self._cleanScheduledJobs(3600*24)
-        # self.ioloop.add_future(self._cleanScheduledJobs, self._callback)
-        # self.pipe = p = os.popen('sleep 5; cat /etc/mime.types')
-        # self._cleanScheduledJobs, 3600*24)
- 
-        # self.ioloop.remove_handler(fd)
-        # self.finish()
-        # gevent.spawn(self._cleanScheduledJobs, 3600*24)
+        gevent.spawn(self._cleanScheduledJobs, 3600*24)
         observer = Observer()
         handler = JumpscriptHandler(self)
         observer.schedule(handler, "jumpscripts", recursive=True)
         observer.start()
-
-    def _callback(self, **kwargs):
-        print kwargs
 
     def _adminAuth(self,user,passwd):
         return self.nodeclient.authenticate(user, passwd)
@@ -159,7 +138,6 @@ class ControllerCMDS(tornado.web.RequestHandler):
         self._log("schedule done")
         return jobdict
 
-    # @tornado.gen.coroutine
     def _cleanScheduledJobs(self, expiretime):
         while True:
             self.cleanScheduledJobs(expiretime)
@@ -252,12 +230,13 @@ class ControllerCMDS(tornado.web.RequestHandler):
         return self.redis.getQueue(queuename)
 
     def _getWorkQueue(self, session):
+        rediscl = j.clients.redis.getByInstance('system')
         class MultiKeyQueue(object):
             def __init__(self, keys):
                 self.keys = keys
 
             def get(self, timeout=None):
-                data = self.redis.blpop(self.keys, timeout=timeout)
+                data = rediscl.blpop(self.keys, timeout=timeout)
                 if data:
                     return data[1]
                 return None
@@ -289,7 +268,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
         node.ipaddr = list()
         for netitem in netinfo:
             if netitem['mac'] != "00:00:00:00:00:00" and netitem['ip'] and netitem['name']:
-                node.ipaddr.append(netitem['ip'])
+                node.ipaddr.extend(netitem['ip'])
 
     def registerNode(self, hostname, machineguid, session):
         # if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
@@ -330,8 +309,10 @@ class ControllerCMDS(tornado.web.RequestHandler):
         Like self.loadJumpscripts() but for Lua jumpscripts.
         """
         lua_jumpscript_path = 'luajumpscripts'
-        available_jumpscripts =\
-            j.system.fs.listFilesInDir(path=lua_jumpscript_path, recursive=True, filter='*.lua', followSymlinks=True)
+        available_jumpscripts = list()
+        if j.system.fs.exists(lua_jumpscript_path):
+            available_jumpscripts =\
+                j.system.fs.listFilesInDir(path=lua_jumpscript_path, recursive=True, filter='*.lua', followSymlinks=True)
 
         for jumpscript_path in available_jumpscripts:
             jumpscript_metadata = j.core.jumpscripts.introspectLuaJumpscript(jumpscript_path)
@@ -437,7 +418,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
             if cat and entry.category != cat:
                 return False
             return True
-        return [[t.id,t.organization, t.name, t.category, t.descr] for t in filter(myfilter, self.jumpscripts.values()) ]
+        return [[t.id,t.organization, t.name] for t in filter(myfilter, self.jumpscripts.values()) ]
 
     def executeJumpscript(self, organization, name, nid=None, role=None, args={},all=False, \
         timeout=600,wait=True,queue="", gid=None,errorreport=True, session=None):
@@ -715,7 +696,7 @@ class ControllerCMDS(tornado.web.RequestHandler):
 # j.servers.geventws.initSSL4Server("myorg", "controller1")
 
 port = 4444
-daemon = j.servers.tornado.getServer(port=port)
+daemon = j.servers.geventws.getServer(port=port)
 daemon.addCMDsInterface(ControllerCMDS, category="agent")  # pass as class not as object !!! chose category if only 1 then can leave ""
 
 print "load processmanager cmds"
@@ -729,7 +710,7 @@ for item in j.system.fs.listFilesInDir("processmanager/processmanagercmds",filte
         classs = getattr(module, name)
         print "load cmds:%s"%name
         tmp=classs()
-        daemon.addCMDsInterface(classs, category="processmanager_%s"%tmp._name)
+        daemon.addCMDsInterface(classs, category="processmanager_%s" % tmp._name, proxy=True)
 
 # j.system.fs.changeDir("..")
 

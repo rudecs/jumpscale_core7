@@ -59,7 +59,7 @@ class Application:
     def connectRedis(self):
         import JumpScale.baselib.redis
         if j.clients.redis.isRunning('system'):
-            self.redis = j.clients.redis.getByInstanceName('system')
+            self.redis = j.clients.redis.getByInstance('system')
         else:
             self.redis=None
 
@@ -184,7 +184,7 @@ class Application:
 
         # if self.gridInitialized:
         #     client=j.core.osis.getClient(user='root')            
-        #     clientprocess=j.core.osis.getClientForCategory(client,"system","process")
+        #     clientprocess=j.core.osis.getCategory(client,"system","process")
         #     key = "%s_%s"%(j.application.whoAmI.gid,j.application.whoAmI.pid)
         #     if clientprocess.exists(key):
         #         obj=clientprocess.get(key)
@@ -303,7 +303,7 @@ class Application:
         uniquekey = 'grid.node.machineguid'
         if j.application.config.exists(uniquekey):
             machineguid = j.application.config.get(uniquekey)
-            if machineguid:
+            if machineguid.strip():
                 return machineguid
 
         nics = j.system.net.getNics()

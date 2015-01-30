@@ -31,7 +31,7 @@ def action():
     import JumpScale.grid.agentcontroller
     acl = j.clients.agentcontroller.get()
 
-    rcl = j.clients.redis.getByInstanceName('system')
+    rcl = j.clients.redis.getByInstance('system')
     for jobkey in rcl.keys('jobs:*'):
         if jobkey == 'jobs:last':
             continue

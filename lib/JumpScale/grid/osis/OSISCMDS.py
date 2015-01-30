@@ -1,7 +1,5 @@
 from JumpScale import j
-# import gevent
-from tornado.ioloop import IOLoop
-from tornado import gen
+import gevent
 import time
 
 
@@ -13,7 +11,6 @@ class OSISCMDS(object):
         self.osisInstances = {}  # key is namespace_categoryname
         self.db = None  # default db
         self.path="%s/apps/osis/logic"%j.dirs.baseDir
-        self.loop = IOLoop.current()
 
     def authenticate(self, namespace, categoryname, name,passwd, session=None):
         """

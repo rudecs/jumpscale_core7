@@ -17,8 +17,8 @@ class StatManager():
         self.hourId=None
         self.fiveMinuteId=None
 
-        self.osisclient= j.core.osis.getClientByInstance('main')
-        self.osis = j.core.osis.getClientForCategory(self.osisclient, 'stats', 'history')
+        self.osisclient= j.core.osis.getByInstance('main')
+        self.osis = j.core.osis.getCategory(self.osisclient, 'stats', 'history')
 
     def getFiveMinuteId(self):
         if self.fiveMinuteId!=None:

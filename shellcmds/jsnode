@@ -28,7 +28,7 @@ def _deleteNode(nid):
 
     for category in categories:
         print("  * Deleting %s..." % category)
-        catclient = j.core.osis.getClientForCategory(oscl, 'system', category)
+        catclient = j.core.osis.getCategory(oscl, 'system', category)
         if category == 'stats':
             # TODO catclient.delete(nid)
             continue
@@ -45,8 +45,8 @@ def _deleteNode(nid):
 if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole']:
     import JumpScale.grid.osis
 
-    oscl = j.core.osis.getClientByInstance('main')
-    ncl = j.core.osis.getClientForCategory(oscl, 'system', 'node')
+    oscl = j.core.osis.getByInstance('main')
+    ncl = j.core.osis.getCategory(oscl, 'system', 'node')
 
 
     if opts.action == 'list':

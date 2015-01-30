@@ -8,14 +8,14 @@ class AgentControllerFactory(object):
         self._agentControllerClients={}
         self._agentControllerProxyClients={}
 
-    def get(self,addr=None, port=PORT, login='root', passwd=None):
+    def get(self,addr=None, port=PORT, login='root', passwd=None, new=False):
         """
         @if None will be same as master
         """
         if addr is None:
             addr, port, login, passwd = self._getConnectionTuple('main')
         connection = (addr, port, login, passwd)
-        if connection not in self._agentControllerClients:
+        if connection not in self._agentControllerClients or new:
             self._agentControllerClients[connection]=AgentControllerClient(addr, port, login, passwd)
         return self._agentControllerClients[connection]
 
@@ -44,11 +44,11 @@ class AgentControllerFactory(object):
             result[attrib] = value
         return result
 
-    def getByInstance(self, instance=None):
+    def getByInstance(self, instance=None, new=False):
         config = self.getInstanceConfig(instance)
-        return self.get(**config)
+        return self.get(new=new, **config)
 
-    def getClientProxy(self,category="jpackages", addr=None, port=PORT, login='root', passwd=None):
+    def getProxy(self,category="jpackages", addr=None, port=PORT, login='root', passwd=None):
         if addr is None:
             addr, port, login, passwd = self._getConnectionTuple('main')
         connection = (addr, port, login, passwd)
@@ -59,7 +59,7 @@ class AgentControllerFactory(object):
 class AgentControllerProxyClient():
     def __init__(self,category,agentControllerIP, port, login, passwd):
         self.category=category
-        import JumpScale.grid.tornado
+        import JumpScale.grid.geventws
         if agentControllerIP==None:
             acipkey = "grid.agentcontroller.ip"
             if j.application.config.exists(acipkey):
@@ -70,12 +70,12 @@ class AgentControllerProxyClient():
             self.ipaddr=agentControllerIP
         passwd=j.application.config.get("grid.master.superadminpasswd")
         login = 'root'
-        client= j.servers.tornado.getClient(self.ipaddr, PORT, user=login, passwd=passwd,category="processmanager_%s"%category)
+        client= j.servers.geventws.getClient(self.ipaddr, PORT, user=login, passwd=passwd,category="processmanager_%s"%category)
         self.__dict__.update(client.__dict__)
 
 class AgentControllerClient():
     def __init__(self,addr, port=PORT, login='root', passwd=None):
-        import JumpScale.grid.tornado
+        import JumpScale.grid.geventws
 
         if isinstance(addr, str):
             connections = list()
@@ -90,7 +90,7 @@ class AgentControllerClient():
             passwd = j.application.config.get("grid.master.superadminpasswd")
         if login == 'node' and passwd is None:
             passwd = j.application.getUniqueMachineId()
-        client= j.servers.tornado.getHAClient(connections, user=login, passwd=passwd,category="agent")
+        client= j.servers.geventws.getHAClient(connections, user=login, passwd=passwd,category="agent", reconnect=True)
         self.__dict__.update(client.__dict__)
 
     def execute(self,organization,name,role=None,nid=None,gid=None,timeout=60,wait=True,queue="",dieOnFailure=True,errorreport=True, args=None):

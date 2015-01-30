@@ -25,7 +25,7 @@ def action():
 
     import time
     import psutil
-    rediscl = j.clients.redis.getByInstanceName('system')
+    rediscl = j.clients.redis.getByInstance('system')
 
     result={}
     
@@ -233,5 +233,5 @@ def action():
 
 if __name__ == '__main__':
     import JumpScale.grid.osis
-    j.core.osis.client = j.core.osis.getClientByInstance('processmanager')
+    j.core.osis.client = j.core.osis.getByInstance('processmanager')
     action()
