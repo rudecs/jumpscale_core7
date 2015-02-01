@@ -277,7 +277,7 @@ class OSISFactory:
             self._generateOsisModelClassFromSpec(namespace,specpath=basepathspec,classpath=basepathspec)
 
     def getModelTemplate(self):
-        extpath=j.system.fs.getDirName(inspect.getfile(self.getClient))
+        extpath=j.system.fs.getDirName(inspect.getfile(j.clients.osis.get))
         return j.system.fs.joinPaths(extpath,"_templates","model_template.py")
 
 

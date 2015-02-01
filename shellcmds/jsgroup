@@ -34,9 +34,9 @@ opts = parser.parse_args()
 # else:
 #     addr=opts.addr
 
-osis=j.core.osis.getByInstance('main')
-userclient=j.core.osis.getCategory(osis,"system","user")
-groupclient=j.core.osis.getCategory(osis,"system","group")
+osis=j.clients.osis.getByInstance('main')
+userclient=j.clients.osis.getCategory(osis,"system","user")
+groupclient=j.clients.osis.getCategory(osis,"system","group")
 
 ############ADD
 if opts.action =='add':
