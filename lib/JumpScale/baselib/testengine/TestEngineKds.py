@@ -88,7 +88,7 @@ class TestEngineKds():
         self.sysstderr=sys.stderr        
 
     def initTests(self,osisip="127.0.0.1",login="",passwd="",noOsis=False): #@todo implement remote osis
-        client = j.core.osis.getClient(user="root")
+        client = j.clients.osis.get(user="root")
         self.osis=j.core.osis.getCategory(client, 'system', 'test')
         self.noOsis=noOsis
 

@@ -162,7 +162,7 @@ class TestEngine():
     def initTests(self,noOsis, osisip="127.0.0.1",login="",passwd=""): #@todo implement remote osis
         self.noOsis = noOsis
         if not noOsis:
-            client = j.core.osis.getClient(user="root")
+            client = j.clients.osis.get(user="root")
             self.osis=j.core.osis.getCategory(client, 'system', 'test')
 
     def _patchTest(self, testmod):
