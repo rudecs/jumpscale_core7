@@ -119,7 +119,7 @@ class Admin():
 
     def _getActiveNodes(self):
         import JumpScale.grid.osis
-        oscl = j.core.osis.getByInstance('main')
+        oscl = j.clients.osis.getByInstance('main')
         ncl = j.core.osis.getCategory(oscl, 'system', 'node')
         return ncl.simpleSearch({'active': True})
     

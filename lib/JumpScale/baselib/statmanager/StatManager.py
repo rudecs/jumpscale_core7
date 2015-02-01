@@ -17,7 +17,7 @@ class StatManager():
         self.hourId=None
         self.fiveMinuteId=None
 
-        self.osisclient= j.core.osis.getByInstance('main')
+        self.osisclient= j.clients.osis.getByInstance('main')
         self.osis = j.core.osis.getCategory(self.osisclient, 'stats', 'history')
 
     def getFiveMinuteId(self):

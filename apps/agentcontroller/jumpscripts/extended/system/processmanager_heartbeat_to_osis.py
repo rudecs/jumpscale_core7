@@ -18,7 +18,7 @@ async = False
 roles=["*"]
 
 def action():
-    osiscl = j.core.osis.getByInstance()
+    osiscl = j.clients.osis.getByInstance()
     hbcl = j.core.osis.getCategory(osiscl, 'system', 'heartbeat')
     obj = hbcl.new()
     hbcl.set(obj)

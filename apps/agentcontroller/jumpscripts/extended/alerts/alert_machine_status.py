@@ -27,7 +27,7 @@ def action():
         return
 
     import JumpScale.grid.osis
-    ocl = j.core.osis.getByInstance('main')
+    ocl = j.clients.osis.getByInstance('main')
     mcl = j.core.osis.getCategory(ocl, 'cloudbroker', 'vmachine')
 
     try:

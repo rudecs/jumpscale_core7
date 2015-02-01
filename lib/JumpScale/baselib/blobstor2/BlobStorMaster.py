@@ -217,7 +217,7 @@ class BlobStorMaster:
             j.packages.findNewest(name="redis").start()
 
         def checkosis():
-            self.osis = j.core.osis.getByInstance('main')
+            self.osis = j.clients.osis.getByInstance('main')
 
         if 'jumpscale__osis' in j.tools.startupmanager.listProcesses():
             j.tools.startupmanager.startProcess("jumpscale","osis")

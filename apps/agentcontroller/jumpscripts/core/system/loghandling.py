@@ -82,5 +82,5 @@ def action():
         ecoguid=ecoqueue.get_nowait()
 
 if __name__ == '__main__':
-    j.core.osis.client = j.core.osis.getByInstance('main')
+    j.core.osis.client = j.clients.osis.getByInstance('main')
     action()

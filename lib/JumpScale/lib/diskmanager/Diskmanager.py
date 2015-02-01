@@ -243,7 +243,7 @@ diskinfo.description=
                                         hrd.set("diskinfo.epoch",j.base.time.getTimeEpoch())
 
 
-                                        client = j.core.osis.getByInstance('main')
+                                        client = j.clients.osis.getByInstance('main')
                                         client_disk=j.core.osis.getCategory(client,"system","disk")
 
                                         disk=client_disk.new()

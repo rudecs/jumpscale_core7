@@ -68,7 +68,7 @@ class ControllerCMDS():
         self.jumpscriptsFromKeys = {}
         self.jumpscriptsId={}
 
-        self.osisclient = j.core.osis.getByInstance(gevent=True)
+        self.osisclient = j.clients.osis.getByInstance(gevent=True)
         self.jobclient = j.core.osis.getCategory(self.osisclient, 'system', 'job')
         self.nodeclient = j.core.osis.getCategory(self.osisclient, 'system', 'node')
         self.jumpscriptclient = j.core.osis.getCategory(self.osisclient, 'system', 'jumpscript')

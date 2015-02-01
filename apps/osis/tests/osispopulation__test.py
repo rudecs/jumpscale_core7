@@ -23,7 +23,7 @@ priority=2
 class TEST(unittest.TestCase):
 
     def setUp(self):
-        self.client = j.core.osis.getByInstance('main')
+        self.client = j.clients.osis.getByInstance('main')
 
     def tearDown(self):
         pass

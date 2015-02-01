@@ -7,7 +7,7 @@ import JumpScale.grid.osis
 
 if __name__ == '__main__':
 
-    client = j.core.osis.getByInstance('main')
+    client = j.clients.osis.getByInstance('main')
 
 
     def testClass():
