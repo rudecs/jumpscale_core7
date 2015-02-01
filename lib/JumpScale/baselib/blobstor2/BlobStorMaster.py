@@ -248,11 +248,11 @@ class BlobStorMaster:
         daemon.daemon.cmdsInterfaces["blobstormaster"].osis=OsisGroup()
         osis=daemon.daemon.cmdsInterfaces["blobstormaster"].osis
 
-        osis.node=j.core.osis.getCategory(self.osis,"blobstor","bsnode")
-        osis.namespace=j.core.osis.getCategory(self.osis,"blobstor","bsnamespace")
-        osis.disk=j.core.osis.getCategory(self.osis,"blobstor","bsdisk")
-        osis.mdset=j.core.osis.getCategory(self.osis,"blobstor","mdset")
-        osis.gridnode=j.core.osis.getCategory(self.osis,"system","node")
+        osis.node=j.clients.osis.getCategory(self.osis,"blobstor","bsnode")
+        osis.namespace=j.clients.osis.getCategory(self.osis,"blobstor","bsnamespace")
+        osis.disk=j.clients.osis.getCategory(self.osis,"blobstor","bsdisk")
+        osis.mdset=j.clients.osis.getCategory(self.osis,"blobstor","mdset")
+        osis.gridnode=j.clients.osis.getCategory(self.osis,"system","node")
 
 
         daemon.start()

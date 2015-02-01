@@ -21,7 +21,7 @@ class TEST(unittest.TestCase):
 
     def setUp(self):
         self.client = j.clients.osis.getByInstance('main')
-        self.osisclient =j.core.osis.getCategory(self.client, 'test_complextype', 'project')
+        self.osisclient =j.clients.osis.getCategory(self.client, 'test_complextype', 'project')
    
     def test_set(self):
         # We first set some elements and verify the reponse

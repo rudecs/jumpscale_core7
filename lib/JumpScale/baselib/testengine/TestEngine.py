@@ -163,7 +163,7 @@ class TestEngine():
         self.noOsis = noOsis
         if not noOsis:
             client = j.clients.osis.get(user="root")
-            self.osis=j.core.osis.getCategory(client, 'system', 'test')
+            self.osis=j.clients.osis.getCategory(client, 'system', 'test')
 
     def _patchTest(self, testmod):
         if hasattr(testmod, 'TEST') and not isinstance(testmod.TEST, unittest.TestCase):

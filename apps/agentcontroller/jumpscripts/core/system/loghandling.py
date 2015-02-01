@@ -36,8 +36,8 @@ def action():
 
     OSISclient = j.core.osis.client
 
-    OSISclientLogger = j.core.osis.getCategory(OSISclient, "system", "log")
-    OSISclientEco = j.core.osis.getCategory(OSISclient, "system", "eco")
+    OSISclientLogger = j.clients.osis.getCategory(OSISclient, "system", "log")
+    OSISclientEco = j.clients.osis.getCategory(OSISclient, "system", "eco")
 
     log = None
     path = "%s/apps/processmanager/loghandling/"%j.dirs.baseDir

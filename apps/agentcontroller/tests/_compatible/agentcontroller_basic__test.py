@@ -37,7 +37,7 @@ class TEST(unittest.TestCase):
         self.assertEqual(job['state'], 'OK')
         query = {"query":{"bool":{"must":[{"term":{"category":"test_category"}}]}}}
         import JumpScale.grid.osis
-        osis_logs = j.core.osis.getCategory(self.osisclient, "system", "log")
+        osis_logs = j.clients.osis.getCategory(self.osisclient, "system", "log")
 
         start = time.time()
         while start + 5 > time.time():
@@ -49,7 +49,7 @@ class TEST(unittest.TestCase):
     def test_error(self):
         self.client.execute('jumpscale', 'error', ROLE, dieOnFailure=False)
         query = {"query":{"bool":{"must":[{"term":{"state":"error"}}, {"term":{"cmd":"error"}}]}}}
-        osis_jobs = j.core.osis.getCategory(self.osisclient, "system", "job")
+        osis_jobs = j.clients.osis.getCategory(self.osisclient, "system", "job")
         start = time.time()
         while start + 5 > time.time():
             result = osis_jobs.search(query)['result']

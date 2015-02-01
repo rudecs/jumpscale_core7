@@ -10,8 +10,8 @@ class GridHealthChecker(object):
         with j.logger.nostdout():
             self._client = j.clients.agentcontroller.get()
             self._osiscl = j.clients.osis.getByInstance('main')
-        self._heartbeatcl = j.core.osis.getCategory(self._osiscl, 'system', 'heartbeat')
-        self._nodecl = j.core.osis.getCategory(self._osiscl, 'system', 'node')
+        self._heartbeatcl = j.clients.osis.getCategory(self._osiscl, 'system', 'heartbeat')
+        self._nodecl = j.clients.osis.getCategory(self._osiscl, 'system', 'node')
         self._runningnids = list()
         self._nids = list()
         self._nodenames = dict()

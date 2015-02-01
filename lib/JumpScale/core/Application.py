@@ -184,7 +184,7 @@ class Application:
 
         # if self.gridInitialized:
         #     client=j.clients.osis.get(user='root')            
-        #     clientprocess=j.core.osis.getCategory(client,"system","process")
+        #     clientprocess=j.clients.osis.getCategory(client,"system","process")
         #     key = "%s_%s"%(j.application.whoAmI.gid,j.application.whoAmI.pid)
         #     if clientprocess.exists(key):
         #         obj=clientprocess.get(key)

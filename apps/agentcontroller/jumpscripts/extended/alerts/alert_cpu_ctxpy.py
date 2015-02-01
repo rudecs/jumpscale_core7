@@ -26,7 +26,7 @@ def action():
         return
     import JumpScale.grid.osis
     ocl = j.clients.osis.getByInstance('main')
-    scl = j.core.osis.getCategory(ocl, 'system', 'stats')
+    scl = j.clients.osis.getCategory(ocl, 'system', 'stats')
 
     #@todo needs to be redone with stataggregator
     j.system.stataggregator

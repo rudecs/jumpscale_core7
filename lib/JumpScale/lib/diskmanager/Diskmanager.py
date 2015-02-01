@@ -244,7 +244,7 @@ diskinfo.description=
 
 
                                         client = j.clients.osis.getByInstance('main')
-                                        client_disk=j.core.osis.getCategory(client,"system","disk")
+                                        client_disk=j.clients.osis.getCategory(client,"system","disk")
 
                                         disk=client_disk.new()
                                         for key,val in list(disko.__dict__.items()):

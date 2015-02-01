@@ -20,7 +20,7 @@ roles=["*"]
 
 def action():
     osiscl = j.clients.osis.getByInstance()
-    hbcl = j.core.osis.getCategory(osiscl, 'system', 'heartbeat')
+    hbcl = j.clients.osis.getCategory(osiscl, 'system', 'heartbeat')
     obj = hbcl.new()
     hbcl.set(obj)
 

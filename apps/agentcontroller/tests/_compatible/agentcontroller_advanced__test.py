@@ -29,7 +29,7 @@ class TEST(unittest.TestCase):
         #@todo launch 5 wait js (1 sec each), see they are all execute one after the other, check the logs that they were executed
         #test there is only 1 agent (use startupmanager through the processmanager)
         import JumpScale.grid.osis
-        osis_logs = j.core.osis.getCategory(self.osisclient, "system", "log")
+        osis_logs = j.clients.osis.getCategory(self.osisclient, "system", "log")
         for i in range(1, 6):
             kwargs = {'msg': 'msg%s' % i, 'waittime':1}
             self.client.executeJumpscript('jumpscale', 'wait', self.nid, ROLE, args=kwargs)
@@ -62,7 +62,7 @@ class TEST(unittest.TestCase):
         j.tools.startupmanager.startProcess('jumpscale', 'agent_0')
 
         import JumpScale.grid.osis
-        osis_jobs = j.core.osis.getCategory(self.osisclient, "system", "job")
+        osis_jobs = j.clients.osis.getCategory(self.osisclient, "system", "job")
         print osis_jobs.get(secondjob['guid'])['state']
         print osis_jobs.get(firstjob['guid'])['state']
         self.assertEqual(osis_jobs.get(secondjob['guid'])['state'], 'OK')

@@ -29,7 +29,7 @@ class TEST(unittest.TestCase):
         pass
 
     def test_stat(self):
-        client=j.core.osis.getCategory(self.client,"system","stats")
+        client=j.clients.osis.getCategory(self.client,"system","stats")
         keys=["cpu.percent",\
             "process.nrconnections",\
             "memory.rss",\
@@ -43,7 +43,7 @@ class TEST(unittest.TestCase):
 
     def test_node(self):
         print('node')
-        client = j.core.osis.getCategory(self.client, "system", "node")
+        client = j.clients.osis.getCategory(self.client, "system", "node")
 
         for i in range(0, 20):
             obj = client.new()
@@ -64,7 +64,7 @@ class TEST(unittest.TestCase):
         
     def test_machine(self):
         print('machine')
-        client=j.core.osis.getCategory(self.client,"system","machine")        
+        client=j.clients.osis.getCategory(self.client,"system","machine")        
 
         for i in range(30,50):
 
@@ -90,7 +90,7 @@ class TEST(unittest.TestCase):
 
     def test_process(self):
         print('process')
-        client=j.core.osis.getCategory(self.client,"system","process")        
+        client=j.clients.osis.getCategory(self.client,"system","process")        
 
         for i in range(30,100):
 
@@ -115,7 +115,7 @@ class TEST(unittest.TestCase):
 
     def test_disk(self):
         print('disk')
-        client = j.core.osis.getCategory(self.client, "system", "disk")
+        client = j.clients.osis.getCategory(self.client, "system", "disk")
 
         for i in range(20, 70):
             obj = client.new()
@@ -159,7 +159,7 @@ class TEST(unittest.TestCase):
 
     def test_vdisk(self):
         print('vdisk')
-        client=j.core.osis.getCategory(self.client,"system","vdisk")        
+        client=j.clients.osis.getCategory(self.client,"system","vdisk")        
 
         for i in range(20,70):
             obj=client.new()            

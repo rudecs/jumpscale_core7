@@ -220,7 +220,7 @@ class OSISFactory:
         if classpath=="":
             classpath=j.system.fs.joinPaths(j.dirs.varDir,"code","osismodel",namespace)
 
-        extpath=j.system.fs.getDirName(inspect.getfile(self.getClient))
+        extpath=j.system.fs.getDirName(inspect.getfile(j.clients.osis.get))
         templpath=j.system.fs.joinPaths(extpath,"_templates","osiscomplextypes")
         j.system.fs.copyDirTree(templpath, classpath, keepsymlinks=False, eraseDestination=False, \
             skipProtectedDirs=False, overwriteFiles=False, applyHrdOnDestPaths=None)        

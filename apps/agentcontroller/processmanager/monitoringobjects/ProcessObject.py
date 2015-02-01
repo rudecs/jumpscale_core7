@@ -6,7 +6,7 @@ from _MonObjectBaseFactory import *
 class ProcessObjectFactory(MonObjectBaseFactory):
     def __init__(self,host,classs):
         MonObjectBaseFactory.__init__(self,host,classs)
-        self.osis=j.core.osis.getCategory(self.host.daemon.osis,"system","process")
+        self.osis=j.clients.osis.getCategory(self.host.daemon.osis,"system","process")
         #@todo P1 load them from ES at start (otherwise delete will not work), make sure they are proper osis objects
         j.core.processmanager.childrenPidsFound={}
         self.pid2name={}

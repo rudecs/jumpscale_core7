@@ -19,7 +19,7 @@ roles = []
 log=False
 
 def action():
-    ncl = j.core.osis.getCategory(j.core.osis.client, "system", "nic")
+    ncl = j.clients.osis.getCategory(j.core.osis.client, "system", "nic")
     rediscl = j.clients.redis.getByInstance('system')
     netinfo=j.system.net.getNetworkInfo()
     results = dict()
