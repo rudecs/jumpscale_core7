@@ -71,11 +71,11 @@ def deps(F): # F is func or method without instance
             raise RuntimeError("did not expect this result, needs to be str,list,bool,int,dict")
         return result
 
-    def wrapper(*args2,**kwargs): # class instance in args[0] for method
+    def wrapper(jp, *args2,**kwargs): # class instance in args[0] for method
         result=None
-        jp=args2[0] #this is the self from before
 
         loadargs = kwargs.get('args', {})
+        deps = kwargs.get('deps', False)
         if not isinstance(loadargs, dict):
             raise RuntimeError("args need to be dict")
 
@@ -89,7 +89,7 @@ def deps(F): # F is func or method without instance
                     else:
                         result=processresult(result,F(dep))
                     j.packages._justinstalled.append(dep.jp.name)
-        result=processresult(result,F(*args2,**kwargs))
+        result=processresult(result,F(jp, *args2,**kwargs))
         return result
     return wrapper
 
@@ -364,7 +364,7 @@ class JPackageInstance():
 
     @deps
     @remote
-    def stop(self,args={},deps=True):
+    def stop(self,args={},deps=False):
         self._load(args=args)
         self.actions.stop(**args)
         if not self.actions.check_down_local(**args):
@@ -417,10 +417,10 @@ class JPackageInstance():
         self.actions.start(**args)
 
     @deps
-    def restart(self,args={},deps=True):
+    def restart(self,args={},deps=False):
         self._load(args=args)
-        self.stop(args=args)
-        self.start(args=args)
+        self.stop(args=args, deps=deps)
+        self.start(args=args, deps=True)
 
     def getProcessDicts(self,deps=True,args={}):
         self._load(args=args)
