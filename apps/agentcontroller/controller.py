@@ -283,7 +283,7 @@ class ControllerCMDS():
         node = self.nodeclient.get(nodeid)
         self._setRoles(node.roles, nodeid)
         self.sessionsUpdateTime[nodeid]=j.base.time.getTimeEpoch()
-        result = {'node': node.dump(), 'webdiskey': j.core.jumpscripts.secret}
+        result = {'node': node.dump()}
         return result
 
     def register(self,session):

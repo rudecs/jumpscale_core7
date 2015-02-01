@@ -174,14 +174,11 @@ class ProcessManager():
             res=self.acclient.registerNode(hostname=socket.gethostname(), machineguid=j.application.getUniqueMachineId())
 
             nid=res["node"]["id"]
-            webdiskey=res["webdiskey"]
             j.application.config.set("grid.node.id",nid)
 
-            self.hrd.set("agentcontroller.webdiskey",webdiskey)
             j.application.config.set("grid.id",res["node"]["gid"])
             j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
 
-            verifyinstall('jumpscale', 'webdis_client', args={"addr":acip,"port":7779})
             verifyinstall('jumpscale', 'osis_client', instance='processmanager', args={"osis.client.addr":acip,"osis.client.port":5544,"osis.client.login":aclogin,"osis.client.passwd":acpasswd})
             self.hrd.set("osis.connection","processmanager")
             verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, args={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
