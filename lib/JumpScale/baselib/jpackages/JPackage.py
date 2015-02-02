@@ -163,11 +163,14 @@ class JPackageInstance(object):
 
     @property
     def actionspath(self):
-        if j.packages.type=="c":
-            j.system.fs.createDir(j.dirs.getJPActionsPath(node=self._node))
-            self._actionspath="%s/%s__%s"%(j.dirs.getJPActionsPath(node=self._node),self.jp.name,self.instance)
-        else:
-            self._actionspath="%s/%s__%s__%s"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
+        if self._actionspath is None:
+            actionsdir = j.dirs.getJPActionsPath(node=self._node)
+            j.system.fs.createDir(actionsdir)
+            if j.packages.type=="c":
+                j.system.fs.createDir(j.dirs.getJPActionsPath(node=self._node))
+                self._actionspath="%s/%s__%s"%(actionsdir,self.jp.name,self.instance)
+            else:
+                self._actionspath="%s/%s__%s__%s"%(actionsdir,self.jp.domain,self.jp.name,self.instance)
         return self._actionspath
 
     def _init(self):
@@ -470,7 +473,7 @@ class JPackageInstance(object):
             log("Latest %s already installed" % self)
             return
         self._apply()
-        self.stop(deps=deps)
+        self.stop(deps=False)
         self.prepare(deps=deps)
 
         #download
