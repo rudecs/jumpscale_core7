@@ -23,3 +23,6 @@ def action():
     osiscl = j.clients.osis.getByInstance('main')
     status = osiscl.getStatus()
     return status
+
+if __name__ == "__main__":
+    print action()

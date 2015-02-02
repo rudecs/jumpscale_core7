@@ -15,3 +15,6 @@ roles = []
 
 def action():
     return j.system.net.getNetworkInfo()
+
+if __name__ == "__main__":
+    print action()

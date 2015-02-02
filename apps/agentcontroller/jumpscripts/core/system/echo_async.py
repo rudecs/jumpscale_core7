@@ -16,3 +16,6 @@ log=False
 
 def action(msg=""):
     return msg
+
+if __name__ == "__main__":
+    print action("It works")

@@ -26,3 +26,6 @@ def action():
     for disk in disks:
         result[disk.path] = {'free': disk.free, 'size': disk.size}
     return result
+
+if __name__ == "__main__":
+    print action()

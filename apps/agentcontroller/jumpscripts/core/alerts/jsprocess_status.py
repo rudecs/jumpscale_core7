@@ -20,10 +20,15 @@ roles = []
 
 
 def action():
-    for jp in j.packages.find(domain='jumpscale') :
+    for jp in j.packages.find():
         instances = jp.listInstances()
         for instance in instances:
             jpinstance = jp.getInstance(instance)
-            if not jpinstance.actions.check_up_local():
+            if not jpinstance.isInstalled():
+                continue
+            if not jpinstance.actions.check_up_local(wait=False):
                  message = "Process %s:%s:%s is not running" % (jpinstance.domain, jpinstance.name, instance)
                  j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
+                 
+if __name__ == '__main__':
+    action()
