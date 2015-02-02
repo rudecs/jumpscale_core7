@@ -121,7 +121,7 @@ class ProcessManager():
             jps = j.packages.find('jumpscale', "redis")
             jp = jps[0].getInstance('system')
             if not jp.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
-                j.packages.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40},instance="system")
+                jp.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40})
             if j.system.net.waitConnectionTest("localhost",9999,10)==False:
                 j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 

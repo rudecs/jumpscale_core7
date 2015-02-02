@@ -90,7 +90,7 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
-    def getInstance(self,instance=None, args={}):
+    def getInstance(self,instance=None, args={}, hrddata=None):
         # get first installed or main
         if instance is None:
             instances = self.listInstances()
@@ -98,7 +98,7 @@ class JPackage():
                 instance = instances[0]
             else:
                 instance = 'main'
-        return JPackageInstance(self, instance, args)
+        return JPackageInstance(self, instance, args, hrddata)
 
     def listInstances(self, node=None):
         hrdfolder = j.dirs.getHrdDir(node=node)
@@ -123,7 +123,7 @@ class JPackage():
 
 class JPackageInstance(object):
 
-    def __init__(self,jp,instance, args={}):
+    def __init__(self,jp,instance, args=None, hrddata=None):
         self.instance=instance
         self.jp=jp
         self.domain=self.jp.domain
@@ -135,7 +135,11 @@ class JPackageInstance(object):
         self._actions=None
         self._loaded=False
         self._reposDone={}
-        self.args=args
+        self.args=args or {}
+        self.hrddata = hrddata or {}
+        self.hrddata["jp.name"]=self.jp.name
+        self.hrddata["jp.domain"]=self.jp.domain
+        self.hrddata["jp.instance"]=self.instance
         self._init=False
         self._node = self.args.get("node2execute")
 
@@ -231,18 +235,15 @@ class JPackageInstance(object):
         self._actions=mod.Actions()
         self._actions.jp_instance=self
 
-    def _apply(self):#,*stdargs,**kwargs):  @question why this (despiegk) removed it again
+    def _apply(self):
         j.do.createDir(j.do.getDirName(self.hrdpath))
-        self.args["jp.name"]=self.jp.name
-        self.args["jp.domain"]=self.jp.domain
-        self.args["jp.instance"]=self.instance
         source="%s/actions.py"%self.jp.metapath
         j.do.copyFile(source,self.actionspath+".py")
         source="%s/actions.lua"%self.jp.metapath
         if j.system.fs.exists(source):
             j.do.copyFile(source,self.actionspath+".lua")
 
-        self._hrd=j.core.hrd.get(self.hrdpath,args=self.args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
+        self._hrd=j.core.hrd.get(self.hrdpath,args=self.hrddata,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
         self._hrd.save()
        
         actionPy = self.actionspath+".py"
@@ -310,7 +311,7 @@ class JPackageInstance(object):
                 if item.strip()=="":
                     continue
                 item2=item.strip()
-                args={}
+                hrddata={}
                 item={}
                 item["name"]=item2
                 item["domain"]="jumpscale"
@@ -321,17 +322,15 @@ class JPackageInstance(object):
 
             if "args" in item:
                 if isinstance(item['args'], dict):
-                    args = item['args']
+                    hrddata = item['args']
                 else:
                     argskey = item['args']
                     if self.hrd.exists(argskey):
-                        args=self.hrd.getDict(argskey)
+                        hrddata=self.hrd.getDict(argskey)
                     else:
-                        args = {}
+                        hrddata = {}
             else:
-                args={}
-
-            item['args']=args
+                hrddata={}
 
             if "name" in item:
                 name=item["name"]
@@ -349,9 +348,7 @@ class JPackageInstance(object):
                 instance="main"
 
             jp=j.packages.get(name=name,domain=domain)
-            jp=jp.getInstance(instance)
-
-            jp.args=args
+            jp=jp.getInstance(instance, hrddata=hrddata)
 
             res.append(jp)
 
@@ -473,17 +470,7 @@ class JPackageInstance(object):
             log("Latest %s already installed" % self)
             return
         self._apply()
-
         self.stop(deps=deps)
-
-        for dep in self.getDependencies():
-            if dep.jp.name not in j.packages._justinstalled:
-                if 'args' in dep.__dict__:
-                    dep.install(args=dep.args)
-                else:
-                    dep.install()
-                j.packages._justinstalled.append(dep.jp.name)
-
         self.prepare(deps=deps)
 
         #download

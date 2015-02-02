@@ -99,23 +99,22 @@ class JPackageFactory():
 
         return res
 
-    def get(self,domain="",name="",instance="",args={}):
+    def get(self,domain="",name="",instance="",args={}, hrddata=None):
         self._doinit()
         jps=self.find(domain,name,1)
         if len(jps)==0:
             j.events.opserror_critical("cannot find jpackage %s/%s"%(domain,name))
         if instance!="":
-            jps[0]=jps[0].getInstance(instance)
-            jps[0].args=args
+            jps[0]=jps[0].getInstance(instance, args=args, hrddata=hrddata)
         return jps[0]
 
-    def install(self,domain="",name="",instance="main",args={}):
+    def install(self,domain="",name="",instance="main",args={}, hrddata=None):
         self._doinit()
         jp=self.get(domain,name)
         if instance=="":
             j.events.inputerror_critical("instance cannot be empty when installing a jpackage","jpackage.install")
-        jpi=jp.getInstance(instance)
-        return jpi.install(args=args)
+        jpi=jp.getInstance(instance, args=args, hrddata=hrddata)
+        return jpi.install()
 
     def getHRD(self,reload=True):
         if self.hrd==None or reload:

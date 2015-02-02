@@ -96,7 +96,7 @@ def sorter(jp1, jp2):
         key2 = "%s_%s" % (jp2.domain, jp2.name)
         return cmp(key1, key2)
 
-def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=False,list=False, jpargs={}):
+def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=False,list=False, jpargs={}, hrddata=None):
     packages=[]
 
     name=args.name.strip()
@@ -131,7 +131,7 @@ def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=Fal
         raise RuntimeError("Can only get jpackage instances if only 1 jpackage when instance set or more jpackages when instance=main")
 
     if toinstall:
-        packages=[jp.getInstance(args.instance, args=jpargs) for jp in packages]
+        packages=[jp.getInstance(args.instance, args=jpargs, hrddata=hrddata) for jp in packages]
         expandInstances = False
 
     if expandInstances:
@@ -140,9 +140,9 @@ def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=Fal
         for jp in rawjps:
             if args.instance is None:
                 for instance in jp.listInstances():
-                    packages.append(jp.getInstance(instance, args=jpargs))
+                    packages.append(jp.getInstance(instance, args=jpargs, hrddata=hrddata))
             else:
-                packages.append(jp.getInstance(args.instance, args=jpargs))
+                packages.append(jp.getInstance(args.instance, args=jpargs, hrddata=hrddata))
 
     if packages==[]:
         raise RuntimeError("Cannot find packages, need at least 1")
@@ -156,17 +156,18 @@ if '--help' in sys.argv or '-h' in sys.argv:
 args = parser.parse_args()
 args.deps=not args.nodeps
 
-jpargs={}
+hrddata={}
 if args.data<>None:
     if args.data.find("#")<>-1:
         for line in args.data.split("#"):
             if line.find("=")<>-1:
                 var,data=line.split("=",1)
-                jpargs[var.strip()]=data.strip()
+                hrddata[var.strip()]=data.strip()
     else:
         tags=j.core.tags.getObject(args.data)
-        jpargs=tags.getDict()
+        hrddata=tags.getDict()
 
+jpargs = {}
 if args.node!=None:
     jpargs["node2execute"]=args.node
 if args.lua!=None:
@@ -198,10 +199,10 @@ if args.action == 'configure':
 
 elif args.action == 'install':
 
-    packages = getJPackage(args,toinstall=True, jpargs=jpargs)
+    packages = getJPackage(args,toinstall=True, jpargs=jpargs, hrddata=hrddata)
 
     for package in packages:
-        package.install(deps=args.deps,reinstall=args.reinstall)
+        package.install(deps=args.deps, reinstall=args.reinstall)
 
 elif args.action == 'update':
     packages = getJPackage(args,toinstall=True, jpargs=jpargs)
