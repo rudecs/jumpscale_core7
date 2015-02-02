@@ -169,7 +169,6 @@ class HRDItem():
             self.value=j.tools.text.str2var(data)
 
         if self.hrd.changed:
-            # print "SAVE"
             self.hrd.save()
             self.hrd.changed=False
 

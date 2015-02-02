@@ -24,7 +24,6 @@ def action():
         instances = jp.listInstances()
         for instance in instances:
             jpinstance = jp.getInstance(instance)
-            jpinstance._load()
             if not jpinstance.actions.check_up_local():
-                 message = "Process %s:%s is not running" % (process.domain, process.name)
+                 message = "Process %s:%s:%s is not running" % (jpinstance.domain, jpinstance.name, instance)
                  j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
