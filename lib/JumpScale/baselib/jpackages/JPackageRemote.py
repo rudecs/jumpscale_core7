@@ -22,35 +22,123 @@ class RemotePython(object):
         self.port = None
         self.keyname = None
         self._keyhrd = None
-        self.cl = self._sshConnect(node)
+        self.cl = self._connect(node)
 
+    def _negotiateConnection(self,target):
+        nodes = self._getAllNodes()
+        for kind,nodes in nodes.iteritems():
+            for node in nodes:
+                if node == target:
+                    return kind
+        return None
+
+    def _getAllNodes(self):
+        jps = ["node.ssh.key","node.ms1","node.kvm"]
+        nodes = {}
+        for jp in jps:
+            nodes[jp] = []
+            instances = j.application.getAppHRDInstanceNames(jp)
+            nodes[jp].extend(instances)
+        return nodes
 
     def _generateUniq(self,name):
         epoch = int(time.time())
         return "%s_%s_%s" % (epoch,self.jp.name,name)
 
-    def _sshConnect(self,node):
-        sshHRD = j.application.getAppInstanceHRD("node.ssh.key", node)
+    def _connect(self, node):
+        connKind = self._negotiateConnection(node)
+        if connKind is None:
+            raise RuntimeError("No node found")
+        if connKind in ["node.ssh.key","node.ms1"]:
+            return self._sshConnect(node,connKind)
+        elif connKind in ['node.kvm']:
+            return self._kvmConnect(node,connKind)
+
+    def _sshConnect(self,node,kind):
+        c = j.remote.cuisine
+        sshHRD = j.application.getAppInstanceHRD(kind, node)
         self.ip = sshHRD.get("param.machine.ssh.ip")
         self.port = sshHRD.get("param.machine.ssh.port")
         self.keyname = sshHRD.get('param.ssh.key.name')
         self._keyhrd = j.application.getAppInstanceHRD("sshkey",self.keyname)
-        j.remote.cuisine.fabric.env["key"] = self._keyhrd.get('param.ssh.key.priv')
-        cl=j.remote.cuisine.connect(self.ip,self.port)
+        c.fabric.env["key"] = self._keyhrd.get('param.ssh.key.priv')
+        cl = c.connect(self.ip,self.port)
         return cl
 
-    def copyTree(self,src,dest):
-        keyloc = "/tmp/%s" % self._generateUniq('id_dsa')
-        j.system.fs.writeFile(keyloc,self._keyhrd.get("param.ssh.key.priv"))
-        j.system.fs.chmod(keyloc,0o600)
+    def _kvmConnect(self,node,kind='node.kvm'):
+        kvmHRD = j.application.getAppInstanceHRD(kind, node)
+        hostType = kvmHRD.get("param.hostnode.type")
+        hostInstance = kvmHRD.get("param.hostnode.instance")
+        hostCl = self._sshConnect(hostInstance,hostType)
+
+        config = self.executeCode("j.system.platform.kvm.getConfig('%s')" % node)
+        vmHRD = j.core.hrd.get(content=config)
+        vmIP = vmHRD.get("bootstrap.ip")
+        vmLogin = vmHRD.get("bootstrap.login")
+        vmPasswd = vmHRD.get("bootstrap.passwd")
+
+        # forward ssh of vm to outside
+        rule = hostCl.run("iptables -L -n -v | grep 'tcp dpt:2222'")
+        if rule != "":
+            ss = rule.split(":")
+            ip = ss[len(ss)-2]
+            cmd = "iptables -t nat -D PREROUTING -p tcp --dport 2222 -j DNAT --to-destination %s:22" % ip
+            hostCl.run(cmd)
+        cmd = "iptables -t nat -A PREROUTING -p tcp --dport 2222 -j DNAT --to-destination %s:22" % vmHRD.get("bootstrap.ip")
+        hostCl.run(cmd)
+
+        c = j.remote.cuisine.fabric.env['password'] = vmHRD.get("bootstrap.passwd")
+        cl=cl.connect(vmIP,2222)
+        return cl
+
+    def copyTree(self, source, dest ,sshkey=None, port=None, ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"]):
+        print("copy %s %s" % (source,dest))
+        if not j.do.exists(source):
+            raise RuntimeError("copytree:Cannot find source:%s"%source)
+        excl=""
+        for item in ignoredir:
+            excl+="--exclude '*%s*/' "%item
+        for item in ignorefiles:
+            excl+="--exclude '*%s*' "%item
+        excl+="--exclude '*.pyc' "
+        excl+="--exclude '*.bak' "
+        excl+="--exclude '*__pycache__*' "
+        if j.do.isDir(source):
+            if dest[-1]!="/":
+                dest+="/"
+            if source[-1]!="/":
+                source+="/"
         destdir = dest.split(':')[1]
         if not self.cl.file_exists(destdir):
             cmd = "mkdir -p %s" % destdir
             self.cl.run(cmd)
-        print("send %s to %s" %(src,dest))
-        j.do.copyTree(src,dest,sshkey=keyloc)
 
-    def execute(self, action):
+        ssh=""
+        if sshkey is None:
+            sshkey = self._keyhrd.get("param.ssh.key.priv")
+        if port is None:
+            port = self.port
+        keyloc = "/tmp/%s" % self._generateUniq('id_dsa')
+        j.system.fs.writeFile(keyloc,sshkey)
+        j.system.fs.chmod(keyloc,0o600)
+        ssh += "-e 'ssh -i %s -p %s'" % (keyloc,port)
+
+
+        cmd="rsync -vP %s -a --no-compress --max-delete=0 %s %s %s"%(ssh,excl,source,dest)
+        j.do.execute(cmd)
+        j.system.fs.remove(keyloc)
+
+    def executeCode(self,code):
+        code = """
+from JumpScale import j
+%s
+""" % code
+        codeloc = "/tmp/%s" % self._generateUniq('exec.py')
+        self.cl.file_write(codeloc, code)
+        cmd = "jspython %s" % codeloc
+        return self.cl.run(cmd)
+
+    def executeJP(self, action):
         action = action.replace("_","") # make sure the action name is correcte
         codegen=j.tools.packInCode.get4python()
 
@@ -138,10 +226,11 @@ class JPackageMock(object):
 
         code = codegen.get()
         codeloc = "/tmp/%s" % self._generateUniq('exec.py')
-        self.cl.file_write(codeloc, code)
-        cmd = "jspython %s" % codeloc
-        print "RUN %s" % action
-        self.cl.run(cmd)
+        with self.cl.fabric.context_managers.hide('running'):
+            self.cl.file_write(codeloc, code)
+            cmd = "jspython %s" % codeloc
+            print "RUN %s" % action
+            self.cl.run(cmd)
 
 
 class RemoteLua(object):
@@ -150,11 +239,10 @@ class RemoteLua(object):
         self.jp = jp
         self.cl = _sshConnect(node)
 
-    def execute(self, action):
+    def executeJP(self, action):
         # add hrd content into actions file
         # the hrd is converted into a lua table
         dictHRD = self.self.jp.hrd.getHRDAsDict()
-        from ipdb import set_trace;set_trace()
         jsonHRD = json.dumps(dictHRD)
         content = """local json = require 'json'
         local hrd = json.decode.decode('%s')
