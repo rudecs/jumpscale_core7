@@ -1,11 +1,13 @@
 from JumpScale import j
 import imp
-import copy
 import sys
 
 import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
+
+def log(msg, level=1):
+    j.logger.log(msg, level=level, category='JPACKAGE')
 
 def loadmodule(name, path):
     parentname = ".".join(name.split(".")[:-1])
@@ -175,9 +177,18 @@ class JPackageInstance():
 
     def isInstalled(self):
         hrdpath = self.getHRDPath()
-        if j.system.fs.exists(hrdpath):
+        if j.system.fs.exists(hrdpath) and self.hrd.exists('jp.installed.checksum'):
             return True
         return False
+
+    def isLatest(self):
+        if not self.isInstalled():
+            return False
+        checksum = self.hrd.get('jp.installed.checksum')
+        return checksum == self._getMetaChecksum()
+
+    def _getMetaChecksum(self):
+        return j.system.fs.getFolderMD5sum(self.metapath)
 
     def getTCPPorts(self,deps=True, *args, **kwargs):
         self._load()
@@ -388,14 +399,9 @@ class JPackageInstance():
                 j.packages._justinstalled.append(dep.jp.name)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
-            # print recipeitem
-            #pull the required repo
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
 
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
-            # print recipeitem
-            #pull the required repo
-            # from ipdb import set_trace;set_trace()
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
             if node:
@@ -461,7 +467,7 @@ class JPackageInstance():
                 j.do.execute(cmd,dieOnNonZeroExitCode=False)
 
         if self.hrd.getBool("ubuntu.apt.update",default=False):
-            print "apt update"
+            log("apt update")
             j.do.execute("apt-get update -y",dieOnNonZeroExitCode=False)
 
         if self.hrd.getBool("ubuntu.apt.upgrade",default=False):
@@ -476,9 +482,16 @@ class JPackageInstance():
         self.actions.prepare()
 
     @deps
-    def install(self,args={},start=True,deps=True):
-        print "INSTALL:%s"%self
+    def install(self,args={},start=True,deps=True, reinstall=False):
+        if "node2execute" in args:
+            node = j.packages.remote.sshPython(jp=self.jp,node=args['node2execute'])
+        else:
+            node = None
 
+        log("INSTALL:%s"%self)
+        if self.isLatest() and not reinstall and not node:
+            log("Latest %s already installed" % self)
+            return
         self._load(args=args)
 
         self.stop(args=args,deps=deps)
@@ -493,10 +506,6 @@ class JPackageInstance():
 
         self.prepare(args=args,deps=deps)
 
-        if "node2execute" in args:
-            node = j.packages.remote.sshPython(jp=self.jp,node=args['node2execute'])
-        else:
-            node = None
 
         #download
         for recipeitem in self.hrd.getListFromPrefix("web.export"):
@@ -587,6 +596,7 @@ class JPackageInstance():
         self.configure(args=args)
 
         self.start(args=args)
+        self.hrd.set('jp.installed.checksum', self._getMetaChecksum())
 
         # else:
         #     #now bootstrap docker

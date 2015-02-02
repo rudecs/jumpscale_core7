@@ -73,7 +73,7 @@ group.add_argument('--lua',required=False,default=False,action="store_true",help
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
 group.add_argument('--data', required=False, help='use this to pass hrd information to jpackage e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
-# group.add_argument('-r', '--reinstall', required=False, action='store_true', help='Reinstall found package')
+group.add_argument('-r', '--reinstall', required=False, action='store_true', help='Reinstall found package')
 # group.add_argument('-s', '--single', required=False, action='store_true', help='Do not install dependencies')
 
 #install
@@ -203,21 +203,8 @@ if args.action == 'configure':
 elif args.action == 'install':
 
     packages = getJPackage(args,toinstall=True)
-
-    # if args.instance<>0 and len(packages)>1:
-    #     j.events.inputerror_critical("Cannot find more jpackages if instance is given.")
-
     for package in packages:
-        # dependencies = True
-        # if args.single or args.deps:#args.deps because the cmdutils.getJPackage(...) will already have found the dependencies
-        #     dependencies=False
-        # if args.debug:
-        #     package.setDebugMode()
-        # download=True
-        # if args.nodownload:
-        #     download=False
-
-        package.install(args=hrddata,deps=args.deps)
+        package.install(args=hrddata,deps=args.deps, reinstall=args.reinstall)
 
 elif args.action == 'update':
     packages = getJPackage(args,toinstall=True)
