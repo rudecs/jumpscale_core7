@@ -179,9 +179,9 @@ class ProcessManager():
             j.application.config.set("grid.id",res["node"]["gid"])
             j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
 
-            verifyinstall('jumpscale', 'osis_client', instance='processmanager', args={"osis.client.addr":acip,"osis.client.port":5544,"osis.client.login":aclogin,"osis.client.passwd":acpasswd})
+            verifyinstall('jumpscale', 'osis_client', instance='processmanager', hrddata={"param.osis.client.addr":acip,"param.osis.client.port":5544,"param.osis.client.login":aclogin,"param.osis.client.passwd":acpasswd})
             self.hrd.set("osis.connection","processmanager")
-            verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, args={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
+            verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, hrddata={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
             
             self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
@@ -256,15 +256,10 @@ def kill_subprocesses():
     for p in processes:
         p.kill()        
 
-def verifyinstall(domain='jumpscale', name='', instance='main', args={}):
-    jps = j.packages.find(domain, name)
-    if not jps:
-        j.packages.install(domain=domain, name=name, instance=instance, args=args)
-    else:
-        jp = jps[0]
-        isInstalled = j.system.fs.exists(jp.getInstance(instance).getHRDPath())
-        if opts.reset or not isInstalled:
-            j.packages.install(domain=domain, name=name, instance=instance, args=args)
+def verifyinstall(domain='jumpscale', name='', instance='main', args={}, hrddata={}):
+    jp = j.packages.get(name=name, instance=instance)
+    if not jp.isInstalled() or opts.reset:
+        j.packages.install(domain=domain, name=name, instance=instance, args=args, hrddata=hrddata)
 
 parser = cmdutils.ArgumentParser()
 parser.add_argument("-i", '--instance', default="0", help='jsagent instance', required=False)
@@ -273,8 +268,6 @@ parser.add_argument("-s", '--services', help='list of services to run e.g heka, 
 
 opts = parser.parse_args()
 
-
-verifyinstall('jumpscale', 'jsagent', 'main')
 j.application.instanceconfig = j.application.getAppInstanceHRD('jsagent', 'main')
 
 #first start processmanager with all required stuff

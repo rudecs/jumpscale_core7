@@ -474,7 +474,7 @@ class JPackageInstance(object):
             return
         self._apply()
         self.stop(deps=False)
-        self.prepare(deps=deps)
+        self.prepare(deps=False)
 
         #download
         for recipeitem in self.hrd.getListFromPrefix("web.export"):
@@ -561,8 +561,7 @@ class JPackageInstance(object):
                             j.system.fs.createDir(dest)
                             j.do.copyTree(src,dest)
 
-
-        self.configure()
+        self.configure(deps=False)
 
         self.start()
         self.hrd.set('jp.installed.checksum', self._getMetaChecksum())
@@ -727,7 +726,7 @@ class JPackageInstance(object):
     def configure(self,deps=True,restart=True):
         self.actions.configure(**self.args)
         if restart:
-            self.restart()
+            self.restart(deps=False)
 
     def __repr__(self):
         return "%-15s:%-15s:%s"%(self.jp.domain,self.jp.name,self.instance)
