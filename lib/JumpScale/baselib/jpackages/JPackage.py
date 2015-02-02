@@ -473,7 +473,7 @@ class JPackageInstance(object):
             log("Latest %s already installed" % self)
             return
         self._apply()
-        self.stop(deps=deps)
+        self.stop(deps=False)
         self.prepare(deps=deps)
 
         #download
