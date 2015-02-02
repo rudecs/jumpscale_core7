@@ -20,8 +20,11 @@ roles = []
 
 
 def action():
-    for process in j.tools.startupmanager.getProcessDefs():
-        if process.autostart and not process.isRunning():
-            message = "Process %s:%s is not running" % (process.domain, process.name)
-            j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
-
+    for jp in j.packages.find(domain='jumpscale') :
+        instances = jp.listInstances()
+        for instance in instances:
+            jpinstance = jp.getInstance(instance)
+            jpinstance._load()
+            if not jpinstance.actions.check_up_local():
+                 message = "Process %s:%s is not running" % (process.domain, process.name)
+                 j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
