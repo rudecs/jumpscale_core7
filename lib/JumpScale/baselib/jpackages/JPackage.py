@@ -679,7 +679,7 @@ class JPackageInstance():
     @deps
     def resetstate(self,args={},deps=True):
         self._load(args)
-        j.do.delete(self.hrdpath,force=True)
+        # j.do.delete(self.hrdpath,force=True)
         j.do.delete(self.actionspath,force=True)
         j.do.delete(self.actionspath+"c",force=True) #for .pyc file
         actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
