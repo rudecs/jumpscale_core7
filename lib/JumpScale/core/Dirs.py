@@ -254,8 +254,10 @@ class Dirs(object):
             else:
                 return "%s/self/actions"%self.gitConfigDir
         else:
-            return "%s/jpackage_actions"%(j.dirs.baseDir)
-
+            if node is not None:
+                return "%s/jpackage_actions/nodes/%s"%(j.dirs.baseDir, node)
+            else:
+                return "%s/jpackage_actions/"%(j.dirs.baseDir)
 
     def getStatePath(self,node=None):
         if self.gitConfigDir=="unknown":

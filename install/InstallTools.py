@@ -1214,7 +1214,7 @@ class InstallTools():
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
         will ignore changes !!!!!!!!!!!
         """
-        base,ttype,account,repo,dest,url=self.getGitRepoArgs(url,dest,login,passwd,reset=reset)
+        base,provider,account,repo,dest,url=self.getGitRepoArgs(url,dest,login,passwd,reset=reset)
 
         if dest==None and branch==None:
             branch="master"
@@ -1259,10 +1259,10 @@ class InstallTools():
             
         return dest
 
-    def getGitReposListLocal(self,ttype="",account="",name="",errorIfNone=True):
+    def getGitReposListLocal(self,provider="",account="",name="",errorIfNone=True):
         repos={}
         for top in self.listDirsInDir("/opt/code/", recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-            if ttype!="" and ttype!=top:
+            if provider!="" and provider!=top:
                 continue
             for accountfound in self.listDirsInDir("/opt/code/%s"%top, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                 if account!="" and account!=accountfound:
@@ -1275,16 +1275,18 @@ class InstallTools():
                     if self.exists(path="%s/.git"%repodir):
                         repos[reponame]=repodir
         if len(list(repos.keys()))==0:
-            raise RuntimeError("Cannot find git repo '%s':'%s':'%s'"%(ttype,account,name))
+            raise RuntimeError("Cannot find git repo '%s':'%s':'%s'"%(provider,account,name))
         return repos
 
 
-    def pushGitRepos(self,message,name="",update=True,ttype="",account=""):
+    def pushGitRepos(self,message,name="",update=True,provider="",account=""):
         """
         if name specified then will look under code dir if repo with path can be found
         if not or more than 1 there will be error
+        @param provider e.g. git, github
         """
-        repos=self.getGitReposListLocal(ttype,account,name)
+        #@todo make sure we use gitlab or github account if properly filled in
+        repos=self.getGitReposListLocal(provider,account,name)
         for name,path in list(repos.items()):
             print(("push git repo:%s"%path))
             cmd="cd %s;git add . -A"%(path)
@@ -1297,8 +1299,8 @@ class InstallTools():
             cmd="cd %s;git push"%(path)
             self.executeInteractive(cmd)
 
-    def updateGitRepos(self,ttype="",account="",name="",message=""):
-        repos=self.getGitReposListLocal(ttype,account,name)
+    def updateGitRepos(self,provider="",account="",name="",message=""):
+        repos=self.getGitReposListLocal(provider,account,name)
         for name,path in list(repos.items()):
             print(("push git repo:%s"%path))
             cmd="cd %s;git add . -A"%(path)
@@ -1308,17 +1310,17 @@ class InstallTools():
             cmd="cd %s;git pull"%(path)
             self.executeInteractive(cmd)
 
-    def changeLoginPasswdGitRepos(self,ttype,login,passwd):
+    def changeLoginPasswdGitRepos(self,provider,login,passwd):
         """
         walk over all git repo's found in account & change login/passwd
         """
-        for reponame,repopath in list(self.getGitReposListLocal(ttype).items()):
+        for reponame,repopath in list(self.getGitReposListLocal(provider).items()):
             import re
             configpath="%s/.git/config"%repopath
             text=self.readFile(configpath)
             text2=text
-            for item in re.findall(re.compile(r'//.*@%s'%ttype), text):
-                newitem="//%s:%s@%s"%(login,passwd,ttype)
+            for item in re.findall(re.compile(r'//.*@%s'%provider), text):
+                newitem="//%s:%s@%s"%(login,passwd,provider)
                 text2=text.replace(item,newitem)
             if text2!=text:
                 print(("changed login/passwd on %s"%configpath))
@@ -1456,12 +1458,20 @@ paths.hrd=$(paths.base)/hrd
         C=C.replace("$base",basedir.rstrip("/"))
         self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
+#         C="""
+# email                   = @ASK descr:'email as used for github'
+# fullname                = @ASK descr:'full name as used for github'
+# git.login               = @ASK descr:'login for github'
+# git.passwd              = @ASK descr:'passwd for github'
+# """
+
         C="""
-email                   = @ASK descr:'email as used for github'
-fullname                = @ASK descr:'full name as used for github'
-git.login               = @ASK descr:'login for github'
-git.passwd              = @ASK descr:'passwd for github'
+email                   = 
+fullname                = 
+git.login               = 
+git.passwd              = 
 """
+
         hpath="%s/hrd/system/whoami.hrd"%basedir
         if not self.exists(path=hpath):
             self.writeFile(hpath,C)

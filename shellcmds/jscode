@@ -100,6 +100,7 @@ def getRepos(account=None,name=None):
 
 repos=getRepos(opts.accounts,opts.name)
 
+
 if opts.action == "status":
     print("\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev")
     print("=========================================================================================================================")
@@ -122,15 +123,16 @@ for provider,account,reponame,branch,client,path in repos:
     #is dirty hack, am sure there are better ways (@TODO)
     if opts.action == "push":
         print(("push git repo:%s"%path))
-        cmd="cd %s;git add . -A"%(path)
-        j.do.executeInteractive(cmd)
-        cmd="cd %s;git commit -m \"%s\""%(path,opts.message)
-        j.do.executeInteractive(cmd)
-        cmd="cd %s;git pull"%(path)
-        j.do.executeInteractive(cmd)
-        cmd="cd %s;git push"%(path)
-        j.do.executeInteractive(cmd)
-        continue
+        j.do.pushGitRepos(message=opts.message,name=reponame,update=True,provider=provider,account=account)
+        # cmd="cd %s;git add . -A"%(path)
+        # j.do.executeInteractive(cmd)
+        # cmd="cd %s;git commit -m \"%s\""%(path,opts.message)
+        # j.do.executeInteractive(cmd)
+        # cmd="cd %s;git pull"%(path)
+        # j.do.executeInteractive(cmd)
+        # cmd="cd %s;git push"%(path)
+        # j.do.executeInteractive(cmd)
+        # continue
 
     if opts.action in ['status','commit','push','update']:
 
@@ -141,7 +143,7 @@ for provider,account,reponame,branch,client,path in repos:
         if opts.onlychanges and nrmods==0:
             continue
 
-        # lrev,lid,ttype,branch,user,msg,ddate=client.client.tip()
+        # lrev,lid,provider,branch,user,msg,ddate=client.client.tip()
         branch=client.branchName
 
         if opts.branch != None:

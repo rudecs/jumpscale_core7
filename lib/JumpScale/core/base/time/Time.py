@@ -27,6 +27,23 @@ class Time:
             pass
         timestamp = int(time.time())
         return timestamp
+    
+    def getSecondsInHR(self, seconds):
+        minute = 60.
+        hour = 3600.
+        day = hour * 24
+        week = day * 7
+        if seconds < minute:
+            return "%s seconds" % seconds
+        elif seconds < hour:
+            return "%s minutes" % round((seconds/minute), 1)
+        elif seconds < day:
+            return "%s hours" % round((seconds/hour), 1)
+        elif seconds < week:
+            return "%s days" % round((seconds/day), 1)
+        else:
+            return "%s weeks" % round((seconds/week), 1)
+
 
     def getTimeEpochBin(self):
         '''

@@ -73,6 +73,7 @@ class RedisFactory:
         self.redis = {}
         self.gredisq = {}
         self.redisq = {}
+        self._config = {}
 
     def getGeventRedisClient(self, ipaddr, port, fromcache=True,password=""):
         #from gevent.monkey import patch_socket
@@ -93,14 +94,18 @@ class RedisFactory:
         return self.redis[key]
 
     def getByInstance(self, instance, gevent=False):
-        jp = j.packages.find('jumpscale','redis')[0].getInstance(instance)
-        password = jp.hrd.get('param.passwd')
-        port = jp.hrd.getInt('param.port')
-        password = None if not password.strip() else password
+        if not instance in self._config:
+            hrd = j.application.getAppInstanceHRD(name="redis",instance=instance)
+            password = hrd.get('param.passwd')
+            port = hrd.getInt('param.port')
+            password = None if not password.strip() else password
+            self._config[instance] = {'password': password, 'port':port}
+
         if gevent:
-            return GeventRedis('localhost', port, password=password)
+            rediscl = GeventRedis('localhost', self._config[instance]['port'], password=self._config[instance]['password'])
         else:
-            return Redis('localhost', port, password=password)
+            rediscl = Redis('localhost', self._config[instance]['port'], password=self._config[instance]['password'])
+        return rediscl
 
     def getRedisQueue(self, ipaddr, port, name, namespace="queues", fromcache=True):
         if not fromcache:

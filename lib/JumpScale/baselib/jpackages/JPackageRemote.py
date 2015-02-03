@@ -142,7 +142,7 @@ from JumpScale import j
         action = action.replace("_","") # make sure the action name is correcte
         codegen=j.tools.packInCode.get4python()
 
-        actionfile="%s/%s__%s.py"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
+        actionfile="%s.py" % self.jp.actionspath
         actionContent = j.system.fs.fileGetContents(actionfile)
         codegen.code +="""
 class JPackageInstanceMock(object):
@@ -156,6 +156,7 @@ class JPackageMock(object):
 
     def __init__(self,hrd,domain,name,instance):
         self.hrd = hrd
+        self.instance = instance
         self.jp = JPackageInstanceMock(domain,name,instance)
 
     def getLogPath(self):

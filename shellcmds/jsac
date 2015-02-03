@@ -7,7 +7,7 @@ import sys,time
 j.application.start("jsac")
 
 parser = cmdutils.ArgumentParser()
-parser.add_argument("action", choices=['reload', 'exec', 'listsessions', 'pushjs'], help='Command to perform')
+parser.add_argument("action", choices=['reload', 'exec', 'listsessions'], help='Command to perform')
 parser.add_argument('-nid', '--nodeid', dest='nid', required=False, type=int, help='Use for exec')
 parser.add_argument('-gid', '--gridid', dest='gid', required=False, type=int, help='Use for exec')
 parser.add_argument('-r', '--role', required=False, help='Use for exec')
@@ -28,7 +28,9 @@ if opts.action == 'reload':
 elif opts.action == 'listsessions':
     import yaml
     sessions = ac.listSessions()
-    print('Sessions:\n\n', yaml.dump(sessions))
+    hrd = j.core.hrd.get()
+    hrd.set('sessions', sessions, False)
+    print('Sessions:\n\n %s' % hrd)
 elif opts.action == 'exec':
     import yaml
     args = dict()
@@ -40,10 +42,6 @@ elif opts.action == 'exec':
                 value = int(value)
             args[key] = value
     job = ac.executeJumpscript(opts.organization, opts.name, nid=opts.nid, gid=opts.gid, role=opts.role, args=args, queue=opts.queue)
-    print("Job:\n\n:", yaml.dump(job))
-elif opts.action == 'pushjs':
-    import JumpScale.grid.jumpscripts
-    print('Pushing Jumpscripts to webdis')
-    j.core.jumpscripts.pushToGridMaster()
+    print("Job:\n\n: %s" % yaml.dump(job))
 
 j.application.stop()

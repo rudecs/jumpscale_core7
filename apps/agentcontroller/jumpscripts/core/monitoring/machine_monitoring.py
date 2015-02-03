@@ -27,9 +27,8 @@ except:
     enable=False
 
 def action():
-    syscl = j.core.osis.getNamespace("system")
+    syscl = j.clients.osis.getNamespace('system')
     rediscl = j.clients.redis.getByInstance('system')
-
     con = libvirt.open('qemu:///system')
     #con = libvirt.open('qemu+ssh://10.101.190.24/system')
     stateMap = {libvirt.VIR_DOMAIN_RUNNING: 'RUNNING',
