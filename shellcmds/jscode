@@ -100,6 +100,41 @@ def getRepos(account=None,name=None):
 
 repos=getRepos(opts.accounts,opts.name)
 
+def pushGitRepos(message,name="",update=True,provider="",account=""):
+    """
+    if name specified then will look under code dir if repo with path can be found
+    if not or more than 1 there will be error
+    @param provider e.g. git, github
+    """
+    #@todo make sure we use gitlab or github account if properly filled in
+    login = j.application.config.get("whoami.git.login")
+    passwd = j.application.config.get("whoami.git.passwd")
+    if login is None or login.strip() == "" or passwd is None or passwd.strip == "":
+        raise RuntimeError("no git configuration found. Please install github_client to configure git. (jpackage install -n github_client)")
+
+    repos=j.do.getGitReposListLocal(provider,account,name)
+    for name,path in list(repos.items()):
+
+        cmd = "cd %s;git config --get remote.origin.url"%path
+        _,url,_ = j.do.execute(cmd)
+        if str(url).find("@") == -1:
+            start = str(url).find('//')
+            url = url[:start+2]+ "%s:%s@" %(login,passwd) +url[start+2:len(url)-1]
+            print url
+            cmd = "cd %s;git remote set-url origin %s" % (path,url)
+            j.do.execute(cmd)
+
+        print(("push git repo:%s"%path))
+        cmd="cd %s;git add . -A"%(path)
+        j.do.execute(cmd)
+        cmd="cd %s;git commit -m \"%s\""%(path,message)
+        j.do.execute(cmd)
+        if update:
+            cmd='cd %s;git pull'%(path)
+            j.do.executeInteractive(cmd)
+        cmd='cd %s;git push'%(path)
+        from ipdb import set_trace;set_trace()
+        # j.do.execute(cmd)
 
 if opts.action == "status":
     print("\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev")
@@ -107,7 +142,6 @@ if opts.action == "status":
 
 
 for provider,account,reponame,branch,client,path in repos:
-
     if opts.action == "update" and opts.deletechanges:
         print(("force update %s/%s/%s"%(provider,account,reponame)))
         client.pull()
@@ -116,25 +150,16 @@ for provider,account,reponame,branch,client,path in repos:
 
     if opts.action == "get":
         cmd="git config --global push.default matching"
-        do.execute(cmd)
-        do.pullGitRepo(opts.url,dest=None,depth=None,ignorelocalchanges=opts.deletechanges,reset=False,branch=opts.branch)
+        j.do.execute(cmd)
+        j.do.pullGitRepo(opts.url,dest=None,depth=None,ignorelocalchanges=opts.deletechanges,reset=False,branch=opts.branch)
         continue
 
     #is dirty hack, am sure there are better ways (@TODO)
     if opts.action == "push":
-        print(("push git repo:%s"%path))
-        j.do.pushGitRepos(message=opts.message,name=reponame,update=True,provider=provider,account=account)
-        # cmd="cd %s;git add . -A"%(path)
-        # j.do.executeInteractive(cmd)
-        # cmd="cd %s;git commit -m \"%s\""%(path,opts.message)
-        # j.do.executeInteractive(cmd)
-        # cmd="cd %s;git pull"%(path)
-        # j.do.executeInteractive(cmd)
-        # cmd="cd %s;git push"%(path)
-        # j.do.executeInteractive(cmd)
-        # continue
+        pushGitRepos(message=opts.message,name=reponame,update=True,provider=provider,account=account)
 
-    if opts.action in ['status','commit','push','update']:
+    nrmods = 0
+    if opts.action in ['status','commit','update']:
 
         mods=client.getModifiedFiles()
 
@@ -218,7 +243,7 @@ for provider,account,reponame,branch,client,path in repos:
                     print(("    - %s"%(subitem)))
 
 
-    if opts.action in ['commit','push','update']:
+    if opts.action in ['commit','update']:
 
         if nrmods>0:
             if opts.message==None:
@@ -229,13 +254,9 @@ for provider,account,reponame,branch,client,path in repos:
             print("ADD/REMOVE/COMMIT")
             client.commit(message=message, addremove=True)
 
-    if opts.update or opts.action =='update' or opts.action =='push':
+    if opts.update or opts.action =='update':
         print("PULL")
         client.pull()
-    
-    if opts.action =='push':        
-        print("PUSH")
-        client.push()
 
 
 j.application.stop()
