@@ -6,6 +6,7 @@ from .ActionsBase import ActionsBase
 class JPackageFactory():
 
     def __init__(self):
+        
         self._init=False
         self.domains={}
         self.hrd=None
@@ -28,6 +29,7 @@ class JPackageFactory():
         self._type=value
 
     def _doinit(self):
+        
         if self._init==False:
             j.do.debug=False
 

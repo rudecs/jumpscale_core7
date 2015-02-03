@@ -295,10 +295,7 @@ class JPackageInstance(object):
         login = j.application.config.get("whoami.git.login").strip()
         passwd = j.application.config.getStr("whoami.git.passwd").strip()
 
-        if login:
-            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,dest=dest)
-        else:
-            dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision,dest=dest)
+        dest=j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth, branch=branch,revision=revision,dest=dest)
         self._reposDone[url]=dest
         return dest
 
