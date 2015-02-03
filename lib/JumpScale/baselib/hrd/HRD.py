@@ -199,7 +199,7 @@ class HRD(HRDBase):
 
         if content!="":
             self.process(content)
-        else:
+        elif path is not None:
             self.read()
 
     def set(self,key,value="",persistent=True,comments="",temp=False,ttype=None,data=""):
