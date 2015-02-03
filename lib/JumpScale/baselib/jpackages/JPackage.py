@@ -28,7 +28,7 @@ def remote(F): # F is func or method without instance
                 cl = j.packages.remote.sshPython(jp, node)
 
             cl.execute(F.func_name)
-
+    wrapper.func_name_orig = F.func_name
     return wrapper
 
 #decorator to get dependencies
@@ -74,7 +74,11 @@ def deps(F): # F is func or method without instance
             for dep in jp.getDependencies():
                 if dep.jp.name not in j.packages._justinstalled:
                     dep.args = jp.args
-                    result=processresult(result,F(dep))
+                    if hasattr(F, 'func_name_orig'):
+                        depfunc = getattr(dep, F.func_name_orig)
+                    else:
+                        depfunc = getattr(dep, F.func_name)
+                    result=processresult(result,depfunc(*args, **kwargs))
                     j.packages._justinstalled.append(dep.jp.name)
         result=processresult(result,F(jp, *args,**kwargs))
         return result
