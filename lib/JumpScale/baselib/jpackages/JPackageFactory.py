@@ -29,10 +29,6 @@ class JPackageFactory():
         self._type=value
 
     def _doinit(self):
-        raise RuntimeError("ii")
-        from IPython import embed
-        print "DEBUG NOW 9999"
-        embed()
         
         if self._init==False:
             j.do.debug=False
