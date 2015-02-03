@@ -167,22 +167,6 @@ class Daemon(object):
             2= method not found
             2+ any other error
         """
-        cmdkey = "%s_%s" % (category, cmd)
-        # cmd2 = {}
-        if cmdkey in self.cmds:
-            ffunction = self.cmds[cmdkey]
-        else:
-            ffunction = None
-            if not self.cmdsInterfaces.has_key(category):
-                return returnCodes.METHOD_NOT_FOUND, "", None
-
-            cmdinterface= self.cmdsInterfaces[category]
-            if hasattr(cmdinterface, cmd):
-                ffunction = getattr(cmdinterface, cmd)
-            else:
-                return returnCodes.METHOD_NOT_FOUND, "", None
-
-            self.cmds[cmdkey] = ffunction
 
         inputisdict = isinstance(data, dict)
 
