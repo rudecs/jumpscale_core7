@@ -1283,6 +1283,7 @@ class InstallTools():
         """
         if name specified then will look under code dir if repo with path can be found
         if not or more than 1 there will be error
+        @param ttype e.g. git, github
         """
         repos=self.getGitReposListLocal(ttype,account,name)
         for name,path in list(repos.items()):

@@ -123,15 +123,16 @@ for provider,account,reponame,branch,client,path in repos:
     #is dirty hack, am sure there are better ways (@TODO)
     if opts.action == "push":
         print(("push git repo:%s"%path))
-        cmd="cd %s;git add . -A"%(path)
-        j.do.executeInteractive(cmd)
-        cmd="cd %s;git commit -m \"%s\""%(path,opts.message)
-        j.do.executeInteractive(cmd)
-        cmd="cd %s;git pull"%(path)
-        j.do.executeInteractive(cmd)
-        cmd="cd %s;git push"%(path)
-        j.do.executeInteractive(cmd)
-        continue
+        j.do.pushGitRepos(message=opts.message,name=reponame,update=True,ttype=provider,account=account)
+        # cmd="cd %s;git add . -A"%(path)
+        # j.do.executeInteractive(cmd)
+        # cmd="cd %s;git commit -m \"%s\""%(path,opts.message)
+        # j.do.executeInteractive(cmd)
+        # cmd="cd %s;git pull"%(path)
+        # j.do.executeInteractive(cmd)
+        # cmd="cd %s;git push"%(path)
+        # j.do.executeInteractive(cmd)
+        # continue
 
     if opts.action in ['status','commit','push','update']:
 
