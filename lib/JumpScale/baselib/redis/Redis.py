@@ -95,9 +95,9 @@ class RedisFactory:
 
     def getByInstance(self, instance, gevent=False):
         if not instance in self._config:
-            jp = j.packages.get(name='redis', instance=instance)
-            password = jp.hrd.get('param.passwd')
-            port = jp.hrd.getInt('param.port')
+            hrd = j.application.getAppInstanceHRD(name="redis",instance=instance)
+            password = hrd.get('param.passwd')
+            port = hrd.getInt('param.port')
             password = None if not password.strip() else password
             self._config[instance] = {'password': password, 'port':port}
 
