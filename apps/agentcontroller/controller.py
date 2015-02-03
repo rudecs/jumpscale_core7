@@ -679,7 +679,7 @@ class ControllerCMDS():
             result.append(jobresult)
         return result
 
-    def getAllJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts'), session=None):
+    def getJumpscripts(self, bz2_compressed=True, types=('processmanager', 'jumpscripts'), session=None):
         """
         Returns the available jumpscripts as a Base64-encoded TAR archive that is optionally compressed using bzip2.
 
