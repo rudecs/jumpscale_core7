@@ -151,7 +151,10 @@ class GeventWSServer():
 
     def start(self):
         print(("started on %s" % self.port))
-        self.server.serve_forever()
+        try:
+            self.server.serve_forever()
+        except KeyboardInterrupt:
+            print "bye"
 
     def addCMDsInterface(self, MyCommands, category="",proxy=False):
         self.daemon.addCMDsInterface(MyCommands, category,proxy=proxy)
