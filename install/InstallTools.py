@@ -1456,12 +1456,20 @@ paths.hrd=$(paths.base)/hrd
         C=C.replace("$base",basedir.rstrip("/"))
         self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
+#         C="""
+# email                   = @ASK descr:'email as used for github'
+# fullname                = @ASK descr:'full name as used for github'
+# git.login               = @ASK descr:'login for github'
+# git.passwd              = @ASK descr:'passwd for github'
+# """
+
         C="""
-email                   = @ASK descr:'email as used for github'
-fullname                = @ASK descr:'full name as used for github'
-git.login               = @ASK descr:'login for github'
-git.passwd              = @ASK descr:'passwd for github'
+email                   = 
+fullname                = 
+git.login               = 
+git.passwd              = 
 """
+
         hpath="%s/hrd/system/whoami.hrd"%basedir
         if not self.exists(path=hpath):
             self.writeFile(hpath,C)

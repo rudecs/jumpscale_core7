@@ -57,11 +57,12 @@ class Application:
         self.config = j.core.hrd.get(path="%s/system" % j.dirs.hrdDir)
 
     def connectRedis(self):
-        import JumpScale.baselib.redis
-        if j.clients.redis.isRunning('system'):
-            self.redis = j.clients.redis.getByInstance('system')
-        else:
-            self.redis=None
+        if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
+            import JumpScale.baselib.redis
+            if j.clients.redis.isRunning('system'):
+                self.redis = j.clients.redis.getByInstance('system')
+                return
+        self.redis=None
 
     def initWhoAmI(self, reload=False):
         """
