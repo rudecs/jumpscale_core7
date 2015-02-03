@@ -318,7 +318,7 @@ class JPackageInstance(object):
                 hrddata={}
                 item={}
                 item["name"]=item2
-                item["domain"]="jumpscale"
+                item["domain"]=""
                 item["instance"]="main"
 
             if not build and item.get('type', 'runtime') == 'build':
@@ -342,8 +342,8 @@ class JPackageInstance(object):
             domain=""
             if "domain" in item:
                 domain=item["domain"].strip()
-            if domain=="":
-                domain="jumpscale"
+            # if domain=="":
+            #     domain="jumpscale"
 
             instance="main"
             if "instance" in item:
@@ -365,7 +365,7 @@ class JPackageInstance(object):
         if not self.actions.check_down_local(**self.args):
             self.actions.halt(**self.args)
 
-    @deps
+    # @deps
     def build(self, deps=True):
 
         if self._node:
@@ -652,8 +652,7 @@ class JPackageInstance(object):
         self.restart()
 
     @deps
-    def resetstate(self,deps=True):
-        j.do.delete(self.hrdpath,force=True)
+    def resetstate(self,deps=True):        
         j.do.delete(self.actionspath,force=True)
         j.do.delete(self.actionspath+"c",force=True) #for .pyc file
         actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
@@ -668,6 +667,7 @@ class JPackageInstance(object):
         - remove data of the app
         """
         self.resetstate()
+        j.do.delete(self.hrdpath,force=True)
         #remove build repo's
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
