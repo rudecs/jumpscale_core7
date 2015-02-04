@@ -6,6 +6,12 @@ class Actions(ActionsBase):
     """
     implement methods of this class to change behaviour of lifecycle management of jpackage
     """
+    # def init(self,**args):
+    #     """
+    #     first function called, always called where jpackage is hosted
+    #     """
+    #     return True
+    
     # def prepare(self,**args):
     #     """
     #     this gets executed before the files are downloaded & installed on approprate spots

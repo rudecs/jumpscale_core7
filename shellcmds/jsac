@@ -42,6 +42,6 @@ elif opts.action == 'exec':
                 value = int(value)
             args[key] = value
     job = ac.executeJumpscript(opts.organization, opts.name, nid=opts.nid, gid=opts.gid, role=opts.role, args=args, queue=opts.queue)
-    print("Job:\n\n: %s" % yaml.dump(job))
+    print("Job:\n\n: %s" % yaml.dump(job).replace('!!python/unicode ', ''))
 
 j.application.stop()

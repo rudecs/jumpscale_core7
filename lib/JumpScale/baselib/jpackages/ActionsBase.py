@@ -29,13 +29,23 @@ class ActionsBase():
                 name+="__%s"%self.jp_instance.instance
         return domain, name
 
+    def init(self,**args):
+        """
+        first function called, always called where jpackage is hosted
+        """
+        return True
+
     def start(self,**args):
         """
         start happens because of info from main.hrd file but we can overrule this
         make sure to also call ActionBase.start(**args) in your implementation otherwise the default behaviour will not happen
         """
 
+        if self.jp_instance.getProcessDicts()==[]:
+            return
+
         def start2(process):
+            
             cwd=process["cwd"]
             self.stop(**args)
 
@@ -140,6 +150,10 @@ class ActionsBase():
         a uptime check will be done afterwards (local)
         return True if stop was ok, if not this step will have failed & halt will be executed.
         """
+
+        if self.jp_instance.getProcessDicts()==[]:
+            return
+
         def _stop(process):
             ports = process.get('ports', [])
             for port in ports:
@@ -171,7 +185,8 @@ class ActionsBase():
             for port in self.jp_instance.getTCPPorts():
                 j.system.process.killProcessByPort(port)
             if not self.check_down_local(**args):
-                j.system.process.killProcessByName(process["filterstr"])
+                if process["filterstr"].strip()!="":
+                    j.system.process.killProcessByName(process["filterstr"])
             if not self.check_down_local(**args):
                 j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
 
@@ -215,7 +230,10 @@ class ActionsBase():
                             return False
             else:
                 #no ports defined
-                filterstr=process["filterstr"]
+                filterstr=process["filterstr"].strip()
+
+                if filterstr=="":
+                    raise RuntimeError("Process filterstr cannot be empty.")
 
                 start=j.base.time.getTimeEpoch()
                 now=start
@@ -253,7 +271,9 @@ class ActionsBase():
                         return False
             else:
                 #no ports defined
-                filterstr=process["filterstr"]
+                filterstr=process["filterstr"].strip()
+                if filterstr=="":
+                    raise RuntimeError("Process filterstr cannot be empty.")
                 return j.system.process.checkProcessRunning(filterstr)==False
 
         for process in self.jp_instance.getProcessDicts():

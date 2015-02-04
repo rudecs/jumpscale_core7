@@ -1080,6 +1080,7 @@ class InstallTools():
         self.expandTarGz(tmppath,destdir)
 
     def expandTarGz(self,path,destdir,deleteDestFirst=True,deleteSourceAfter=False):
+        import gzip
 
         self.lastdir=os.getcwd()
         os.chdir(self.TMP)
