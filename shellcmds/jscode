@@ -108,7 +108,11 @@ if opts.action == "status":
 for provider,account,reponame,branch,client,path in repos:
 
     from IPython import embed;embed()
-    
+    if j.application.config.exists("whoami.git.passwd") == False or j.application.config.exists("whoami.git.login") == False:
+        raise RuntimeError("git configuration not found, please install github_client jpackage (jpackage install -n github_client)")
+    else:
+        login = j.application.config.get("whoami.git.login")
+        passwd = j.application.config.get("whoami.git.passwd")
 
     if opts.action == "update" and opts.deletechanges:
         print(("force update %s/%s/%s"%(provider,account,reponame)))
