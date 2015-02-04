@@ -127,8 +127,8 @@ for provider,account,reponame,branch,client,path in repos:
 
     if opts.action == "get":
         cmd="git config --global push.default matching"
-        do.execute(cmd)
-        do.pullGitRepo(opts.url,dest=None,depth=None,ignorelocalchanges=opts.deletechanges,reset=False,branch=opts.branch)
+        j.do.execute(cmd)
+        j.do.pullGitRepo(opts.url,dest=None,depth=None,ignorelocalchanges=opts.deletechanges,reset=False,branch=opts.branch)
         continue
 
     #is dirty hack, am sure there are better ways (@TODO)
