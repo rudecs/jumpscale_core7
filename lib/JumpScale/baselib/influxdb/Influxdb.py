@@ -15,3 +15,10 @@ class InfluxdbFactory:
             verify_ssl=verify_ssl, timeout=timeout, use_udp=use_udp, udp_port=udp_port)
         return db
 
+    def getByInstance(self, instancename):
+        hrd = j.application.getAppInstanceHRD(name="influxdb_client",instance=instancename)
+        ipaddr=hrd.get("param.influxdb.client.address")
+        port=hrd.getInt("param.influxdb.client.port")        
+        login=hrd.get("param.influxdb.client.login")
+        passwd=hrd.get("param.influxdb.client.passwd")
+        return j.clients.influxdb.get(host=ipaddr, port=port,username=login, password=passwd, database="main")

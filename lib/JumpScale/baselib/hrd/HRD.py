@@ -169,7 +169,6 @@ class HRDItem():
             self.value=j.tools.text.str2var(data)
 
         if self.hrd.changed:
-            # print "SAVE"
             self.hrd.save()
             self.hrd.changed=False
 
@@ -200,7 +199,7 @@ class HRD(HRDBase):
 
         if content!="":
             self.process(content)
-        else:
+        elif path is not None:
             self.read()
 
     def set(self,key,value="",persistent=True,comments="",temp=False,ttype=None,data=""):

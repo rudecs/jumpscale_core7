@@ -20,8 +20,15 @@ roles = []
 
 
 def action():
-    for process in j.tools.startupmanager.getProcessDefs():
-        if process.autostart and not process.isRunning():
-            message = "Process %s:%s is not running" % (process.domain, process.name)
-            j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
-
+    for jp in j.packages.find():
+        instances = jp.listInstances()
+        for instance in instances:
+            jpinstance = jp.getInstance(instance)
+            if not jpinstance.isInstalled():
+                continue
+            if not jpinstance.actions.check_up_local(wait=False):
+                 message = "Process %s:%s:%s is not running" % (jpinstance.domain, jpinstance.name, instance)
+                 j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
+                 
+if __name__ == '__main__':
+    action()

@@ -31,9 +31,9 @@ opts=cmdutils.processLogin(parser)
 
 import JumpScale.grid.osis
 
-osis=j.core.osis.getByInstance('main')
-userclient=j.core.osis.getCategory(osis,"system","user")
-groupclient=j.core.osis.getCategory(osis,"system","group")
+osis=j.clients.osis.getByInstance('main')
+userclient=j.clients.osis.getCategory(osis,"system","user")
+groupclient=j.clients.osis.getCategory(osis,"system","group")
 
 xmpp=[]
 mobile=[]

@@ -7,7 +7,7 @@ import JumpScale.grid.osis
 
 if __name__ == '__main__':
 
-    client = j.core.osis.getByInstance('main')
+    client = j.clients.osis.getByInstance('main')
 
 
     def testClass():
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print(client.listNamespaces())
 
     def test1():
-        user=j.core.osis.getCategory(client,"system","user")
+        user=j.clients.osis.getCategory(client,"system","user")
         obj=user.new()
         obj.id="jan"
         obj.description="test"

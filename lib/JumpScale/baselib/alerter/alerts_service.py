@@ -34,7 +34,7 @@ class AlertService(object):
     def __init__(self):
         self.rediscl = j.clients.redis.getByInstance('system')
         self.alertqueue = self.rediscl.getQueue('alerts')
-        self.alerts_client = j.core.portal.getByInstance('main').actors.system.alerts
+        self.alerts_client = j.clients.portal.getByInstance('main').actors.system.alerts
         self.scl = j.core.osis.getNamespace('system')
         self.handlers = list()
         self.timers = dict()

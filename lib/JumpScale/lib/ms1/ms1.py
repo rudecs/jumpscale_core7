@@ -100,9 +100,9 @@ class MS1(object):
         cs=self.getCloudspaceObj(space_secret)
 
         host = 'www.mothership1.com'# if cs["location"] == 'ca1' else '%s.mothership1.com' % cs["location"]
-        api=j.core.portal.getClient(host, 443, space_secret)
+        api=j.clients.portal.get(host, 443, space_secret)
         try:
-            api=j.core.portal.getClient(host, 443, space_secret)
+            api=j.clients.portal.get(host, 443, space_secret)
         except Exception as e:
             raise RuntimeError("E:Could not login to MS1 API.")
 

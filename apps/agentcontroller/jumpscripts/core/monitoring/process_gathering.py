@@ -155,47 +155,53 @@ def action():
                 j.core.processmanager.childrenPidsFound[int(childpid)]=True
 
     #walk over startupmanager processes (make sure we don't double count)
-    for sprocess in j.tools.startupmanager.getProcessDefs():
-        pid = sprocess.getJSPid()
+    pids = {}
+    for package in j.packages.find():
+        for instance in package.listInstances():
+            jpinstance = package.getInstance(instance)
+            if not jpinstance.isInstalled():
+                continue
+            
+            ports = jpinstance.getTCPPorts()
+            for d in jpinstance.getProcessDicts():
+                process_key="%s_%s"%(jpinstance.domain, jpinstance.name)
+                cwd = d.get('cwd')
+                cmd = d.get('cmd')
 
-        if j.core.processmanager.monObjects.processobject.pid2name.has_key(pid):
-            sprocess.domain,sprocess.name=j.core.processmanager.monObjects.processobject.pid2name[pid]
+                for p in ports:
+                    pids[process_key] =  pids.get(process_key, [])
+                    pids[process_key].extend(j.system.process.getPidsByPort(p))
+                
+                cacheobj=j.core.processmanager.monObjects.processobject.get(id=process_key)
+    
+                cacheobj.ckeyOld = rediscl.hget('processes', process_key)
         
-        process_key="%s_%s"%(sprocess.domain,sprocess.name)
-        print "process: '%s' pid:'%s'"%(process_key,pid)
-
-        # exists=j.core.processmanager.monObjects.processobject.exists(process_key)
-
-        cacheobj=j.core.processmanager.monObjects.processobject.get(id=process_key)
-
-        cacheobj.ckeyOld = rediscl.hget('processes', process_key)
-
-        processOsisObject=cacheobj.db
-
-        processOsisObject.active=sprocess.isRunning()
-        processOsisObject.ports = sprocess.ports
-        processOsisObject.jpname = sprocess.jpackage_name
-        processOsisObject.jpdomain=sprocess.jpackage_domain
-        processOsisObject.workingdir = sprocess.workingdir
-        processOsisObject.cmd = sprocess.cmd
-        processOsisObject.sname = sprocess.name
-        processOsisObject.pname = ""
-        processOsisObject.getSetGuid()
-        processOsisObject.type="jsprocess"
-        processOsisObject.statkey=process_key
-        processOsisObject.systempids = sprocess.getPids()
-
-
-        if processOsisObject.systempids:            
-            loadFromSystemProcessInfo(process_key,cacheobj,processOsisObject.systempids[0])
-            cacheobj.getTotalsChildren()
-        else:
-            processStopped(cacheobj)
-
-        result[process_key]=cacheobj
-
-
-
+                processOsisObject=cacheobj.db
+                
+                processOsisObject.active=jpinstance.actions.check_up_local(wait=False)
+                processOsisObject.ports = ports
+                processOsisObject.jpname = jpinstance.name
+                processOsisObject.jpdomain=jpinstance.domain
+                processOsisObject.workingdir = cwd
+                processOsisObject.cmd = cmd
+                processOsisObject.sname = process_key
+                processOsisObject.pname = ""
+                processOsisObject.getSetGuid()
+                processOsisObject.type="jsprocess"
+                processOsisObject.statkey=process_key
+                processOsisObject.systempids = pids[process_key]
+        
+                if processOsisObject.systempids:            
+                    loadFromSystemProcessInfo(process_key,cacheobj,str(processOsisObject.systempids[0]))
+                    cacheobj.getTotalsChildren()
+                else:
+                    processStopped(cacheobj)
+        
+                result[process_key]=cacheobj
+                
+    for k, v in pids.iteritems():     
+        print "process: '%s' pids:'%s'"%(k,v)
+                
         # exists=j.core.processmanager.monObjects.processobject.exists(process_key)
     for process_key,cacheobj in result.iteritems():
         if j.basetype.string.check(process_key):
@@ -233,5 +239,5 @@ def action():
 
 if __name__ == '__main__':
     import JumpScale.grid.osis
-    j.core.osis.client = j.core.osis.getByInstance('processmanager')
+    j.core.osis.client = j.clients.osis.getByInstance('processmanager')
     action()

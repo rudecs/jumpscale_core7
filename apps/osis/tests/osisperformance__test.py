@@ -32,8 +32,8 @@ class TEST():
         return ':'.join(["%02x" % x for x in mac])
 
     def setUp(self):
-        self.client = j.core.osis.getClient()
-        self.nodeclient =j.core.osis.getCategory(self.client, 'system', 'fake4test')
+        self.client = j.clients.osis.get()
+        self.nodeclient =j.clients.osis.getCategory(self.client, 'system', 'fake4test')
         self.prefix = time.time()
 
     def test_set(self):

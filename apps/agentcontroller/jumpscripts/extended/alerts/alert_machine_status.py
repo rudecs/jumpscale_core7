@@ -27,8 +27,8 @@ def action():
         return
 
     import JumpScale.grid.osis
-    ocl = j.core.osis.getByInstance('main')
-    mcl = j.core.osis.getCategory(ocl, 'cloudbroker', 'vmachine')
+    ocl = j.clients.osis.getByInstance('main')
+    mcl = j.clients.osis.getCategory(ocl, 'cloudbroker', 'vmachine')
 
     try:
         con = libvirt.open('qemu:///system')

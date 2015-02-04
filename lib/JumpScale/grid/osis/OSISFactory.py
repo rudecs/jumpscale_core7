@@ -30,7 +30,7 @@ class NameSpaceClient(object):
         self._client = client
         self._namespace = namespace
         for category in client.listNamespaceCategories(namespace):
-            cclient = j.core.osis.getCategory(self._client, self._namespace, category)
+            cclient = j.clients.osis.getCategory(self._client, self._namespace, category)
             setattr(self, category, cclient)
 
     def __getattr__(self, category):
@@ -38,9 +38,92 @@ class NameSpaceClient(object):
         if category not in categories:
             raise AttributeError("Category %s does not exists in namespace %s" % (category, self._namespace))
 
-        cclient = j.core.osis.getCategory(self._client, self._namespace, category)
+        cclient = j.clients.osis.getCategory(self._client, self._namespace, category)
         setattr(self, category, cclient)
         return cclient
+
+class OSISClientFactory(object):
+    def __init__(self):
+        self._sysstdout = None
+        self.osisConnections = {}
+        self.osisConnectionsCat={}
+
+    def get(self, ipaddr=None, port=5544,user=None,passwd=None,ssl=False,gevent=False):
+        if ipaddr==None or user==None or passwd==None:
+            osisjp=j.packages.find(name="osis_client",domain="jumpscale")[0]
+            inames=osisjp.listInstances()
+            if len(inames)==1:
+                osisjp=osisjp.load(instance=inames[0])
+                hrd=osisjp.hrd_instance
+                if ipaddr==None:
+                    ipaddr=hrd.get("osis.client.addr")
+                if user==None:
+                    user=hrd.get("osis.client.login")
+                if passwd==None:
+                    passwd=hrd.get("osis.client.passwd")
+                port=int(hrd.get("osis.client.port"))
+
+        if passwd=="EMPTY":
+            passwd=""
+
+        if ipaddr!=None:
+            ips = [ipaddr]
+        elif j.application.config.exists('osis.ip'):
+            ips = j.application.config.getList('osis.ip')
+        else:
+            ips = [ j.application.config.get('grid.master.ip') ]
+        connections = [ (ip, port) for ip in ips ]
+        key = "%s_%s_%s" % (connections, user, passwd)
+        if key in self.osisConnections:
+            return self.osisConnections[key]
+
+        if user==None or user=="node":
+            user="node"
+            passwd=j.application.config.get("grid.node.machineguid")
+        elif user=="root" and not passwd:
+            if j.application.config.exists("osis.superadmin.passwd"):
+                passwd=j.application.config.get("osis.superadmin.passwd")
+            else:
+                raise RuntimeError("Osis superadmin passwd has not been defined on this node, please put in #hrd (osis.superadmin.passwd) or use argument 'passwd'.")
+
+        with j.logger.nostdout():
+            client= j.servers.geventws.getClient(connections[0][0], connections[0][1], user=user, passwd=passwd,category="osis")
+        self.osisConnections[key] = client
+        return client
+
+    def getByInstance(self, instance=None, ssl=False, gevent=False,die=True):
+        if instance is None:
+            if hasattr(j.application, 'instanceconfig'):
+                instance = j.application.instanceconfig.get('osis.connection')
+            else:
+                instance = 'main'
+        hrdinstance= j.application.getAppInstanceHRD(name="osis_client",instance=instance) 
+        if hrdinstance:
+            ipaddr=hrdinstance.get("param.osis.client.addr")
+            port=int(hrdinstance.get("param.osis.client.port"))
+            user=hrdinstance.get("param.osis.client.login")
+            passwd=hrdinstance.get("param.osis.client.passwd")
+            return self.get(ipaddr=ipaddr, port=port, user=user, passwd=passwd, ssl=ssl, gevent=gevent)
+        if die:
+            j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)
+
+    def getNamespace(self, namespace, client=None):
+        if client==None:
+            client = self.getByInstance('main')
+        return NameSpaceClient(client, namespace)
+
+    def getCategory(self, client, namespace, category):
+        """
+        how to use
+        @param client: osiclient
+        @param namespace: OSIS namespace
+        @param category: OSIS category
+
+        """
+        if client==None:
+            raise RuntimeError("Client cannot be None: getCategory %s/%s"%(namespace, category))
+        return OSISClientForCat(client, namespace, category)
+
 
 
 class OSISFactory:
@@ -48,27 +131,7 @@ class OSISFactory:
     """
     """
 
-    def _redirect(self):
-        self._out=FileLikeStreamObject()
-        if not self._sysstdout:
-            self._sysstdout=sys.stdout
-        # sys.stdout=self._out
-
-    def _stopRedirect(self,pprint=False):
-        if self._sysstdout:
-            sys.stdout=self._sysstdout
-        out = None
-        if self._out:
-            out=self._out.out
-            if pprint:
-                print(out)
-        self._out=None 
-        return out
-
     def __init__(self):
-        self._sysstdout = None
-        self.osisConnections = {}
-        self.osisConnectionsCat={}
         self.nodeguids={}
         self.osisModels={}
         self.namespacesInited={}
@@ -127,85 +190,6 @@ class OSISFactory:
         # daemon.schedule("checkchangelog", self.cmds.checkChangeLog)
         daemon.start()
 
-    def getClient(self, ipaddr=None, port=5544,user=None,passwd=None,ssl=False,gevent=False):
-        if ipaddr==None or user==None or passwd==None:
-            osisjp=j.packages.find(name="osis_client",domain="jumpscale")[0]
-            inames=osisjp.listInstances()
-            if len(inames)==1:
-                osisjp=osisjp.load(instance=inames[0])
-                hrd=osisjp.hrd_instance
-                if ipaddr==None:
-                    ipaddr=hrd.get("osis.client.addr")
-                if user==None:
-                    user=hrd.get("osis.client.login")
-                if passwd==None:
-                    passwd=hrd.get("osis.client.passwd")
-                port=int(hrd.get("osis.client.port"))
-
-        if passwd=="EMPTY":
-            passwd=""
-
-        if ipaddr!=None:
-            ips = [ipaddr]
-        elif j.application.config.exists('osis.ip'):
-            ips = j.application.config.getList('osis.ip')
-        else:
-            ips = [ j.application.config.get('grid.master.ip') ]
-        connections = [ (ip, port) for ip in ips ]
-        key = "%s_%s_%s" % (connections, user, passwd)
-        if key in self.osisConnections:
-            return self.osisConnections[key]
-
-        if user==None or user=="node":
-            user="node"
-            passwd=j.application.config.get("grid.node.machineguid")
-        elif user=="root" and not passwd:
-            if j.application.config.exists("osis.superadmin.passwd"):
-                passwd=j.application.config.get("osis.superadmin.passwd")
-            else:
-                raise RuntimeError("Osis superadmin passwd has not been defined on this node, please put in #hrd (osis.superadmin.passwd) or use argument 'passwd'.")
-
-        with j.logger.nostdout():
-            #client = j.core.zdaemon.getZDaemonHAClient(connections, category="osis", user=user, passwd=passwd,ssl=ssl,sendformat="j", returnformat="j",gevent=gevent)
-            client= j.servers.geventws.getClient(connections[0][0], connections[0][1], user=user, passwd=passwd,category="osis")
-        self.osisConnections[key] = client
-        return client
-
-    def getByInstance(self, instance=None, ssl=False, gevent=False,die=True):
-        if instance is None:
-            if hasattr(j.application, 'instanceconfig'):
-                instance = j.application.instanceconfig.get('osis.connection')
-            else:
-                instance = 'main'
-        # osisjp=j.packages.findNewest(name="osis_client",domain="jumpscale")
-        # osisjp.load(instance=instance)
-        # if osisjp.isInstalled():
-        # hrdinstance = j.core.hrd.get('/opt/jumpscale7/hrd/jumpscale/osis_client/%s.hrd' % instance)
-        hrdinstance= j.application.getAppInstanceHRD(name="osis_client",instance=instance) 
-        if hrdinstance:
-            ipaddr=hrdinstance.get("param.osis.client.addr")
-            port=int(hrdinstance.get("param.osis.client.port"))
-            user=hrdinstance.get("param.osis.client.login")
-            passwd=hrdinstance.get("param.osis.client.passwd")
-            return self.getClient(ipaddr=ipaddr, port=port, user=user, passwd=passwd, ssl=ssl, gevent=gevent)
-        if die:
-            j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)
-
-    def getNamespace(self, namespace, client=None):
-        if client==None:
-            client = self.getByInstance('main')
-        return NameSpaceClient(client, namespace)
-
-    def getCategory(self, client, namespace, category):
-        """
-        how to use
-
-        client=j.core.osis.getByInstance('main')
-        client4node=j.core.osis.getCategory(client,"system","node")
-        """
-        if client==None:
-            raise RuntimeError("Client cannot be None: getCategory %s/%s"%(namespace, category))
-        return OSISClientForCat(client, namespace, category)
 
     def getOsisBaseObjectClass(self):
         return OSISBaseObject
@@ -230,14 +214,13 @@ class OSISFactory:
         """
         import JumpScale.baselib.specparser                
         j.core.specparser.parseSpecs(specpath, appname="osismodel", actorname=namespace)
-        # spec = j.core.specparser.getModelSpec(namespace, category, "root")
 
         modelNames = j.core.specparser.getModelNames("osismodel", namespace)
 
         if classpath=="":
             classpath=j.system.fs.joinPaths(j.dirs.varDir,"code","osismodel",namespace)
 
-        extpath=j.system.fs.getDirName(inspect.getfile(self.getClient))
+        extpath=j.system.fs.getDirName(inspect.getfile(j.clients.osis.get))
         templpath=j.system.fs.joinPaths(extpath,"_templates","osiscomplextypes")
         j.system.fs.copyDirTree(templpath, classpath, keepsymlinks=False, eraseDestination=False, \
             skipProtectedDirs=False, overwriteFiles=False, applyHrdOnDestPaths=None)        
@@ -294,7 +277,7 @@ class OSISFactory:
             self._generateOsisModelClassFromSpec(namespace,specpath=basepathspec,classpath=basepathspec)
 
     def getModelTemplate(self):
-        extpath=j.system.fs.getDirName(inspect.getfile(self.getClient))
+        extpath=j.system.fs.getDirName(inspect.getfile(j.clients.osis.get))
         return j.system.fs.joinPaths(extpath,"_templates","model_template.py")
 
 

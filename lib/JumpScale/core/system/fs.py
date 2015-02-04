@@ -1408,26 +1408,30 @@ class SystemFS:
 
     def md5sum(self, filename):
         """Return the hex digest of a file without loading it all into memory
-        @param filename: string (filename to get the hex digest of it)
+        @param filename: string (filename to get the hex digest of it) or list of files
         @rtype: md5 of the file
         """
         self.log('Get the hex digest of file %s without loading it all into memory'%filename,8)
         if filename is None:
             raise('File name is None in system.fs.md5sum')
+        if not isinstance(filename, list):
+            filename = [filename]
+        digest = hashlib.md5()
         try:
-            try:
-                fh = open(filename)
-                digest = hashlib.md5()
-                while 1:
-                    buf = fh.read(4096)
-                    if buf == "":
-                        break
-                    digest.update(buf)
-            finally:
-                fh.close()
+            for filepath in filename:
+                with open(filepath) as fh:
+                    while True:
+                        buf = fh.read(4096)
+                        if buf == "":
+                            break
+                        digest.update(buf)
             return digest.hexdigest()
         except Exception as e:
             raise RuntimeError("Failed to get the hex digest of the file %sin system.fs.md5sum. Error: %s"  % (filename,str(e)))
+
+    def getFolderMD5sum(self, folder):
+        files = sorted(self.walk(folder, recurse=1))
+        return self.md5sum(files)
 
     def walkExtended(self, root, recurse=0, dirPattern='*' , filePattern='*', followSoftLinks = True, dirs=True, files=True ):
         """

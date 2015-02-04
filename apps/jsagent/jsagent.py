@@ -121,7 +121,7 @@ class ProcessManager():
             jps = j.packages.find('jumpscale', "redis")
             jp = jps[0].getInstance('system')
             if not jp.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
-                j.packages.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40},instance="system")
+                jp.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40})
             if j.system.net.waitConnectionTest("localhost",9999,10)==False:
                 j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 
@@ -174,17 +174,14 @@ class ProcessManager():
             res=self.acclient.registerNode(hostname=socket.gethostname(), machineguid=j.application.getUniqueMachineId())
 
             nid=res["node"]["id"]
-            webdiskey=res["webdiskey"]
             j.application.config.set("grid.node.id",nid)
 
-            self.hrd.set("agentcontroller.webdiskey",webdiskey)
             j.application.config.set("grid.id",res["node"]["gid"])
             j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
 
-            verifyinstall('jumpscale', 'webdis_client', args={"addr":acip,"port":7779})
-            verifyinstall('jumpscale', 'osis_client', instance='processmanager', args={"osis.client.addr":acip,"osis.client.port":5544,"osis.client.login":aclogin,"osis.client.passwd":acpasswd})
+            verifyinstall('jumpscale', 'osis_client', instance='processmanager', hrddata={"param.osis.client.addr":acip,"param.osis.client.port":5544,"param.osis.client.login":aclogin,"param.osis.client.passwd":acpasswd})
             self.hrd.set("osis.connection","processmanager")
-            verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, args={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
+            verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, hrddata={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
             
             self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
@@ -259,15 +256,10 @@ def kill_subprocesses():
     for p in processes:
         p.kill()        
 
-def verifyinstall(domain='jumpscale', name='', instance='main', args={}):
-    jps = j.packages.find(domain, name)
-    if not jps:
-        j.packages.install(domain=domain, name=name, instance=instance, args=args)
-    else:
-        jp = jps[0]
-        isInstalled = j.system.fs.exists(jp.getInstance(instance).getHRDPath())
-        if opts.reset or not isInstalled:
-            j.packages.install(domain=domain, name=name, instance=instance, args=args)
+def verifyinstall(domain='jumpscale', name='', instance='main', args={}, hrddata={}):
+    jp = j.packages.get(name=name, instance=instance)
+    if not jp.isInstalled() or opts.reset:
+        j.packages.install(domain=domain, name=name, instance=instance, args=args, hrddata=hrddata)
 
 parser = cmdutils.ArgumentParser()
 parser.add_argument("-i", '--instance', default="0", help='jsagent instance', required=False)
@@ -276,8 +268,6 @@ parser.add_argument("-s", '--services', help='list of services to run e.g heka, 
 
 opts = parser.parse_args()
 
-
-verifyinstall('jumpscale', 'jsagent', 'main')
 j.application.instanceconfig = j.application.getAppInstanceHRD('jsagent', 'main')
 
 #first start processmanager with all required stuff
@@ -289,7 +279,7 @@ pm.services=[item.strip().lower() for item in opts.services.split(",")]
 from lib.worker import Worker
 
 #I had to do this in mother process otherwise weird issues caused by gevent !!!!!!!
-j.core.osis.client = j.core.osis.getByInstance()
+j.core.osis.client = j.clients.osis.getByInstance()
 
 from gevent.pywsgi import WSGIServer
 

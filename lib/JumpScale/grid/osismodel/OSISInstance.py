@@ -50,7 +50,7 @@ class OSISRemoteOSISInstance(OSISInstanceNoDB):
 
     def __init__(self, appname, actorname, modelname, classs):
         OSISInstanceNoDB.__init__(self, appname, actorname, modelname, classs)
-        self.remoteOSISClient = j.core.osis.getByInstance('main')
+        self.remoteOSISClient = j.clients.osis.getByInstance('main')
 
     def _getObj(self, obj):
         obj = self._getDict(obj)

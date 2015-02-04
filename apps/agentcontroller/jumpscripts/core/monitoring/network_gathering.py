@@ -19,7 +19,7 @@ roles = []
 log=False
 
 def action():
-    ncl = j.core.osis.getCategory(j.core.osis.client, "system", "nic")
+    ncl = j.clients.osis.getCategory(j.core.osis.client, "system", "nic")
     rediscl = j.clients.redis.getByInstance('system')
     netinfo=j.system.net.getNetworkInfo()
     results = dict()
@@ -65,5 +65,5 @@ def action():
 
 if __name__ == '__main__':
     import JumpScale.grid.osis
-    j.core.osis.client = j.core.osis.getByInstance('processmanager')
+    j.core.osis.client = j.clients.osis.getByInstance('processmanager')
     action()

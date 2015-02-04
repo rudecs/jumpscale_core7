@@ -1,11 +1,13 @@
 from JumpScale import j
 import imp
-import copy
 import sys
 
 import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
+
+def log(msg, level=1):
+    j.logger.log(msg, level=level, category='JPACKAGE')
 
 def loadmodule(name, path):
     parentname = ".".join(name.split(".")[:-1])
@@ -15,20 +17,12 @@ def loadmodule(name, path):
 
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
-    def wrapper(*args2,**kwargs): # class instance in args[0] for method
-        result=None
-        jp=args2[0] #this is the self from before
-        if not isinstance(kwargs["args"],dict):
-            raise RuntimeError("args need to be dict")
-
-        jp._load(args=kwargs["args"])
-        if not "args" in kwargs:
-            raise RuntimeError("args need to be part of kwargs")
-        if not "node2execute" in kwargs["args"]:
-            return F(*args2,**kwargs)
+    def wrapper(jp, *args,**kwargs): # class instance in args[0] for method
+        if not jp._node:
+            return F(jp, *args,**kwargs)
         else:
-            node = kwargs['args']['node2execute']
-            if kwargs['args']['lua']:
+            node = jp._node
+            if jp.args.get('lua', False):
                 cl = j.packages.remote.sshLua(jp, node)
             else:
                 cl = j.packages.remote.sshPython(jp, node)
@@ -71,25 +65,18 @@ def deps(F): # F is func or method without instance
             raise RuntimeError("did not expect this result, needs to be str,list,bool,int,dict")
         return result
 
-    def wrapper(*args2,**kwargs): # class instance in args[0] for method
+    def wrapper(jp, *args,**kwargs): # class instance in args[0] for method
         result=None
-        jp=args2[0] #this is the self from before
 
-        loadargs = kwargs.get('args', {})
-        if not isinstance(loadargs, dict):
-            raise RuntimeError("args need to be dict")
-
-        jp._load(args=loadargs)
+        deps = kwargs.get('deps', False)
         if deps:
             j.packages._justinstalled=[]
             for dep in jp.getDependencies():
                 if dep.jp.name not in j.packages._justinstalled:
-                    if 'args' in dep.__dict__:
-                        result=processresult(result,F(dep,args=dep.args))
-                    else:
-                        result=processresult(result,F(dep))
+                    dep.args = jp.args
+                    result=processresult(result,F(dep))
                     j.packages._justinstalled.append(dep.jp.name)
-        result=processresult(result,F(*args2,**kwargs))
+        result=processresult(result,F(jp, *args,**kwargs))
         return result
     return wrapper
 
@@ -103,7 +90,7 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
-    def getInstance(self,instance=None):
+    def getInstance(self,instance=None, args={}, hrddata=None):
         # get first installed or main
         if instance is None:
             instances = self.listInstances()
@@ -111,7 +98,7 @@ class JPackage():
                 instance = instances[0]
             else:
                 instance = 'main'
-        return JPackageInstance(self, instance)
+        return JPackageInstance(self, instance, args, hrddata)
 
     def listInstances(self, node=None):
         hrdfolder = j.dirs.getHrdDir(node=node)
@@ -134,26 +121,57 @@ class JPackage():
     def __str__(self):
         return self.__repr__()
 
-class JPackageInstance():
+class JPackageInstance(object):
 
-    def __init__(self,jp,instance):
+    def __init__(self,jp,instance, args=None, hrddata=None):
         self.instance=instance
         self.jp=jp
         self.domain=self.jp.domain
         self.name=self.jp.name
         self._hrd=None
-        self.metapath=jp.metapath
-        self.hrdpath=""
-        self.actions=None
+        self._actionspath = None
+        self.metapath = jp.metapath
+        self._hrdpath = None
+        self._actions=None
         self._loaded=False
         self._reposDone={}
-        self.args={}
+        self.args=args or {}
+        self.hrddata = hrddata or {}
+        self.hrddata["jp.name"]=self.jp.name
+        self.hrddata["jp.domain"]=self.jp.domain
+        self.hrddata["jp.instance"]=self.instance
         self._init=False
+        self._node = self.args.get("node2execute")
+
+    @property
+    def hrdpath(self):
+        self._hrdpath = self.getHRDPath()
+        return self._hrdpath
 
     @property
     def hrd(self):
-        self._load()
-        return self.hrd
+        if not j.system.fs.exists(self.hrdpath):
+            self._apply()
+        self._hrd = j.core.hrd.get(self.hrdpath)
+        return self._hrd
+
+    @property
+    def actions(self):
+        if self._actions is None:
+            self._loadActions()
+        return self._actions
+
+    @property
+    def actionspath(self):
+        if self._actionspath is None:
+            actionsdir = j.dirs.getJPActionsPath(node=self._node)
+            j.system.fs.createDir(actionsdir)
+            if j.packages.type=="c":
+                j.system.fs.createDir(j.dirs.getJPActionsPath(node=self._node))
+                self._actionspath="%s/%s__%s"%(actionsdir,self.jp.name,self.instance)
+            else:
+                self._actionspath="%s/%s__%s__%s"%(actionsdir,self.jp.domain,self.jp.name,self.instance)
+        return self._actionspath
 
     def _init(self):
         if self._init==False:
@@ -162,25 +180,32 @@ class JPackageInstance():
         self._init=True
 
     def getLogPath(self):
-        self._load()
         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))
         return logpath
 
-    def getHRDPath(self,node=None):
+    def getHRDPath(self):
         if j.packages.type=="c":
-            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.instance)
+            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=self._node), self.jp.name, self.instance)
         else:
             hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
         return hrdpath
 
     def isInstalled(self):
         hrdpath = self.getHRDPath()
-        if j.system.fs.exists(hrdpath):
+        if j.system.fs.exists(hrdpath) and self.hrd.exists('jp.installed.checksum'):
             return True
         return False
 
+    def isLatest(self):
+        if not self.isInstalled():
+            return False
+        checksum = self.hrd.get('jp.installed.checksum')
+        return checksum == self._getMetaChecksum()
+
+    def _getMetaChecksum(self):
+        return j.system.fs.getFolderMD5sum(self.metapath)
+
     def getTCPPorts(self,deps=True, *args, **kwargs):
-        self._load()
         ports = set()
         for process in self.getProcessDicts():
             for item in process["ports"]:
@@ -200,66 +225,43 @@ class JPackageInstance():
             return processes[0].get('prio', 100)
         return 199
 
-    def _load(self,args={}):#,*stdargs,**kwargs):  @question why this (despiegk) removed it again
-        if self._loaded==False:
-            node=None
-            if "node2execute" in args:
-                node=args["node2execute"]
+    def _loadActions(self):
+        if not j.system.fs.exists(self.actionspath):
+            self._apply()
+        else:
+            self._loadActionModule()
 
-            self.hrdpath = self.getHRDPath(node=node)
+    def _loadActionModule(self):
+        modulename="JumpScale.jpackages.%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
+        mod = loadmodule(modulename, self.actionspath+".py")
 
-            j.do.createDir(j.do.getDirName(self.hrdpath))
-            if j.packages.type=="c":
-                j.system.fs.createDir(j.dirs.getJPActionsPath(node=node))
-                self.actionspath="%s/%s__%s"%(j.dirs.getJPActionsPath(node=node),self.jp.name,self.instance)
-            else:
-                self.actionspath="%s/%s__%s__%s"%(j.dirs.getJPActionsPath(),self.jp.domain,self.jp.name,self.instance)
+        self._actions=mod.Actions()
+        self._actions.jp_instance=self
 
-            args.update(self.args)
+    def _apply(self):
+        j.do.createDir(j.do.getDirName(self.hrdpath))
+        source="%s/actions.py"%self.jp.metapath
+        j.do.copyFile(source,self.actionspath+".py")
+        source="%s/actions.lua"%self.jp.metapath
+        if j.system.fs.exists(source):
+            j.do.copyFile(source,self.actionspath+".lua")
 
-            # source="%s/instance.hrd"%self.jp.metapath
-            # if args!={} or (not j.system.fs.exists(path=self.hrdpath) and j.system.fs.exists(path=source)):
-            #     j.do.copyFile(source,self.hrdpath)
-            # else:
-            #     if not j.system.fs.exists(path=source):
-            #         j.do.writeFile(self.hrdpath,"")
+        self._hrd=j.core.hrd.get(self.hrdpath,args=self.hrddata,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
+        self._hrd.save()
+       
+        actionPy = self.actionspath+".py"
+        self._hrd.applyOnFile(actionPy, additionalArgs=self.args)
+        j.application.config.applyOnFile(actionPy, additionalArgs=self.args)
 
-            args["jp.name"]=self.jp.name
-            args["jp.domain"]=self.jp.domain
-            args["jp.instance"]=self.instance
-            source="%s/actions.py"%self.jp.metapath
-            j.do.copyFile(source,self.actionspath+".py")
-            source="%s/actions.lua"%self.jp.metapath
-            if j.system.fs.exists(source):
-                j.do.copyFile(source,self.actionspath+".lua")
+        actionLua = self.actionspath+".lua"
+        if j.system.fs.exists(source):
+            self._hrd.applyOnFile(actionLua, additionalArgs=self.args)
+            j.application.config.applyOnFile(actionLua, additionalArgs=self.args)
 
-            hrd0=j.core.hrd.get("%s/instance.hrd"%self.jp.metapath)
+        j.application.config.applyOnFile(self.hrdpath, additionalArgs=self.args)
 
-            # orghrd=j.core.hrd.get(self.jp.hrdpath_main)
-            self.hrd=j.core.hrd.get(self.hrdpath,args=args,templates=["%s/instance.hrd"%self.jp.metapath,"%s/jp.hrd"%self.jp.metapath])
+        self._loadActionModule()
 
-            self.hrd.save()
-
-            actionPy = self.actionspath+".py"
-            self.hrd.applyOnFile(actionPy, additionalArgs=args)
-            j.application.config.applyOnFile(actionPy, additionalArgs=args)
-
-            actionLua = self.actionspath+".lua"
-            if j.system.fs.exists(source):
-                self.hrd.applyOnFile(actionLua, additionalArgs=args)
-                j.application.config.applyOnFile(actionLua, additionalArgs=args)
-
-            j.application.config.applyOnFile(self.hrdpath, additionalArgs=args)
-
-            self.actionspath+=".py"
-            self.hrd=j.core.hrd.get(self.hrdpath)
-
-            modulename="JumpScale.jpackages.%s.%s.%s"%(self.jp.domain,self.jp.name,self.instance)
-            mod = loadmodule(modulename, self.actionspath)
-
-            self.actions=mod.Actions()
-            self.actions.jp_instance=self
-            self._loaded=True
 
     def _getRepo(self,url,recipeitem=None,dest=None):
         if url in self._reposDone:
@@ -312,7 +314,7 @@ class JPackageInstance():
                 if item.strip()=="":
                     continue
                 item2=item.strip()
-                args={}
+                hrddata={}
                 item={}
                 item["name"]=item2
                 item["domain"]="jumpscale"
@@ -323,17 +325,15 @@ class JPackageInstance():
 
             if "args" in item:
                 if isinstance(item['args'], dict):
-                    args = item['args']
+                    hrddata = item['args']
                 else:
                     argskey = item['args']
                     if self.hrd.exists(argskey):
-                        args=self.hrd.getDict(argskey)
+                        hrddata=self.hrd.getDict(argskey)
                     else:
-                        args = {}
+                        hrddata = {}
             else:
-                args={}
-
-            item['args']=args
+                hrddata={}
 
             if "name" in item:
                 name=item["name"]
@@ -351,12 +351,7 @@ class JPackageInstance():
                 instance="main"
 
             jp=j.packages.get(name=name,domain=domain)
-            jp=jp.getInstance(instance)
-
-            jp.args=args
-
-            # if args!={}:
-            #     jp._load()
+            jp=jp.getInstance(instance, hrddata=hrddata)
 
             res.append(jp)
 
@@ -364,18 +359,16 @@ class JPackageInstance():
 
     @deps
     @remote
-    def stop(self,args={},deps=True):
-        self._load(args=args)
-        self.actions.stop(**args)
-        if not self.actions.check_down_local(**args):
-            self.actions.halt(**args)
+    def stop(self,deps=True):
+        self.actions.stop(**self.args)
+        if not self.actions.check_down_local(**self.args):
+            self.actions.halt(**self.args)
 
     @deps
-    def build(self,args={},deps=True):
-        self._load(args=args)
+    def build(self, deps=True):
 
-        if "node2execute" in args:
-            node = j.packages.remote.sshPython(jp=self.jp,node=args['node2execute'])
+        if self._node:
+            node = j.packages.remote.sshPython(jp=self.jp,node=self._node)
         else:
             node = None
 
@@ -388,42 +381,36 @@ class JPackageInstance():
                 j.packages._justinstalled.append(dep.jp.name)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
-            # print recipeitem
             #pull the required repo
-            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
+            self._getRepo(recipeitem['url'],recipeitem=recipeitem)
 
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
-            # print recipeitem
             #pull the required repo
-            # from ipdb import set_trace;set_trace()
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
-            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
+            self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
             if node:
                 dest = "root@%s:%s" %(node.ip, "/opt/build/%s"%name)
                 node.copyTree("/opt/build/%s"%name,dest)
         if node:
-            self._build(args=args)
+            self._build()
         else:
-            self.actions.build(**args)
+            self.actions.build(**self.args)
 
     @remote
-    def _build(self,args={},deps=True):
-        self.action.build(**args)
+    def _build(self,deps=True):
+        self.action.build(**self.args)
 
     @deps
     @remote
-    def start(self,args={},deps=True):
-        self._load(args=args)
-        self.actions.start(**args)
+    def start(self,deps=True):
+        self.actions.start(**self.args)
 
     @deps
-    def restart(self,args={},deps=True):
-        self._load(args=args)
-        self.stop(args=args)
-        self.start(args=args)
+    def restart(self,deps=True):
+        self.stop()
+        self.start()
 
     def getProcessDicts(self,deps=True,args={}):
-        self._load(args=args)
         counter=0
 
         defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
@@ -447,8 +434,7 @@ class JPackageInstance():
         return procs
 
     @remote
-    def prepare(self,args={},deps=False):
-        self._load(args=args)
+    def prepare(self,deps=False):
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
             src=src.replace(";",":")
             if src.strip()!="":
@@ -461,7 +447,7 @@ class JPackageInstance():
                 j.do.execute(cmd,dieOnNonZeroExitCode=False)
 
         if self.hrd.getBool("ubuntu.apt.update",default=False):
-            print "apt update"
+            log("apt update")
             j.do.execute("apt-get update -y",dieOnNonZeroExitCode=False)
 
         if self.hrd.getBool("ubuntu.apt.upgrade",default=False):
@@ -476,27 +462,19 @@ class JPackageInstance():
         self.actions.prepare()
 
     @deps
-    def install(self,args={},start=True,deps=True):
-        print "INSTALL:%s"%self
-
-        self._load(args=args)
-
-        self.stop(args=args,deps=deps)
-
-        for dep in self.getDependencies():
-            if dep.jp.name not in j.packages._justinstalled:
-                if 'args' in dep.__dict__:
-                    dep.install(args=dep.args)
-                else:
-                    dep.install()
-                j.packages._justinstalled.append(dep.jp.name)
-
-        self.prepare(args=args,deps=deps)
-
-        if "node2execute" in args:
-            node = j.packages.remote.sshPython(jp=self.jp,node=args['node2execute'])
+    def install(self,start=True,deps=True, reinstall=False):
+        if self._node:
+            node = j.packages.remote.sshPython(jp=self.jp,node=self._node)
         else:
             node = None
+
+        log("INSTALL:%s"%self)
+        if self.isLatest() and not reinstall and not node:
+            log("Latest %s already installed" % self)
+            return
+        self._apply()
+        self.stop(deps=False)
+        self.prepare(deps=False)
 
         #download
         for recipeitem in self.hrd.getListFromPrefix("web.export"):
@@ -583,10 +561,10 @@ class JPackageInstance():
                             j.system.fs.createDir(dest)
                             j.do.copyTree(src,dest)
 
+        self.configure(deps=False)
 
-        self.configure(args=args)
-
-        self.start(args=args)
+        self.start()
+        self.hrd.set('jp.installed.checksum', self._getMetaChecksum())
 
         # else:
         #     #now bootstrap docker
@@ -638,39 +616,35 @@ class JPackageInstance():
         #     j.tools.docker.run(name,"jpackage install -n %s -d %s"%(self.jp.name,self.jp.domain))
 
     @deps
-    def publish(self,args={},deps=True):
+    def publish(self,deps=True):
         """
         check which repo's are used & push the info
         this does not use the build repo's
         """
-        self._load(args=args)
-        self.actions.publish(**args)
+        self.actions.publish(**self.args)
 
     @deps
-    def package(self,args={},deps=True):
+    def package(self,deps=True):
         """
         """
-        self._load(args)
-        self.actions.package(**args)
+        self.actions.package(**self.args)
 
     @deps
     @remote
-    def update(self,args={},deps=True):
+    def update(self,deps=True):
         """
         - go over all related repo's & do an update
         - copy the files again
         - restart the app
         """
-        self._load(args)
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
-            # print recipeitem
             #pull the required repo
-            dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
+            self._getRepo(recipeitem['url'],recipeitem=recipeitem)
 
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
             # print recipeitem
             #pull the required repo
-            name=recipeitem['url'].replace("https://",""),replace("http://","").replace(".git","")
+            name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest="/opt/build/%s/%s"%name
             j.do.pullGitRepo(dest=dest,ignorelocalchanges=True)
 
@@ -687,82 +661,74 @@ class JPackageInstance():
 
 
     @deps
-    def reset(self,args={},deps=True):
+    def reset(self,deps=True):
         """
         - remove build repo's !!!
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app
         """
-        self._load(args=args)
         self.resetstate()
+        j.do.delete(self.hrdpath,force=True)
         #remove build repo's
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest="/opt/build/%s"%name
             j.do.delete(dest)
 
-        self.actions.removedata(**args)
+        self.actions.removedata(**self.args)
 
     @deps
     @remote
-    def removedata(self,args={},deps=False):
+    def removedata(self,deps=False):
         """
         - remove build repo's !!!
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app
         """
-        self._load(args=args)
-        self.actions.removedata(**args)
+        self.actions.removedata(**self.args)
 
     @deps
     @remote
-    def execute(self,args={},deps=False):
+    def execute(self,deps=False):
         """
         execute cmd on jpackage
         """
-        self._load(args=args)
-        self.actions.execute(**args)
+        self.actions.execute(**self.args)
 
     @deps
     @remote
-    def uninstall(self,args={},deps=True):
-        self._load(args)
+    def uninstall(self,deps=True):
         self.reset()
-        self._load(args=args)
-        self.actions.uninstall(**args)
+        self.actions.uninstall(**self.args)
 
     @deps
     @remote
-    def monitor(self,args={},deps=True):
+    def monitor(self,deps=True):
         """
         do all monitor checks and return True if they all succeed
         """
-        self._load(args=args)
-        res=self.actions.check_up_local(**args)
-        res=res and self.actions.monitor_local(**args)
-        res=res and self.actions.monitor_remove(**args)
+        res=self.actions.check_up_local(**self.args)
+        res=res and self.actions.monitor_local(**self.args)
+        res=res and self.actions.monitor_remove(**self.args)
         return res
 
     @deps
     @remote
-    def iimport(self,url,args={},deps=True):
-        self._load(args=args)
-        self.actions.iimport(url,**args)
+    def iimport(self,url,deps=True):
+        self.actions.iimport(url,**self.args)
 
     @deps
     @remote
-    def export(self,args={},deps=True):
-        self._load(args=args)
-        self.actions.export(url,**args)
+    def export(self,url,deps=True):
+        self.actions.export(url,**self.args)
 
 
     @deps
     @remote
-    def configure(self,args={},deps=True,restart=True):
-        self._load(args=args)
-        self.actions.configure(**args)
+    def configure(self,deps=True,restart=True):
+        self.actions.configure(**self.args)
         if restart:
-            self.restart()
+            self.restart(deps=False)
 
     def __repr__(self):
         return "%-15s:%-15s:%s"%(self.jp.domain,self.jp.name,self.instance)

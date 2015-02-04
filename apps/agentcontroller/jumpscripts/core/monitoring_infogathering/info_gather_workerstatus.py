@@ -31,3 +31,6 @@ def action():
             stats['state'] = 'HALTED'
         result[queue] = stats
     return result
+
+if __name__ == "__main__":
+    print action()

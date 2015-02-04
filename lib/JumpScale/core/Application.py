@@ -183,8 +183,8 @@ class Application:
         #@todo this SHOULD BE WORKING AGAIN, now processes are never removed
 
         # if self.gridInitialized:
-        #     client=j.core.osis.getClient(user='root')            
-        #     clientprocess=j.core.osis.getCategory(client,"system","process")
+        #     client=j.clients.osis.get(user='root')            
+        #     clientprocess=j.clients.osis.getCategory(client,"system","process")
         #     key = "%s_%s"%(j.application.whoAmI.gid,j.application.whoAmI.pid)
         #     if clientprocess.exists(key):
         #         obj=clientprocess.get(key)
