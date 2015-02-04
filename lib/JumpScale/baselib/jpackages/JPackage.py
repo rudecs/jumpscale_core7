@@ -18,10 +18,11 @@ def loadmodule(name, path):
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
     def wrapper(jp, *args,**kwargs): # class instance in args[0] for method
-        if not jp._node:
+        jp.init()
+        if not jp.node:
             return F(jp, *args,**kwargs)
         else:
-            node = jp._node
+            node = jp.node
             if jp.args.get('lua', False):
                 cl = j.packages.remote.sshLua(jp, node)
             else:
@@ -94,15 +95,23 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
-    def getInstance(self,instance=None, args={}, hrddata=None):
+    def getInstance(self,instance=None, args={}, hrddata=None,node=""):
         # get first installed or main
         if instance is None:
-            instances = self.listInstances()
+            instances = self.listInstances(node=node)
             if instances:
                 instance = instances[0]
             else:
                 instance = 'main'
-        return JPackageInstance(self, instance, args, hrddata)
+        return JPackageInstance(self, instance, args, hrddata,node=node)
+
+    def existsInstance(self,instance,node=""):
+        # get first installed or main
+        instances = self.listInstances(node=node)
+        if instances:
+            return True
+        else:
+            return False
 
     def listInstances(self, node=None):
         hrdfolder = j.dirs.getHrdDir(node=node)
@@ -127,7 +136,7 @@ class JPackage():
 
 class JPackageInstance(object):
 
-    def __init__(self,jp,instance, args=None, hrddata=None):
+    def __init__(self,jp,instance, args=None, hrddata=None,node=""):
         self.instance=instance
         self.jp=jp
         self.domain=self.jp.domain
@@ -145,7 +154,10 @@ class JPackageInstance(object):
         self.hrddata["jp.domain"]=self.jp.domain
         self.hrddata["jp.instance"]=self.instance
         self._init=False
-        self._node = self.args.get("node2execute")
+        self.node = self.args.get("node2execute","")
+        if self.node=="" and node!="":
+            self.node=node
+
 
     @property
     def hrdpath(self):
@@ -168,19 +180,23 @@ class JPackageInstance(object):
     @property
     def actionspath(self):
         if self._actionspath is None:
-            actionsdir = j.dirs.getJPActionsPath(node=self._node)
+            actionsdir = j.dirs.getJPActionsPath(node=self.node)
             j.system.fs.createDir(actionsdir)
             if j.packages.type=="c":
-                j.system.fs.createDir(j.dirs.getJPActionsPath(node=self._node))
+                j.system.fs.createDir(j.dirs.getJPActionsPath(node=self.node))
                 self._actionspath="%s/%s__%s"%(actionsdir,self.jp.name,self.instance)
             else:
                 self._actionspath="%s/%s__%s__%s"%(actionsdir,self.jp.domain,self.jp.name,self.instance)
         return self._actionspath
 
-    def _init(self):
+    def init(self):
         if self._init==False:
             import JumpScale.baselib.remote.cuisine
             import JumpScale.lib.docker
+            if self.actions.init():
+                #did something
+                pass
+                #@todo need to reload HRD's
         self._init=True
 
     def getLogPath(self):
@@ -189,7 +205,7 @@ class JPackageInstance(object):
 
     def getHRDPath(self):
         if j.packages.type=="c":
-            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=self._node), self.jp.name, self.instance)
+            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=self.node), self.jp.name, self.instance)
         else:
             hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.instance)
         return hrdpath
@@ -368,8 +384,8 @@ class JPackageInstance(object):
     # @deps
     def build(self, deps=True):
 
-        if self._node:
-            node = j.packages.remote.sshPython(jp=self.jp,node=self._node)
+        if self.node:
+            node = j.packages.remote.sshPython(jp=self.jp,node=self.node)
         else:
             node = None
 
@@ -464,8 +480,12 @@ class JPackageInstance(object):
 
     @deps
     def install(self,start=True,deps=True, reinstall=False):
-        if self._node:
-            node = j.packages.remote.sshPython(jp=self.jp,node=self._node)
+        self.init()
+        if reinstall:
+            self.resetstate()
+
+        if self.node:
+            node = j.packages.remote.sshPython(jp=self.jp,node=self.node)
         else:
             node = None
 
