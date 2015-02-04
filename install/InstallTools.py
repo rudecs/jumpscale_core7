@@ -1138,24 +1138,18 @@ class InstallTools():
         '''
         return int(time.time())
 
-    def getGitRepoArgs(self, url="", dest=None, login=None, passwd=None, reset=False):
+    def rewriteGitRepoUrl(self, url="", login=None, passwd=None):
         """
-        Extracts and returns data useful in cloning a Git repository.
+        Rewrite the url of a git repo with login and passwd if specified
 
         Args:
-            url (str): the HTTP URL of the Git repository to clone from. ex: 'https://github.com/odoo/odoo.git'
-            dest (str): the local filesystem path to clone to
+            url (str): the HTTP URL of the Git repository. ex: 'https://github.com/odoo/odoo'
             login (str): authentication login name
             passwd (str): authentication login password
-            reset (boolean): if True, any cached clone of the Git repository will be removed
 
         Returns:
             (repository_host, repository_type, repository_account, repository_name, repository_url)
         """
-
-        if not url:
-            raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
-
         url_pattern = re.compile('^(https?://)(.*?)/(.*?)/(.*?)/?$')
         match = url_pattern.match(url)
         if not match:
@@ -1190,6 +1184,27 @@ class InstallTools():
                 'account': repository_account,
                 'repo': repository_name,
             }
+        return protocol, repository_host, repository_account, repository_name, repository_url
+
+    def getGitRepoArgs(self, url="", dest=None, login=None, passwd=None, reset=False):
+        """
+        Extracts and returns data useful in cloning a Git repository.
+
+        Args:
+            url (str): the HTTP URL of the Git repository to clone from. ex: 'https://github.com/odoo/odoo.git'
+            dest (str): the local filesystem path to clone to
+            login (str): authentication login name
+            passwd (str): authentication login password
+            reset (boolean): if True, any cached clone of the Git repository will be removed
+
+        Returns:
+            (repository_host, repository_type, repository_account, repository_name, repository_url)
+        """
+
+        if not url:
+            raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
+
+        protocol, repository_host, repository_account, repository_name, repository_url = self.rewriteGitRepoUrl(url=url,login=login,passwd=passwd)
 
         repository_type = repository_host.split('.')[0] if '.' in repository_host else repository_host
 
@@ -1286,18 +1301,19 @@ class InstallTools():
         @param provider e.g. git, github
         """
         #@todo make sure we use gitlab or github account if properly filled in
+        from IPython import embed;embed()
         repos=self.getGitReposListLocal(provider,account,name)
         for name,path in list(repos.items()):
             print(("push git repo:%s"%path))
             cmd="cd %s;git add . -A"%(path)
             self.executeInteractive(cmd)
             cmd="cd %s;git commit -m \"%s\""%(path,message)
-            self.executeInteractive(cmd)
+            # self.executeInteractive(cmd)
             if update:
                 cmd="cd %s;git pull"%(path)
                 self.executeInteractive(cmd)
             cmd="cd %s;git push"%(path)
-            self.executeInteractive(cmd)
+            # self.executeInteractive(cmd)
 
     def updateGitRepos(self,provider="",account="",name="",message=""):
         repos=self.getGitReposListLocal(provider,account,name)

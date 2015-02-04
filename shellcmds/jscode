@@ -100,7 +100,6 @@ def getRepos(account=None,name=None):
 
 repos=getRepos(opts.accounts,opts.name)
 
-
 if opts.action == "status":
     print("\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev")
     print("=========================================================================================================================")
