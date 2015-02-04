@@ -10,7 +10,7 @@ j.application.start('jpackage')
 parser = cmdutils.ArgumentParser()
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
-    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create", "status"]
+    "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create", "status","nodes"]
 
 help="""
 jpackage commands:
@@ -66,7 +66,7 @@ group.add_argument('-i','--instance',required=False, help='Instance of jpackage 
 group.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
 group.add_argument('--nodeps',required=False, action='store_true',help='Don\'t perfomr action on dependencies, default False',default=False)
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
-
+group.add_argument('--cmd', required=False, help='use this to pass cmd to jpackage e.g. \'ls -l\'')
 group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
 group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
 
@@ -132,7 +132,7 @@ def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=Fal
         raise RuntimeError("Can only get jpackage instances if only 1 jpackage when instance set or more jpackages when instance=main")
 
     if toinstall:
-        packages=[jp.getInstance(args.instance, args=jpargs, hrddata=hrddata) for jp in packages]
+        packages=[jp.getInstance(args.instance, args=jpargs, hrddata=hrddata, node=args.node) for jp in packages]
         expandInstances = False
 
     if expandInstances:
@@ -167,6 +167,8 @@ if args.data<>None:
     else:
         tags=j.core.tags.getObject(args.data)
         hrddata=tags.getDict()
+if args.cmd is not None:
+    hrddata['cmd'] = args.cmd.strip()
 
 if args.cmd is not None:
     hrddata['cmd'] = args.cmd.strip()
@@ -280,7 +282,7 @@ elif args.action == 'stop':
         package.stop(deps=False)
 
 elif args.action == 'execute':
-    packages = getJPackage(args,expandInstances=True, jpargs=jpargs)
+    packages = getJPackage(args,expandInstances=True, jpargs=jpargs, hrddata=hrddata)
     for package in packages:
         package.execute(deps=args.deps)
 
@@ -374,5 +376,19 @@ elif args.action == 'status':
 
     jps = packages = getJPackage(args,expandInstances=True, toinstall=False,list=True, jpargs=jpargs)
     printJPackages(jps)
+
+elif args.action == 'nodes':
+    def printNodes(allNodes):
+
+        form = '%(type)-15s %(instance)-10s'
+        print form % {'type': 'TYPE', 'instance': 'INSTANCE'}
+        print '=' * 25
+        for typ,nodes in allNodes.iteritems():
+            print ''
+            for node in nodes:
+                print form % {'type': typ, 'instance': node}
+
+    allNodes = j.packages.remote.getAllNodes()
+    printNodes(allNodes)
 
 j.application.stop()
