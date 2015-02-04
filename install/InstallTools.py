@@ -1307,12 +1307,12 @@ class InstallTools():
             cmd="cd %s;git add . -A"%(path)
             self.executeInteractive(cmd)
             cmd="cd %s;git commit -m \"%s\""%(path,message)
-            # self.executeInteractive(cmd)
+            self.executeInteractive(cmd)
             if update:
                 cmd="cd %s;git pull"%(path)
                 self.executeInteractive(cmd)
             cmd="cd %s;git push"%(path)
-            # self.executeInteractive(cmd)
+            self.executeInteractive(cmd)
 
     def updateGitRepos(self,provider="",account="",name="",message=""):
         repos=self.getGitReposListLocal(provider,account,name)
