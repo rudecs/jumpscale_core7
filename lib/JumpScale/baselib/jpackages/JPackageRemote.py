@@ -27,6 +27,15 @@ class JPackageRemoteFactory(object):
         self.remoteLua.jp = jp
         return self.remoteLua
 
+    def getAllNodes(self):
+        jps = ["node.ssh.key","node.ms1","node.kvm"]
+        nodes = {}
+        for jp in jps:
+            nodes[jp] = []
+            instances = j.application.getAppHRDInstanceNames(jp)
+            nodes[jp].extend(instances)
+        return nodes
+
 class RemoteBase(object):
     def __init__(self, jp, node):
         self.node = node
@@ -42,21 +51,12 @@ class RemoteBase(object):
         return "%s_%s_%s" % (epoch,self.jp.name,name)
 
     def _negotiateConnection(self,target):
-        nodes = self._getAllNodes()
+        nodes = j.packages.remote.getAllNodes()
         for kind,nodes in nodes.iteritems():
             for node in nodes:
                 if node == target:
                     return kind
         return None
-
-    def _getAllNodes(self):
-        jps = ["node.ssh.key","node.ms1","node.kvm"]
-        nodes = {}
-        for jp in jps:
-            nodes[jp] = []
-            instances = j.application.getAppHRDInstanceNames(jp)
-            nodes[jp].extend(instances)
-        return nodes
 
     def _connect(self, node):
         connKind = self._negotiateConnection(node)
@@ -134,9 +134,9 @@ class RemoteBase(object):
             if source[-1]!="/":
                 source+="/"
         destdir = dest.split(':')[1]
-        if not self.cl.file_exists(destdir):
+        if not self.connection.file_exists(destdir):
             cmd = "mkdir -p %s" % destdir
-            self.cl.run(cmd)
+            self.connection.run(cmd)
 
         ssh=""
         if sshkey is None:
