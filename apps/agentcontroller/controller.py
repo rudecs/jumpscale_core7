@@ -268,7 +268,8 @@ class ControllerCMDS():
         node.ipaddr = list()
         for netitem in netinfo:
             if netitem['mac'] != "00:00:00:00:00:00" and netitem['ip'] and netitem['name']:
-                node.ipaddr.extend(netitem['ip'])
+                ip = [netitem['ip']] if isinstance(netitem['ip'], basestring) else netitem['ip']
+                node.ipaddr.extend(ip)
 
     def registerNode(self, hostname, machineguid, session):
         # if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
