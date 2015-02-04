@@ -42,8 +42,8 @@ jpackage commands:
     removedata
     - remove data of app (e.g. database, e.g. vmachine when node jpackage)
     execute
-    - execute cmd on package e.g. sshcmd on node jp or sql statement on database ...
-    - use --data with cmd:... to specify cmd to be execute
+    - execute cmd on package e.g. ssh cmd on node jp or sql statement on database ...
+    - use --cmd with to specify command to be execute
     monitor
     - do uptime check, local monitor & remote monitor check, if all ok return True
     configure
@@ -54,6 +54,10 @@ jpackage commands:
     - use --url to specify where to import from or export to
     create
     - interactively create a jpackage
+    status
+    - display status of installed jpackages (domain, name, priority, version, port)
+    nodes
+    - display all remote nodes available for jpackage remote execution
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
