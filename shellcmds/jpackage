@@ -66,7 +66,6 @@ group.add_argument('-i','--instance',required=False, help='Instance of jpackage 
 group.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
 group.add_argument('--nodeps',required=False, action='store_true',help='Don\'t perfomr action on dependencies, default False',default=False)
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
-group.add_argument('--cmd', required=False, help='use this to pass cmd to jpackage e.g. \'ls -l\'')
 group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
 group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
 
