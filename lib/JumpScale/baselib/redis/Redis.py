@@ -54,8 +54,12 @@ class Redis(redis.Redis):
     def getDict(self, key):
         return RedisDict(self, key)
 
-    def getQueue(self, name, namespace="queues"):
-        return RedisQueue(self, name, namespace=namespace)
+    def getQueue(self, name, namespace="queues", newconnection=False):
+        if not newconnection:
+            return RedisQueue(self, name, namespace=namespace)
+        else:
+            client = redis.Redis(**self.connection_pool.connection_kwargs)
+            return RedisQueue(client, name, namespace=namespace)
 
 class GeventRedis(Redis):
     def hgetall(self, name):
