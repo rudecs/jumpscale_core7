@@ -77,7 +77,7 @@ class AgentControllerClient():
     def __init__(self,addr, port=PORT, login='root', passwd=None):
         import JumpScale.grid.geventws
 
-        if isinstance(addr, str):
+        if isinstance(addr, basestring):
             connections = list()
             for con in addr.split(','):
                 self.ipaddr = con
