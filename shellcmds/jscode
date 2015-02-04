@@ -107,12 +107,17 @@ if opts.action == "status":
 
 for provider,account,reponame,branch,client,path in repos:
 
-    from IPython import embed;embed()
+    # from IPython import embed;embed()
     if j.application.config.exists("whoami.git.passwd") == False or j.application.config.exists("whoami.git.login") == False:
         raise RuntimeError("git configuration not found, please install github_client jpackage (jpackage install -n github_client)")
     else:
-        login = j.application.config.get("whoami.git.login")
-        passwd = j.application.config.get("whoami.git.passwd")
+        from ipdb import set_trace;set_trace()
+        _,url,_ = j.do.execute("cd %s;git config --get remote.origin.url" % path)
+        if str(url).find("@") == -1:
+            login = j.application.config.get("whoami.git.login")
+            passwd = j.application.config.get("whoami.git.passwd")
+            _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url),login=login,passwd=passwd)
+            j.do.executeInteractive("cd %s;git remote set-url origin %s" %(path,repository_url))
 
     if opts.action == "update" and opts.deletechanges:
         print(("force update %s/%s/%s"%(provider,account,reponame)))

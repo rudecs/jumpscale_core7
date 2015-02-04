@@ -29,7 +29,7 @@ class JPackageFactory():
         self._type=value
 
     def _doinit(self):
-        
+        from ipdb import set_trace;set_trace()
         if self._init==False:
             j.do.debug=False
 
