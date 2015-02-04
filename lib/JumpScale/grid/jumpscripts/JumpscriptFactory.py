@@ -241,19 +241,26 @@ class JumpscriptFactory:
         """
         Introspects for a Lua Jumpscript at the given path and returns a LuaJumpscript object with the results.
 
+        Args:
+            path (str): the absolute path to the jumpscript file.
+
         Raises:
             IOError if the file at the path could not be opened.
         """
 
+        assert os.path.isabs(path), 'An absolute file path is needed'
+
         if not os.path.exists(path):
             raise IOError(path + ' does not exist')
 
-        # The Lua Jumpscript metadata is inferred conventionally using each file's path as follows:
+        relative_path = path.split('agentcontroller/')[1]    # Remove the string "^.*agentcontroller/"
+
+        # The Lua Jumpscript metadata is inferred conventionally using the jumpscript file's relative path as follows:
         # luajumpscripts/ORGANIZATION[/IRRELEVANT_SUBPATH]/JUMPSCRIPT_NAME.lua
         #
         # Note: The IRRELEVANT_SUBPATH is optional and is not used.
 
-        path_components = path.split('/')
+        path_components = relative_path.split('/')
         jumpscript_name = os.path.splitext(path_components[-1])[0]
         jumpscript_organization = path_components[1]
 
