@@ -73,6 +73,7 @@ group.add_argument('--lua',required=False,default=False,action="store_true",help
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
 group.add_argument('--data', required=False, help='use this to pass hrd information to jpackage e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
+group.add_argument('--cmd', required=False, help='use this to pass cmd to jpackage e.g. \'ls -l\'')
 group.add_argument('-r', '--reinstall', required=False, action='store_true', help='Reinstall found package')
 # group.add_argument('-s', '--single', required=False, action='store_true', help='Do not install dependencies')
 
@@ -167,6 +168,9 @@ if args.data<>None:
         tags=j.core.tags.getObject(args.data)
         hrddata=tags.getDict()
 
+if args.cmd is not None:
+    hrddata['cmd'] = args.cmd.strip()
+
 jpargs = {}
 if args.node!=None:
     jpargs["node2execute"]=args.node
@@ -198,6 +202,7 @@ if args.action == 'configure':
         package.start()
 
 elif args.action == 'install':
+    print hrddata
 
     packages = getJPackage(args,toinstall=True, jpargs=jpargs, hrddata=hrddata)
 
