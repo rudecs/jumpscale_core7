@@ -6,15 +6,28 @@ import json
 import time
 
 class JPackageRemoteFactory(object):
+    def __init__(self):
+        self.node = None
+        self.remotePython = None
+        self.remoteLua = None
 
     def sshPython(self, jp, node):
-        return RemotePython(jp,node)
+        if self.node != node or self.remotePython is None:
+            self.remotePython = RemotePython(jp,node)
+            self.node = node
+
+        self.remotePython.jp = jp
+        return self.remotePython
 
     def sshLua(self, jp, node):
-        return RemoteLua(jp,node)
+        if self.node != node or self.remoteLua is None:
+            self.remoteLua = RemoteLua(jp,node)
+            self.node = node
 
+        self.remoteLua.jp = jp
+        return self.remoteLua
 
-class RemotePython(object):
+class RemoteBase(object):
     def __init__(self, jp, node):
         self.node = node
         self.jp = jp
@@ -22,7 +35,11 @@ class RemotePython(object):
         self.port = None
         self.keyname = None
         self._keyhrd = None
-        self.cl = self._connect(node)
+        self.connection = self._connect(node)
+
+    def _generateUniq(self,name):
+        epoch = int(time.time())
+        return "%s_%s_%s" % (epoch,self.jp.name,name)
 
     def _negotiateConnection(self,target):
         nodes = self._getAllNodes()
@@ -41,14 +58,10 @@ class RemotePython(object):
             nodes[jp].extend(instances)
         return nodes
 
-    def _generateUniq(self,name):
-        epoch = int(time.time())
-        return "%s_%s_%s" % (epoch,self.jp.name,name)
-
     def _connect(self, node):
         connKind = self._negotiateConnection(node)
         if connKind is None:
-            raise RuntimeError("No node found")
+            raise RuntimeError("No node found for %s" % node)
         if connKind in ["node.ssh.key","node.ms1"]:
             return self._sshConnect(node,connKind)
         elif connKind in ['node.kvm']:
@@ -66,30 +79,42 @@ class RemotePython(object):
         return cl
 
     def _kvmConnect(self,node,kind='node.kvm'):
+        """
+        This function establish a connection to a kvm machine
+        First it connects to the host and forward a port of the host to the ssh port of the vm in order to expose the vm
+        Then it connects to the vm thought ssh
+        """
+        # connection to the host machine
         kvmHRD = j.application.getAppInstanceHRD(kind, node)
         hostType = kvmHRD.get("param.hostnode.type")
         hostInstance = kvmHRD.get("param.hostnode.instance")
         hostCl = self._sshConnect(hostInstance,hostType)
+        hostIp = self.ip
+        hostPort = self.port
 
-        config = self.executeCode("j.system.platform.kvm.getConfig('%s')" % node)
-        vmHRD = j.core.hrd.get(content=config)
-        vmIP = vmHRD.get("bootstrap.ip")
-        vmLogin = vmHRD.get("bootstrap.login")
-        vmPasswd = vmHRD.get("bootstrap.passwd")
+        vmIP = kvmHRD.get("param.machine.ssh.ip")
+        vmPasswd = kvmHRD.get("param.machine.ssh.passwd")
+        vmLogin = kvmHRD.get("param.machine.ssh.login")
 
-        # forward ssh of vm to outside
-        rule = hostCl.run("iptables -L -n -v | grep 'tcp dpt:2222'")
-        if rule != "":
-            ss = rule.split(":")
-            ip = ss[len(ss)-2]
-            cmd = "iptables -t nat -D PREROUTING -p tcp --dport 2222 -j DNAT --to-destination %s:22" % ip
-            hostCl.run(cmd)
-        cmd = "iptables -t nat -A PREROUTING -p tcp --dport 2222 -j DNAT --to-destination %s:22" % vmHRD.get("bootstrap.ip")
+        # remove current port forward if any
+        cmd = "ps ax | grep -v '/bin/bash -l -c' | grep 'ssh -f -N -L' > /tmp/ssh"
+        hostCl.run(cmd)
+        res = hostCl.run("cat /tmp/ssh")
+        processes = res.splitlines()
+        for line in processes[:len(processes)-1]: # skip last one, cause it's grep
+            if res != "":
+                pid = res.strip().split(" ")[0]
+                cmd = "kill %s" %pid
+                hostCl.run(cmd)
+        # expose vm
+        cmd = "ssh -f -N -L 2222:localhost:22  %s" % vmIP
         hostCl.run(cmd)
 
-        c = j.remote.cuisine.fabric.env['password'] = vmHRD.get("bootstrap.passwd")
-        cl=cl.connect(vmIP,2222)
-        return cl
+        c = j.remote.cuisine
+        c.fabric.env['password'] = vmPasswd
+        c.fabric.env['login'] = vmLogin
+        c.fabric.env['shell'] = "/bin/sh -c"
+        return c.connect(hostIp,2222)
 
     def copyTree(self, source, dest ,sshkey=None, port=None, ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"]):
         print("copy %s %s" % (source,dest))
@@ -128,17 +153,29 @@ class RemotePython(object):
         j.do.execute(cmd)
         j.system.fs.remove(keyloc)
 
-    def executeCode(self,code):
+    def executeCode(self, code, client=None):
+        if client is None:
+            client = self.connection
+
         code = """
 from JumpScale import j
 %s
 """ % code
         codeloc = "/tmp/%s" % self._generateUniq('exec.py')
-        self.cl.file_write(codeloc, code)
+        client.file_write(codeloc, code)
         cmd = "jspython %s" % codeloc
-        return self.cl.run(cmd)
+        return client.run(cmd)
 
-    def executeJP(self, action):
+
+class RemotePython(RemoteBase):
+    def __init__(self, jp, node):
+        super(RemotePython,self).__init__(jp=jp,node=node)
+
+
+    def executeJP(self, action, client=None):
+        if client is None:
+            client = self.connection
+
         action = action.replace("_","") # make sure the action name is correcte
         codegen=j.tools.packInCode.get4python()
 
@@ -227,23 +264,22 @@ class JPackageMock(object):
 
         code = codegen.get()
         codeloc = "/tmp/%s" % self._generateUniq('exec.py')
-        with self.cl.fabric.context_managers.hide('running'):
-            self.cl.file_write(codeloc, code)
-            cmd = "jspython %s" % codeloc
-            print "RUN %s" % action
-            self.cl.run(cmd)
+        client.file_write(codeloc, code)
+        cmd = "jspython %s" % codeloc
+        print "RUN %s" % action
+        client.run(cmd)
 
 
-class RemoteLua(object):
+class RemoteLua(RemoteBase):
     def __init__(self, jp, node):
-        self.node = node
-        self.jp = jp
-        self.cl = _sshConnect(node)
+        super(RemoteLua,self).__init__(jp=jp,node=node)
 
-    def executeJP(self, action):
+    def executeJP(self, action, client=None):
+        if client is None:
+            client = self.connection
         # add hrd content into actions file
         # the hrd is converted into a lua table
-        dictHRD = self.self.jp.hrd.getHRDAsDict()
+        dictHRD = self.jp.hrd.getHRDAsDict()
         jsonHRD = json.dumps(dictHRD)
         content = """local json = require 'json'
         local hrd = json.decode.decode('%s')
@@ -251,14 +287,14 @@ class RemoteLua(object):
         """ % jsonHRD
 
         #put action file on dest system
-        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.self.jp.name,self.self.jp.instance)
+        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
         content += j.system.fs.fileGetContents(actionfile)
         # add the call to the wanted function into the lua file
         # and pass the args table we construct from the hrd
         content+= "\n%s(hrd)"%action
-        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.self.jp.name,self.self.jp.instance)
-        self.cl.file_write(actionfiledest,content)
+        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.jp.name,self.jp.instance)
+        client.file_write(actionfiledest,content)
         j.system.fs.writeFile("/opt/code/action.lua",content)
         cmd = 'lua %s' % (actionfiledest)
-        self.cl.run(cmd)
+        client.run(cmd)
         del j.remote.cuisine.fabric.env["key"]

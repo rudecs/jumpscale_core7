@@ -28,7 +28,7 @@ def remote(F): # F is func or method without instance
             else:
                 cl = j.packages.remote.sshPython(jp, node)
 
-            cl.execute(F.func_name)
+            cl.executeJP(F.func_name)
     wrapper.func_name_orig = F.func_name
     return wrapper
 
@@ -95,7 +95,7 @@ class JPackage():
         self.hrdpath=""
         self.hrdpath_main=""
 
-    def getInstance(self,instance=None, args={}, hrddata=None,node=""):
+    def getInstance(self,instance=None, args={}, hrddata=None,node=None):
         # get first installed or main
         if instance is None:
             instances = self.listInstances(node=node)

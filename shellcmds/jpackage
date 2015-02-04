@@ -131,7 +131,7 @@ def getJPackage(args, debug=None,update=False,expandInstances=True,toinstall=Fal
         raise RuntimeError("Can only get jpackage instances if only 1 jpackage when instance set or more jpackages when instance=main")
 
     if toinstall:
-        packages=[jp.getInstance(args.instance, args=jpargs, hrddata=hrddata) for jp in packages]
+        packages=[jp.getInstance(args.instance, args=jpargs, hrddata=hrddata, node=args.node) for jp in packages]
         expandInstances = False
 
     if expandInstances:
