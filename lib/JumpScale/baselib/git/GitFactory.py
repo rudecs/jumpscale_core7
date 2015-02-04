@@ -7,15 +7,10 @@ class GitFactory:
         j.logger.consolelogCategories.append("git")
 
     def getClientFromUrl(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch=None,revision=None):
-        
+        raise RuntimeError("not implemented")
         base,ttype,account,repo,dest,url=j.do.getGitRepoArgs(url,dest,login,passwd,reset=reset)
 
         if login==None:
-            from IPython import embed
-            print "DEBUG NOW ooo1"
-            embed()
-            
-                
             if j.application.config.get("whoami.git.login",default="")!="":
                 login=j.application.config.get("whoami.git.login")
                 passwd=j.application.config.get("whoami.git.passwd")

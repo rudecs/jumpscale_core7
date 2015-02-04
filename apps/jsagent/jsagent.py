@@ -283,6 +283,9 @@ j.core.osis.client = j.clients.osis.getByInstance()
 
 from gevent.pywsgi import WSGIServer
 
-pm.start()
+try:
+    pm.start()
+except KeyboardInterrupt:
+    print "Bye"
 
 j.application.stop()

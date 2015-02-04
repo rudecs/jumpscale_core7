@@ -6,6 +6,7 @@ from .ActionsBase import ActionsBase
 class JPackageFactory():
 
     def __init__(self):
+        
         self._init=False
         self.domains={}
         self.hrd=None
@@ -28,6 +29,7 @@ class JPackageFactory():
         self._type=value
 
     def _doinit(self):
+        
         if self._init==False:
             j.do.debug=False
 
@@ -99,32 +101,38 @@ class JPackageFactory():
 
         return res
 
-    def get(self,domain="",name="",instance="",args={}, hrddata=None):
+    def get(self,domain="",name="",instance="main",args={}, hrddata=None,node=""):
         self._doinit()
         jps=self.find(domain,name,1)
         if len(jps)==0:
             j.events.opserror_critical("cannot find jpackage %s/%s"%(domain,name))
-        if instance!="":
-            jps[0]=jps[0].getInstance(instance, args=args, hrddata=hrddata)
+        jps[0]=jps[0].getInstance(instance, args=args, hrddata=hrddata,node=node)
         return jps[0]
 
-    def install(self,domain="",name="",instance="main",args={}, hrddata=None):
+    def exists(self,domain="",name="",instance="main",node=""):
         self._doinit()
-        jp=self.get(domain,name)
-        if instance=="":
-            j.events.inputerror_critical("instance cannot be empty when installing a jpackage","jpackage.install")
-        jpi=jp.getInstance(instance, args=args, hrddata=hrddata)
-        return jpi.install()
+        jps=self.find(domain,name,1)
+        if len(jps)==0:
+            return False
+        return  jps[0].existsInstance(instance=instance,node=node)   
 
-    def getHRD(self,reload=True):
-        if self.hrd==None or reload:
-            if self.type=="n":
-                source="%s/apps/"%self.domains[0]
-            else:
-                source="%s/apps/"%j.dirs.hrdDir
-            self.hrd=j.core.hrd.get(source)
+    # def install(self,domain="",name="",instance="main",args={}, hrddata=None):
+    #     self._doinit()
+    #     jp=self.get(domain,name)
+    #     if instance=="":
+    #         j.events.inputerror_critical("instance cannot be empty when installing a jpackage","jpackage.install")
+    #     jpi=jp.getInstance(instance, args=args, hrddata=hrddata)
+    #     return jpi.install()
 
-        return self.hrd
+    # def getHRD(self,reload=True):
+    #     if self.hrd==None or reload:
+    #         if self.type=="n":
+    #             source="%s/apps/"%self.domains[0]
+    #         else:
+    #             source="%s/apps/"%j.dirs.hrdDir
+    #         self.hrd=j.core.hrd.get(source)
+
+    #     return self.hrd
 
     def __str__(self):
         return self.__repr__()

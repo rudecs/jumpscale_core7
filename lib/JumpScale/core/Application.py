@@ -57,11 +57,12 @@ class Application:
         self.config = j.core.hrd.get(path="%s/system" % j.dirs.hrdDir)
 
     def connectRedis(self):
-        import JumpScale.baselib.redis
-        if j.clients.redis.isRunning('system'):
-            self.redis = j.clients.redis.getByInstance('system')
-        else:
-            self.redis=None
+        if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
+            import JumpScale.baselib.redis
+            if j.clients.redis.isRunning('system'):
+                self.redis = j.clients.redis.getByInstance('system')
+                return
+        self.redis=None
 
     def initWhoAmI(self, reload=False):
         """
@@ -205,6 +206,18 @@ class Application:
         import sys
         if not self._calledexit:
             self.stop(stop=False)
+
+    def existAppInstanceHRD(self,name,instance,domain="jumpscale"):
+        """
+        returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
+        """
+        if j.packages.type!="c":
+            path='%s/%s.%s.%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
+        else:
+            path='%s/%s.%s.hrd' % (j.dirs.getHrdDir(),name,instance)
+        if not j.system.fs.exists(path=path):
+            return False
+        return True
 
     def getAppInstanceHRD(self,name,instance,domain="jumpscale"):
         """

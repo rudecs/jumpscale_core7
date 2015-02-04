@@ -215,6 +215,9 @@ class Text:
             if ttype=="str":
                 result=j.console.askString(question=descr, defaultparam=default, regex=regex, retry=retry)
 
+            elif ttype=="list":
+                result=j.console.askString(question=descr, defaultparam=default, regex=regex, retry=retry)
+
             elif ttype=="multiline":
                 result=j.console.askMultiline(question=descr)
 
@@ -265,7 +268,7 @@ class Text:
                     result += "    %s,\n" % line.strip().strip(',')
 
             else:
-                j.events.inputerror_critical("Input type:%s is invalid (only: bool,int,str,string,dropdown,float)"%ttype)
+                j.events.inputerror_critical("Input type:%s is invalid (only: bool,int,str,string,dropdown,list,dict,float)"%ttype)
 
             out+="%s%s\n"%(prefix,result)
 
