@@ -257,9 +257,9 @@ def kill_subprocesses():
         p.kill()        
 
 def verifyinstall(domain='jumpscale', name='', instance='main', args={}, hrddata={}):
-    jp = j.packages.get(name=name, instance=instance)
+    jp = j.packages.get(name=name, instance=instance, args=args, hrddata=hrddata)
     if not jp.isInstalled() or opts.reset:
-        j.packages.install(domain=domain, name=name, instance=instance, args=args, hrddata=hrddata)
+        jp.install()
 
 parser = cmdutils.ArgumentParser()
 parser.add_argument("-i", '--instance', default="0", help='jsagent instance', required=False)
