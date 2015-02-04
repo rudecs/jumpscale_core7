@@ -367,8 +367,7 @@ class JPackageInstance(object):
             if instance=="":
                 instance="main"
 
-            jp=j.packages.get(name=name,domain=domain)
-            jp=jp.getInstance(instance, hrddata=hrddata)
+            jp=j.packages.get(name=name, instance=instance, hrddata=hrddata)
 
             res.append(jp)
 
