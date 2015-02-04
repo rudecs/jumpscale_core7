@@ -13,8 +13,17 @@ class Session():
     def __init__(self, ddict):
         self.__dict__ = ddict
 
+        if not hasattr(self, 'nid'):
+            self.nid = None
+
     def __repr__(self):
         return str(self.__dict__)
+
+    def updateNodeId(self, new_node_id):
+        """
+        Sets the session's NID attribute to the provided new_node_id.
+        """
+        self.nid = new_node_id
 
     __str__ = __repr__
 
@@ -121,6 +130,18 @@ class Daemon(object):
                                         message=message[0], signature=message[1])
         else:
             return message
+
+    def notifyOfNewNode(self, node, session_id):
+        """
+        Notifies this daemon about a newly-registered node.
+
+        Args:
+            node: metadata about the new node.
+            session_id (str): the ID of the session the new node is involved in.
+        """
+        if hasattr(node, 'id'):
+            # Let's use this opportunity to update the associated session with the new NID
+            self.sessions[session_id].updateNodeId(node.id)
 
     def encrypt(self, message, session):
         if session and session.encrkey:

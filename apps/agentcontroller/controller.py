@@ -281,6 +281,7 @@ class ControllerCMDS():
         self._updateNetInfo(session.netinfo, node)
         nodeid, new, changed = self.nodeclient.set(node)
         node = self.nodeclient.get(nodeid)
+        self.daemon.notifyOfNewNode(node, session.id)
         self._setRoles(node.roles, nodeid)
         self.sessionsUpdateTime[nodeid]=j.base.time.getTimeEpoch()
         result = {'node': node.dump()}
