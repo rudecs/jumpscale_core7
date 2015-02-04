@@ -220,7 +220,27 @@ class JPackageInstance(object):
         if not self.isInstalled():
             return False
         checksum = self.hrd.get('jp.installed.checksum')
-        return checksum == self._getMetaChecksum()
+        if checksum != self._getMetaChecksum():
+            return False
+        for recipeitem in self.hrd.getListFromPrefix("git.export"):
+            branch = recipeitem.get('branch', 'master') or 'master'
+            recipeurl = recipeitem['url']
+            if recipeurl in self._reposDone:
+                continue
+
+            login = j.application.config.get("whoami.git.login").strip()
+            passwd = j.application.config.getStr("whoami.git.passwd").strip()
+            _, _, _, _, dest, url = j.do.getGitRepoArgs(recipeurl, login=login, passwd=passwd)
+
+            current = j.system.process.execute('cd %s; git rev-parse HEAD --branch %s' % (dest, branch))
+            current = current[1].split('--branch')[1].strip()
+            remote = j.system.process.execute('git ls-remote %s refs/heads/%s' % (url, branch))
+            remote = remote[1].split()[0]
+
+            if current != remote:
+                return False
+            self._reposDone[recipeurl] = dest
+        return True
 
     def _getMetaChecksum(self):
         return j.system.fs.getFolderMD5sum(self.metapath)
