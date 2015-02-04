@@ -107,6 +107,9 @@ if opts.action == "status":
 
 for provider,account,reponame,branch,client,path in repos:
 
+    from IPython import embed;embed()
+    
+
     if opts.action == "update" and opts.deletechanges:
         print(("force update %s/%s/%s"%(provider,account,reponame)))
         client.pull()

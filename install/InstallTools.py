@@ -1301,7 +1301,6 @@ class InstallTools():
         @param provider e.g. git, github
         """
         #@todo make sure we use gitlab or github account if properly filled in
-        from IPython import embed;embed()
         repos=self.getGitReposListLocal(provider,account,name)
         for name,path in list(repos.items()):
             print(("push git repo:%s"%path))
