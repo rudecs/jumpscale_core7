@@ -225,7 +225,7 @@ class Daemon(object):
 
 
             eco.errormessage = \
-                "ERROR IN RPC CALL %s: %s. (Session:%s)\nData:%s\n" % (cmdkey, eco.errormessage, session, data)
+                "ERROR IN RPC CALL %s: %s. (Session:%s)\nData:%s\n" % (cmd, eco.errormessage, session, data)
 
             eco.process()
             eco.__dict__.pop("tb", None)
