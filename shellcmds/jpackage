@@ -202,8 +202,6 @@ if args.action == 'configure':
         package.start()
 
 elif args.action == 'install':
-    print hrddata
-
     packages = getJPackage(args,toinstall=True, jpargs=jpargs, hrddata=hrddata)
 
     for package in packages:
