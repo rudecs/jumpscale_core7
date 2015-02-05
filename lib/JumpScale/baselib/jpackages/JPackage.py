@@ -72,14 +72,10 @@ def deps(F): # F is func or method without instance
         deps = kwargs.get('deps', False)
         if deps:
             j.packages._justinstalled=[]
-            for dep in jp.getDependencies():
+            for dep in jp.getDependencyChain():
                 if dep.jp.name not in j.packages._justinstalled:
                     dep.args = jp.args
-                    if hasattr(F, 'func_name_orig'):
-                        depfunc = getattr(dep, F.func_name_orig)
-                    else:
-                        depfunc = getattr(dep, F.func_name)
-                    result=processresult(result,depfunc(*args, **kwargs))
+                    result=processresult(result,F(dep, *args, **kwargs))
                     j.packages._justinstalled.append(dep.jp.name)
         result=processresult(result,F(jp, *args,**kwargs))
         return result
@@ -394,6 +390,17 @@ class JPackageInstance(object):
             res.append(jp)
 
         return res
+
+    def getDependencyChain(self, chain=None):
+        chain = chain  if chain is not None else []
+        for dep in self.getDependencies():
+            dep.getDependencyChain(chain)
+            if dep not in chain:
+                chain.append(dep)
+        return chain
+
+    def __eq__(self, jp):
+        return jp.name == self.name and self.domain == jp.domain and self.instance == jp.instance
 
     @deps
     @remote
