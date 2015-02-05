@@ -190,9 +190,7 @@ if args.lua!=None:
 #         domains=args.domain.split(",")
 #         domains=[domain.lower().strip() for domain in domains]
 #     return domains
-
-if args.verbose:
-    j.application.debug=True
+j.application.debug=args.verbose
 
 if args.quiet:
     class NullDevice():

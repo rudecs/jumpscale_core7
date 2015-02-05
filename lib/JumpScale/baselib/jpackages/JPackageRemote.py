@@ -42,6 +42,9 @@ class RemoteBase(object):
         self.jp = jp
         self.ip = None
         self.port = None
+        self.login = None
+        self.passwd = None
+        self.key = None
         self.keyname = None
         self._keyhrd = None
         self.connection = self._connect(node)
@@ -62,10 +65,17 @@ class RemoteBase(object):
         connKind = self._negotiateConnection(node)
         if connKind is None:
             raise RuntimeError("No node found for %s" % node)
+        client = None
         if connKind in ["node.ssh.key","node.ms1"]:
-            return self._sshConnect(node,connKind)
+            client = self._sshConnect(node,connKind)
         elif connKind in ['node.kvm']:
-            return self._kvmConnect(node,connKind)
+            client = self._kvmConnect(node,connKind)
+
+        if not j.application.debug:
+            client.fabric.state.output['running'] = False
+            client.fabric.state.output['out'] = False
+
+        return client
 
     def _sshConnect(self,node,kind):
         c = j.remote.cuisine
@@ -92,29 +102,33 @@ class RemoteBase(object):
         hostIp = self.ip
         hostPort = self.port
 
-        vmIP = kvmHRD.get("param.machine.ssh.ip")
-        vmPasswd = kvmHRD.get("param.machine.ssh.passwd")
-        vmLogin = kvmHRD.get("param.machine.ssh.login")
+        vmIp = kvmHRD.get("param.machine.ssh.ip")
+        self.passwd = kvmHRD.get("param.machine.ssh.passwd")
+        self.login = kvmHRD.get("param.machine.ssh.login")
+        self.key = kvmHRD.get("param.machine.ssh.key")
+        self.port = 2222
 
         # remove current port forward if any
         cmd = "ps ax | grep -v '/bin/bash -l -c' | grep 'ssh -f -N -L' > /tmp/ssh"
         hostCl.run(cmd)
         res = hostCl.run("cat /tmp/ssh")
         processes = res.splitlines()
-        for line in processes[:len(processes)-1]: # skip last one, cause it's grep
-            if res != "":
-                pid = res.strip().split(" ")[0]
-                cmd = "kill %s" %pid
-                hostCl.run(cmd)
+        for line in processes:
+            pid = line.strip().split(" ")[0]
+            cmd = "kill %s" %pid
+            hostCl.run(cmd, warn_only=True) # warn_only=True, don't crash if process doesn't exist
         # expose vm
-        cmd = "ssh -f -N -L 2222:localhost:22  %s" % vmIP
+        cmd = "ssh -f -N -L %s:localhost:22  %s" % (self.port,vmIp)
         hostCl.run(cmd)
 
         c = j.remote.cuisine
-        c.fabric.env['password'] = vmPasswd
-        c.fabric.env['login'] = vmLogin
+        c.fabric.env['password'] = self.passwd
+        c.fabric.env['login'] = self.login
+        c.fabric.env['key'] = self.key
+        c.fabric.env['ip'] = hostIp
+        c.fabric.env['port'] = self.port
         c.fabric.env['shell'] = "/bin/sh -c"
-        return c.connect(hostIp,2222)
+        return c.connect(hostIp,self.port)
 
     def copyTree(self, source, dest ,sshkey=None, port=None, ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"]):
         print("copy %s %s" % (source,dest))
@@ -148,10 +162,43 @@ class RemoteBase(object):
         j.system.fs.chmod(keyloc,0o600)
         ssh += "-e 'ssh -i %s -p %s'" % (keyloc,port)
 
-
-        cmd="rsync -vP %s -a --no-compress --max-delete=0 %s %s %s"%(ssh,excl,source,dest)
+        verbose = "-q"
+        if j.application.debug:
+            verbose = "-v"
+        cmd="rsync -P %s %s -a --max-delete=0 %s %s %s"%(verbose,ssh,excl,source,dest)
         j.do.execute(cmd)
         j.system.fs.remove(keyloc)
+
+    def writeFile(self, dest, content, sshkey=None,port=None):
+        ssh=""
+        if sshkey is None:
+            if self.key is not None:
+                sshkey = self.key
+            elif self._keyhrd is not None:
+                sshkey = self._keyhrd.get("param.ssh.key.priv")
+            elif self.keyname is not None:
+                keyhrd = j.application.getAppInstanceHRD("sshkey",self.keyname)
+                sshkey = keyhrd.get('param.ssh.key.priv')
+
+        port = self.port if self.port is not None else 22
+        keyloc = "/tmp/%s" % self._generateUniq('id_dsa')
+        j.system.fs.writeFile(keyloc,sshkey)
+        j.system.fs.chmod(keyloc,0o600)
+        ssh += "-i %s -P %s" % (keyloc,port)
+
+        fileLoc = "/tmp/%s" % self._generateUniq('content')
+        j.system.fs.writeFile(fileLoc,content)
+        dest = "root@%s:%s" % (self.ip,dest)
+
+        verbose = "-q"
+        if j.application.debug:
+            verbose = "-v"
+
+        cmd="scp %s %s %s %s"%(verbose,ssh,fileLoc,dest)
+        print "Send file : %s" % cmd
+        j.do.executeInteractive(cmd)
+        j.system.fs.remove(keyloc)
+        j.system.fs.remove(fileLoc)
 
     def executeCode(self, code, client=None):
         if client is None:
@@ -162,7 +209,7 @@ from JumpScale import j
 %s
 """ % code
         codeloc = "/tmp/%s" % self._generateUniq('exec.py')
-        client.file_write(codeloc, code)
+        self.writeFile(codeloc,code)
         cmd = "jspython %s" % codeloc
         return client.run(cmd)
 
@@ -264,7 +311,7 @@ class JPackageMock(object):
 
         code = codegen.get()
         codeloc = "/tmp/%s" % self._generateUniq('exec.py')
-        client.file_write(codeloc, code)
+        self.writeFile(codeloc,code)
         cmd = "jspython %s" % codeloc
         print "RUN %s" % action
         client.run(cmd)
@@ -293,7 +340,7 @@ class RemoteLua(RemoteBase):
         # and pass the args table we construct from the hrd
         content+= "\n%s(hrd)"%action
         actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.jp.name,self.jp.instance)
-        client.file_write(actionfiledest,content)
+        self.writeFile(actionfiledest,content)
         j.system.fs.writeFile("/opt/code/action.lua",content)
         cmd = 'lua %s' % (actionfiledest)
         client.run(cmd)
