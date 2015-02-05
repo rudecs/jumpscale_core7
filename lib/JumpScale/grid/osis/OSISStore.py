@@ -3,6 +3,7 @@ import copy
 import imp
 import ujson as json
 import time
+import JumpScale.baselib.taskletengine
 
 class OSISStore(object):
     """
