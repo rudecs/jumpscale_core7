@@ -170,17 +170,15 @@ if args.data<>None:
     else:
         tags=j.core.tags.getObject(args.data)
         hrddata=tags.getDict()
-if args.cmd is not None:
-    hrddata['cmd'] = args.cmd.strip()
-
-if args.cmd is not None:
-    hrddata['cmd'] = args.cmd.strip()
 
 jpargs = {}
 if args.node!=None:
     jpargs["node2execute"]=args.node
 if args.lua!=None:
     jpargs["lua"]=args.lua
+
+if args.cmd is not None:
+    jpargs['cmd'] = args.cmd.strip()
 
 
 # def askDomains(args):
