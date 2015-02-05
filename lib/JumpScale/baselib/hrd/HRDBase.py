@@ -237,7 +237,7 @@ class HRDBase():
             hrditem._process()
 
     def pop(self,key):
-        if key in self:
+        if key in self.items:
             self.items.pop(key)
 
     def applyOnDir(self,path,filter=None, minmtime=None, maxmtime=None, depth=None,changeFileName=True,changeContent=True,additionalArgs={}):

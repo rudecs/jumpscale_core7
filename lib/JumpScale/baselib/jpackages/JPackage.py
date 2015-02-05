@@ -166,6 +166,8 @@ class JPackageInstance(object):
 
     @property
     def hrd(self):
+        if self._hrd:
+            return self._hrd
         if not j.system.fs.exists(self.hrdpath):
             self._apply()
         self._hrd = j.core.hrd.get(self.hrdpath)
