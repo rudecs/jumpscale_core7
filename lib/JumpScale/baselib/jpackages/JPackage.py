@@ -688,9 +688,7 @@ class JPackageInstance(object):
         self.restart()
 
     @deps
-    def resetstate(self,deps=True):        
-        self._load(args)
-
+    def resetstate(self,deps=True):
         j.do.delete(self.actionspath,force=True)
         j.do.delete(self.actionspath+"c",force=True) #for .pyc file
         actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
@@ -705,13 +703,13 @@ class JPackageInstance(object):
         - remove data of the app
         """
         self.resetstate()
-        j.do.delete(self.hrdpath,force=True)
         #remove build repo's
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             dest="/opt/build/%s"%name
             j.do.delete(dest)
 
+        j.do.delete(self.hrdpath,force=True)
         self.actions.removedata(**self.args)
 
     @deps
