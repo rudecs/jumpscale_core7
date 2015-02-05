@@ -410,10 +410,7 @@ class JPackageInstance(object):
 
         for dep in self.getDependencies(build=True):
             if dep.jp.name not in j.packages._justinstalled:
-                if 'args' in dep.__dict__:
-                    dep.install(args=dep.args)
-                else:
-                    dep.install()
+                dep.install()
                 j.packages._justinstalled.append(dep.jp.name)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
