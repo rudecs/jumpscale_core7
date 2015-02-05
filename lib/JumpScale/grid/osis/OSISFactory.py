@@ -3,7 +3,7 @@ from .OSISCMDS import OSISCMDS
 from .OSISClientForCat import OSISClientForCat
 from .OSISBaseObject import OSISBaseObject
 from .OSISBaseObjectComplexType import OSISBaseObjectComplexType
-import JumpScale.portal.codegentools
+import JumpScale.baselib.codegentools
 import JumpScale.baselib.codetools
 
 import inspect
@@ -265,7 +265,7 @@ class OSISFactory:
         return classpath
 
     def generateOsisModelDefaults(self,namespace,specpath=""):
-        import JumpScale.portal.codegentools
+        import JumpScale.baselib.codegentools
 
         if specpath=="":
             specpath=j.system.fs.joinPaths("logic", namespace, "model.spec")
