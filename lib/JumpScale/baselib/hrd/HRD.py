@@ -357,13 +357,11 @@ class HRD(HRDBase):
 
         splitted=content.split("\n")
         x=-1
-        go=True
         vartype="unknown"
-        while go:
+        while True:
             x+=1
             if x==len(splitted):
-                go=False
-                continue
+                break
             line=splitted[x]
 
             # print ("%s:%s:%s"%(state,vartype,line))
@@ -418,7 +416,7 @@ class HRD(HRDBase):
                     pre,post=line2.split("=",1)                        
                     vartype="unknown"
                     name=pre.strip()
-                    if post.strip()=="" or post.strip().startswith("b") or post.strip().lower()=="@ask,":
+                    if post.strip()=="" or post.strip() in ("b", "bqp") or post.strip().lower()=="@ask,":
                         state="multiline"
                         # print ("multilinenew:%s"%(line))
                         if  post.lower().strip().startswith("@ask"):
