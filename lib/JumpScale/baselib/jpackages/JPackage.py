@@ -689,8 +689,12 @@ class JPackageInstance(object):
 
     @deps
     def resetstate(self,deps=True):
-        j.do.delete(self.actionspath,force=True)
-        j.do.delete(self.actionspath+"c",force=True) #for .pyc file
+        if self.actionspath.find(".py") == -1:
+            j.do.delete(self.actionspath+".py",force=True)
+            j.do.delete(self.actionspath+"pyc",force=True) #for .pyc file
+        else:
+            j.do.delete(self.actionspath,force=True)
+            j.do.delete(self.actionspath+"c",force=True) #for .pyc file
         actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
         j.do.delete("%s/%s.json"%(j.dirs.getStatePath(),actioncat),force=True)
 
@@ -709,8 +713,8 @@ class JPackageInstance(object):
             dest="/opt/build/%s"%name
             j.do.delete(dest)
 
-        j.do.delete(self.hrdpath,force=True)
         self.actions.removedata(**self.args)
+        j.do.delete(self.hrdpath,force=True)
 
     @deps
     @remote
