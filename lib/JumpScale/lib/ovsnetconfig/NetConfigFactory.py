@@ -74,12 +74,6 @@ class NetConfigFactory():
         """
         j.system.fs.writeFile(filename="/etc/network/interfaces",contents="auto lo\n iface lo inet loopback\n\n")
 
-    def loadNetworkInterfaces(self):
-        """
-        Reloads the networking configuration which is basicly applying /etc/network/interfaces
-        """
-        j.system.platform.ubuntu.restartService('networking')
-
     def printConfigFromSystem(self):
         pprint.pprint(self.getConfigFromSystem())
 
@@ -334,8 +328,7 @@ iface $bondname inet manual
         #@todo need to do more checks here that it came up and retry couple of times if it did not
         #@ can do this by investigating self.getConfigFromSystem
 
-        print("restarting network, can take a while.")
-        j.system.process.executeWithoutPipe("sudo service networking restart")
+        j.system.process.executeWithoutPipe("/etc/init.d/openvswitch-switch restart")
 
 
         print(self._exec("ip a", failOnError=True))
