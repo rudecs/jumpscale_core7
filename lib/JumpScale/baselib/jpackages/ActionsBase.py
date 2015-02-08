@@ -1,5 +1,6 @@
 from JumpScale import j
 import JumpScale.baselib.screen
+
 class ActionsBase():
     """
     implement methods of this class to change behaviour of lifecycle management of jpackage
@@ -154,10 +155,14 @@ class ActionsBase():
         if self.jp_instance.getProcessDicts()==[]:
             return
 
-        def _stop(process):
-            ports = process.get('ports', [])
-            for port in ports:
+        def stop_process(process):
+
+            for port in process.get('ports', []):
                 j.system.process.killProcessByPort(port)
+
+            if process.get('filterstr', None):
+                for pid in j.system.process.getPidsByFilter(process['filterstr']):
+                    j.system.process.kill(pid)  # Will send a SIGKILL
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
@@ -168,12 +173,13 @@ class ActionsBase():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)
 
+
         if self.jp_instance.jp.name == 'redis':
             j.logger.redislogging = None
             j.logger.redis = None
 
         for process in self.jp_instance.getProcessDicts():
-            _stop(process)
+            stop_process(process)
         return True
 
     def halt(self,**args):
