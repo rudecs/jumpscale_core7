@@ -75,6 +75,7 @@ def deps(F): # F is func or method without instance
             for dep in jp.getDependencyChain():
                 if dep.jp.name not in j.packages._justinstalled:
                     dep.args = jp.args
+                    dep.node = jp.args.get("node2execute","")
                     result=processresult(result,F(dep, *args, **kwargs))
                     j.packages._justinstalled.append(dep.jp.name)
         result=processresult(result,F(jp, *args,**kwargs))
