@@ -232,18 +232,22 @@ class Dirs(object):
         return None
 
     def getHrdDir(self,node=None,system=False):
+        hrdDir = ""
         if system==False :
             if self.gitConfigDir=="unknown":
                 self.amInGitConfigRepo()
             if self.gitConfigDir!=None:            
                 if node!=None:
-                    return "%s/nodes/%s/hrd"%(self.gitConfigDir,node)
+                    hrdDir = "%s/nodes/%s/hrd"%(self.gitConfigDir,node)
                 else:
-                    return "%s/self/hrd"%self.gitConfigDir
+                    hrdDir = "%s/self/hrd"%self.gitConfigDir
             else:
-                return self.hrdDir+"/apps"
+                hrdDir = self.hrdDir+"/apps"
         else:
-            return self.hrdDir+"/system"
+            hrdDir = self.hrdDir+"/system"
+        if not j.system.fs.exists(hrdDir):
+            j.system.fs.createDir(hrdDir)
+        return  hrdDir
 
     def getJPActionsPath(self,node=None,system=None):
         if self.gitConfigDir=="unknown":
