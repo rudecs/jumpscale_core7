@@ -705,7 +705,7 @@ class JPackageInstance(object):
         else:
             j.do.delete(self.actionspath,force=True)
             j.do.delete(self.actionspath+"c",force=True) #for .pyc file
-        actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
+        actioncat="jp_%s_%s_%s"%(self.jp.domain,self.jp.name,self.instance)
         j.do.delete("%s/%s.json"%(j.dirs.getStatePath(),actioncat),force=True)
 
 
