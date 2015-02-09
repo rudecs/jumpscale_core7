@@ -74,6 +74,7 @@ def deps(F): # F is func or method without instance
             for dep in jp.getDependencyChain():
                 if dep.jp.name not in j.packages._justinstalled:
                     dep.args = jp.args
+                    dep.node = jp.args.get("node2execute","")
                     result=processresult(result,F(dep, *args, **kwargs))
                     j.packages._justinstalled.append(dep.jp.name)
         result=processresult(result,F(jp, *args,**kwargs))
@@ -242,10 +243,12 @@ class JPackageInstance(object):
     def _getMetaChecksum(self):
         return j.system.fs.getFolderMD5sum(self.metapath)
 
-    def getTCPPorts(self,deps=True, *args, **kwargs):
+    def getTCPPorts(self, processes=None, *args, **kwargs):
         ports = set()
+        if processes is None:
+            processes = self.getProcessDicts()
         for process in self.getProcessDicts():
-            for item in process["ports"]:
+            for item in process.get("ports", []):
                 if isinstance(item, basestring):
                     moreports = item.split(";")
                 elif isinstance(item, int):
@@ -695,7 +698,7 @@ class JPackageInstance(object):
         else:
             j.do.delete(self.actionspath,force=True)
             j.do.delete(self.actionspath+"c",force=True) #for .pyc file
-        actioncat="jp_%s_%s"%(self.jp.domain,self.jp.name)
+        actioncat="jp_%s_%s_%s"%(self.jp.domain,self.jp.name,self.instance)
         j.do.delete("%s/%s.json"%(j.dirs.getStatePath(),actioncat),force=True)
 
 

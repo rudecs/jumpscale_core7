@@ -21,7 +21,7 @@ class Action:
         '''
         self.category=category
         if self.category=="unknown" and jp<>None:
-            self.category="jp_%s_%s"%(jp.jp.domain,jp.jp.name)
+            self.category="jp_%s_%s_%s"%(jp.jp.domain,jp.jp.name,jp.instance)
         self.jp=jp
         self.name=name
         self.action=action

@@ -142,15 +142,17 @@ class RemoteBase(object):
         excl+="--exclude '*.pyc' "
         excl+="--exclude '*.bak' "
         excl+="--exclude '*__pycache__*' "
+
         if j.do.isDir(source):
             if dest[-1]!="/":
                 dest+="/"
             if source[-1]!="/":
                 source+="/"
-        destdir = dest.split(':')[1]
+            destdir = dest.split(':')[1]
+        else:
+            destdir = j.system.fs.getParent(dest.split(':')[1])
         if not self.connection.file_exists(destdir):
-            cmd = "mkdir -p %s" % destdir
-            self.connection.run(cmd)
+            self.connection.run("mkdir -p %s" % destdir)
 
         ssh=""
         if sshkey is None:
@@ -184,7 +186,7 @@ class RemoteBase(object):
         keyloc = "/tmp/%s" % self._generateUniq('id_dsa')
         j.system.fs.writeFile(keyloc,sshkey)
         j.system.fs.chmod(keyloc,0o600)
-        ssh += "-i %s -P %s" % (keyloc,port)
+        ssh += "-o StrictHostKeyChecking=no -i %s -P %s" % (keyloc,port)
 
         fileLoc = "/tmp/%s" % self._generateUniq('content')
         j.system.fs.writeFile(fileLoc,content)

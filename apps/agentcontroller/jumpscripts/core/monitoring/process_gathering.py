@@ -60,7 +60,8 @@ def action():
         processinfo = None
         try:
             cacheobj.p = j.system.process.getProcessObject(pid)
-        except:
+        except Exception, e:
+            print e
             cacheobj.p = None
             return
         try:
@@ -71,7 +72,7 @@ def action():
                         'get_cpu_percent', 'username']
 
                 processinfo = cacheobj.p.as_dict(args)
-                processinfo['parent'] = cacheobj.p.parent.pid
+                processinfo['parent'] = cacheobj.p.ppid()
                 processinfo['children'] = [ x.pid for x in cacheobj.p.get_children() ]
         except psutil.NoSuchProcess:
             pass
@@ -155,23 +156,18 @@ def action():
                 j.core.processmanager.childrenPidsFound[int(childpid)]=True
 
     #walk over startupmanager processes (make sure we don't double count)
-    pids = {}
     for package in j.packages.find():
         for instance in package.listInstances():
             jpinstance = package.getInstance(instance)
             if not jpinstance.isInstalled():
                 continue
-            
+
             ports = jpinstance.getTCPPorts()
             for d in jpinstance.getProcessDicts():
                 process_key="%s_%s"%(jpinstance.domain, jpinstance.name)
                 cwd = d.get('cwd')
                 cmd = d.get('cmd')
 
-                for p in ports:
-                    pids[process_key] =  pids.get(process_key, [])
-                    pids[process_key].extend(j.system.process.getPidsByPort(p))
-                
                 cacheobj=j.core.processmanager.monObjects.processobject.get(id=process_key)
     
                 cacheobj.ckeyOld = rediscl.hget('processes', process_key)
@@ -189,20 +185,16 @@ def action():
                 processOsisObject.getSetGuid()
                 processOsisObject.type="jsprocess"
                 processOsisObject.statkey=process_key
-                processOsisObject.systempids = pids[process_key]
+                processOsisObject.systempids = jpinstance.actions.get_pids()
         
                 if processOsisObject.systempids:            
-                    loadFromSystemProcessInfo(process_key,cacheobj,str(processOsisObject.systempids[0]))
+                    loadFromSystemProcessInfo(process_key,cacheobj,processOsisObject.systempids[0])
                     cacheobj.getTotalsChildren()
                 else:
                     processStopped(cacheobj)
         
                 result[process_key]=cacheobj
                 
-    for k, v in pids.iteritems():     
-        print "process: '%s' pids:'%s'"%(k,v)
-                
-        # exists=j.core.processmanager.monObjects.processobject.exists(process_key)
     for process_key,cacheobj in result.iteritems():
         if j.basetype.string.check(process_key):
             cacheobj.db.systempids.sort()

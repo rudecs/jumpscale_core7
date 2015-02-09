@@ -1,5 +1,7 @@
 from JumpScale import j
 import JumpScale.baselib.screen
+import os
+import signal
 
 class ActionsBase():
     """
@@ -156,13 +158,10 @@ class ActionsBase():
             return
 
         def stop_process(process):
-
-            for port in process.get('ports', []):
-                j.system.process.killProcessByPort(port)
-
-            if process.get('filterstr', None):
-                for pid in j.system.process.getPidsByFilter(process['filterstr']):
-                    j.system.process.kill(pid)  # Will send a SIGKILL
+            currentpids = (os.getpid(), os.getppid())
+            for pid in self.get_pids([process]):
+                if pid not in currentpids :
+                    j.system.process.kill(pid, signal.SIGTERM)
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
@@ -182,23 +181,27 @@ class ActionsBase():
             stop_process(process)
         return True
 
+    def get_pids(self, processes=None, **kwargs):
+        pids = set()
+        if processes is None:
+            processes = self.jp_instance.getProcessDicts()
+        for process in processes:
+            for port in self.jp_instance.getTCPPorts(process):
+                pids.update(j.system.process.getPidsByPort(port))
+            if process.get('filterstr', None):
+                pids.update(j.system.process.getPidsByFilter(process['filterstr']))
+        return list(pids)
+
     def halt(self,**args):
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
         """
-        def do(process):
-            cwd=process["cwd"]
-            for port in self.jp_instance.getTCPPorts():
-                j.system.process.killProcessByPort(port)
-            if not self.check_down_local(**args):
-                if process["filterstr"].strip()!="":
-                    j.system.process.killProcessByName(process["filterstr"])
-            if not self.check_down_local(**args):
-                j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
-
-        for process in self.jp_instance.getProcessDicts():
-            do(process)
-
+        currentpids = (os.getpid(), os.getppid())
+        for pid in self.get_pids():
+            if pid not in currentpids :
+                j.system.process.kill(pid, signal.SIGKILL)
+        if not self.check_down_local(**args):
+            j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
         return True
 
     def build(self,**args):
