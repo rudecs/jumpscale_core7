@@ -244,10 +244,12 @@ class JPackageInstance(object):
     def _getMetaChecksum(self):
         return j.system.fs.getFolderMD5sum(self.metapath)
 
-    def getTCPPorts(self,deps=True, *args, **kwargs):
+    def getTCPPorts(self, processes=None, *args, **kwargs):
         ports = set()
+        if processes is None:
+            processes = self.getProcessDicts()
         for process in self.getProcessDicts():
-            for item in process["ports"]:
+            for item in process.get("ports", []):
                 if isinstance(item, basestring):
                     moreports = item.split(";")
                 elif isinstance(item, int):
