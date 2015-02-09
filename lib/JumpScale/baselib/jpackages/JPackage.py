@@ -29,7 +29,6 @@ def remote(F): # F is func or method without instance
                 cl = j.packages.remote.sshPython(jp, node)
 
             cl.executeJP(F.func_name)
-    wrapper.func_name_orig = F.func_name
     return wrapper
 
 #decorator to get dependencies
@@ -592,20 +591,12 @@ class JPackageInstance(object):
                             j.system.fs.createDir(j.do.getParent(dest))
                             j.do.symlink(src, dest)
                     else:
-                        if j.system.fs.exists(path=dest):
-                            if not "delete" in recipeitem:
-                                recipeitem["delete"]="false"
-                            if recipeitem["delete"].lower()=="true":
-                                print ("copy: %s->%s"%(src,dest))
-                                j.do.delete(dest)
-                                j.system.fs.createDir(dest)
-                            else:
-                                print ("merge: %s->%s"%(src,dest))
-                            j.do.copyTree(src,dest)
-                        else:
-                            print ("copy: %s->%s"%(src,dest))
-                            j.system.fs.createDir(dest)
-                            j.do.copyTree(src,dest)
+                        delete = recipeitem.get('delete', 'false').lower()=="true"
+
+                        j.system.fs.createDir(j.system.fs.getParent(dest))
+
+                        print ("copy: %s->%s"%(src,dest))
+                        j.system.fs.copyDirTree(src, dest, eraseDestination=delete, overwriteFiles=delete)
 
         self.configure(deps=False)
 
