@@ -599,7 +599,10 @@ class JPackageInstance(object):
                         j.system.fs.createDir(j.system.fs.getParent(dest))
 
                         print ("copy: %s->%s"%(src,dest))
-                        j.system.fs.copyDirTree(src, dest, eraseDestination=delete, overwriteFiles=delete)
+                        if j.system.fs.isDir(src):
+                            j.system.fs.copyDirTree(src, dest, eraseDestination=delete, overwriteFiles=delete)
+                        else:
+                            j.system.fs.copyFile(src, dest, overwriteFile=delete)
 
         self.configure(deps=False)
 
