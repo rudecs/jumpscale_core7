@@ -221,7 +221,7 @@ class RedisFactory:
         C = """
 daemonize no
 pidfile $vardir/redis/$name/redis.pid
-port $port
+$port
 bind 127.0.0.1
 # unixsocket $vardir/redis/$name/redis.sock
 # unixsocketperm 755
@@ -778,6 +778,8 @@ aof-rewrite-incremental-fsync yes
 
         C = C.replace("$name", name)
         C = C.replace("$maxram", str(maxram))
+        if port != "":
+             port = "port %s" % port
         C = C.replace("$port", str(port))
         C = C.replace("$vardir", j.dirs.varDir)
 
