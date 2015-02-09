@@ -1,5 +1,6 @@
 from JumpScale import j
 import JumpScale.baselib.screen
+import os
 
 class ActionsBase():
     """
@@ -160,9 +161,11 @@ class ActionsBase():
             for port in process.get('ports', []):
                 j.system.process.killProcessByPort(port)
 
+            currentpids = (os.getpid(), os.getppid())
             if process.get('filterstr', None):
                 for pid in j.system.process.getPidsByFilter(process['filterstr']):
-                    j.system.process.kill(pid)  # Will send a SIGKILL
+                    if pid not in currentpids :
+                        j.system.process.kill(pid)  # Will send a SIGKILL
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
