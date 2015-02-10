@@ -8,6 +8,7 @@ import copy
 j.application.start('jpackage')
 
 parser = cmdutils.ArgumentParser()
+j.logger.consolelogCategories.append('jpactions')
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
     "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create", "status","nodes"]
@@ -358,6 +359,8 @@ elif args.action == 'list':
     printJPackages(jps)
 
 elif args.action == 'status':
+    j.logger.consolelogCategories.remove('jpactions')
+    j.logger.consolelogCategories.append('nologs') # dont leave categories empty
     def printJPackages(packages):
 
         form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s %(ports)s'

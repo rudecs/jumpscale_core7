@@ -3,6 +3,11 @@ import JumpScale.baselib.screen
 import os
 import signal
 
+CATEGORY = "jpactions"
+
+def log(msg, level=2):
+    j.logger.log(msg, level=level, category=CATEGORY)
+
 class ActionsBase():
     """
     implement methods of this class to change behaviour of lifecycle management of jpackage
@@ -65,6 +70,7 @@ class ActionsBase():
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
+            log("Starting %s:%s" % (domain, name))
 
             j.do.delete(self.jp_instance.getLogPath())
 
@@ -132,9 +138,9 @@ class ActionsBase():
         isrunning=self.check_up_local()
         if isrunning==False:
             if j.system.fs.exists(path=self.jp_instance.getLogPath()):
-                log=j.do.readFile(self.jp_instance.getLogPath()).strip()
+                logc=j.do.readFile(self.jp_instance.getLogPath()).strip()
             else:
-                log=""
+                logc=""
 
             msg=""
 
@@ -172,13 +178,15 @@ class ActionsBase():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)
 
-
         if self.jp_instance.jp.name == 'redis':
             j.logger.redislogging = None
             j.logger.redis = None
 
-        for process in self.jp_instance.getProcessDicts():
-            stop_process(process)
+        processes = self.jp_instance.getProcessDicts()
+        if processes:
+            log("Stopping %s" % self.jp_instance)
+            for process in processes:
+                stop_process(process)
         return True
 
     def get_pids(self, processes=None, **kwargs):
@@ -255,7 +263,10 @@ class ActionsBase():
         for process in self.jp_instance.getProcessDicts():
             result=do(process)
             if result==False:
+                domain, name = self._getDomainName(process)
+                log("Status %s:%s not running" % (domain,name))
                 return False
+        log("Status %s is running" % (self.jp_instance))
         return True
 
     def check_down_local(self,**args):

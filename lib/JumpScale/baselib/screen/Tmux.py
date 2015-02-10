@@ -19,7 +19,6 @@ class Tmux:
         env = os.environ.copy()
         env.pop('TMUX', None)
         cmd="%s new-session -d -s %s -n %s" % (self.screencmd, sessionname, screens[0])
-        print (cmd)
         if user!=None:
             cmd = "sudo -u %s -i %s"%(user,cmd)
         # j.system.process.run(cmd, env=env)  #@todo does not work in python3
@@ -112,7 +111,6 @@ class Tmux:
             return None
         for line in output.split():
             pid, windowname = line.split(';')
-            # print "%s '%s'"%(pid,windowname)
             if windowname == name:
                 return int(pid)
         return None
