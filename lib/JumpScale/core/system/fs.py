@@ -239,11 +239,15 @@ class SystemFS:
             raise TypeError("No parameters given to system.fs.copyFile from %s, to %s" % (fileFrom, to))
         if j.system.fs.isFile(fileFrom):
             # Create target folder first, otherwise copy fails
+            target_folder = os.path.dirname(to)
             if createDirIfNeeded:
-                target_folder = os.path.dirname(to)
                 self.createDir(target_folder)
             if overwriteFile==False:
-                if self.exists(to):
+                if os.path.samefile(to, target_folder):
+                    destfilename = os.path.join(to, os.path.basename(fileFrom))
+                    if self.exists(destfilename):
+                        return
+                elif self.exists(to):
                     return
             if skipProtectedDirs:
                 if j.dirs.checkInProtectedDir(to):

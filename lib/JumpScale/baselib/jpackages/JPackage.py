@@ -580,6 +580,7 @@ class JPackageInstance(object):
                 items=[(src,dest,link)]
 
             for src,dest,link in items:
+                delete = recipeitem.get('overwrite', 'true').lower()=="true"
                 if dest.strip()=="":
                     raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
                 if dest[0]!="/":
@@ -593,16 +594,16 @@ class JPackageInstance(object):
                         if not j.system.fs.exists(dest):
                             j.system.fs.createDir(j.do.getParent(dest))
                             j.do.symlink(src, dest)
+                        elif delete:
+                            j.system.fs.delete(dest)
+                            j.do.symlink(src, dest)
                     else:
-                        delete = recipeitem.get('delete', 'false').lower()=="true"
-
-                        j.system.fs.createDir(j.system.fs.getParent(dest))
-
                         print ("copy: %s->%s"%(src,dest))
                         if j.system.fs.isDir(src):
-                            j.system.fs.copyDirTree(src, dest, eraseDestination=delete, overwriteFiles=delete)
+                            j.system.fs.createDir(j.system.fs.getParent(dest))
+                            j.system.fs.copyDirTree(src, dest, eraseDestination=False, overwriteFiles=delete)
                         else:
-                            j.system.fs.copyFile(src, dest, overwriteFile=delete)
+                            j.system.fs.copyFile(src, dest, True, overwriteFile=delete)
 
         self.configure(deps=False)
 
