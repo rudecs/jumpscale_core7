@@ -31,10 +31,12 @@ if __name__ == '__main__':
             import JumpScale.baselib.influxdb
             client = j.clients.influxdb.getByInstance(instancename)
             databases = [db['name'] for db in client.get_list_database()]
-            if 'main' not in databases:
-                client.create_database('main')
+            hrd = j.application.getAppInstanceHRD(instance=instancename, name='influxdb_client')
+            database_name = hrd.getStr('param.influxdb.client.dbname')
+            if database_name not in databases:
+                client.create_database(database_name)
             else:
-                client.switch_database('main')
+                client.switch_database(database_name)
 
         connections["%s_%s"%(dbname,instancename)]=client
 
