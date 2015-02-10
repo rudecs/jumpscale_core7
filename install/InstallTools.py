@@ -372,15 +372,19 @@ class InstallTools():
             src=src.rstrip("/")
             if not self.exists(src):
                 raise RuntimeError("could not find src for link:%s"%src)
-            os.symlink(src,dest)
+            if not self.exists(dest):
+                os.symlink(src,dest)
 
-    def symlinkFilesInDir(self,src,dest,delete=True):
-        for item in self.listFilesInDir(src, recursive=False,followSymlinks=True,listSymlinks=True):
+    def symlinkFilesInDir(self,src,dest,delete=True, includeDirs=False):
+        if includeDirs:
+            items = self.listFilesAndDirsInDir(src, recursive=False,followSymlinks=False,listSymlinks=False)
+        else:
+            items = self.listFilesInDir(src, recursive=False,followSymlinks=True,listSymlinks=True)
+        for item in items:
             dest2="%s/%s"%(dest,self.getBaseName(item))
             dest2=dest2.replace("//","/")
             print(("link %s:%s"%(item,dest2)))
             self.symlink(item,dest2,delete=delete)
-
 
     def removesymlink(self,path):
         if self.TYPE=="WIN":
@@ -1389,9 +1393,8 @@ class InstallTools():
         self.createDir("%s/hrd/apps"%base)
 
         dest="%s/lib/JumpScale"%base
-        print ("link: '%s' -> '%s'"%(src,dest))
-        self.symlink(src, dest)
-
+        self.createDir(dest)
+        self.symlinkFilesInDir(src, dest, includeDirs=True)
 
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
         desttest="/usr/local/bin/js"
