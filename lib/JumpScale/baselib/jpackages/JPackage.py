@@ -595,7 +595,7 @@ class JPackageInstance(object):
                             j.system.fs.createDir(j.do.getParent(dest))
                             j.do.symlink(src, dest)
                         elif delete:
-                            j.system.fs.delete(dest)
+                            j.system.fs.remove(dest)
                             j.do.symlink(src, dest)
                     else:
                         print ("copy: %s->%s"%(src,dest))
