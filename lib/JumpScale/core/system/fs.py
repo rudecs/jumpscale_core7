@@ -243,7 +243,7 @@ class SystemFS:
             if createDirIfNeeded:
                 self.createDir(target_folder)
             if overwriteFile==False:
-                if os.path.samefile(to, target_folder):
+                if self.exists(to) and os.path.samefile(to, target_folder):
                     destfilename = os.path.join(to, os.path.basename(fileFrom))
                     if self.exists(destfilename):
                         return
