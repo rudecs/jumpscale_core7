@@ -65,7 +65,10 @@ class AgentControllerProxyClient():
                 self.ipaddr=j.application.config.get("grid.master.ip")
         else:
             self.ipaddr=agentControllerIP
-        acconfig = j.packages.get(name='agentcontroller_client').hrd
+        instances = j.application.getAppHRDInstanceNames('agentcontroller_client')
+        if not instances:
+            raise RuntimeError('AgentController Client must be configured')
+        acconfig = j.application.getAppInstanceHRD('agentcontroller_client', instances[0])
         passwd = acconfig.get("agentcontroller.client.passwd")
         login = 'root'
         client= j.servers.geventws.getClient(self.ipaddr, PORT, user=login, passwd=passwd,category="processmanager_%s"%category)
@@ -85,7 +88,10 @@ class AgentControllerClient():
         else:
             raise ValueError("AgentControllerIP shoudl be either string or iterable")
         if login == 'root' and passwd is None:
-            acconfig = j.packages.get(name='agentcontroller_client').hrd
+            instances = j.application.getAppHRDInstanceNames('agentcontroller_client')
+            if not instances:
+                raise RuntimeError('AgentController Client must be configured')
+            acconfig = j.application.getAppInstanceHRD('agentcontroller_client', instances[0])
             passwd = acconfig.get("agentcontroller.client.passwd")
         if login == 'node' and passwd is None:
             passwd = j.application.getUniqueMachineId()
