@@ -249,12 +249,14 @@ class SystemFS:
                         return
                 elif self.exists(to):
                     return
+            elif self.isFile(to):
+                self.remove(to) # overwriting some open  files is frustrating and may not work due to locking [delete/copy is a better strategy]
             if skipProtectedDirs:
                 if j.dirs.checkInProtectedDir(to):
                     raise RuntimeError("did not copyFile from:%s to:%s because in protected dir"%(fileFrom,to))
                     return
             try:
-                shutil.copy(fileFrom, to)
+                shutil.copy(fileFrom, to)                
                 self.log("Copied file from %s to %s" % (fileFrom,to),6)
             except Exception as e:
                 raise RuntimeError("Could not copy file from %s to %s, error %s" % (fileFrom,to,e))                
