@@ -46,7 +46,7 @@ class HRDBase():
 
     def getInt(self,key,default=None):
         if default!=None:
-            default=int(default)        
+            default=int(default)
         res=self.get(key,default=default)
         return j.tools.text.getInt(res)
 
@@ -55,7 +55,7 @@ class HRDBase():
             default=str(default)        
         res=self.get(key,default=default)
         res=j.tools.text.pythonObjToStr(res,multiline=False, canBeDict=False)
-        res=res.strip()
+        res=res.strip().strip("'")
         return res
 
     def listAdd(self,key,item):

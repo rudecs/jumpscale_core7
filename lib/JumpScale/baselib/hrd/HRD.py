@@ -24,6 +24,7 @@ class HRDItem():
             return self.data
         if self.value==None:
             self._process()
+        self.value = self.value.strip("'") if isinstance(self.value, basestring) else self.value
         return self.value
 
     def getAsString(self):
@@ -56,7 +57,9 @@ class HRDItem():
             name=self.name
         
         self.value=value
-
+        if self.ttype == 'str':
+            if not value.startswith("'"):
+                self.value = "'%s'" % value
         if comments!="":
             self.comments=comments
 
@@ -123,7 +126,7 @@ class HRDItem():
 
         if data.find("@ASK")!=-1:
             # print ("%s CHANGED"%self)
-            self.hrd.changed=True        
+            self.hrd.changed=True
 
         ttype, data=j.tools.text.ask(data,self.name,args=self.hrd.args)
         self.data = data
@@ -131,7 +134,7 @@ class HRDItem():
             self.ttype = ttype
 
         if self.ttype=="str" or self.ttype=="base":
-            self.value=data.strip().strip("'")
+            self.value=data.strip()
             self.value=j.tools.text.machinetext2val(self.value)
 
         elif self.ttype=="dict":
@@ -222,7 +225,7 @@ class HRD(HRDBase):
             else:
                 return default
         val= self.items[key].get()
-        val = val.strip() if isinstance(val, basestring) else val
+        val = val.strip().strip("'") if isinstance(val, basestring) else val
         j.core.hrd.log("hrd get '%s':'%s'"%(key,val))
         return val
 

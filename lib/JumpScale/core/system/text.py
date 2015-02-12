@@ -505,7 +505,7 @@ class Text:
              : -> \\D
              \\n -> return
         """
-        value=value.strip("'")
+        # value=value.strip("'")
         value2=value.replace("\\K",",")
         value2=value2.replace("\\Q","\"")
         value2=value2.replace("\\S"," ")
