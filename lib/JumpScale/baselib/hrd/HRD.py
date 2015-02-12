@@ -24,8 +24,7 @@ class HRDItem():
             return self.data
         if self.value==None:
             self._process()
-        self.value = self.value.strip("'") if isinstance(self.value, basestring) else self.value
-        return self.value
+        return self.value.strip("'") if isinstance(self.value, basestring) else self.value
 
     def getAsString(self):
         if self.ttype=="binary":
