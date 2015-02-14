@@ -27,16 +27,28 @@ class mainclass(parentclass):
                     if value['id'] not in gr['users']:
                          gr['users'].append(value['id'])
                          g.set(gr['guid'],gr, session=session)
-        
         return guid, new, changed
 
+    def exists(self, key, session=None):
+        """
+        get dict value
+        """
+        gid, _, id = key.rpartition('_')
+        self.runTasklet('exists', key, session)
+        db, counter = self._getMongoDB(session)
+        return not db.find_one({"id":id})==None
+
     def get(self, key, full=False, session=None):
-        """
-        @return as json encoded
-        """
-        val = parentclass.get(self, key, full, session=session)
-        # if val is not None and 'passwd' in val:
+        gid, _, id = key.rpartition('_')
+        self.runTasklet('get', key, session)
+        db, counter = self._getMongoDB(session)
+        res=db.find_one({"id":id})
 
-        #     val['passwd'] = j.core.osis.decrypt(val['passwd'])
-        return val
+        # res["guid"]=str(res["_id"])
+        if not res:
+            j.errorconditionhandler.raiseBug(message="Key %s doesn't exist" % key, level=4)
 
+        if not full:
+            res.pop("_id")
+            res.pop("_ttl", None)
+        return res

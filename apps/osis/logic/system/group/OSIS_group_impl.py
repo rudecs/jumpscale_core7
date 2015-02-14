@@ -30,3 +30,27 @@ class mainclass(parentclass):
                         u.set(user['guid'], user, session=session)
 
         return [guid, new, changed]
+
+    def exists(self, key, session=None):
+        """
+        get dict value
+        """
+        gid, _, id = key.rpartition('_')
+        self.runTasklet('exists', key, session)
+        db, counter = self._getMongoDB(session)
+        return not db.find_one({"id":id})==None
+
+    def get(self, key, full=False, session=None):
+        gid, _, id = key.rpartition('_')
+        self.runTasklet('get', key, session)
+        db, counter = self._getMongoDB(session)
+        res=db.find_one({"id":id})
+
+        # res["guid"]=str(res["_id"])
+        if not res:
+            j.errorconditionhandler.raiseBug(message="Key %s doesn't exist" % key, level=4)
+
+        if not full:
+            res.pop("_id")
+            res.pop("_ttl", None)
+        return res
