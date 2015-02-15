@@ -48,6 +48,7 @@ class ActionsBase():
         def start2(process):
             
             cwd=process["cwd"]
+            args['process'] = process
             self.stop(**args)
 
             tcmd=process["cmd"]
@@ -156,7 +157,6 @@ class ActionsBase():
             return
 
         def stop_process(process):
-
             for port in process.get('ports', []):
                 j.system.process.killProcessByPort(port)
 
@@ -177,9 +177,11 @@ class ActionsBase():
         if self.jp_instance.jp.name == 'redis':
             j.logger.redislogging = None
             j.logger.redis = None
-
-        for process in self.jp_instance.getProcessDicts():
-            stop_process(process)
+        if 'process' in args:
+            stop_process(args['process'])
+        else:
+            for process in self.jp_instance.getProcessDicts():
+                stop_process(process)
         return True
 
     def halt(self,**args):
