@@ -608,6 +608,15 @@ class JPackageInstance(object):
                             j.system.fs.createDir(dest)
                             j.do.copyTree(src,dest)
 
+        if node:
+            # install the hrd to the remote host
+            hrdPath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(self.node),self.name,self.instance)
+            if not j.system.fs.exists(hrdPath):
+                raise RuntimeError("The hrd (%s) for this jpackages doesn't exists")
+            hrdContent = j.system.fs.fileGetContents(hrdPath)
+            destPath = "%s/apps/%s.%s.%s.hrd" % (j.dirs.hrdDir, self.domain, self.name, self.instance)
+            node.writeFile(destPath,hrdContent)
+
         self.configure(deps=False)
 
         self.start()
