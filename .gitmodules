@@ -1,3 +1,4 @@
 [submodule "docs"]
 	path = docs
 	url = https://github.com/Jumpscale/jumpscale_core7.wiki.git
+    ignore = all
