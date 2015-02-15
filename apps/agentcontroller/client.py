@@ -36,26 +36,12 @@ for i in range(1):
     args["msg"]="test"
     result=client.executeJumpscript(organization="jumpscale", name="echo", nid=j.application.whoAmI.nid, role=None, args=args, all=False, timeout=600, wait=True, queue='io', transporttimeout=5, _agentid=0)
     print result
-    # job=client.execute(,,msg="test:%s"%i,timeout=5,wait=True,lock="")
-    # job=client.waitJumpscript(job["id"])
-    # print job
-
-
-
-    # if job["resultcode"]>0:
-    #     eco= j.errorconditionhandler.getErrorConditionObject(ddict=job["result"])
-    #     eco.process()
-    # else:
-    #     print "result:%s"%job["result"]
 
 j.application.stop()
 
 print "start test"
 for i in range(1):
     job=client.execute("opencode","dummy","node",args={"msg":"amessage"},timeout=60,wait=True,lock="alock")
-    # from IPython import embed
-    # print "DEBUG NOW id"
-    # embed()
     
     resultcode,result=client.waitJumpscript(job.id)
 

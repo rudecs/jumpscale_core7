@@ -2,6 +2,7 @@ from JumpScale import j
 # import JumpScale.baselib.codeexecutor
 from .HRD import HRD
 from .HRDTree import HRDTree
+from collections import OrderedDict
 
 class HRDFactory:
     def __init__(self):
@@ -14,7 +15,7 @@ class HRDFactory:
         elif level<self.loglevel+1 and self.logenable:
             j.logger.log(msg,category="hrd.%s"%category,level=level)
 
-    def get(self,path=None,content="",prefixWithName=True,keepformat=False,args={},templates=[]):
+    def get(self,path=None,content="",prefixWithName=True,keepformat=False,args=OrderedDict(),templates=[]):
         """
         @param path
         """        

@@ -1,6 +1,7 @@
 from JumpScale import j
 import binascii
 import copy
+from collections import OrderedDict
 class HRDBase():
 
     def prefix(self, key,depth=0):
@@ -45,7 +46,7 @@ class HRDBase():
 
     def getInt(self,key,default=None):
         if default!=None:
-            default=int(default)        
+            default=int(default)
         res=self.get(key,default=default)
         return j.tools.text.getInt(res)
 
@@ -53,8 +54,8 @@ class HRDBase():
         if default!=None:
             default=str(default)        
         res=self.get(key,default=default)
-        res=j.tools.text.pythonObjToStr(res,multiline=False)
-        res=res.strip()
+        res=j.tools.text.pythonObjToStr(res,multiline=False, canBeDict=False)
+        res=res.strip().strip("'")
         return res
 
     def listAdd(self,key,item):
@@ -68,7 +69,6 @@ class HRDBase():
         return j.tools.text.getFloat(res)
 
     def exists(self,key):
-        key=key.lower()
         return key in self.items
 
     def getList(self,key):
@@ -89,7 +89,7 @@ class HRDBase():
                 ddict[key]=j.tools.text.str2var(item)
             return ddict
         if ddict.strip()=="":
-            return {}        
+            return OrderedDict()   
         raise RuntimeError("no dict for %s"%key)
 
     def getListFromPrefix(self, prefix):
@@ -105,7 +105,7 @@ class HRDBase():
         """
         returns values from prefix return as list
         """
-        result={}
+        result = OrderedDict()
         l=len(prefix)
         for key in self.prefix(prefix):
             if prefix!="":
@@ -135,14 +135,14 @@ class HRDBase():
                         ddict[keyparts[0]]=[]
                     newkey="%s_%s"%(keyparts[0],keyparts[1])
                     if newkey!=prevkey:
-                        ddict[keyparts[0]].append({})
+                        ddict[keyparts[0]].append(OrderedDict())
                     # print "%s %s"%(prevkey,newkey)
                     prevkey=newkey
                     ddict[keyparts[0]][-1][keyparts[2]]=self.get(key).replace("\\n","\n")
                     ddict.pop(key)                
         return ddict
 
-    def getListFromPrefixEachItemDict(self, prefix,musthave=[],defaults={},aredict={},arelist=[],areint=[],arebool=[]):
+    def getListFromPrefixEachItemDict(self, prefix,musthave=[],defaults=OrderedDict(),aredict=OrderedDict(),arelist=[],areint=[],arebool=[]):
         """
         returns values from prefix return as list
         each value represents a dict
@@ -154,7 +154,7 @@ class HRDBase():
         for key in self.prefix(prefix):
             result.append(copy.copy(self.get(key)))
 
-        def processdict(ddict,musthave=[],defaults={},aredicts={},arelist=[],arebool=[]):
+        def processdict(ddict,musthave=[],defaults=OrderedDict(),aredicts=OrderedDict(),arelist=[],arebool=[]):
             # print "##\n%s\n##\n"%ddict
             for key in musthave:
                 if key not in ddict.keys():
@@ -184,7 +184,7 @@ class HRDBase():
                 elif key in aredict:
                     checkval=str(ddict[key]).strip().strip(",")
                     if checkval=="":
-                        ddict[key]={}
+                        ddict[key]=OrderedDict()
                     elif j.basetype.dictionary.check(ddict[key]):
                         for key3,val3 in ddict[key].items():
                             ddict[key][key3]=j.tools.text.machinetext2val(str(ddict[key][key3]))
@@ -216,7 +216,7 @@ class HRDBase():
 
         return result   
 
-    def checkValidity(self,template,hrddata={}):
+    def checkValidity(self,template,hrddata=OrderedDict()):
         """
         @param template is example hrd content block, which will be used to check against, 
         if params not found will be added to existing hrd 
@@ -240,7 +240,7 @@ class HRDBase():
         if key in self.items:
             self.items.pop(key)
 
-    def applyOnDir(self,path,filter=None, minmtime=None, maxmtime=None, depth=None,changeFileName=True,changeContent=True,additionalArgs={}):
+    def applyOnDir(self,path,filter=None, minmtime=None, maxmtime=None, depth=None,changeFileName=True,changeContent=True,additionalArgs=OrderedDict()):
         """
         look for $(name) and replace with hrd value
         """
@@ -256,7 +256,7 @@ class HRDBase():
             if changeContent:
                 self.applyOnFile(item2,additionalArgs=additionalArgs)
 
-    def applyOnFile(self,path,additionalArgs={}):
+    def applyOnFile(self,path,additionalArgs=OrderedDict()):
         """
         look for $(name) and replace with hrd value
         """
@@ -266,7 +266,7 @@ class HRDBase():
         content=self._replaceVarsInText(content,additionalArgs=additionalArgs)
         j.system.fs.writeFile(path,content)
 
-    def applyOnContent(self,content,additionalArgs={}):
+    def applyOnContent(self,content,additionalArgs=OrderedDict()):
         """
         look for $(name) and replace with hrd value
         """
@@ -274,7 +274,7 @@ class HRDBase():
         content=self._replaceVarsInText(content,additionalArgs=additionalArgs)
         return content
 
-    def _replaceVarsInText(self,content,additionalArgs={}):
+    def _replaceVarsInText(self,content,additionalArgs=OrderedDict()):
         if content=="":
             return content
             

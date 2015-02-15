@@ -137,7 +137,11 @@ class ProcessManager():
 
         self.hrd=j.application.instanceconfig
 
-        acip=self.hrd.get("ac.ipaddress",default="")
+
+        acclientinstancename = self.hrd.get('agentcontroller.connection')
+        acconfig = j.application.getAppInstanceHRD('agentcontroller_client', acclientinstancename)
+
+        acip = acconfig.get("agentcontroller.client.addr",default="")
 
         if "hekad" in self.services:
             jp=j.packages.findNewest("jumpscale","hekad")
@@ -160,10 +164,9 @@ class ProcessManager():
                 if j.application.config.get("grid.id")=="" or j.application.config.getInt("grid.id")==0:
                     j.application.config.set("grid.id",self.hrd.get("grid.id"))
 
-            acport=self.hrd.getInt("ac.port")
-            aclogin=self.hrd.get("ac.login",default="node")
-            acpasswd=self.hrd.get("ac.passwd",default="")
-            acclientinstancename = self.hrd.get('agentcontroller.connection')
+            acport = acconfig.getInt("agentcontroller.client.port")
+            aclogin = acconfig.get("agentcontroller.client.login",default="node")
+            acpasswd = acconfig.get("agentcontroller.client.passwd",default="")
 
             #processmanager enabled
             while j.system.net.waitConnectionTest(acip,acport,2)==False:
@@ -178,10 +181,6 @@ class ProcessManager():
 
             j.application.config.set("grid.id",res["node"]["gid"])
             j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
-
-            verifyinstall('jumpscale', 'osis_client', instance='processmanager', hrddata={"param.osis.client.addr":acip,"param.osis.client.port":5544,"param.osis.client.login":aclogin,"param.osis.client.passwd":acpasswd})
-            self.hrd.set("osis.connection","processmanager")
-            verifyinstall('jumpscale', 'agentcontroller_client', instance=acclientinstancename, hrddata={"agentcontroller.client.addr":acip,"agentcontroller.client.port":4444,"agentcontroller.client.login":aclogin})
             
             self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
@@ -254,12 +253,7 @@ class ProcessManager():
 @atexit.register
 def kill_subprocesses():
     for p in processes:
-        p.kill()        
-
-def verifyinstall(domain='jumpscale', name='', instance='main', args={}, hrddata={}):
-    jp = j.packages.get(name=name, instance=instance, args=args, hrddata=hrddata)
-    if not jp.isInstalled() or opts.reset:
-        jp.install()
+        p.kill()
 
 parser = cmdutils.ArgumentParser()
 parser.add_argument("-i", '--instance', default="0", help='jsagent instance', required=False)

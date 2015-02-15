@@ -4,11 +4,12 @@ from JumpScale import j
 from .HRDBase import HRDBase
 
 from .HRD import HRD
+from collections import OrderedDict
 
 
 class HRDTree(HRDBase):
     def __init__(self,path="",prefixWithName=False,keepformat=True):
-        self.items={} #link between key & hrd storing the key
+        self.items=OrderedDict() #link between key & hrd storing the key
         self.hrds=[] #all hrd's in tree
         self.changed=False
         self.commentblock=""

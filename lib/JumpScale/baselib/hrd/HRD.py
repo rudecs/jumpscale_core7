@@ -3,6 +3,7 @@ import JumpScale.baselib.regextools
 from .HRDBase import HRDBase
 import binascii
 import copy
+from collections import OrderedDict
 
 class HRDItem():
     def __init__(self,name,hrd,ttype,data,comments):
@@ -23,7 +24,7 @@ class HRDItem():
             return self.data
         if self.value==None:
             self._process()
-        return self.value
+        return self.value.strip("'") if isinstance(self.value, basestring) else self.value
 
     def getAsString(self):
         if self.ttype=="binary":
@@ -37,7 +38,6 @@ class HRDItem():
 
         data=j.tools.text.pythonObjToStr(self.value)
         if not (self.ttype=="dict" or self.ttype=="list"):
-            # print "'%s'"%data
             if data.find("\n   ")!=0:
                 data=data.strip()
         else:
@@ -56,7 +56,9 @@ class HRDItem():
             name=self.name
         
         self.value=value
-
+        if self.ttype == 'str':
+            if not value.startswith("'"):
+                self.value = "'%s'" % value
         if comments!="":
             self.comments=comments
 
@@ -123,7 +125,7 @@ class HRDItem():
 
         if data.find("@ASK")!=-1:
             # print ("%s CHANGED"%self)
-            self.hrd.changed=True        
+            self.hrd.changed=True
 
         ttype, data=j.tools.text.ask(data,self.name,args=self.hrd.args)
         self.data = data
@@ -131,14 +133,14 @@ class HRDItem():
             self.ttype = ttype
 
         if self.ttype=="str" or self.ttype=="base":
-            self.value=data.strip().strip("'")
+            self.value=data.strip()
             self.value=j.tools.text.machinetext2val(self.value)
 
         elif self.ttype=="dict":
-            currentobj={}
+            currentobj=OrderedDict()
             self.value=data.strip(",")
             if self.value.strip()==":":
-                self.value={}
+                self.value=OrderedDict()
             else:
                 for item in self.value.split(","):
                     item = item.strip()
@@ -181,7 +183,7 @@ class HRDItem():
     __repr__=__str__
 
 class HRD(HRDBase):
-    def __init__(self,path=None,tree=None,content="",prefixWithName=False,keepformat=True,args={},templates=[],istemplate=False):
+    def __init__(self,path=None,tree=None,content="",prefixWithName=False,keepformat=True,args=OrderedDict(),templates=[],istemplate=False):
         self.path=path
         if self.path is not None:
             self.name=".".join(j.system.fs.getBaseName(self.path).split(".")[:-1])
@@ -189,7 +191,7 @@ class HRD(HRDBase):
             self.name = ""
         self.tree=tree
         self.changed=False
-        self.items={}
+        self.items=OrderedDict()
         self.commentblock=""  #at top of file
         self.keepformat=keepformat
         self.prefixWithName=prefixWithName
@@ -222,7 +224,7 @@ class HRD(HRDBase):
             else:
                 return default
         val= self.items[key].get()
-        val = val.strip() if isinstance(val, basestring) else val
+        val = val.strip().strip("'") if isinstance(val, basestring) else val
         j.core.hrd.log("hrd get '%s':'%s'"%(key,val))
         return val
 
@@ -292,6 +294,8 @@ class HRD(HRDBase):
         content=j.tools.text.replaceQuotes(content,"something")
         if content.lower().find("@ask")!=-1:
             return "ask"
+        elif content.startswith(('"', "'")):
+            return "base"
         elif content.find(":")!=-1:
             return "dict"
         elif content.find(",")!=-1:

@@ -409,11 +409,12 @@ class Text:
                 obj="False"
             return obj
         elif j.basetype.string.check(obj):
+            isdict = canBeDict and obj.find(":")!=-1
             if obj.strip()=="":
                 return ""
             if obj.find("\n")!=-1 and multiline:
-                obj="\n%s"%Text.prefix("    ",obj.strip())                
-            elif obj.find(":")!=-1 or obj.find(" ")!=-1 or obj.find("/")!=-1 or obj.find(",")!=-1:
+                obj="\n%s"%Text.prefix("    ",obj.strip())
+            elif not isdict or obj.find(" ")!=-1 or obj.find("/")!=-1 or obj.find(",")!=-1:
                 if not partial:
                     obj="'%s'"%obj.strip("'")
                 else:
@@ -427,7 +428,7 @@ class Text:
             if multiline:
                 resout="\n"
                 for item in obj:
-                    resout+="    %s,\n"%Text.pythonObjToStr1line(item)                
+                    resout+="    %s,\n"%Text.pythonObjToStr1line(item)
                 resout=resout.rstrip().strip(",")+",\n"
             else:
                 resout='['
@@ -504,7 +505,7 @@ class Text:
              : -> \\D
              \\n -> return
         """
-        value=value.strip("'")
+        # value=value.strip("'")
         value2=value.replace("\\K",",")
         value2=value2.replace("\\Q","\"")
         value2=value2.replace("\\S"," ")

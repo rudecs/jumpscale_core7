@@ -8,6 +8,7 @@ import copy
 j.application.start('jpackage')
 
 parser = cmdutils.ArgumentParser()
+j.logger.consolelogCategories.append('jpactions')
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
     "removedata","monitor","configure","cleanup","export","import","uninstall","package","push","execute","create", "status","nodes"]
@@ -181,13 +182,7 @@ if args.cmd is not None:
     jpargs['cmd'] = args.cmd.strip()
 
 
-# def askDomains(args):
-#     if args.domain==None:
-#         return j.console.askChoiceMultiple(j.packages.getDomainNames())
-#     else:
-#         domains=args.domain.split(",")
-#         domains=[domain.lower().strip() for domain in domains]
-#     return domains
+
 j.application.debug=args.verbose
 
 if args.quiet:
@@ -358,6 +353,8 @@ elif args.action == 'list':
     printJPackages(jps)
 
 elif args.action == 'status':
+    j.logger.consolelogCategories.remove('jpactions')
+    j.logger.consolelogCategories.append('nologs') # dont leave categories empty
     def printJPackages(packages):
 
         form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s %(ports)s'

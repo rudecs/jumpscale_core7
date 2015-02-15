@@ -56,9 +56,11 @@ def get_all_ifaces():
     """
     netpath = '/sys/class/net'; ifaces = {}
     for i in os.listdir(netpath):
-        with open(os.path.join(netpath, i, "address")) as f:
-            addr = f.readline().strip()
-            ifaces[i] = addr
+        addresspath = os.path.join(netpath, i, "address")
+        if os.path.exists(addresspath):
+            with open(addresspath) as f:
+                addr = f.readline().strip()
+                ifaces[i] = addr
     return ifaces
 
 

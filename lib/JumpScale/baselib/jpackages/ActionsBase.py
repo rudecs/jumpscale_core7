@@ -1,5 +1,12 @@
 from JumpScale import j
 import JumpScale.baselib.screen
+import os
+import signal
+
+CATEGORY = "jpactions"
+
+def log(msg, level=2):
+    j.logger.log(msg, level=level, category=CATEGORY)
 
 class ActionsBase():
     """
@@ -64,6 +71,7 @@ class ActionsBase():
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
+            log("Starting %s:%s" % (domain, name))
 
             j.do.delete(self.jp_instance.getLogPath())
 
@@ -131,9 +139,9 @@ class ActionsBase():
         isrunning=self.check_up_local()
         if isrunning==False:
             if j.system.fs.exists(path=self.jp_instance.getLogPath()):
-                log=j.do.readFile(self.jp_instance.getLogPath()).strip()
+                logc=j.do.readFile(self.jp_instance.getLogPath()).strip()
             else:
-                log=""
+                logc=""
 
             msg=""
 
@@ -157,12 +165,10 @@ class ActionsBase():
             return
 
         def stop_process(process):
-            for port in process.get('ports', []):
-                j.system.process.killProcessByPort(port)
-
-            if process.get('filterstr', None):
-                for pid in j.system.process.getPidsByFilter(process['filterstr']):
-                    j.system.process.kill(pid)  # Will send a SIGKILL
+            currentpids = (os.getpid(), os.getppid())
+            for pid in self.get_pids([process]):
+                if pid not in currentpids :
+                    j.system.process.kill(pid, signal.SIGTERM)
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
@@ -173,34 +179,41 @@ class ActionsBase():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)
 
-
         if self.jp_instance.jp.name == 'redis':
             j.logger.redislogging = None
             j.logger.redis = None
+
         if 'process' in args:
             stop_process(args['process'])
         else:
-            for process in self.jp_instance.getProcessDicts():
-                stop_process(process)
+            processes = self.jp_instance.getProcessDicts()
+            if processes:
+                log("Stopping %s" % self.jp_instance)
+                for process in processes:
+                    stop_process(process)
         return True
+
+    def get_pids(self, processes=None, **kwargs):
+        pids = set()
+        if processes is None:
+            processes = self.jp_instance.getProcessDicts()
+        for process in processes:
+            for port in self.jp_instance.getTCPPorts(process):
+                pids.update(j.system.process.getPidsByPort(port))
+            if process.get('filterstr', None):
+                pids.update(j.system.process.getPidsByFilter(process['filterstr']))
+        return list(pids)
 
     def halt(self,**args):
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
         """
-        def do(process):
-            cwd=process["cwd"]
-            for port in self.jp_instance.getTCPPorts():
-                j.system.process.killProcessByPort(port)
-            if not self.check_down_local(**args):
-                if process["filterstr"].strip()!="":
-                    j.system.process.killProcessByName(process["filterstr"])
-            if not self.check_down_local(**args):
-                j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
-
-        for process in self.jp_instance.getProcessDicts():
-            do(process)
-
+        currentpids = (os.getpid(), os.getppid())
+        for pid in self.get_pids():
+            if pid not in currentpids :
+                j.system.process.kill(pid, signal.SIGKILL)
+        if not self.check_down_local(**args):
+            j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
         return True
 
     def build(self,**args):
@@ -254,7 +267,10 @@ class ActionsBase():
         for process in self.jp_instance.getProcessDicts():
             result=do(process)
             if result==False:
+                domain, name = self._getDomainName(process)
+                log("Status %s:%s not running" % (domain,name))
                 return False
+        log("Status %s is running" % (self.jp_instance))
         return True
 
     def check_down_local(self,**args):

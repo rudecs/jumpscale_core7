@@ -29,7 +29,6 @@ def remote(F): # F is func or method without instance
                 cl = j.packages.remote.sshPython(jp, node)
 
             cl.executeJP(F.func_name)
-    wrapper.func_name_orig = F.func_name
     return wrapper
 
 #decorator to get dependencies
@@ -244,10 +243,12 @@ class JPackageInstance(object):
     def _getMetaChecksum(self):
         return j.system.fs.getFolderMD5sum(self.metapath)
 
-    def getTCPPorts(self,deps=True, *args, **kwargs):
+    def getTCPPorts(self, processes=None, *args, **kwargs):
         ports = set()
+        if processes is None:
+            processes = self.getProcessDicts()
         for process in self.getProcessDicts():
-            for item in process["ports"]:
+            for item in process.get("ports", []):
                 if isinstance(item, basestring):
                     moreports = item.split(";")
                 elif isinstance(item, int):
@@ -579,6 +580,7 @@ class JPackageInstance(object):
                 items=[(src,dest,link)]
 
             for src,dest,link in items:
+                delete = recipeitem.get('overwrite', 'true').lower()=="true"
                 if dest.strip()=="":
                     raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
                 if dest[0]!="/":
@@ -592,21 +594,16 @@ class JPackageInstance(object):
                         if not j.system.fs.exists(dest):
                             j.system.fs.createDir(j.do.getParent(dest))
                             j.do.symlink(src, dest)
+                        elif delete:
+                            j.system.fs.remove(dest)
+                            j.do.symlink(src, dest)
                     else:
-                        if j.system.fs.exists(path=dest):
-                            if not "delete" in recipeitem:
-                                recipeitem["delete"]="false"
-                            if recipeitem["delete"].lower()=="true":
-                                print ("copy: %s->%s"%(src,dest))
-                                j.do.delete(dest)
-                                j.system.fs.createDir(dest)
-                            else:
-                                print ("merge: %s->%s"%(src,dest))
-                            j.do.copyTree(src,dest)
+                        print ("copy: %s->%s"%(src,dest))
+                        if j.system.fs.isDir(src):
+                            j.system.fs.createDir(j.system.fs.getParent(dest))
+                            j.system.fs.copyDirTree(src, dest, eraseDestination=False, overwriteFiles=delete)
                         else:
-                            print ("copy: %s->%s"%(src,dest))
-                            j.system.fs.createDir(dest)
-                            j.do.copyTree(src,dest)
+                            j.system.fs.copyFile(src, dest, True, overwriteFile=delete)
 
         if node:
             # install the hrd to the remote host
