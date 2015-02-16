@@ -69,15 +69,21 @@ def deps(F): # F is func or method without instance
         result=None
 
         deps = kwargs.get('deps', False)
+        reverse = kwargs.get('reverse', False)
         if deps:
             j.packages._justinstalled=[]
-            for dep in jp.getDependencyChain():
+            packagechain = jp.getDependencyChain()
+            packagechain.append(jp)
+            if reverse:
+                packagechain.reverse()
+            for dep in packagechain:
                 if dep.jp.name not in j.packages._justinstalled:
                     dep.args = jp.args
                     dep.node = jp.args.get("node2execute","")
                     result=processresult(result,F(dep, *args, **kwargs))
                     j.packages._justinstalled.append(dep.jp.name)
-        result=processresult(result,F(jp, *args,**kwargs))
+        else:
+            result=processresult(result,F(jp, *args,**kwargs))
         return result
     return wrapper
 
@@ -404,7 +410,6 @@ class JPackageInstance(object):
     def __eq__(self, jp):
         return jp.name == self.name and self.domain == jp.domain and self.instance == jp.instance
 
-    @deps
     @remote
     def stop(self,deps=True):
         self.actions.stop(**self.args)
@@ -477,8 +482,9 @@ class JPackageInstance(object):
 
         return procs
 
+    @deps
     @remote
-    def prepare(self,deps=False):
+    def prepare(self,deps=False, reverse=True):
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
             src=src.replace(";",":")
             if src.strip()!="":
@@ -505,24 +511,34 @@ class JPackageInstance(object):
 
         self.actions.prepare()
 
-    @deps
-    def install(self,start=True,deps=True, reinstall=False):
+    def install(self, start=True,deps=True, reinstall=False):
+        """
+        Install JPackage.
+        
+        Keyword arguments:
+        start     -- whether JPackage should start after install (default True)
+        deps      -- install the JPackage dependencies (default True)
+        reinstall -- reinstall if already installed (default False)
+        """
         self.init()
         if reinstall:
             self.resetstate()
 
-        if self.node:
-            node = j.packages.remote.sshPython(jp=self.jp,node=self.node)
-        else:
-            node = None
-
         log("INSTALL:%s"%self)
-        if self.isLatest() and not reinstall and not node:
+        if self.isLatest() and not reinstall and not self.node:
             log("Latest %s already installed" % self)
             return
         self._apply()
         self.stop(deps=False)
-        self.prepare(deps=False)
+        self.prepare(deps=True, reverse=True)
+        self._install(start=start, deps=deps, reinstall=reinstall)
+
+    @deps
+    def _install(self,start=True,deps=True, reinstall=False):
+        if self.node:
+            node = j.packages.remote.sshPython(jp=self.jp,node=self.node)
+        else:
+            node = None
 
         #download
         for recipeitem in self.hrd.getListFromPrefix("web.export"):
