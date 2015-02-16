@@ -25,52 +25,15 @@ class GitlabInstance():
             self.passwd=passwd
 
         self.gitlab=gitlab3.GitLab(self.addr)
-        self.gitlab.login(self.login, password=self.passwd)
+        self.authenticate(login, passwd)
 
-    # def getGitClient(self, accountName, repoName="", branch="master", clean=False,path=None):
-    #     """
-    #     @param path if not is std codefolder (best practice to leave this default)
-    #     """
-    #     repoName=repoName.replace(".","-")
-    #     #if self.gitclients.has_key(repoName):
-    #         #return self.gitclients[repoName]
-    #     #@todo P2 cache the connections but also use branchnames
-    #     self.accountName = accountName
-    #     if repoName=="":
-    #         repoName=self.findRepoFromGitlab(repoName)
-    #     if repoName=="":
-    #         raise RuntimeError("reponame cannot be empty")
-
-    #     # if self.passwd=="":
-    #     url = 'git@%s:' % (self.addr)
-    #     # else:
-    #     #     url = 'http://%s:%s@%s' % (self.loginName,self.passwd,self.addr)
-    #     #     # url = 'http://%s' % (self.addr)
-    #     #     if url[-1] != "/":
-    #     #         url=url+"/"
-
-    #     url += "%s/%s.git" % (accountName, repoName)
-
-    #     j.clients.gitlab.log("init git client ##%s## on path:%s"%(repoName,self.getCodeFolder(repoName)),category="getclient")
-    #     if path==None:
-    #         path=self.getCodeFolder(repoName)
-
-    #     try:
-    #         cl = j.clients.git.getClient(path, url, branchname=branch, cleandir=clean,login=self.loginName,passwd=self.passwd)
-    #     except Exception as e:
-    #         if not j.system.fs.exists(path=path):
-    #             #init repo
-
-
-    #             cl = j.clients.git.getClient(path, url, branchname=branch, cleandir=clean,login=self.loginName,passwd=self.passwd)
-
-        
-    #     # j.clients.gitlab.log("git client inited for repo:%s"%repoName,category="getclient")
-    #     self.gitclients[repoName]=cl
-    #     return cl
-
-    # def getCodeFolder(self, repoName):
-    #     return j.system.fs.joinPaths(j.dirs.codeDir, "git_%s" % self.accountName, repoName)
+    def authenticate(self, login, password):
+        """
+        Everytime a user authenticates, he has a new client instance
+        To overcome Race conditions
+        """
+        new_client = gitlab3.GitLab(self.addr)
+        return new_client.login(login, password)
 
     def getGroup(self,name,die=True):
         groups=self.gitlab.groups()
@@ -119,3 +82,33 @@ class GitlabInstance():
             j.do.pullGitRepo(url=url, dest=None, login=self.login, passwd=self.passwd, depth=1, ignorelocalchanges=False, reset=False, branch=None, revision=None)
             
         return proj,path
+
+    def getUserInfo(self, username):
+        return self.gitlab.find_user(username=username)
+
+    def getGroupInfo(self, groupname):
+        return self.gitlab.getGroup(groupname)
+
+    def userExists(self, username):
+        return bool(self.getUserInfo(username))
+
+    def createUser(self, username, password, email, groups=['binary']):
+        id = self.gitlab.add_user(username=username, password=password, email=email)
+        for group in groups:
+            g = self.gitlabclient.find_group(name=group)
+            g.add_member(id)
+            g.save()
+
+    def listUsers(self):
+        return self.gitlab.users()
+
+    def listGroups(self):
+        return self.gitlab.groups()
+
+    def getGroups(self,username):
+        result = []
+        for group in self.gitlab.groups():
+            for member in  group.members():
+                if member.username == username:
+                    result.append(group.name)
+        return result
