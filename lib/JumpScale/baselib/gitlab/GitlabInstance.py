@@ -25,7 +25,7 @@ class GitlabInstance():
             self.passwd=passwd
 
         self.gitlab=gitlab3.GitLab(self.addr)
-        self.authenticate(login, passwd)
+        self.gitlab.login(self.login, self.passwd)
 
     def authenticate(self, login, password):
         """
@@ -106,9 +106,4 @@ class GitlabInstance():
         return self.gitlab.groups()
 
     def getGroups(self,username):
-        result = []
-        for group in self.gitlab.groups():
-            for member in  group.members():
-                if member.username == username:
-                    result.append(group.name)
-        return result
+        return [ group.name for group in self.gitlab.groups(sudo=username) ]
