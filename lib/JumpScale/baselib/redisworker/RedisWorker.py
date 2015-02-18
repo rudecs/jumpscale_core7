@@ -23,8 +23,9 @@ class Job(OsisBaseObject):
     identifies a job in the grid
     """
 
-    def __init__(self, ddict={},args={}, timeout=60, sessionid=None, jscriptid=None,cmd="",category="",log=True, queue=None, wait=False):
+    def __init__(self, ddict={},args={}, timeout=60, sessionid=None, jscriptid=None,cmd="",category="",log=True, queue=None, wait=False, internal=False):
         self.errorreport = False
+        self.internal = False
         if ddict != {}:
             self.load(ddict)
         else:
@@ -48,6 +49,7 @@ class Job(OsisBaseObject):
             self.timeStart=j.base.time.getTimeEpoch()
             self.timeStop=0
             self.log=log
+            self.internal = internal
 
     def setArgs(self,action):
         import inspect
@@ -115,8 +117,8 @@ class RedisWorkerFactory(object):
             self._queue["process"] = self.redis.getQueue("workers:work:process") #, fromcache=False)
         return self._queue
 
-    def _getJob(self, jscriptid=None,args={}, timeout=60,log=True, queue="default",ddict={}):
-        job=Job(ddict=ddict, args=args, timeout=timeout, sessionid=self.sessionid, jscriptid=jscriptid,log=log, queue=queue)
+    def _getJob(self, jscriptid=None,args={}, timeout=60,log=True, queue="default",ddict={}, internal=True):
+        job=Job(ddict=ddict, args=args, timeout=timeout, sessionid=self.sessionid, jscriptid=jscriptid,log=log, queue=queue, internal=internal)
         job.id=self.redis.incr("workers:joblastid")      
         job.getSetGuid()
         return job
@@ -200,7 +202,7 @@ class RedisWorkerFactory(object):
                 self.redis.hset("workers:jumpscripts:name","%s__%s"%(js.organization,js.name), jumpscript_data)            
             self.redis.hset("workers:jumpscripthashes",key,js.id)
 
-        job=self._getJob(js.id,args=args,timeout=_timeout,log=_log,queue=_queue)
+        job=self._getJob(js.id,args=args,timeout=_timeout,log=_log,queue=_queue, internal=True)
         job.cmd=js.name
         self._scheduleJob(job)
         if _sync:
@@ -241,7 +243,7 @@ class RedisWorkerFactory(object):
         
         if self.checkJumpscriptQueue(js,_queue):
             return None
-        job=self._getJob(js.id,args=args,timeout=_timeout,log=_log,queue=_queue)
+        job=self._getJob(js.id,args=args,timeout=_timeout,log=_log,queue=_queue, internal=True)
         job.cmd="%s/%s"%(js.organization,js.name)
         job.category="jumpscript"
         job.log=js.log

@@ -207,7 +207,7 @@ class Worker(object):
     def notifyWorkCompleted(self,job):
         job.timeStop=int(time.time())
 
-        if job.jscriptid>1000000:
+        if job.internal:
             #means is internal job
             self.redisw.redis.hset("workers:jobs",job.id, json.dumps(job.__dict__))
             self.redisw.redis.rpush("workers:return:%s"%job.id,time.time())            
