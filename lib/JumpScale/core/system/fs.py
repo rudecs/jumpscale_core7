@@ -1512,11 +1512,17 @@ class SystemFS:
 
     #WalkExtended = deprecated('j.system.fs.WalkExtended','j.system.fs.walkExtended', '3.2')(walkExtended)
 
-    def walk(self, root, recurse=0, pattern='*', return_folders=0, return_files=1, followSoftlinks = True,str=False ):
+    def walk(self, root, recurse=0, pattern='*', return_folders=0, return_files=1, followSoftlinks=True, str=False, depth=None):
         """This is to provide ScanDir similar function
         It is going to be used wherever some one wants to list all files and subfolders
         under one given directly with specific or none matchers
         """
+        # initialize
+        result = []
+        if depth is not None:
+            if depth == 0:
+                return result
+            depth -= 1
         if str:
             os.path.supports_unicode_filenames=True
 
@@ -1549,7 +1555,7 @@ class SystemFS:
             # recursively scan other folders, appending results
             if recurse:
                 if self.isDir(fullname) and not self.isLink(fullname):
-                    result = result + self.walk( fullname, recurse, pattern, return_folders, return_files, followSoftlinks )
+                    result = result + self.walk( fullname, recurse, pattern, return_folders, return_files, followSoftlinks, depth=depth)
         return result
 
     #Walk = deprecated('j.system.fs.Walk', 'j.system.fs.walk', '3.2')(walk)
