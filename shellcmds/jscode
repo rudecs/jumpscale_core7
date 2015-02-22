@@ -111,7 +111,7 @@ for provider,account,reponame,branch,client,path in repos:
     if j.application.config.exists("whoami.git.passwd") == False or j.application.config.exists("whoami.git.login") == False:
         raise RuntimeError("git configuration not found, please install github_client jpackage (jpackage install -n github_client)")
     else:
-        from ipdb import set_trace;set_trace()
+        # from ipdb import set_trace;set_trace()
         _,url,_ = j.do.execute("cd %s;git config --get remote.origin.url" % path)
         if str(url).find("@") == -1:
             login = j.application.config.get("whoami.git.login")
