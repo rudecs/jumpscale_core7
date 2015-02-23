@@ -1,8 +1,8 @@
-
 from JumpScale import j
 
+def cb():
+    from .RemoteSystem import RemoteSystem
+    return RemoteSystem()
+
 j.base.loader.makeAvailable(j, 'remote')
-
-from .RemoteSystem import RemoteSystem
-
-j.remote.system = RemoteSystem()
+j.remote._register('system', cb)

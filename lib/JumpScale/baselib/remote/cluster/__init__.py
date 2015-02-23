@@ -1,9 +1,8 @@
 from JumpScale import j
-from .ClusterFactory import ClusterFactory
+
+def cb():
+    from .ClusterFactory import ClusterFactory
+    return ClusterFactory()
 
 j.base.loader.makeAvailable(j, 'remote')
-j.remote.cluster = ClusterFactory()
-
-from .ClusterConfigs import *
-
-j.remote.cluster.config=ClusterConfigs()
+j.remote._register('cluster', cb)

@@ -1,6 +1,8 @@
 from JumpScale import j
 
-from .github import GitHubFactory
-j.base.loader.makeAvailable(j, 'clients')
+def cb():
+    from .github import GitHubFactory
+    return GitHubFactory()
 
-j.clients.github=GitHubFactory()
+j.base.loader.makeAvailable(j, 'clients')
+j.clients._register('github', cb)

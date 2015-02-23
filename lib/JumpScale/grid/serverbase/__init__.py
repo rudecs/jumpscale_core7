@@ -1,7 +1,8 @@
 from JumpScale import j
 
-
-from .ServerBaseFactory import ServerBaseFactory
+def cb():
+    from .ServerBaseFactory import ServerBaseFactory
+    return ServerBaseFactory()
 
 j.base.loader.makeAvailable(j, 'servers')
-j.servers.base = ServerBaseFactory()
+j.servers._register('base', cb)

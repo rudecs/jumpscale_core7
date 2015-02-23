@@ -1,5 +1,13 @@
 from JumpScale import j
-from .units import Bytes, Sizes
+
+def cbb():
+    from .units import Bytes
+    return Bytes()
+
+def cbs():
+    from .units import Sizes
+    return Sizes()
+
 j.base.loader.makeAvailable(j, 'tools.units')
-j.tools.units.bytes = Bytes()
-j.tools.units.sizes = Sizes()
+j.tools.units._register('bytes', cbb)
+j.tools.units._register('sizes', cbs)

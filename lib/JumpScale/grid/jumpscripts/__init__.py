@@ -1,6 +1,8 @@
 from JumpScale import j
 
-from .JumpscriptFactory import JumpscriptFactory
+def cb():
+    from .JumpscriptFactory import JumpscriptFactory
+    return JumpscriptFactory()
 
 j.base.loader.makeAvailable(j, 'core')
-j.core.jumpscripts = JumpscriptFactory()
+j.core._register('jumpscripts', cb)

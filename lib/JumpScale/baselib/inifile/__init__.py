@@ -1,4 +1,8 @@
 from JumpScale import j
-from .IniFile import InifileTool
+
+def cb():
+    from .IniFile import InifileTool
+    return InifileTool()
+
 j.base.loader.makeAvailable(j, 'tools')
-j.tools.inifile = InifileTool()
+j.tools._register('inifile', cb)

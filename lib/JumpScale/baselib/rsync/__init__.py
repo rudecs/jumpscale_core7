@@ -1,7 +1,9 @@
 from JumpScale import j
 
-from .RsyncFactory import RsyncFactory
+def cb():
+    from .RsyncFactory import RsyncFactory
+    return RsyncFactory()
 
 j.base.loader.makeAvailable(j, 'tools')
-j.tools.rsync = RsyncFactory()
+j.tools._register('rsync', cb)
 

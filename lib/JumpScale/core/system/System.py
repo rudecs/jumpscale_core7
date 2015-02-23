@@ -13,7 +13,7 @@ except:
         raise "python module pwd is not supported on this platform, please fix the dependency"
     
 import time,socket,random,tempfile
-from JumpScale import j
+from JumpScale import j, Loader
 #from JumpScale.core.Vars import Vars
 from JumpScale.core.system.fs import SystemFS
 from JumpScale.core.system.string import String
@@ -64,7 +64,7 @@ def _wrap_deprecated_process(f):
     return wrapper
 
 
-class System:
+class System(Loader):
     #jumpscale internal object
     # Singleton state
     __shared_state = {}
@@ -117,6 +117,7 @@ class System:
         Binds currently running L{jumpscale.enumerators.PlatformType.PlatformType}
         and initializes the C{fs}, C{net} and C{process} attributes.
         '''
+        super(System, self).__init__()
         self.platformtype=self._jPlatformType
         self.fs = SystemFS()
         self.net = SystemNet()

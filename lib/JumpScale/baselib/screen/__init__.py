@@ -1,4 +1,8 @@
 from JumpScale import j
-from .Tmux import Tmux
+
+def cb():
+    from .Tmux import Tmux
+    return Tmux()
+
 j.base.loader.makeAvailable(j, 'system.platform')
-j.system.platform.screen = Tmux()
+j.system.platform._register('screen', cb)

@@ -1,5 +1,9 @@
 from JumpScale import j
+
+def cb():
+    from .qemu_img import QemuImg
+    return QemuImg()
+
 j.base.loader.makeAvailable(j, 'system.platform')
-from .qemu_img import QemuImg
-j.system.platform.qemu_img = QemuImg()
+j.system.platform._register('qemu_img', cb)
 

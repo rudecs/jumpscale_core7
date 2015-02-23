@@ -1,14 +1,17 @@
-
 from JumpScale.baselib.regextools.RegexTools import RegexTools
+from JumpScale.baselib.codeexecutor.CodeExecutor import CodeExecutor
 from .TemplateEngineWrapper import TemplateEngineWrapper
 from .WordReplacer import WordReplacer
 from .TextFileEditor import TextFileEditor
+from .CodeManager import CodeManager
 
 class CodeTools:
     def __init__(self):
         self.regex=RegexTools()
         self.templateengine=TemplateEngineWrapper()
-        
+        self.codemanager = CodeManager()
+        self.executor = CodeExecutor()
+        self.regex = RegexTools()
         #self.wordreplacer=WordReplacer()
     
     def getWordReplacerTool(self):

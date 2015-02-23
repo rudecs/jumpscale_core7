@@ -1,8 +1,8 @@
-
 from JumpScale import j
 
+def cb():
+    from .Cuisine import OurCuisine
+    return OurCuisine()
+
 j.base.loader.makeAvailable(j, 'remote')
-
-from .Cuisine import OurCuisine
-
-j.remote.cuisine = OurCuisine()
+j.remote._register('cuisine', cb)

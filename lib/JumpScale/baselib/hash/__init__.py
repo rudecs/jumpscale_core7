@@ -1,4 +1,8 @@
 from JumpScale import j
-from .HashTool import HashTool
+
+def cb():
+    from .HashTool import HashTool
+    return HashTool()
+
 j.base.loader.makeAvailable(j, 'tools')
-j.tools.hash = HashTool()
+j.tools._register('hash', cb)

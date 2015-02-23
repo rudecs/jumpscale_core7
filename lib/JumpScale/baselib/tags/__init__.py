@@ -1,4 +1,7 @@
 from JumpScale import j
-from .TagsFactory import TagsFactory
-# j.base.loader.makeAvailable(j, 'core')
-j.core.tags = TagsFactory()
+
+def cb():
+    from .TagsFactory import TagsFactory
+    return TagsFactory()
+
+j.core._register('tags', cb)

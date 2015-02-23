@@ -1,6 +1,9 @@
 from JumpScale import j
-from .GitFactory import GitFactory
+
+def cb():
+    from .GitFactory import GitFactory
+    return GitFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-j.clients.git = GitFactory()
+j.clients._register('git', cb)
 

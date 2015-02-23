@@ -1,10 +1,9 @@
 from JumpScale import j
 
-from .ZRedisGWFactory import *
-import JumpScale.baselib.hash
+def cb():
+    from .ZRedisGWFactory import ZRedisGWFactory
+    return ZRedisGWFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-# j.base.loader.makeAvailable(j, 'servers')
-
-j.clients.zredisgw=ZRedisGWFactory()
+j.clients._register('zredisgw', cb)
 

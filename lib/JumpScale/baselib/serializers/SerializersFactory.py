@@ -1,10 +1,23 @@
 from JumpScale import j
 
+from .SerializerInt import SerializerInt
+from .SerializerTime import SerializerTime
+from .SerializerBase64 import SerializerBase64
+from .SerializerHRD import SerializerHRD
+from .SerializerDict import SerializerDict
+from .SerializerBlowfish import SerializerBlowfish
+
 class SerializersFactory():
 
     def __init__(self):
         self.types={}
         self._cache={}
+        self.int = SerializerInt()
+        self.time = SerializerTime()
+        self.base64 = SerializerBase64()
+        self.hrd = SerializerHRD()
+        self.dict = SerializerDict()
+        self.blowfish = SerializerBlowfish()
 
     def get(self,serializationstr,key=""):
         """

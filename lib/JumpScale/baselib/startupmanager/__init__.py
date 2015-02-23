@@ -1,5 +1,8 @@
 from JumpScale import j
-from .StartupManager import StartupManager
+
+def cb():
+    from .StartupManager import StartupManager
+    return StartupManager()
 
 j.base.loader.makeAvailable(j, 'tools')
-j.tools.startupmanager = StartupManager()
+j.tools._register('startupmanager', cb)

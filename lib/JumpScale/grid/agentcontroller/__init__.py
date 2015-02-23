@@ -1,4 +1,8 @@
 from JumpScale import j
-from .AgentControllerFactory import AgentControllerFactory
+
+def cb():
+    from .AgentControllerFactory import AgentControllerFactory
+    return AgentControllerFactory()
+
 j.base.loader.makeAvailable(j, 'clients')
-j.clients.agentcontroller = AgentControllerFactory()
+j.clients._register('agentcontroller', cb)

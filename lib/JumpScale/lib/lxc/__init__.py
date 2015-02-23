@@ -1,5 +1,9 @@
 from JumpScale import j
-j.base.loader.makeAvailable(j, 'system.platform.lxc')
-from .Lxc import Lxc
-j.system.platform.lxc = Lxc()
+
+def cb():
+    from .Lxc import Lxc
+    return Lxc()
+
+j.base.loader.makeAvailable(j, 'system.platform')
+j.system.platform._register('lxc', cb)
 

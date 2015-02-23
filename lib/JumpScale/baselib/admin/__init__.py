@@ -1,7 +1,8 @@
 from JumpScale import j
-
-from .Admin import *
-
 j.base.loader.makeAvailable(j, 'tools')
 
-j.tools.admin=AdminFactory()
+def cb():
+    from .Admin import AdminFactory
+    return AdminFactory()
+
+j.tools._register('admin', cb)

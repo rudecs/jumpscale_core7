@@ -1,5 +1,8 @@
 from JumpScale import j
-import JumpScale.baselib.code
-from .OSIS import OSIS
+
+def cb():
+    import JumpScale.baselib.code
+    from .OSIS import OSIS
+    return OSIS()
 j.base.loader.makeAvailable(j, 'core')
-j.core.osismodel = OSIS()
+j.core._register('osismodel', cb)

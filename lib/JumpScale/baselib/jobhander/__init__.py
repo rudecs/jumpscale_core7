@@ -1,9 +1,10 @@
 from JumpScale import j
 
-from .JobManager import JobManager
+def cb():
+    from .JobManager import JobManager
+    return JobHandler()
 
 j.base.loader.makeAvailable(j, 'core')
-
-j.core.jobhandler=JobHandler()
+j.core._register('jobhandler', cb)
 
 

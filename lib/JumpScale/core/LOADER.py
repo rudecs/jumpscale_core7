@@ -1,8 +1,6 @@
 from JumpScale import j
+from JumpScale import Loader as DummyLoader
 
-class Dummy(object):
-    def __getattr__(self, key):
-        raise AttributeError("%s is not loaded, did your forget an import?" % key)
 
 class Loader(object):
     def makeAvailable(self, obj, path):
@@ -12,9 +10,7 @@ class Loader(object):
         ob = obj
         for part in path.split('.'):
             if not hasattr(ob, part):
-                setattr(ob, part, Dummy())
+                setattr(ob, part, DummyLoader())
             ob = getattr(ob, part)
-
-
 
 j.base.loader = Loader()

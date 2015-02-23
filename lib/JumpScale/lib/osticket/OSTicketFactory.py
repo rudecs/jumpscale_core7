@@ -17,7 +17,7 @@ class OSTicketFactory():
         """
         key="%s_%s_%s_%s_%s"%(ipaddr,port,login,passwd,dbname)
         if key not in self.clients:
-            self.clients[key]=j.client.mysql.getClient(ipaddr, port,login, passwd, dbname)
+            self.clients[key]=j.clients.mysql.getClient(ipaddr, port,login, passwd, dbname)
         return OSTicketClient(self.clients[key])
 
 

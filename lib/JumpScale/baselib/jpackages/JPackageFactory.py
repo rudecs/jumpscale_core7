@@ -1,5 +1,6 @@
 from JumpScale import j
 from .JPackage import JPackage
+from .JPackageRemote import JPackageRemoteFactory
 
 from .ActionsBase import ActionsBase
 
@@ -12,8 +13,8 @@ class JPackageFactory():
         self.hrd=None
         self._justinstalled=[]
         self._type = None
-
         self.indocker=False
+        self.remote = JPackageRemoteFactory()
 
     @property
     def type(self):

@@ -1,6 +1,10 @@
 from JumpScale import j
-from .GraphiteClient import GraphiteClient
+
+def cb():
+    from .GraphiteClient import GraphiteClient
+    return GraphiteClient()
+
 j.base.loader.makeAvailable(j, 'clients')
-j.clients.graphite = GraphiteClient()
+j.clients._register('graphite', cb)
 
 

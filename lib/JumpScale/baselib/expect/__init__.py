@@ -1,6 +1,9 @@
 from JumpScale import j
-from .Expect import ExpectTool
+
+def cb():
+    from .Expect import ExpectTool
+    return ExpectTool()
 
 j.base.loader.makeAvailable(j, 'tools')
 
-j.tools.expect=ExpectTool()
+j.tools._register('expect', cb)

@@ -5,6 +5,7 @@ import JumpScale.grid.osis
 #from ZBrokerClient import ZBrokerClient
 from collections import namedtuple
 import JumpScale.grid.geventws
+from  JumpScale.grid.gridhealthchecker.gridhealthchecker import GridHealthChecker
 import time
 
 
@@ -23,6 +24,13 @@ class GridFactory():
         self.nid=None
         self.config = None
         self.roles = list()
+        self._healthchecker = None
+    
+    @property
+    def healthchecker(self):
+        if not self._healthchecker:
+            self._healthchecker = GridHealthChecker()
+        return self._healthchecker
 
     def _loadConfig(self,test=True):
         if "config" not in j.application.__dict__:

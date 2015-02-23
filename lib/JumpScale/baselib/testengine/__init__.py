@@ -1,8 +1,11 @@
 from JumpScale import j
-import JumpScale.baselib.params
-from .TestEngine import TestEngine
-from .TestEngineKds import TestEngineKds
+
+def cb():
+    from .TestEngine import TestEngine
+    return TestEngine()
+
+#from .TestEngineKds import TestEngineKds
+#j.tools.testengineKds = TestEngineKds()
 
 j.base.loader.makeAvailable(j, 'tools')
-j.tools.testengine = TestEngine()
-j.tools.testengineKds = TestEngineKds()
+j.tools._register('testengine', cb)

@@ -1,5 +1,9 @@
 from JumpScale import j
+
+def cb():
+    from .Docker import Docker
+    return Docker()
+
 j.base.loader.makeAvailable(j, 'tools')
-from .Docker import Docker
-j.tools.docker = Docker()
+j.tools._register('docker', cb)
 

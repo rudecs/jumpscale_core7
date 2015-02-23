@@ -1,9 +1,10 @@
 from JumpScale import j
 
-
-from .MongoDBClient import MongoDBClient
+def cb():
+    from .MongoDBClient import MongoDBClient
+    return MongoDBClient()
 
 j.base.loader.makeAvailable(j, 'clients')
-j.clients.mongodb = MongoDBClient()
+j.clients._register('mongodb', cb)
 
 

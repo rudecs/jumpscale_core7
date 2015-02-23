@@ -1,3 +1,7 @@
 from JumpScale import j
-from .Code import Code
-j.code = Code()
+
+def cb():
+    from .Code import Code
+    return Code()
+
+j._register('code', cb)

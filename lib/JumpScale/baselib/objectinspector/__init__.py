@@ -1,5 +1,8 @@
 from JumpScale import j
 
+def cb():
+    from .ObjectInspector import ObjectInspector
+    return ObjectInspector()
+
 j.base.loader.makeAvailable(j, 'tools')
-from .ObjectInspector import ObjectInspector
-j.tools.objectinspector=ObjectInspector()
+j.tools._register('objectinspector', cb)

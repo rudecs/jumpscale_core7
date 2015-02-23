@@ -1,4 +1,8 @@
 from JumpScale import j
-from .SSL import SSL
+
+def cb():
+    from .SSL import SSL
+    return SSL()
+
 j.base.loader.makeAvailable(j, 'tools')
-j.tools.ssl = SSL()
+j.tools._register('ssl', cb)

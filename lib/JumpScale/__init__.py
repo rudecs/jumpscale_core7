@@ -18,31 +18,45 @@ else:
     base=os.environ['JSBASE']
 
 
-class JumpScale():
-	def __init__(self):
-		pass
-
-class Core():
+class Loader(object):
     def __init__(self):
-        pass
+        self._extensions = {}
 
+    def _register(self, name, callback):
+        self._extensions[name] = callback
 
-# class Tools():
-#     def __init__(self):
-#         pass
+    def __getattr__(self, attr):
+        if attr not in self._extensions:
+            raise AttributeError("%s is not loaded, did your forget an import?" % attr)
+        obj = self._extensions[attr]()
+        setattr(self, attr, obj)
+        return obj
 
-# class Logger():
-#     def __init__(self):
-#         inlog=False        
-#     def log(self,msg,**args):
-#         print msg
-# j.logger=Logger
+    def _getAttributeNames(self):
+        return self._extensions.keys()
+
+class JumpScale(Loader):
+    pass
+
+class Core(Loader):
+    pass
 
 class EventsTemp():
     def inputerror_critical(self,msg,category=""):
         print("ERROR IN BOOTSTRAP:%s"%category)
         print(msg)
         sys.exit(1)
+
+def loadSubModules(filepath, prefix='JumpScale'):
+    rootfolder = os.path.dirname(filepath)
+    for module in os.listdir(rootfolder):
+        moduleload = '%s.%s' % (prefix, module)
+        if not os.path.isdir(os.path.join(rootfolder, module)):
+            continue
+        try:
+            __import__(moduleload, locals(), globals())
+        except ImportError, e:
+            pass
 
 j = JumpScale()
 from . import base
@@ -71,24 +85,9 @@ j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
 from .core.Dirs import Dirs
 j.dirs=Dirs()
 
-# from JumpScale.core.baseclasses.BaseEnumeration import enumerations
-# j.enumerators=enumerations
-
 from .core import errorhandling
 
-# import JumpScale.baselib.codeexecutor
-from .baselib import tags
-from .baselib import platforms
-# from .core import config
-from .baselib import hrd
-
-from .baselib import jpackages
-
-# import JumpScale.baselib.startupmanager
-# from . import shellconfig
-# from . import gui
-
-
+loadSubModules(__file__)
 j.application.init()
 
 

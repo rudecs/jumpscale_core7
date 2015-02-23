@@ -1,5 +1,8 @@
 from JumpScale import j
 
+def cb():
+    from .SSLSigning import SSLSigning
+    return SSLSigning()
+
 j.base.loader.makeAvailable(j, 'tools')
-from .SSLSigning import SSLSigning
-j.tools.sslSigning = SSLSigning()
+j.tools._register('sslSigning', cb)

@@ -1,9 +1,10 @@
 from JumpScale import j
 
-from .RedisWorker import RedisWorkerFactory
+def cb():
+    from .RedisWorker import RedisWorkerFactory
+    return RedisWorkerFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-
-j.clients.redisworker=RedisWorkerFactory()
+j.clients._register('redisworker', cb)
 
 

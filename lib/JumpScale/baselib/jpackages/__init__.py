@@ -1,6 +1,7 @@
 from JumpScale import j
-from .JPackageFactory import JPackageFactory
-from .JPackageRemote import JPackageRemoteFactory
 
-j.packages = JPackageFactory()
-j.packages.remote = JPackageRemoteFactory()
+def cb():
+    from .JPackageFactory import JPackageFactory
+    return JPackageFactory()
+
+j._register('packages', cb)

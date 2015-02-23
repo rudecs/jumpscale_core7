@@ -1,4 +1,8 @@
 from JumpScale import j
-from .GridFactory import GridFactory
+
+def cb():
+    from .GridFactory import GridFactory
+    return GridFactory()
+
 j.base.loader.makeAvailable(j, 'core')
-j.core.grid = GridFactory()
+j.core._register('grid', cb)

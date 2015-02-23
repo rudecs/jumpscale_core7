@@ -1,5 +1,9 @@
 from JumpScale import j
+
+def cb():
+    from .Sandboxer import Sandboxer
+    return Sandboxer()
+
 j.base.loader.makeAvailable(j, 'tools')
-from .Sandboxer import Sandboxer
-j.tools.sandboxer = Sandboxer()
+j.tools._register('sandboxer', cb)
 

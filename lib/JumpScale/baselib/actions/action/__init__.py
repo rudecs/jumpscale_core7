@@ -1,8 +1,10 @@
 from JumpScale import j
 
-from .ActionController import ActionController
+def cb():
+    from .ActionController import ActionController
+    return ActionController()
 
-j.action=ActionController()
+j._register('actions', cb)
 
 
 

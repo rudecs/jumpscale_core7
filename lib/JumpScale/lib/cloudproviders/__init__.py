@@ -1,5 +1,9 @@
 from JumpScale import j
+
+def cb():
+    from .factory import Factory
+    return Factory()
+
 j.base.loader.makeAvailable(j, 'tools')
-from .factory import Factory
-j.tools.cloudproviders = Factory()
+j.tools._register('cloudproviders', cb)
 

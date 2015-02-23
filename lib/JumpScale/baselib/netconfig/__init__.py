@@ -1,8 +1,9 @@
 from JumpScale import j
 
-from .Netconfig import Netconfig
+def cb():
+    from .Netconfig import Netconfig
+    return Netconfig()
 
-
-j.system.netconfig=Netconfig()
+j.system._register('netconfig', cb)
 
 
