@@ -268,7 +268,7 @@ class Text:
                     result += "    %s,\n" % line.strip().strip(',')
 
             else:
-                j.events.inputerror_critical("Input type:%s is invalid (only: bool,int,str,string,dropdown,list,dict,float)"%ttype)
+                j.events.inputerror_critical("Input type:%s is invalid (only: bool,int,str,string,dropdown,list,dict,float)"%ttype)            
 
             out+="%s%s\n"%(prefix,result)
 

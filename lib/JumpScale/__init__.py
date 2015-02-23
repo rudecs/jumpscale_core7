@@ -83,6 +83,7 @@ from .baselib import platforms
 from .baselib import hrd
 
 from .baselib import jpackages
+from .baselib import atyourservice
 
 # import JumpScale.baselib.startupmanager
 # from . import shellconfig
