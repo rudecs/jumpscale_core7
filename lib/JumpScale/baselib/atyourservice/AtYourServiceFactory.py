@@ -140,7 +140,7 @@ class AtYourServiceFactory():
 
             return finalRes
 
-    def new(self,domain="",name="",instance="main",args={}, hrddata=None):
+    def new(self,domain="",name="",instance="main",parent=None,args={}):
         """
         will create a new service 
         """
@@ -148,7 +148,7 @@ class AtYourServiceFactory():
         services=self.find(domain,name,1)
         if len(services)==0:
             j.events.opserror_critical("cannot find jpackage %s/%s"%(domain,name))
-        services[0]=services[0].newInstance(instance, args=args, hrddata=hrddata)
+        services[0]=services[0].newInstance(instance,parent=parent, args=args)
         return services[0]
 
     def get(self,domain="",name="",instance="main"):

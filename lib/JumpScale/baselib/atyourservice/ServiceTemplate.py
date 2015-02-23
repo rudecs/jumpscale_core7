@@ -16,10 +16,10 @@ class ServiceTemplate():
         self.name=name
         self.domain=domain
         self.hrd=None
-        self.metapath=path        
+        self.metapath=path
 
-    def newInstance(self,instance="main", args={}, hrddata=None,parent=None):
-        return Service(instance=instance,servicetemplate=self,args=args, hrddata=hrddata,parent=parent)
+    def newInstance(self,instance="main", args={}, parent=None):
+        return Service(instance=instance,servicetemplate=self,args=args,parent=parent)
 
     def getInstance(self,instance=None):
         # get first installed or main
@@ -44,26 +44,25 @@ class ServiceTemplate():
         from IPython import embed
         print "DEBUG NOW listInstances"
         embed()
-        
 
-    def install(self, instance="main",start=True,deps=True, reinstall=False,args={},hrddata=None,parent=None):
+
+    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None):
         """
         Install Service.
-        
+
         Keyword arguments:
         start     -- whether Service should start after install (default True)
         deps      -- install the Service dependencies (default True)
         reinstall -- reinstall if already installed (default False)
         args      -- arguments to be used when installing
-        hrddata   -- predefined configuration items for hrd of service instance
         parent    -- optional service which is mother e.g. install an app in a node.
         """
 
-        service=self.newInstance(instance=instance, args=args, hrddata=hrddata,parent=parent)
+        service=self.newInstance(instance=instance, args=args ,parent=parent)
         from IPython import embed
         print "DEBUG NOW install service"
         embed()
-        
+
 
 
     def __repr__(self):
