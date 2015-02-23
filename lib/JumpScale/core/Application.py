@@ -207,17 +207,14 @@ class Application:
         if not self._calledexit:
             self.stop(stop=False)
 
-
-
     def existAppInstanceHRD(self,name,instance,domain="jumpscale"):
         """
         returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
         """
-        if j.packages.type!="c": #configdir
+        if j.packages.type!="c":
             path='%s/%s.%s.%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
         else:
-            #is for jpackage in system
-            path='%s/%s.%s.hrd' % (j.dirs.hrdDir,name,instance)
+            path='%s/%s.%s.hrd' % (j.dirs.getHrdDir(),name,instance)
         if not j.system.fs.exists(path=path):
             return False
         return True

@@ -27,12 +27,13 @@ class Dirs(object):
         self.__initialized = False ##bool
 
         import sys
-        self._hrdDir=None
+
         self.baseDir=j.application.config.get("system.paths.base")
         self.appDir = j.application.config.get("system.paths.app")
         self.varDir = j.application.config.get("system.paths.var")
         self.tmpDir = j.application.config.get("system.paths.tmp")
         self.cfgDir = j.application.config.get("system.paths.cfg")
+        self.hrdDir = j.application.config.get("system.paths.hrd")
         self.libDir = j.application.config.get("system.paths.lib")
         self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
         self.logDir = j.application.config.get("system.paths.log")
@@ -102,16 +103,6 @@ class Dirs(object):
     def _createDir(self,path):
         if not os.path.exists(path):
             os.makedirs(path)
-
-    @property
-    def hrdDir(self):
-        if self._hrdDir!=None:
-            return self._hrdDir
-        if self.amInGitConfigRepo()!=None:
-            self._hrdDir="%s/services/"%(self.amInGitConfigRepo())
-        else:
-            self._hrdDir = j.application.config.get("system.paths.hrd")
-        return self._hrdDir
 
     def init(self,reinit=False):
         """Initializes all the configured directories if needed
@@ -228,18 +219,60 @@ class Dirs(object):
         path=j.system.fs.getcwd()
         while path.strip("/")!="":
             if ".git" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False)\
-                and "servicetemplates" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
+                and "jp" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
                 #are in git repo which can be used as root for configuration mgmt
-                # j.system.fs.createDir("%s/self/hrd"%path)
-                # j.system.fs.createDir("%s/self/actions"%path)
-                # j.system.fs.createDir("%s/self/state"%path)
-                # j.system.fs.createDir("%s/nodes"%path)
+                j.system.fs.createDir("%s/self/hrd"%path)
+                j.system.fs.createDir("%s/self/actions"%path)
+                j.system.fs.createDir("%s/self/state"%path)
+                j.system.fs.createDir("%s/nodes"%path)
                 self.gitConfigDir=path
                 return path
             path=j.system.fs.getParent(path)
         self.gitConfigDir=None
         return None
 
+    def getHrdDir(self,node=None,system=False):
+        hrdDir = ""
+        if system==False :
+            if self.gitConfigDir=="unknown":
+                self.amInGitConfigRepo()
+            if self.gitConfigDir!=None:            
+                if node!=None:
+                    hrdDir = "%s/nodes/%s/hrd"%(self.gitConfigDir,node)
+                else:
+                    hrdDir = "%s/self/hrd"%self.gitConfigDir
+            else:
+                hrdDir = self.hrdDir+"/apps"
+        else:
+            hrdDir = self.hrdDir+"/system"
+        if not j.system.fs.exists(hrdDir):
+            j.system.fs.createDir(hrdDir)
+        return  hrdDir
+
+    def getJPActionsPath(self,node=None,system=None):
+        if self.gitConfigDir=="unknown":
+            self.amInGitConfigRepo()
+        if self.gitConfigDir!=None and system==None:            
+            if node!=None:
+                return "%s/nodes/%s/actions"%(self.gitConfigDir,node)
+            else:
+                return "%s/self/actions"%self.gitConfigDir
+        else:
+            if node is not None:
+                return "%s/jpackage_actions/nodes/%s"%(j.dirs.baseDir, node)
+            else:
+                return "%s/jpackage_actions/"%(j.dirs.baseDir)
+
+    def getStatePath(self,node=None):
+        if self.gitConfigDir=="unknown":
+            self.amInGitConfigRepo()
+        if self.gitConfigDir!=None:            
+            if node!=None:
+                return "%s/nodes/%s/state"%(self.gitConfigDir,node)
+            else:
+                return "%s/self/state"%self.gitConfigDir
+        else:
+            return "%s/cfg/actionsstate"%(j.dirs.baseDir)            
             
     def __str__(self):
         return str(self.__dict__) #@todo P3 implement (thisnis not working)
