@@ -1,4 +1,8 @@
 from JumpScale import j
+
+def cb():
+    from .dhcp import DhcpFactory
+    return DhcpFactory()
+
 j.base.loader.makeAvailable(j, 'system.platform.dhcp')
-from .dhcp import DhcpFactory
-j.system.platform.dhcp = DhcpFactory()
+j.system.platform._register('dhcp', cb)

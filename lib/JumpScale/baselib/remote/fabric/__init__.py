@@ -1,8 +1,8 @@
-
 from JumpScale import j
 
+def cb():
+    from .FabricTool import FabricTool
+    return FabricTool()
+
 j.base.loader.makeAvailable(j, 'tools')
-
-from .FabricTool import FabricTool
-
-j.remote.fabric = FabricTool()
+j.remote._register('fabric', cb)

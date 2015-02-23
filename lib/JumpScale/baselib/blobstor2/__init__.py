@@ -1,10 +1,16 @@
 from JumpScale import j
 
-from .BlobStorFactory import *
-import JumpScale.baselib.hash
+def cbc():
+    from .BlobStorFactory import BlobStorFactory
+    return BlobStorFactory()
+
+def cbs():
+    from .BlobStorFactory import BlobStorFactoryServer
+    return BlobStorFactoryServer()
+
 
 j.base.loader.makeAvailable(j, 'clients')
 j.base.loader.makeAvailable(j, 'servers')
 
-j.clients.blobstor2=BlobStorFactory()
-j.servers.blobstor2=BlobStorFactoryServer()
+j.clients._register('blobstor2', cbc)
+j.servers._register('blobstor2', cbs)

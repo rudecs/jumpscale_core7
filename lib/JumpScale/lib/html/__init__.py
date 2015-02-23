@@ -1,5 +1,9 @@
 from JumpScale import j
+
+def cb():
+    from .HTMLFactory import HTMLFactory
+    return HTMLFactory()
+
 j.base.loader.makeAvailable(j, 'tools')
-from .HTMLFactory import HTMLFactory
-j.tools.html = HTMLFactory()
+j.tools._register('html', cb)
 

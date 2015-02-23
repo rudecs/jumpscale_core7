@@ -1,4 +1,8 @@
 from JumpScale import j
-from .Elasticsearch import ElasticsearchFactory
+
+def cb():
+    from .Elasticsearch import ElasticsearchFactory
+    return ElasticsearchFactory()
+
 j.base.loader.makeAvailable(j, 'clients')
-j.clients.elasticsearch = ElasticsearchFactory()
+j.clients._register('elasticsearch', cb)

@@ -1,5 +1,8 @@
 from JumpScale import j
-import JumpScale.baselib.code
-from .SpecParser import SpecParserFactory
+
+def cb():
+    from .SpecParser import SpecParserFactory
+    return SpecParserFactory()
+
 j.base.loader.makeAvailable(j, 'core')
-j.core.specparser = SpecParserFactory()
+j.core._register('specparser', cb)

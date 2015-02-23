@@ -1,11 +1,10 @@
 from JumpScale import j
-from .LRUCacheFactory import LRUCacheFactory
 
-class Empty():
-	pass
-if "db" not in j.__dict__:
-    j.db=Empty()
+def cb():
+    from .LRUCacheFactory import LRUCacheFactory
+    return LRUCacheFactory()
 
-j.db.cache=LRUCacheFactory()
+j.base.loader.makeAvailable(j, 'db')
+j.db._register('cache', cb)
 
 

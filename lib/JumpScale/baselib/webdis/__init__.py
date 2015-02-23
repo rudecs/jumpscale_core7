@@ -1,9 +1,10 @@
 from JumpScale import j
 
-from .Webdis import WebdisFactory
+def cb():
+    from .Webdis import WebdisFactory
+    return WebdisFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-
-j.clients.webdis=WebdisFactory()
+j.clients._register('webdis', cb)
 
 

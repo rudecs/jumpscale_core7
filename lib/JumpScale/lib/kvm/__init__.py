@@ -1,5 +1,9 @@
 from JumpScale import j
-j.base.loader.makeAvailable(j, 'system.platform.kvm')
-from KVM import KVM
-j.system.platform.kvm = KVM()
+
+def cb():
+    from KVM import KVM
+    return KVM()
+
+j.base.loader.makeAvailable(j, 'system.platform')
+j.system.platform._register('kvm', cb)
 

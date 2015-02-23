@@ -1,4 +1,8 @@
 from JumpScale import j
-from .GeventLoopFactory import GeventLoopFactory
+
+def cb():
+    from .GeventLoopFactory import GeventLoopFactory
+    return GeventLoopFactory()
+
 j.base.loader.makeAvailable(j, 'core')
-j.core.gevent = GeventLoopFactory()
+j.core._register('gevent', cb)

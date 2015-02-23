@@ -1,5 +1,7 @@
 from JumpScale import j
-from .Params import ParamsFactory
-j.base.loader.makeAvailable(j, 'core')
 
-j.core.params = ParamsFactory()
+def cb():
+    from .Params import ParamsFactory
+    return ParamsFactory()
+
+j.core._register('params', cb)

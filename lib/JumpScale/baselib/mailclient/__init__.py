@@ -1,6 +1,9 @@
 from JumpScale import j
-from .emailclient import EmailClient
+
+def cb():
+    from .emailclient import EmailClient
+    return EmailClient()
 
 j.base.loader.makeAvailable(j, 'clients')
-j.clients.email = EmailClient()
+j.clients._register('email', cb)
 

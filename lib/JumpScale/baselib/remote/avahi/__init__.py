@@ -1,8 +1,8 @@
-
 from JumpScale import j
 
+def cb():
+    from .Avahi import Avahi
+    return Avahi()
+
 j.base.loader.makeAvailable(j, 'remote')
-
-from .Avahi import Avahi
-
-j.remote.avahi = Avahi()
+j.remote._register('avahi', cb)

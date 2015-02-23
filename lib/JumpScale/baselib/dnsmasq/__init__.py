@@ -1,5 +1,8 @@
 from JumpScale import j
-from .dnsmasq import DNSMasq
+
+def cb():
+    from .dnsmasq import DNSMasq
+    return DNSMasq()
 
 j.base.loader.makeAvailable(j, 'tools')
-j.tools.dnsmasq = DNSMasq()
+j.tools._register('dnsmasq', cb)

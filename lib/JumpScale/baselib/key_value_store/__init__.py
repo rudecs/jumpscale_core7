@@ -1,4 +1,8 @@
 from JumpScale import j
-from .store_factory import KeyValueStoreFactory
+
+def cb():
+    from .store_factory import KeyValueStoreFactory
+    return KeyValueStoreFactory()
+
 j.base.loader.makeAvailable(j, 'db')
-j.db.keyvaluestore = KeyValueStoreFactory()
+j.db._register('keyvaluestore', cb)

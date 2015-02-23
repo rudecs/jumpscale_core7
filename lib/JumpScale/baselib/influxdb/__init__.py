@@ -1,9 +1,8 @@
 from JumpScale import j
 
-from .Influxdb import InfluxdbFactory
+def cb():
+    from .Influxdb import InfluxdbFactory
+    return InfluxdbFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-
-j.clients.influxdb=InfluxdbFactory()
-
-
+j.clients._register('influxdb', cb)

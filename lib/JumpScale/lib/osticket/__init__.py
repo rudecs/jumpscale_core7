@@ -1,4 +1,8 @@
 from JumpScale import j
-j.base.loader.makeAvailable(j, 'client')
-from .OSTicketFactory import OSTicketFactory
-j.client.osticket=OSTicketFactory()
+
+def cb():
+    from .OSTicketFactory import OSTicketFactory
+    return OSTicketFactory()
+
+j.base.loader.makeAvailable(j, 'clients')
+j.clients._register('osticket', cb)

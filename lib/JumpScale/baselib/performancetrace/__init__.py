@@ -1,9 +1,10 @@
 from JumpScale import j
 
-from .PerformanceTrace import PerformanceTraceFactory
+def cb():
+    from .PerformanceTrace import PerformanceTraceFactory
+    return PerformanceTraceFactory()
 
 j.base.loader.makeAvailable(j, 'tools')
-
-j.tools.performancetrace=PerformanceTraceFactory()
+j.tools._register('performancetrace', cb)
 
 

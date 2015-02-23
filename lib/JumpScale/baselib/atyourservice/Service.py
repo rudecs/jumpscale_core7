@@ -90,7 +90,7 @@ def deps(F): # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self,instance,servicetemplate,path="",args=None, hrddata=None,parent=None):
+    def __init__(self,instance,servicetemplate,path="",args=None,parent=None):
         self.domain=servicetemplate.domain
         self.instance=instance
         self.name=servicetemplate.name
@@ -108,7 +108,7 @@ class Service(object):
         self._loaded=False
         self._reposDone={}
         self.args=args or {}
-        self.hrddata = hrddata or {}
+        self.hrddata = {}
         self.hrddata["jp.name"]=self.name
         self.hrddata["jp.domain"]=self.domain
         self.hrddata["jp.instance"]=self.instance
@@ -134,15 +134,15 @@ class Service(object):
         return self._actions
 
 
-    def init(self):
-        if self._init==False:
-            import JumpScale.baselib.remote.cuisine
-            import JumpScale.lib.docker
-            if self.actions.init():
-                #did something
-                pass
-                #@todo need to reload HRD's
-        self._init=True
+    # def init(self):
+    #     if self._init==False:
+    #         import JumpScale.baselib.remote.cuisine
+    #         import JumpScale.lib.docker
+    #         if self.actions.init():
+    #             #did something
+    #             pass
+    #             #@todo need to reload HRD's
+    #     self._init=True
 
     # def getLogPath(self):
     #     logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))
@@ -458,7 +458,7 @@ class Service(object):
             self.resetstate()
 
         log("INSTALL:%s"%self)
-        if self.isLatest() and not reinstall and not self.node:
+        if self.isLatest() and not reinstall:
             log("Latest %s already installed" % self)
             return
         self._apply()

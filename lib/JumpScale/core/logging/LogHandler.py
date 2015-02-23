@@ -213,9 +213,11 @@ class LogHandler(object):
                 sys.stderr = self._buffer
                 return self._buffer
 
-            def __exit__(self, *args, **kwargs):
+            def __exit__(self, type, value, traceback):
                 sys.stdout = self._original_stdout
                 sys.stderr = self._original_stderr
+                if type:
+                    print(self._buffer.getvalue())
                 self._buffer.close()
 
         return NoStdout()

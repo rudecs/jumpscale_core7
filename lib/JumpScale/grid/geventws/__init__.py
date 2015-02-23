@@ -1,7 +1,8 @@
 from JumpScale import j
 
-
-from .GeventWSFactory import GeventWSFactory
+def cb():
+    from .GeventWSFactory import GeventWSFactory
+    return GeventWSFactory()
 
 j.base.loader.makeAvailable(j, 'servers')
-j.servers.geventws = GeventWSFactory()
+j.servers._register('geventws', cb)

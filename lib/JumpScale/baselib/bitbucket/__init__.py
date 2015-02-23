@@ -1,11 +1,17 @@
 from JumpScale import j
 
-from .Bitbucket import Bitbucket
-from .BitbucketConfigManagement import BitbucketConfigManagement
-from .BitbucketInterface import BitbucketInterface
+def bb():
+    from .Bitbucket import Bitbucket
+    from .BitbucketConfigManagement import BitbucketConfigManagement
+    obj = Bitbucket()
+    obj._config = BitbucketConfigManagement()
+    return obj
+
+def bbi():
+    from .BitbucketInterface import BitbucketInterface
+    return BitbucketInterface()
 
 j.base.loader.makeAvailable(j, 'clients')
 
-j.clients.bitbucket=Bitbucket()
-j.clients.bitbucket._config=BitbucketConfigManagement()
-j.clients.bitbucketi=BitbucketInterface()
+j.clients._register('bitbucket', bb)
+j.clients._register('bitbucketi', bbi)

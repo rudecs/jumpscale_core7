@@ -1,4 +1,8 @@
 from JumpScale import j
-j.base.loader.makeAvailable(j, 'client')
-from .MySQLFactory import MySQLFactory
-j.client.mysql=MySQLFactory()
+
+def cb():
+    from .MySQLFactory import MySQLFactory
+    return MySQLFactory()
+
+j.base.loader.makeAvailable(j, 'clients')
+j.clients._register('mysql', cb)

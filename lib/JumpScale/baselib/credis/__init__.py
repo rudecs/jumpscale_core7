@@ -1,9 +1,10 @@
 from JumpScale import j
 
-from .CRedis import CRedisFactory
+def cb():
+    from .CRedis import CRedisFactory
+    return CRedisFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-
-j.clients.credis=CRedisFactory()
+j.clients._register('credis', cb)
 
 

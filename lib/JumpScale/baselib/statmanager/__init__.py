@@ -1,5 +1,8 @@
 from JumpScale import j
-from .StatManager import StatManager
+
+def cb():
+    from .StatManager import StatManager
+    return StatManager()
 
 j.base.loader.makeAvailable(j, 'system')
-j.system.statmanager = StatManager()
+j.system._register('statmanager', cb)

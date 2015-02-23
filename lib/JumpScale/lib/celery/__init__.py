@@ -1,7 +1,8 @@
 from JumpScale import j
 
-from .CeleryFactory import *
+def cb():
+    from .CeleryFactory import CeleryFactory
+    return CeleryFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-
-j.clients.celery=CeleryFactory()
+j.clients._register('celery', cb)

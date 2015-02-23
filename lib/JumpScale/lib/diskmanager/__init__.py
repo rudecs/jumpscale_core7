@@ -1,5 +1,9 @@
 from JumpScale import j
-j.base.loader.makeAvailable(j, 'system.platform.diskmanager')
-from .Diskmanager import Diskmanager
-j.system.platform.diskmanager = Diskmanager()
+
+def cb():
+    from .Diskmanager import Diskmanager
+    return Diskmanager()
+
+j.base.loader.makeAvailable(j, 'system.platform')
+j.system.platform._register('diskmanager', cb)
 

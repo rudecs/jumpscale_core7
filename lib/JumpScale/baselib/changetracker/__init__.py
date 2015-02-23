@@ -1,8 +1,9 @@
 from JumpScale import j
 
-from .BackupFactory import *
-import JumpScale.baselib.hash
+def cb():
+    from .BackupFactory import *
+    import JumpScale.baselib.hash
+    return BackupFactory()
 
 j.base.loader.makeAvailable(j, 'clients')
-
-j.clients.backup=BackupFactory()
+j.clients._register('backup', cb)

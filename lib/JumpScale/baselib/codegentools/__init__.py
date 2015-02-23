@@ -1,4 +1,8 @@
 from JumpScale import j
-from .CodeGenerator import CodeGenerator
+
+def cb():
+    from .CodeGenerator import CodeGenerator
+    return CodeGenerator()
+
 j.base.loader.makeAvailable(j, 'core')
-j.core.codegenerator = CodeGenerator()
+j.core._register('codegenerator', cb)

@@ -1,4 +1,8 @@
 from JumpScale import j
+
+def cb():
+    from .JailFactory import JailFactory
+    return JailFactory()
+
 j.base.loader.makeAvailable(j, 'tools')
-from .JailFactory import JailFactory
-j.tools.jail=JailFactory()
+j.tools._register('jail', cb)
