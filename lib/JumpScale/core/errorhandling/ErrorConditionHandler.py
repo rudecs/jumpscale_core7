@@ -163,8 +163,7 @@ class ErrorConditionHandler():
         if j.application.debug:
             msg=str(eco)
 
-        print(("\n#########   Operational Critical Error    #################\n%s\n###########################################################\n"% msg))
-        print() 
+        print("\n#########   Operational Critical Error    #################\n%s\n###########################################################\n"% j.tools.text.toStr(msg))
         if die:
             self.halt(msg,eco)
 
