@@ -96,7 +96,7 @@ class SpecActorMethod(Specbase):
 
                     default = self.getDefaultValue(ttype, default)
 
-                    spec=SpecActorMethodVar(varname,descr,tags,linenr,default)
+                    spec=SpecActorMethodVar(varname,descr,tags,linenr,default, ttype)
                     spec.comment=comments
                     self.vars.append(spec)
                 elif varname=="result":
@@ -115,12 +115,13 @@ class SpecActorMethod(Specbase):
 
 
 class SpecActorMethodVar(Specbase):
-    def __init__(self,name,descr,tags,linenr,default):
+    def __init__(self,name,descr,tags,linenr,default, ttype):
         Specbase.__init__(self,linenr)
         self.name=name
         self.description=descr
         self.tags=tags
         self.defaultvalue=default
+        self.ttype = ttype
 
 
 
