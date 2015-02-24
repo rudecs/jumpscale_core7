@@ -322,7 +322,7 @@ class RedisWorkerFactory(object):
         queue=self.queue[qname]
 
         # if not self.jobExistsInQueue(qname,job):
-            # self.redis.hset("workers:jobs",job.id, json.dumps(job.__dict__))
+        self.redis.hset("workers:jobs",job.id, json.dumps(job.__dict__))
         queue.put(job)
 
 

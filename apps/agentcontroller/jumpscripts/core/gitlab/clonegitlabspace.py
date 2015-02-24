@@ -8,7 +8,7 @@ Clone/Update gitlab user spaces
 """
 
 organization = "jumpscale"
-name = "clonegitlabspaces"
+name = "clonegitlabspace"
 author = "hamdy.farag@codescalers.com"
 license = "bsd"
 version = "1.0"
@@ -17,19 +17,23 @@ roles = []
 log=False
 
 
-def action(username):
-    print "Cloning gitlab spaces for user %s " % username
+def action(username, spacename):
+    print "Cloning gitlab space %s for user %s " % (spacename, username)
     print "**********************************************"
     client = j.clients.gitlab.get()
-    projects = client.getUserSpacesObjects(username)
-    for p in projects:
-        web_url = p.web_url.split('//')
+    spaces = client.getUserSpacesObjects(username)
+    spaces_names = [s.name for s in spaces]
+    try:
+        idx = spaces_names.index(spacename)
+        web_url = spaces[idx].web_url.split('//')
         credentials = "%s:%s" % (client.login, client.passwd)
         web_url.insert(1, '//%s@' % credentials)
         web_url = ''.join(web_url)
-        basedir = "/opt/jumpscale7/apps/portals/main/base/%s" % p.name
+        basedir = "/opt/jumpscale7/apps/portals/main/base/%s" % spacename
         repo = j.clients.git.getClient(basedir=basedir, remoteUrl=web_url)
         repo.fetch()
+    except ValueError:
+        raise RuntimeError("Insufficient permissions to clone space %s for user %s" % (spacename, username))
 
 if __name__ == '__name__':
     action()

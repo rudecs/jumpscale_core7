@@ -14,17 +14,27 @@ import JumpScale.baselib.git
 def lazyLogIn(function):
     """
     Gitlab client REST API are very slow, directly authenticating portal against gitlab
-    take time and shouldn't be done at the very beginning of starting portal.
+    takes time and shouldn't be done at the very beginning of starting portal.
     This docorator makes sure that whenever a gitlab client function is called
     the client will be authenticated if not already.
+    
+    SOmetimes, if connection lost to gitlab, client becomes suddenly unauthorized
+    but unaware of that because isLoggedIn flag is still True
+    this situation is handled as well, in case a function call returns UnAuthorized exception
+    client is  re-authenticated.
     """
     def wrapper(self, *args, **kwargs):
         if not self.isLoggedIn:
             login = self.login
             passwd = self.passwd
             self.isLoggedIn = self.authenticate(login, passwd)
-        return function(self, *args, **kwargs)
+        try:
+            return function(self, *args, **kwargs)
+        except gitlab3.exceptions.UnauthorizedRequest:
+            self.isLoggedIn = self.authenticate(login, passwd)
+            return function(self, *args, **kwargs)
     return wrapper
+
 
 class GitlabInstance():
     """
@@ -321,9 +331,9 @@ class GitlabInstance():
         return username, ''
     
     @lazyLogIn
-    def getUserSpaces(self, username, force_cache_renew=False):
+    def getUserSpacesObjects(self, username, force_cache_renew=False):
         """
-        Get userspace names for a specific user
+        Get userspace objects (not just names) for a specific user
         Gitlab userspaces always start with 'portal_'
         
         @param username: username
@@ -337,9 +347,24 @@ class GitlabInstance():
                 return result['data']
 
         try:
-            userspaces =  [p.name for p in self.gitlab.find_projects_by_name('portal_', sudo=username)]
+            userspaces =  [p for p in self.gitlab.find_projects_by_name('portal_', sudo=username)]
             self._addToCache(username, 'spaces', userspaces)
             return userspaces
         except gitlab3.exceptions.ForbiddenRequest:
             self._addToCache(username, 'spaces', [])
             return []
+        
+    
+    @lazyLogIn
+    def getUserSpaces(self, username, force_cache_renew=False):
+        """
+        Get userspace names for a specific user
+        Gitlab userspaces always start with 'portal_'
+        
+        @param username: username
+        @type username: `str`
+        @param bypass_cache: If True, Force getting data from gitlab backend, otherwise try to get it from cache 1st 
+        @type bypass_cache:`bool` 
+        """
+        return [p.name for p in self.getUserSpacesObjects(username, force_cache_renew)]
+    
