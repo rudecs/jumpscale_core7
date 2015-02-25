@@ -13,13 +13,14 @@ class ActionsBase():
     implement methods of this class to change behaviour of lifecycle management of jpackage
     """
 
-    def prepare(self,**args):
+    @remote
+    def prepare(self,serviceobj):
         """
         this gets executed before the files are downloaded & installed on approprate spots
         """
         return True
 
-    def configure(self,**args):
+    def configure(self,serviceobj):
         """
         this gets executed when files are installed
         this step is used to do configuration steps to the platform
@@ -37,16 +38,16 @@ class ActionsBase():
                 name+="__%s"%self.serviceobject.instance
         return domain, name
 
-    def init(self,**args):
+    def init(self,serviceobj):
         """
         first function called, always called where jpackage is hosted
         """
         return True
 
-    def start(self,**args):
+    def start(self,serviceobj):
         """
         start happens because of info from main.hrd file but we can overrule this
-        make sure to also call ActionBase.start(**args) in your implementation otherwise the default behaviour will not happen
+        make sure to also call ActionBase.start(serviceobj) in your implementation otherwise the default behaviour will not happen
         """
 
         if self.serviceobject.getProcessDicts()==[]:
@@ -56,7 +57,7 @@ class ActionsBase():
             
             cwd=process["cwd"]
             args['process'] = process
-            self.stop(**args)
+            self.stop(serviceobj)
 
             tcmd=process["cmd"]
             if tcmd=="jspython":
@@ -154,7 +155,7 @@ class ActionsBase():
             else:
                 j.events.opserror_critical("could not start:%s"%self.serviceobject,"jp.start.failed.other")
 
-    def stop(self,**args):
+    def stop(self,serviceobj):
         """
         if you want a gracefull shutdown implement this method
         a uptime check will be done afterwards (local)
@@ -204,7 +205,7 @@ class ActionsBase():
                 pids.update(j.system.process.getPidsByFilter(process['filterstr']))
         return list(pids)
 
-    def halt(self,**args):
+    def halt(self,serviceobj):
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
         """
@@ -212,23 +213,23 @@ class ActionsBase():
         for pid in self.get_pids():
             if pid not in currentpids :
                 j.system.process.kill(pid, signal.SIGKILL)
-        if not self.check_down_local(**args):
+        if not self.check_down_local(serviceobj):
             j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
         return True
 
-    def build(self,**args):
+    def build(self,serviceobj):
         """
         build instructions for the jpackage, make sure the builded jpackage ends up in right directory, this means where otherwise binaries would run from
         """
         pass
 
-    def package(self,**args):
+    def package(self,serviceobj):
         """
         copy the files from the production location on the filesystem to the appropriate binary git repo
         """
         pass
 
-    def check_up_local(self, wait=True, **args):
+    def check_up_local(self, wait=True, serviceobj):
         """
         do checks to see if process(es) is (are) running.
         this happens on system where process is
@@ -273,7 +274,7 @@ class ActionsBase():
         log("Status %s is running" % (self.serviceobject))
         return True
 
-    def check_down_local(self,**args):
+    def check_down_local(self,serviceobj):
         """
         do checks to see if process(es) are all down
         this happens on system where process is
@@ -306,35 +307,35 @@ class ActionsBase():
                 return False
         return True
 
-    def check_requirements(self,**args):
+    def check_requirements(self,serviceobj):
         """
         do checks if requirements are met to install this app
         e.g. can we connect to database, is this the right platform, ...
         """
         return True
 
-    def monitor_local(self,**args):
+    def monitor_local(self,serviceobj):
         """
         do checks to see if all is ok locally to do with this package
         this happens on system where process is
         """
         return True
 
-    def monitor_remote(self,**args):
+    def monitor_remote(self,serviceobj):
         """
         do checks to see if all is ok from remote to do with this package
         this happens on system from which we install or monitor (unless if defined otherwise in hrd)
         """
         return True
 
-    def cleanup(self,**args):
+    def cleanup(self,serviceobj):
         """
         regular cleanup of env e.g. remove logfiles, ...
         is just to keep the system healthy
         """
         return True
 
-    def data_export(self,**args):
+    def data_export(self,serviceobj):
         """
         export data of app to a central location (configured in hrd under whatever chosen params)
         return the location where to restore from (so that the restore action knows how to restore)
@@ -342,38 +343,38 @@ class ActionsBase():
         """
         return False
 
-    def data_import(self,id,**args):
+    def data_import(self,id,serviceobj):
         """
         import data of app to local location
         if specifies which retore to do, id corresponds with line item in the $name.export file
         """
         return False
 
-    def uninstall(self,**args):
+    def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
-    def removedata(self,**args):
+    def removedata(self,serviceobj):
         """
         remove all data from the app (called when doing a reset)
         """
         pass
 
-    def uninstall(self,**args):
+    def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
-    def test(self,**args):
+    def test(self,serviceobj):
         """
         test the jpackage on appropriate behaviour
         """
         pass
 
-    def execute(self,**args):
+    def execute(self,serviceobj):
         """
         execute is not relevant for each type of jpackage
         for e.g. a node.ms1 package it would mean remote some shell command on that machine

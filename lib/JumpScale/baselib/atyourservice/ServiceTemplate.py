@@ -20,7 +20,7 @@ class ServiceTemplate():
 
     def newInstance(self,instance="main", args={},hrddata={}, parent=None):
         service = Service(instance=instance,servicetemplate=self,args=args,parent=parent)
-        service.log("create instance")
+        # service.log("create instance")
         return service
 
     def getInstance(self,instance=None, args={},parent=None):

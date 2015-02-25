@@ -380,13 +380,14 @@ class Service(object):
 
     @remote
     def stop(self,deps=True):
+        self.log("stop instance")
         self.actions.stop(**self.args)
         if not self.actions.check_down_local(**self.args):
             self.actions.halt(**self.args)
 
     # @deps
     def build(self, deps=True):
-
+        self.log("build instance")
         if self.node:
             node = j.atyourservice.remote.sshPython(service=self.service,node=self.node)
         else:
@@ -420,6 +421,7 @@ class Service(object):
     @deps
     @remote
     def start(self,deps=True):
+        self.log("start instance")
         self.actions.start(**self.args)
 
     @deps
@@ -453,6 +455,7 @@ class Service(object):
     @deps
     @remote
     def prepare(self,deps=False, reverse=True):
+        self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
             src=src.replace(";",":")
             if src.strip()!="":
@@ -499,7 +502,7 @@ class Service(object):
         self._apply()
         self.stop(deps=False)
         self.prepare(deps=True, reverse=True)
-        self.log("install")
+        self.log("install instance")
         self._install(start=start, deps=deps, reinstall=reinstall)
 
     @deps
@@ -659,6 +662,7 @@ class Service(object):
         check which repo's are used & push the info
         this does not use the build repo's
         """
+        self.log("publish instance")
         self.actions.publish(**self.args)
 
     @deps
@@ -675,6 +679,7 @@ class Service(object):
         - copy the files again
         - restart the app
         """
+        self.log("update instance")
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             #pull the required repo
             self._getRepo(recipeitem['url'],recipeitem=recipeitem)
@@ -690,6 +695,7 @@ class Service(object):
 
     @deps
     def resetstate(self,deps=True):
+        self.log("resetstate instance")
         if self.actionspath.find(".py") == -1:
             j.do.delete(self.actionspath+".py",force=True)
             j.do.delete(self.actionspath+"pyc",force=True) #for .pyc file
@@ -707,6 +713,7 @@ class Service(object):
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app
         """
+        self.log("reset instance")
         self.resetstate()
         #remove build repo's
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
@@ -725,6 +732,7 @@ class Service(object):
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app
         """
+        self.log("removedata instance")
         self.actions.removedata(**self.args)
 
     @deps
@@ -733,11 +741,13 @@ class Service(object):
         """
         execute cmd on service
         """
+        self.log("execute cmd:'%s' on instance"%self.args["cmd"])
         self.actions.execute(**self.args)
 
     @deps
     @remote
     def uninstall(self,deps=True):
+        self.log("uninstall instance")
         self.reset()
         self.actions.uninstall(**self.args)
 
@@ -755,17 +765,20 @@ class Service(object):
     @deps
     @remote
     def iimport(self,url,deps=True):
+        self.log("import instance data")
         self.actions.iimport(url,**self.args)
 
     @deps
     @remote
     def export(self,url,deps=True):
+        self.log("export instance data")
         self.actions.export(url,**self.args)
 
 
     @deps
     @remote
     def configure(self,deps=True,restart=True):
+        self.log("configure instance")
         self.actions.configure(**self.args)
         if restart:
             self.restart(deps=False)
