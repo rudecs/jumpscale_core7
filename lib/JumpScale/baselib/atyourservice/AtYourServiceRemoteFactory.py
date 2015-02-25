@@ -19,12 +19,12 @@ class AtYourServiceRemoteFactory(object):
         # self.remotePython.service = service
         return RemotePython(service)
 
-    def sshLua(self, jp, node):
+    def sshLua(self, service, node):
         if self.node != node or self.remoteLua is None:
-            self.remoteLua = RemoteLua(jp,node)
+            self.remoteLua = RemoteLua(service,node)
             self.node = node
 
-        self.remoteLua.jp = jp
+        self.remoteLua.service = service
         return self.remoteLua
 
     def getAllNodes(self):
@@ -48,7 +48,7 @@ class AtYourServiceRemoteFactory(object):
 class RemoteBase(object):
     def __init__(self, service):
         self.service = service
-        # self.jp = jp
+        # self.service = service
         self.ip = None
         self.port = None
         self.login = None
@@ -277,17 +277,17 @@ class RemotePython(RemoteBase):
 #     def __init__(self,hrd,domain,name,instance):
 #         self.hrd = hrd
 #         self.instance = instance
-#         self.jp = ServiceMock(domain,name,instance)
+#         self.service = ServiceMock(domain,name,instance)
 
 #     def getLogPath(self):
-#         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.jp.instance))
+#         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.service.domain, self.service.name,self.service.instance))
 #         return logpath
 
 #     def getHRDPath(self,node=None):
 #         if j.atyourservice.type=="c":
-#             hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.jp.instance)
+#             hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.service.name, self.service.instance)
 #         else:
-#             hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.jp.instance)
+#             hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.service.domain, self.service.name, self.service.instance)
 #         return hrdpath
 
 #     def isInstalled(self):
@@ -328,7 +328,7 @@ class RemotePython(RemoteBase):
 #             process["test"]=1
 
 #             if process["name"].strip()=="":
-#                 process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
+#                 process["name"]="%s_%s"%(self.hrd.get("service.name"),self.hrd.get("service.instance"))
 
 #             if self.hrd.exists("env.process.%s"%counter):
 #                 process["env"]=self.hrd.getDict("env.process.%s"%counter)
@@ -362,7 +362,7 @@ class RemoteLua(RemoteBase):
             client = self.connection
         # add hrd content into actions file
         # the hrd is converted into a lua table
-        dictHRD = self.jp.hrd.getHRDAsDict()
+        dictHRD = self.service.hrd.getHRDAsDict()
         jsonHRD = json.dumps(dictHRD)
         content = """local json = require 'json'
         local hrd = json.decode.decode('%s')
@@ -370,12 +370,12 @@ class RemoteLua(RemoteBase):
         """ % jsonHRD
 
         #put action file on dest system
-        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.jp.name,self.jp.instance)
+        actionfile="%s/%s__%s.lua"%(j.dirs.getJPActionsPath(node=self.node),self.service.name,self.service.instance)
         content += j.system.fs.fileGetContents(actionfile)
         # add the call to the wanted function into the lua file
         # and pass the args table we construct from the hrd
         content+= "\n%s(hrd)"%action
-        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.jp.name,self.jp.instance)
+        actionfiledest="%s/%s__%s.lua"%(j.dirs.tmpDir,self.service.name,self.service.instance)
         self.writeFile(actionfiledest,content)
         j.system.fs.writeFile("/opt/code/action.lua",content)
         cmd = 'lua %s' % (actionfiledest)

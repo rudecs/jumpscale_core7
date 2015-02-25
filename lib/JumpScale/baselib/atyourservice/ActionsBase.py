@@ -161,7 +161,6 @@ class ActionsBase():
         return True if stop was ok, if not this step will have failed & halt will be executed.
         """
 
-        from ipdb import set_trace;set_trace()
         if self.serviceobject.getProcessDicts()==[]:
             return
 

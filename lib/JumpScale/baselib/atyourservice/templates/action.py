@@ -4,11 +4,11 @@ ActionsBase=j.atyourservice.getActionsBaseClass()
 
 class Actions(ActionsBase):
     """
-    implement methods of this class to change behaviour of lifecycle management of jpackage
+    implement methods of this class to change behaviour of lifecycle management of service
     """
     # def init(self,**args):
     #     """
-    #     first function called, always called where jpackage is hosted
+    #     first function called, always called where service is hosted
     #     """
     #     return True
     
@@ -22,7 +22,7 @@ class Actions(ActionsBase):
     #     """
     #     this gets executed when files are installed
     #     this step is used to do configuration steps to the platform
-    #     after this step the system will try to start the jpackage if anything needs to be started
+    #     after this step the system will try to start the service if anything needs to be started
     #     """
     #     return True
 
@@ -49,7 +49,7 @@ class Actions(ActionsBase):
 
     # def build(self,**args):
     #     """
-    #     build instructions for the jpackage, make sure the builded jpackage ends up in right directory, this means where otherwise binaries would run from
+    #     build instructions for the service, make sure the builded service ends up in right directory, this means where otherwise binaries would run from
     #     """        
     #     pass
 
@@ -137,6 +137,6 @@ class Actions(ActionsBase):
 
     # def test(self,**args):
     #     """
-    #     tests for the jpackage to test its behaviour
+    #     tests for the service to test its behaviour
     #     """
     #     return True

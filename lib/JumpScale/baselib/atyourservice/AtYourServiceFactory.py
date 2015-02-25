@@ -19,7 +19,7 @@ class AtYourServiceFactory():
     @property
     def type(self):
         self._type="n" #n from normal
-        #check if we are in a git directory, if so we will use $thatdir/jp as base for the metadata
+        #check if we are in a git directory, if so we will use $thatdir/service as base for the metadata
         configpath=j.dirs.amInGitConfigRepo()
         if configpath!=None:
             self._type="c"
@@ -139,7 +139,7 @@ class AtYourServiceFactory():
                 finalRes.append(ServiceTemplate(domainfound,namefound,path))
             #now name & domain is known
             if maxnr!=None and len(finalRes)>maxnr:
-                j.events.inputerror_critical("Found more than %s jpackage for query '%s':'%s'"%(maxnr,domain,name))
+                j.events.inputerror_critical("Found more than %s service for query '%s':'%s'"%(maxnr,domain,name))
 
             return finalRes
 
@@ -150,7 +150,7 @@ class AtYourServiceFactory():
         self._doinit()
         services=self.find(domain,name,1)
         if len(services)==0:
-            j.events.opserror_critical("cannot find jpackage %s/%s"%(domain,name))
+            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
         services[0]=services[0].newInstance(instance,parent=parent, args=args)
         return services[0]
 
@@ -158,7 +158,7 @@ class AtYourServiceFactory():
         self._doinit()
         services=self.find(domain,name,1)
         if len(services)==0:
-            j.events.opserror_critical("cannot find jpackage %s/%s"%(domain,name))
+            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
         services[0]=services[0].getInstance(instance,parent=parent,args=args)
         return services[0]
 
