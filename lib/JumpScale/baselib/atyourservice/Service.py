@@ -227,7 +227,7 @@ class Service(object):
         modulename="JumpScale.atyourservice.%s.%s.%s"%(self.domain,self.name,self.instance)
         mod = loadmodule(modulename, "%s/actions.py"%self.path)
         self._actions=mod.Actions()
-        self._actions.serviceobject=self  #@remark: did rename of service_... to serviceobject
+        # self._actions.serviceobject=self  serviceobj is now an argument of each Action() method
 
     def _apply(self):
         j.do.createDir(self.path)
@@ -239,6 +239,7 @@ class Service(object):
 
         hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
         self._hrd=j.core.hrd.get(hrdpath,args=self.hrddata,prefixWithName=False)
+        self._hrd=j.core.hrd.get(hrdpath,args=self.args,prefixWithName=False)
         self._hrd.applyTemplates(path="%s/service.hrd"%self.templatepath,prefix="service")
         self._hrd.applyTemplates(path="%s/instance.hrd"%self.templatepath,prefix="instance")
 
@@ -381,9 +382,9 @@ class Service(object):
     @remote
     def stop(self,deps=True):
         self.log("stop instance")
-        self.actions.stop(**self.args)
-        if not self.actions.check_down_local(**self.args):
-            self.actions.halt(**self.args)
+        self.actions.stop(self)
+        if not self.actions.check_down_local(self):
+            self.actions.halt(self)
 
     # @deps
     def build(self, deps=True):
@@ -412,7 +413,7 @@ class Service(object):
         if node:
             self._build()
         else:
-            self.actions.build(**self.args)
+            self.actions.build(self)
 
     @remote
     def _build(self,deps=True):
@@ -422,7 +423,7 @@ class Service(object):
     @remote
     def start(self,deps=True):
         self.log("start instance")
-        self.actions.start(**self.args)
+        self.actions.start(self)
 
     @deps
     def restart(self,deps=True):
@@ -480,7 +481,7 @@ class Service(object):
             if packages:
                 j.do.execute("apt-get install -y -f %s"% " ".join(packages) ,dieOnNonZeroExitCode=True)
 
-        self.actions.prepare()
+        self.actions.prepare(self)
 
     def install(self, start=True,deps=True, reinstall=False):
         """
@@ -663,13 +664,13 @@ class Service(object):
         this does not use the build repo's
         """
         self.log("publish instance")
-        self.actions.publish(**self.args)
+        self.actions.publish(self)
 
     @deps
     def package(self,deps=True):
         """
         """
-        self.actions.package(**self.args)
+        self.actions.package(self)
 
     @deps
     @remote
@@ -721,7 +722,7 @@ class Service(object):
             dest="/opt/build/%s"%name
             j.do.delete(dest)
 
-        self.actions.removedata(**self.args)
+        self.actions.removedata(self)
         j.do.delete(self.hrdpath,force=True)
 
     @deps
@@ -733,7 +734,7 @@ class Service(object):
         - remove data of the app
         """
         self.log("removedata instance")
-        self.actions.removedata(**self.args)
+        self.actions.removedata(self)
 
     @deps
     @remote
@@ -742,14 +743,14 @@ class Service(object):
         execute cmd on service
         """
         self.log("execute cmd:'%s' on instance"%self.args["cmd"])
-        self.actions.execute(**self.args)
+        self.actions.execute(self)
 
     @deps
     @remote
     def uninstall(self,deps=True):
         self.log("uninstall instance")
         self.reset()
-        self.actions.uninstall(**self.args)
+        self.actions.uninstall(self)
 
     @deps
     @remote
@@ -757,29 +758,29 @@ class Service(object):
         """
         do all monitor checks and return True if they all succeed
         """
-        res=self.actions.check_up_local(**self.args)
-        res=res and self.actions.monitor_local(**self.args)
-        res=res and self.actions.monitor_remove(**self.args)
+        res=self.actions.check_up_local(self)
+        res=res and self.actions.monitor_local(self)
+        res=res and self.actions.monitor_remove(self)
         return res
 
     @deps
     @remote
     def iimport(self,url,deps=True):
         self.log("import instance data")
-        self.actions.iimport(url,**self.args)
+        self.actions.data_import(url,self)
 
     @deps
     @remote
     def export(self,url,deps=True):
         self.log("export instance data")
-        self.actions.export(url,**self.args)
+        self.actions.data_export(url,self)
 
 
     @deps
     @remote
     def configure(self,deps=True,restart=True):
         self.log("configure instance")
-        self.actions.configure(**self.args)
+        self.actions.configure(self)
         if restart:
             self.restart(deps=False)
 

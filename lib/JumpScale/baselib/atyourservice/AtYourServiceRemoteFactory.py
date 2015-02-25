@@ -48,7 +48,6 @@ class AtYourServiceRemoteFactory(object):
 class RemoteBase(object):
     def __init__(self, service):
         self.service = service
-        # self.service = service
         self.ip = None
         self.port = None
         self.login = None
@@ -62,18 +61,7 @@ class RemoteBase(object):
         epoch = int(time.time())
         return "%s_%s_%s" % (epoch,self.service.name,name)
 
-    # def _negotiateConnection(self,service):
-    #     nodes = j.atyourservice.remote.getAllNodes()
-    #     for kind,instances in nodes.iteritems():
-    #         for nodeInstance in instances:
-    #             if nodeInstance == service.instance:
-    #                 return kind
-    #     return None
-
     def _connect(self, service):
-        # connKind = self._negotiateConnection(service)
-        # if connKind is None:
-        #     raise RuntimeError("No node found for %s" % node)
         client = None
         if service.name.find("kvm") != -1:
             client = self._kvmConnect(service)
@@ -118,20 +106,19 @@ class RemoteBase(object):
         self.login = kvmHRD.get("param.machine.ssh.login")
         # self.key = kvmHRD.get("param.machine.ssh.key") if kvmHRD.get("param.machine.ssh.key") else ""
         self.port = 2222
-        from ipdb import set_trace;set_trace()
 
         parent = service.parent
         parentHRD = j.application.getAppInstanceHRD(parent.name,parent.instance)
         parentCL = self._sshConnect(parent)
         childs = parent.listChilds()
         if "portforward" not in childs or service.instance not in childs["portforward"]:
-            pf = j.atyourservice.new(name="portforward",instance=service.instance,parent=parent)
-            pf.hrddata = {
+            hrddata = {
                 "param.host.port":2222,
                 "param.host.ip":"localhost",
                 "param.remote.ip":kvmHRD.get("param.machine.ssh.ip"),
                 "param.remote.port":22,
             }
+            pf = j.atyourservice.new(name="portforward",instance=service.instance,parent=parent,args=hrddata)
             pf.configure()
         # kvmHRD = j.application.getAppInstanceHRD(kind, service.instance)
         # hostType = kvmHRD.get("param.hostnode.type")
@@ -140,7 +127,6 @@ class RemoteBase(object):
         # hostIp = self.ip
         # hostPort = self.port
 
-       
 
         # # remove current port forward if any
         # cmd = "ps ax | grep -v '/bin/bash -l -c' | grep 'ssh -f -N -L' > /tmp/ssh"

@@ -10,10 +10,10 @@ def log(msg, level=2):
 
 class ActionsBase():
     """
-    implement methods of this class to change behaviour of lifecycle management of jpackage
+    implement methods of this class to change behaviour of lifecycle management of service
     """
 
-    @remote
+    # @remote
     def prepare(self,serviceobj):
         """
         this gets executed before the files are downloaded & installed on approprate spots
@@ -24,23 +24,23 @@ class ActionsBase():
         """
         this gets executed when files are installed
         this step is used to do configuration steps to the platform
-        after this step the system will try to start the jpackage if anything needs to be started
+        after this step the system will try to start the service if anything needs to be started
         """
         return True
 
-    def _getDomainName(self, process):
-        domain=self.serviceobject.jp.domain
+    def _getDomainName(self, serviceobj, process):
+        domain=serviceobj.domain
         if process["name"]!="":
             name=process["name"]
         else:
-            name=self.serviceobject.jp.name
-            if self.serviceobject.instance!="main":
-                name+="__%s"%self.serviceobject.instance
+            name=serviceobj.name
+            if serviceobj.instance!="main":
+                name+="__%s"%serviceobj.instance
         return domain, name
 
     def init(self,serviceobj):
         """
-        first function called, always called where jpackage is hosted
+        first function called, always called where service is hosted
         """
         return True
 
@@ -50,11 +50,11 @@ class ActionsBase():
         make sure to also call ActionBase.start(serviceobj) in your implementation otherwise the default behaviour will not happen
         """
 
-        if self.serviceobject.getProcessDicts()==[]:
+        if serviceobj.getProcessDicts()==[]:
             return
 
         def start2(process):
-            
+
             cwd=process["cwd"]
             args['process'] = process
             self.stop(serviceobj)
@@ -67,14 +67,14 @@ class ActionsBase():
             tuser=process["user"]
             if tuser=="":
                 tuser="root"
-            tlog=self.serviceobject.hrd.getBool("process.log",default=True)
+            tlog=serviceobj.hrd.getBool("process.log",default=True)
             env=process["env"]
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
             log("Starting %s:%s" % (domain, name))
 
-            j.do.delete(self.serviceobject.getLogPath())
+            j.do.delete(serviceobj.getLogPath())
 
             if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
                 cmd2="%s %s"%(tcmd,targs)
@@ -107,7 +107,7 @@ class ActionsBase():
                 j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
 
                 if tlog:
-                    j.system.platform.screen.logWindow(domain,name,self.serviceobject.getLogPath())
+                    j.system.platform.screen.logWindow(domain,name,serviceobj.getLogPath())
 
             else:
                 raise RuntimeError("startup method not known:'%s'"%startupmethod)
@@ -134,26 +134,26 @@ class ActionsBase():
         isrunning=self.check_up_local(wait=False)
         if isrunning:
             return
-        for process in self.serviceobject.getProcessDicts():
+        for process in serviceobj.getProcessDicts():
             start2(process)
 
         isrunning=self.check_up_local()
         if isrunning==False:
-            if j.system.fs.exists(path=self.serviceobject.getLogPath()):
-                logc=j.do.readFile(self.serviceobject.getLogPath()).strip()
+            if j.system.fs.exists(path=serviceobj.getLogPath()):
+                logc=j.do.readFile(serviceobj.getLogPath()).strip()
             else:
                 logc=""
 
             msg=""
 
-            if self.serviceobject.getTCPPorts()==[0]:
+            if serviceobj.getTCPPorts()==[0]:
                 print 'Done ...'
-            elif self.serviceobject.getTCPPorts()!=[]:
-                ports=",".join([str(item) for item in self.serviceobject.getTCPPorts()])
-                msg="Could not start:%s, could not connect to ports %s."%(self.serviceobject,ports)
-                j.events.opserror_critical(msg,"jp.start.failed.ports")
+            elif serviceobj.getTCPPorts()!=[]:
+                ports=",".join([str(item) for item in serviceobj.getTCPPorts()])
+                msg="Could not start:%s, could not connect to ports %s."%(serviceobj,ports)
+                j.events.opserror_critical(msg,"service.start.failed.ports")
             else:
-                j.events.opserror_critical("could not start:%s"%self.serviceobject,"jp.start.failed.other")
+                j.events.opserror_critical("could not start:%s"%serviceobj,"service.start.failed.other")
 
     def stop(self,serviceobj):
         """
@@ -162,7 +162,7 @@ class ActionsBase():
         return True if stop was ok, if not this step will have failed & halt will be executed.
         """
 
-        if self.serviceobject.getProcessDicts()==[]:
+        if serviceobj.getProcessDicts()==[]:
             return
 
         def stop_process(process):
@@ -180,16 +180,16 @@ class ActionsBase():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)
 
-        if self.serviceobject.jp.name == 'redis':
+        if serviceobj.sername == 'redis':
             j.logger.redislogging = None
             j.logger.redis = None
 
         if 'process' in args:
             stop_process(args['process'])
         else:
-            processes = self.serviceobject.getProcessDicts()
+            processes = serviceobj.getProcessDicts()
             if processes:
-                log("Stopping %s" % self.serviceobject)
+                log("Stopping %s" % serviceobj)
                 for process in processes:
                     stop_process(process)
         return True
@@ -197,9 +197,9 @@ class ActionsBase():
     def get_pids(self, processes=None, **kwargs):
         pids = set()
         if processes is None:
-            processes = self.serviceobject.getProcessDicts()
+            processes = serviceobj.getProcessDicts()
         for process in processes:
-            for port in self.serviceobject.getTCPPorts(process):
+            for port in serviceobj.getTCPPorts(process):
                 pids.update(j.system.process.getPidsByPort(port))
             if process.get('filterstr', None):
                 pids.update(j.system.process.getPidsByFilter(process['filterstr']))
@@ -214,12 +214,12 @@ class ActionsBase():
             if pid not in currentpids :
                 j.system.process.kill(pid, signal.SIGKILL)
         if not self.check_down_local(serviceobj):
-            j.events.opserror_critical("could not halt:%s"%self,"jpackage.halt")
+            j.events.opserror_critical("could not halt:%s"%self,"service.halt")
         return True
 
     def build(self,serviceobj):
         """
-        build instructions for the jpackage, make sure the builded jpackage ends up in right directory, this means where otherwise binaries would run from
+        build instructions for the service, make sure the builded service ends up in right directory, this means where otherwise binaries would run from
         """
         pass
 
@@ -229,13 +229,13 @@ class ActionsBase():
         """
         pass
 
-    def check_up_local(self, wait=True, serviceobj):
+    def check_up_local(self, serviceobj, wait=True):
         """
         do checks to see if process(es) is (are) running.
         this happens on system where process is
         """
         def do(process):
-            ports=self.serviceobject.getTCPPorts()
+            ports=serviceobj.getTCPPorts()
             timeout=process["timeout_start"]
             if timeout==0:
                 timeout=2
@@ -265,13 +265,13 @@ class ActionsBase():
                     now=j.base.time.getTimeEpoch()
                 return False
 
-        for process in self.serviceobject.getProcessDicts():
+        for process in serviceobj.getProcessDicts():
             result=do(process)
             if result==False:
                 domain, name = self._getDomainName(process)
                 log("Status %s:%s not running" % (domain,name))
                 return False
-        log("Status %s is running" % (self.serviceobject))
+        log("Status %s is running" % (serviceobj))
         return True
 
     def check_down_local(self,serviceobj):
@@ -281,10 +281,10 @@ class ActionsBase():
         return True when down
         """
         def do(process):
-            if not self.serviceobject.hrd.exists("process.cwd"):
+            if not serviceobj.hrd.exists("process.cwd"):
                 return
 
-            ports=self.serviceobject.getTCPPorts()
+            ports=serviceobj.getTCPPorts()
 
             if len(ports)>0:
                 timeout=process["timeout_stop"]
@@ -301,7 +301,7 @@ class ActionsBase():
                     raise RuntimeError("Process filterstr cannot be empty.")
                 return j.system.process.checkProcessRunning(filterstr)==False
 
-        for process in self.serviceobject.getProcessDicts():
+        for process in serviceobj.getProcessDicts():
             result=do(process)
             if result==False:
                 return False
@@ -370,14 +370,35 @@ class ActionsBase():
 
     def test(self,serviceobj):
         """
-        test the jpackage on appropriate behaviour
+        test the service on appropriate behaviour
         """
         pass
 
     def execute(self,serviceobj):
         """
-        execute is not relevant for each type of jpackage
+        execute is not relevant for each type of service
         for e.g. a node.ms1 package it would mean remote some shell command on that machine
         for e.g. postgresql it would mean execute a sql query
+        """
+        pass
+
+    def upload(self,serviceobj,source,dest):
+        """
+        on central side only
+        push configuration to service instance
+        """
+        pass
+
+    def download(self,serviceobj,source,dest):
+        """
+        on central side only
+        push configuration to service instance
+        """
+        pass
+
+    def executeaction(self,serviceobj,actionname):
+        """
+        on central side only
+        execute something in the service instance
         """
         pass
