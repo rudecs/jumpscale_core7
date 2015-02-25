@@ -1,0 +1,270 @@
+#!/usr/bin/env jspython
+
+from JumpScale.baselib import cmdutils
+import JumpScale.baselib.atyourservice
+from JumpScale import j
+import sys
+import copy
+j.application.start('jservice')
+
+parser = cmdutils.ArgumentParser()
+j.logger.consolelogCategories.append('jpactions')
+
+commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
+    "removedata","monitor","configure","cleanup","export","import","uninstall","push","execute", "status","nodes"]
+
+help="""
+jservice commands:
+
+    install:
+    - download all related git repo's (if not downloaded yet, otherwise update)
+    - prepare & copyfiles & configure
+    - start the app
+    list:
+    - list the jservices
+    stop-start-restart
+    build
+    - if build instructions are given the build repo's will be downloaded & build started
+    - build happens to production dir
+    mdupdate
+    - update all git repo's which have jservice metadata
+    update
+    - go over all related repo's & do an update
+    - copy the files again
+    - restart the app
+    reset
+    - remove build repo's !!!
+    - remove state of the app (same as resetstate) in jumpscale (the configuration info)
+    - remove data of the app
+    resetstate
+    - remove state of the app (same as resetstate) in jumpscale (the configuration info)
+    removedata
+    - remove data of app (e.g. database, e.g. vmachine when node jservice)
+    execute
+    - execute cmd on service e.g. ssh cmd on node jp or sql statement on database ...
+    - use --cmd with to specify command to be execute
+    monitor
+    - do uptime check, local monitor & remote monitor check, if all ok return True
+    configure
+    - configure the app
+    cleanup
+    - remote old logfiles, ...
+    export/import
+    - use --url to specify where to import from or export to
+    create
+    - interactively create a jservice
+    status
+    - display status of installed jservices (domain, name, priority, version, port)
+    nodes
+    - display all remote nodes available for jservice remote execution
+"""
+
+parser.add_argument("action", choices=commands, help='Command to perform\n')
+
+group = parser.add_argument_group(title="Package Selection")
+group.add_argument('-q','--quiet', required=False, action='store_true', help='Put in quiet mode')
+group.add_argument('-n','--name',required=False, help='Name of jservice to be installed',default="")
+# group.add_argument('-d','--domain',required=False, help='Name of jservice domain to be installed',default="")
+group.add_argument('-i','--instance',required=False, help='Instance of jservice (default main)',default=None)
+group.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
+group.add_argument('--nodeps',required=False, action='store_true',help='Don\'t perfomr action on dependencies, default False',default=False)
+group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
+# group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
+# group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
+
+#install
+group = parser.add_argument_group(title="Install/Update/Expand/Configure")
+# group.add_argument('--data', required=False, help='use this to pass hrd information to jservice e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
+# group.add_argument('--cmd', required=False, help='use this to pass cmd to jservice e.g. \'ls -l\'')
+group.add_argument('-r', '--reinstall', required=False, action='store_true', help='Reinstall found service')
+# group.add_argument('-s', '--single', required=False, action='store_true', help='Do not install dependencies')
+
+#install
+group = parser.add_argument_group(title="Export/Import")
+group.add_argument('--url', required=False, help='uncpath to export to or import from')
+
+#list
+group = parser.add_argument_group(title="List")
+group.add_argument('--installed', required=False, action='store_true',default=None, help='List installed jservices')
+
+
+
+def sorter(jp1, jp2):
+    prio1 = jp1.getPriority()
+    prio2 = jp2.getPriority()
+    if prio1 != prio2:
+        return cmp(prio1, prio2)
+    else:
+        key1 = "%s_%s" % (jp1.domain, jp2.name)
+        key2 = "%s_%s" % (jp2.domain, jp2.name)
+        return cmp(key1, key2)
+
+def getService(args):
+    name = args.name.strip()
+    instance = args.instance.strip()
+
+    service = j.atyourservice.get(name=name,instance=instance)
+
+    return service
+
+
+if '--help' in sys.argv or '-h' in sys.argv:
+    print help
+
+args = parser.parse_args()
+args.deps=not args.nodeps
+
+# hrddata={}
+# if args.data<>None:
+#     if args.data.find("#")<>-1:
+#         for line in args.data.split("#"):
+#             if line.find("=")<>-1:
+#                 var,data=line.split("=",1)
+#                 hrddata[var.strip()]=data.strip()
+#     else:
+#         tags=j.core.tags.getObject(args.data)
+#         hrddata=tags.getDict()
+
+# jpargs = {}
+# if args.node!=None:
+#     jpargs["node2execute"]=args.node
+# if args.lua!=None:
+#     jpargs["lua"]=args.lua
+
+# if args.cmd is not None:
+#     jpargs['cmd'] = args.cmd.strip()
+
+
+
+j.application.debug=args.verbose
+
+if args.quiet:
+    class NullDevice():
+        def write(self, s):
+            pass
+    sys.stdout = NullDevice();
+
+if args.action == 'configure':
+    services = getService(args)
+    service.configure()
+
+elif args.action == 'install':
+    service = getService(args)
+    service.install()
+
+elif args.action == 'update':
+    service = getService(args)
+    service.update(deps=args.deps)
+
+elif args.action == 'monitor':
+    service = getService(args)
+    service.monitor()
+
+elif args.action == 'publish':
+    service = getService(args)
+    service.publish(deps=args.deps)
+
+elif args.action == 'reset':
+    service = getService(args)
+    service.reset(deps=args.deps)
+
+elif args.action == 'removedata':
+    service = getService(args)
+    service.removedata(deps=args.deps)
+
+elif args.action == 'resetstate':
+    service = getService(args)
+    service.resetstate(deps=args.deps)
+
+elif args.action == 'export':
+    service = getService(args)
+    service.export(url=args.url,deps=args.deps)
+
+elif args.action == 'import':
+    service = getService(args)
+    service.iimport(url=args.url,deps=args.deps)
+
+elif args.action == 'restart':
+    service = getService(args)
+    service.restart(deps=args.deps)
+
+elif args.action == 'start':
+    service = getService(args)
+    service.start(deps=args.deps)
+
+elif args.action == 'stop':
+    service = getService(args)
+    service.stop(deps=False)
+
+elif args.action == 'execute':
+    services = getService(args)
+    service.execute(deps=args.deps)
+
+elif args.action == 'build':
+    service = getService(args)
+    service.build(deps=args.deps)
+
+elif args.action == 'uninstall':
+    service = getService(args)
+    service.uninstall(deps=args.deps)
+
+elif args.action == 'push':
+    service = getService(args)
+    service.push(deps=args.deps)
+
+# elif args.action == 'list':
+#     def printServices(services):
+#         form = '%(domain)-15s %(name)-20s %(version)8s %(buildnr)8s %(debug)5s %(debugInJservice)5s'
+#         print form % {'domain': 'DOMAIN', 'name': 'NAME', 'version': 'VERSION', 'debug': 'DEBUG', \
+#             'buildnr':'BUILDNR','debugInJservice':'DEBUG_JP'}
+#         print '=' * 70
+#         print ''
+#         for service in sorted(services, key=lambda p: "%s_%s" % (p.domain, p.name)):
+#             # debugINJP = 'yes' if service.getDebugModeInJservice() else 'no'
+#             # debug = 'yes' if service.debug else 'no'
+#             debug="?"
+#             debugINJP="?"
+#             buildNr="?"
+#             version="?"
+#             print form % {'name': service.name, 'domain': service.domain, 'version': version, \
+#             'debug': debug, 'buildnr': buildNr,'debugInJservice':debugINJP}
+
+#     jps=getService(args,list=True,expandInstances=args.installed, jpargs=jpargs)
+#     printServices(jps)
+
+# elif args.action == 'status':
+#     j.logger.consolelogCategories.remove('jpactions')
+#     j.logger.consolelogCategories.append('nologs') # dont leave categories empty
+#     def printServices(services):
+
+#         form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s %(ports)s'
+#         print form % {'domain': 'DOMAIN', 'name': 'NAME', 'instance': 'Instance', 'prio': 'Prio', 'status': 'Status', \
+#             'ports': 'Ports'}
+#         print '=' * 70
+#         print ''
+#         for service in sorted(services, cmp=sorter):
+#             if not service.getProcessDicts():
+#                 continue
+#             isrunning = service.actions.check_up_local(wait=False)
+#             status = 'RUNNING' if isrunning else 'HALTED'
+#             ports = ', '.join( str(x) for x in service.getTCPPorts() )
+#             print form % {'name': service.name, 'domain': service.domain, 'instance': service.instance, 'prio': service.getPriority(), 'status': status, 'ports': ports}
+
+#     jps = services = getService(args,expandInstances=True, toinstall=False,list=True, jpargs=jpargs)
+#     printServices(jps)
+
+# elif args.action == 'nodes':
+#     def printNodes(allNodes):
+
+#         form = '%(type)-15s %(instance)-10s'
+#         print form % {'type': 'TYPE', 'instance': 'INSTANCE'}
+#         print '=' * 25
+#         for typ,nodes in allNodes.iteritems():
+#             print ''
+#             for node in nodes:
+#                 print form % {'type': typ, 'instance': node}
+
+#     allNodes = j.services.remote.getAllNodes()
+#     printNodes(allNodes)
+
+j.application.stop()

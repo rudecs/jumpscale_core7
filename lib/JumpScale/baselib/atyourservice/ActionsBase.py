@@ -405,13 +405,27 @@ class ActionsBase():
         """
         pass
 
-    def execute(self,serviceobj):
+    def execute(self,serviceobj, **kwargs):
         """
         execute is not relevant for each type of service
         for e.g. a node.ms1 service it would mean remote some shell command on that machine
         for e.g. postgresql it would mean execute a sql query
         """
-        pass
+        ip = serviceobj.hrd.get("instance.machine.ssh.ip")
+        port = serviceobj.hrd.get("instance.machine.ssh.port")
+        keyname =  serviceobj.hrd.get('instance.ssh.key.name') if serviceobj.hrd.exists('instance.ssh.key.name') else None
+        login = serviceobj.hrd.get('instance.ssh.user') if serviceobj.hrd.exists('instance.ssh.user') else None
+        password = serviceobj.hrd.get('instance.ssh.pwd') if serviceobj.hrd.exists('instance.ssh.pwd') else None
+        keyHRD = j.application.getAppInstanceHRD("sshkey",self.keyname) if self.keyname != None else None
+
+        cl = None
+        if self._keyhrd !=None:
+            c.fabric.env["key"] = self._keyhrd.get('instance.ssh.key.priv')
+            cl = c.connect(self.ip,self.port)
+        else:
+            cl = c.connect(self.ip,self.port,self.passwd)
+        cmd = kwargs['cmd']
+        cl.run(cmd)
 
     def upload(self,serviceobj,source,dest):
         """
@@ -449,7 +463,7 @@ class ActionsBase():
         # host=serviceobj.hrd.get("instance.host")
         # parentNode = j.atyourservice.findParent(serviceobj,host)
         self.upload(serviceobj,serviceobj.path,j.dirs.hrdDir)
-        self.execute("source /opt/jumpscale7/env.sh;atys %s -n %s -i %s"%(actionname,serviceobj.name,serviceobj.instance))
+        self.execute(serviceobj,cmd="source /opt/jumpscale7/env.sh;atys %s -n %s -i %s"%(actionname,serviceobj.name,serviceobj.instance))
 
     def _rsync(self,source,dest,key,port=22):
         def generateUniq(name):
