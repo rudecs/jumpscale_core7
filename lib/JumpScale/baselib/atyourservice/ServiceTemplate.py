@@ -18,10 +18,12 @@ class ServiceTemplate():
         self.hrd=None
         self.metapath=path
 
-    def newInstance(self,instance="main", args={}, parent=None):
-        return Service(instance=instance,servicetemplate=self,args=args,parent=parent)
+    def newInstance(self,instance="main", args={},hrddata={}, parent=None):
+        service = Service(instance=instance,servicetemplate=self,args=args,parent=parent)
+        service.log("create instance")
+        return service
 
-    def getInstance(self,instance=None):
+    def getInstance(self,instance=None, args={},parent=None):
         # get first installed or main
         if instance is None:
             instances = self.listInstances(node=node)
@@ -29,7 +31,8 @@ class ServiceTemplate():
                 instance = instances[0]
             else:
                 instance = 'main'
-        return j.atyourservice.find(domain=self.domain,name=self.name,maxnr=1,instance=instance)[0]
+        # return j.atyourservice.find(domain=self.domain,name=self.name,maxnr=1,instance=instance)[0]
+        return Service(instance=instance,servicetemplate=self, args=args,parent=parent)
 
     def existsInstance(self,instance):
         res=j.atyourservice.find(domain=self.domain,name=self.name,maxnr=1,instance=instance)
@@ -40,7 +43,7 @@ class ServiceTemplate():
 
     def listInstances(self):
         res=[]
-
+        
         from IPython import embed
         print "DEBUG NOW listInstances"
         embed()

@@ -17,19 +17,30 @@ def loadmodule(name, path):
 
 #decorator to execute an action on a remote machine
 def remote(F): # F is func or method without instance
-    def wrapper(jp, *args,**kwargs): # class instance in args[0] for method
-        pass
-        # jp.init()
-        # if not jp.node:
-        #     return F(jp, *args,**kwargs)
-        # else:
-        #     node = jp.node
-        #     if jp.args.get('lua', False):
-        #         cl = j.atyourservice.remote.sshLua(jp, node)
-        #     else:
-        #         cl = j.atyourservice.remote.sshPython(jp, node)
+    def wrapper(service, *args,**kwargs): # class instance in args[0] for method
+        service.init()
+        isInstall = (F.func_name == "install")
+        serviceisNode = j.atyourservice.isNode(service)
+        parentisNode = False
+        if service.parent:
+            parentisNode = j.atyourservice.isNode(service.parent)
+        cl = None
 
-        #     cl.executeJP(F.func_name)
+        if not parentisNode:
+            return F(service, *args,**kwargs)
+        else:
+            if service.parent:
+                if service.args.get('lua', False):
+                    cl = j.atyourservice.remote.sshLua(service.parent)
+                else:
+                    cl = j.atyourservice.remote.sshPython(service.parent)
+            else:
+                if service.args.get('lua', False):
+                    cl = j.atyourservice.remote.sshLua(service)
+                else:
+                    cl = j.atyourservice.remote.sshPython(service)
+        cl.executeJP(F.func_name)
+
     return wrapper
 
 #decorator to get dependencies
@@ -116,8 +127,8 @@ class Service(object):
         self._init=False
         self.parent=parent
 
-        hrd=self.hrd
-        actions=self.actions        
+        # hrd=self.hrd
+        # actions=self.actions        
 
     @property
     def hrd(self):
@@ -214,7 +225,7 @@ class Service(object):
             # self._loadActionModule()
 
     def _loadActionModule(self):
-        modulename="JumpScale.jpackages.%s.%s.%s"%(self.domain,self.name,self.instance)
+        modulename="JumpScale.atyourservice.%s.%s.%s"%(self.domain,self.name,self.instance)
         mod = loadmodule(modulename, "%s/actions.py"%self.path)
         self._actions=mod.Actions()
         self._actions.serviceobject=self  #@remark: did rename of jp_... to serviceobject
@@ -337,8 +348,23 @@ class Service(object):
 
     def log(self,msg):
         logpath = j.system.fs.joinPaths(self.path,"log.txt")
+        if not j.system.fs.exists(self.path):
+            j.system.fs.createDir(self.path)
         msg = "%s : %s\n" % (j.base.time.formatTime(j.base.time.getTimeEpoch()), msg)
         j.system.fs.writeFile(logpath,msg,append=True)
+
+    def listChilds(self):
+        childDirs = j.system.fs.listDirsInDir(self.path)
+        childs = {}
+        for path in childDirs:
+            child = j.system.fs.getBaseName(path)
+            ss = child.split("__")
+            name = ss[0]
+            instance = ss[1]
+            if name not in childs:
+                childs[name] = []
+            childs[name].append(instance)
+        return childs
 
 
     def getDependencyChain(self, chain=None):

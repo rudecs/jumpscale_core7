@@ -28,6 +28,7 @@ class Dirs(object):
 
         import sys
         self._hrdDir=None
+        self._serviceTemplateDir=None
         self.baseDir=j.application.config.get("system.paths.base")
         self.appDir = j.application.config.get("system.paths.app")
         self.varDir = j.application.config.get("system.paths.var")
@@ -112,6 +113,17 @@ class Dirs(object):
         else:
             self._hrdDir = j.application.config.get("system.paths.hrd")
         return self._hrdDir
+
+    @property
+    def serviceTemplateDir(self):
+        if self._serviceTemplateDir!=None:
+            return self._serviceTemplateDir
+        if self.amInGitConfigRepo()!=None:
+            self._serviceTemplateDir=j.system.fs.joinPaths(self.amInGitConfigRepo(),"servicetemplates")
+        else:
+            raise RuntimeError("should be in a git config repo")
+        return self._serviceTemplateDir
+
 
     def init(self,reinit=False):
         """Initializes all the configured directories if needed

@@ -1,5 +1,6 @@
 from JumpScale import j
 from .ServiceTemplate import ServiceTemplate
+from .Service import Service
 
 from .ActionsBase import ActionsBase
 
@@ -76,10 +77,12 @@ class AtYourServiceFactory():
         if instance!="":
             res=[]
             for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
+                from ipdb import set_trace;set_trace()
                 namefound=j.system.fs.getBaseName(path)
                 name,instance=namefound.split("__",1)
                 instance=instance.split(".",1)[0]
-                res.append(Service(namefound,instance,path))
+                # TODO: bug here, should pass servicetemplate to Service constructor
+                res.append(Service(instance=instance,path=path))
             return res
 
         else:
@@ -151,12 +154,12 @@ class AtYourServiceFactory():
         services[0]=services[0].newInstance(instance,parent=parent, args=args)
         return services[0]
 
-    def get(self,domain="",name="",instance="main"):
+    def get(self,domain="",name="",instance="main",parent=None,args={}):
         self._doinit()
         services=self.find(domain,name,1)
         if len(services)==0:
             j.events.opserror_critical("cannot find jpackage %s/%s"%(domain,name))
-        services[0]=services[0].getInstance(instance, args=args, hrddata=hrddata)
+        services[0]=services[0].getInstance(instance,parent=parent,args=args)
         return services[0]
 
 
@@ -166,6 +169,11 @@ class AtYourServiceFactory():
         if len(services)==0:
             return False
         return  services[0].existsInstance(instance=instance,node=node)
+
+    def isNode(self,service):
+        nodeDir = j.system.fs.joinPaths(j.dirs.serviceTemplateDir,"node")
+        nodes = [j.system.fs.getBaseName(n) for n in j.system.fs.listDirsInDir(nodeDir)]
+        return service.name in nodes
 
     def __str__(self):
         return self.__repr__()

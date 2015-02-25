@@ -11,13 +11,13 @@ class AtYourServiceRemoteFactory(object):
         self.remotePython = None
         self.remoteLua = None
 
-    def sshPython(self, jp, node):
-        if self.node != node or self.remotePython is None:
-            self.remotePython = RemotePython(jp,node)
-            self.node = node
+    def sshPython(self, service):
+        # if self.node != node or self.remotePython is None:
+        #     self.remotePython = RemotePython(service,node)
+        #     self.node = node
 
-        self.remotePython.jp = jp
-        return self.remotePython
+        # self.remotePython.service = service
+        return RemotePython(service)
 
     def sshLua(self, jp, node):
         if self.node != node or self.remoteLua is None:
@@ -28,23 +28,27 @@ class AtYourServiceRemoteFactory(object):
         return self.remoteLua
 
     def getAllNodes(self):
-        from IPython import embed
-        print "DEBUG NOW getAllNodes"
-        embed()
-        p
-        
-        jps = ["node.ssh.key","node.ms1","node.kvm"]
+        """
+        Returns a dict of all with
+        key = node type
+        value = instance available for this node type
+        """
+
+        # TODO, get path dynamically
+        nodeTypes = j.system.fs.listDirsInDir("/opt/code/git/racktivity/ayt/servicetemplates/node",recursive=True)
+        nodeTypes = [j.system.fs.getBaseName(n) for n in nodeTypes]
+
         nodes = {}
-        for jp in jps:
-            nodes[jp] = []
-            instances = j.application.getAppHRDInstanceNames(jp)
-            nodes[jp].extend(instances)
+        for n in nodeTypes:
+            nodes[n] = []
+            instances = j.application.getAppHRDInstanceNames(n)
+            nodes[n].extend(instances)
         return nodes
 
 class RemoteBase(object):
-    def __init__(self, jp, node):
-        self.node = node
-        self.jp = jp
+    def __init__(self, service):
+        self.service = service
+        # self.jp = jp
         self.ip = None
         self.port = None
         self.login = None
@@ -52,29 +56,29 @@ class RemoteBase(object):
         self.key = None
         self.keyname = None
         self._keyhrd = None
-        self.connection = self._connect(node)
+        self.connection = self._connect(service)
 
     def _generateUniq(self,name):
         epoch = int(time.time())
-        return "%s_%s_%s" % (epoch,self.jp.name,name)
+        return "%s_%s_%s" % (epoch,self.service.name,name)
 
-    def _negotiateConnection(self,target):
-        nodes = j.atyourservice.remote.getAllNodes()
-        for kind,nodes in nodes.iteritems():
-            for node in nodes:
-                if node == target:
-                    return kind
-        return None
+    # def _negotiateConnection(self,service):
+    #     nodes = j.atyourservice.remote.getAllNodes()
+    #     for kind,instances in nodes.iteritems():
+    #         for nodeInstance in instances:
+    #             if nodeInstance == service.instance:
+    #                 return kind
+    #     return None
 
-    def _connect(self, node):
-        connKind = self._negotiateConnection(node)
-        if connKind is None:
-            raise RuntimeError("No node found for %s" % node)
+    def _connect(self, service):
+        # connKind = self._negotiateConnection(service)
+        # if connKind is None:
+        #     raise RuntimeError("No node found for %s" % node)
         client = None
-        if connKind in ["node.ssh.key","node.ms1"]:
-            client = self._sshConnect(node,connKind)
-        elif connKind in ['node.kvm']:
-            client = self._kvmConnect(node,connKind)
+        if service.name.find("kvm") != -1:
+            client = self._kvmConnect(service)
+        else:
+            client = self._sshConnect(service)
 
         if not j.application.debug:
             client.fabric.state.output['running'] = False
@@ -82,49 +86,74 @@ class RemoteBase(object):
 
         return client
 
-    def _sshConnect(self,node,kind):
+    def _sshConnect(self,service):
         c = j.remote.cuisine
-        sshHRD = j.application.getAppInstanceHRD(kind, node)
+        sshHRD = j.application.getAppInstanceHRD(service.name, service.instance,parent=service.parent)
         self.ip = sshHRD.get("param.machine.ssh.ip")
         self.port = sshHRD.get("param.machine.ssh.port")
-        self.keyname = sshHRD.get('param.ssh.key.name')
-        self._keyhrd = j.application.getAppInstanceHRD("sshkey",self.keyname)
-        c.fabric.env["key"] = self._keyhrd.get('param.ssh.key.priv')
-        cl = c.connect(self.ip,self.port)
+        self.keyname =  sshHRD.get('param.ssh.key.name') if sshHRD.exists('param.ssh.key.name') else None
+        self.login = sshHRD.get('param.ssh.user') if sshHRD.exists('param.ssh.user') else None
+        self.password = sshHRD.get('param.ssh.pwd') if sshHRD.exists('param.ssh.pwd') else None
+        self._keyhrd = j.application.getAppInstanceHRD("sshkey",self.keyname) if self.keyname != None else None
+        if self._keyhrd !=None:
+            c.fabric.env["key"] = self._keyhrd.get('param.ssh.key.priv')
+            cl = c.connect(self.ip,self.port)
+        else:
+            cl = c.connect(self.ip,self.port,self.passwd)
         return cl
 
-    def _kvmConnect(self,node,kind='node.kvm'):
+    def _kvmConnect(self,service,kind='node.kvm'):
         """
         This function establish a connection to a kvm machine
         First it connects to the host and forward a port of the host to the ssh port of the vm in order to expose the vm
         Then it connects to the vm thought ssh
         """
         # connection to the host machine
-        kvmHRD = j.application.getAppInstanceHRD(kind, node)
-        hostType = kvmHRD.get("param.hostnode.type")
-        hostInstance = kvmHRD.get("param.hostnode.instance")
-        hostCl = self._sshConnect(hostInstance,hostType)
-        hostIp = self.ip
-        hostPort = self.port
+        if service.parent == None:
+            raise RuntimeError("A kvm node should have a parent")
 
+        kvmHRD = j.application.getAppInstanceHRD(service.name, service.instance,parent=service.parent)
         vmIp = kvmHRD.get("param.machine.ssh.ip")
-        self.passwd = kvmHRD.get("param.machine.ssh.passwd")
+        self.passwd = kvmHRD.get("param.machine.ssh.passwd") if kvmHRD.exists("param.machine.ssh.passwd") else ""
         self.login = kvmHRD.get("param.machine.ssh.login")
-        self.key = kvmHRD.get("param.machine.ssh.key")
+        # self.key = kvmHRD.get("param.machine.ssh.key") if kvmHRD.get("param.machine.ssh.key") else ""
         self.port = 2222
+        from ipdb import set_trace;set_trace()
 
-        # remove current port forward if any
-        cmd = "ps ax | grep -v '/bin/bash -l -c' | grep 'ssh -f -N -L' > /tmp/ssh"
-        hostCl.run(cmd)
-        res = hostCl.run("cat /tmp/ssh")
-        processes = res.splitlines()
-        for line in processes:
-            pid = line.strip().split(" ")[0]
-            cmd = "kill %s" %pid
-            hostCl.run(cmd, warn_only=True) # warn_only=True, don't crash if process doesn't exist
-        # expose vm
-        cmd = "ssh -f -N -L %s:localhost:22  %s" % (self.port,vmIp)
-        hostCl.run(cmd)
+        parent = service.parent
+        parentHRD = j.application.getAppInstanceHRD(parent.name,parent.instance)
+        parentCL = self._sshConnect(parent)
+        childs = parent.listChilds()
+        if "portforward" not in childs or service.instance not in childs["portforward"]:
+            pf = j.atyourservice.new(name="portforward",instance=service.instance,parent=parent)
+            pf.hrddata = {
+                "param.host.port":2222,
+                "param.host.ip":"localhost",
+                "param.remote.ip":kvmHRD.get("param.machine.ssh.ip"),
+                "param.remote.port":22,
+            }
+            pf.configure()
+        # kvmHRD = j.application.getAppInstanceHRD(kind, service.instance)
+        # hostType = kvmHRD.get("param.hostnode.type")
+        # hostInstance = kvmHRD.get("param.hostnode.instance")
+        # hostCl = self._sshConnect(hostInstance,hostType)
+        # hostIp = self.ip
+        # hostPort = self.port
+
+       
+
+        # # remove current port forward if any
+        # cmd = "ps ax | grep -v '/bin/bash -l -c' | grep 'ssh -f -N -L' > /tmp/ssh"
+        # parentCL.run(cmd)
+        # res = parentCL.run("cat /tmp/ssh")
+        # processes = res.splitlines()
+        # for line in processes:
+        #     pid = line.strip().split(" ")[0]
+        #     cmd = "kill %s" %pid
+        #     parentCL.run(cmd, warn_only=True) # warn_only=True, don't crash if process doesn't exist
+        # # expose vm
+        # cmd = "ssh -f -N -L %s:localhost:22  %s" % (self.port,vmIp)
+        # parentCL.run(cmd)
 
         c = j.remote.cuisine
         c.fabric.env['password'] = self.passwd
@@ -198,14 +227,14 @@ class RemoteBase(object):
         dest = "root@%s:%s" % (self.ip,dest)
 
         verbose = "-q"
-        if j.application.debug:
-            verbose = "-v"
+        # if j.application.debug:
+            # verbose = "-v"
 
         cmd="scp %s %s %s %s"%(verbose,ssh,fileLoc,dest)
         print "Send file : %s" % cmd
         j.do.executeInteractive(cmd)
         j.system.fs.remove(keyloc)
-        j.system.fs.remove(fileLoc)
+        # j.system.fs.remove(fileLoc)
 
     def executeCode(self, code, client=None):
         if client is None:
@@ -222,8 +251,8 @@ from JumpScale import j
 
 
 class RemotePython(RemoteBase):
-    def __init__(self, jp, node):
-        super(RemotePython,self).__init__(jp=jp,node=node)
+    def __init__(self, service):
+        super(RemotePython,self).__init__(service)
 
 
     def executeJP(self, action, client=None):
@@ -232,88 +261,88 @@ class RemotePython(RemoteBase):
 
         action = action.replace("_","") # make sure the action name is correcte
         codegen=j.tools.packInCode.get4python()
-
-        actionfile="%s.py" % self.jp.actionspath
+        actionfile= j.system.fs.joinPaths(self.service.path,"actions.py")
         actionContent = j.system.fs.fileGetContents(actionfile)
-        codegen.code +="""
-class ServiceMock(object):
-    def __init__(self, domain,name,instance):
-        self.domain = domain
-        self.name = name
-        self.instance = instance
-"""
-        codegen.code +="""
-class ServiceMock(object):
+#         codegen.code +="""
+# class ServiceMock(object):
+#     def __init__(self,hrd,domain,name,instance):
+#         self.hrd = hrd
+#         self.domain = domain
+#         self.name = name
+#         self.instance = instance
+# """
+#         codegen.code +="""
+# class ServiceMock(object):
 
-    def __init__(self,hrd,domain,name,instance):
-        self.hrd = hrd
-        self.instance = instance
-        self.jp = ServiceMock(domain,name,instance)
+#     def __init__(self,hrd,domain,name,instance):
+#         self.hrd = hrd
+#         self.instance = instance
+#         self.jp = ServiceMock(domain,name,instance)
 
-    def getLogPath(self):
-        logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.jp.instance))
-        return logpath
+#     def getLogPath(self):
+#         logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.jp.instance))
+#         return logpath
 
-    def getHRDPath(self,node=None):
-        if j.atyourservice.type=="c":
-            hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.jp.instance)
-        else:
-            hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.jp.instance)
-        return hrdpath
+#     def getHRDPath(self,node=None):
+#         if j.atyourservice.type=="c":
+#             hrdpath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(node=node), self.jp.name, self.jp.instance)
+#         else:
+#             hrdpath = "%s/%s.%s.%s.hrd" % (j.dirs.getHrdDir(), self.jp.domain, self.jp.name, self.jp.instance)
+#         return hrdpath
 
-    def isInstalled(self):
-        hrdpath = self.getHRDPath()
-        if j.system.fs.exists(hrdpath):
-            return True
-        return False
+#     def isInstalled(self):
+#         hrdpath = self.getHRDPath()
+#         if j.system.fs.exists(hrdpath):
+#             return True
+#         return False
 
-    def getTCPPorts(self,deps=True, *args, **kwargs):
-        ports = set()
-        for process in self.getProcessDicts():
-            for item in process["ports"]:
-                if isinstance(item, basestring):
-                    moreports = item.split(";")
-                elif isinstance(item, int):
-                    moreports = [item]
-                for port in moreports:
-                    if isinstance(port, int) or port.isdigit():
-                        ports.add(int(port))
-        return list(ports)
+#     def getTCPPorts(self,deps=True, *args, **kwargs):
+#         ports = set()
+#         for process in self.getProcessDicts():
+#             for item in process["ports"]:
+#                 if isinstance(item, basestring):
+#                     moreports = item.split(";")
+#                 elif isinstance(item, int):
+#                     moreports = [item]
+#                 for port in moreports:
+#                     if isinstance(port, int) or port.isdigit():
+#                         ports.add(int(port))
+#         return list(ports)
 
 
-    def getPriority(self):
-        processes = self.getProcessDicts()
-        if processes:
-            return processes[0].get('prio', 100)
-        return 199
+#     def getPriority(self):
+#         processes = self.getProcessDicts()
+#         if processes:
+#             return processes[0].get('prio', 100)
+#         return 199
 
-    def getProcessDicts(self,deps=True,args={}):
-        counter = 0
-        defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
-        musthave=["cmd","args","prio","env","cwd","timeout_start","timeout_start","ports","startupmanager","filterstr","name","user"]
+#     def getProcessDicts(self,deps=True,args={}):
+#         counter = 0
+#         defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
+#         musthave=["cmd","args","prio","env","cwd","timeout_start","timeout_start","ports","startupmanager","filterstr","name","user"]
 
-        procs=self.hrd.getListFromPrefixEachItemDict("process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
-        for process in procs:
-            counter+=1
+#         procs=self.hrd.getListFromPrefixEachItemDict("process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
+#         for process in procs:
+#             counter+=1
 
-            process["test"]=1
+#             process["test"]=1
 
-            if process["name"].strip()=="":
-                process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
+#             if process["name"].strip()=="":
+#                 process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
 
-            if self.hrd.exists("env.process.%s"%counter):
-                process["env"]=self.hrd.getDict("env.process.%s"%counter)
+#             if self.hrd.exists("env.process.%s"%counter):
+#                 process["env"]=self.hrd.getDict("env.process.%s"%counter)
 
-            if not isinstance(process["env"],dict):
-                raise RuntimeError("process env needs to be dict")
+#             if not isinstance(process["env"],dict):
+#                 raise RuntimeError("process env needs to be dict")
 
-        return procs
-\n
-        """
-        codegen.addHRD(name="hrd",hrd=self.jp.hrd)
+#         return procs
+# \n
+#         """
+        codegen.addHRD(name="hrd",hrd=self.service.hrd)
         codegen.code += actionContent
         codegen.code += "\naction = Actions()\n"
-        codegen.code += "action.jp_instance = ServiceMock(hrd,'%s','%s','%s')\n" %(self.jp.domain,self.jp.name,self.jp.instance)
+        codegen.code += "action.serviceobject =  ServiceMock(hrd,'%s','%s','%s')\n" %(self.service.domain,self.service.name,self.service.instance)
         codegen.code += "action.%s()\n"%action
 
         code = codegen.get()
@@ -325,8 +354,8 @@ class ServiceMock(object):
 
 
 class RemoteLua(RemoteBase):
-    def __init__(self, jp, node):
-        super(RemoteLua,self).__init__(jp=jp,node=node)
+    def __init__(self, service):
+        super(RemoteLua,self).__init__(service)
 
     def executeJP(self, action, client=None):
         if client is None:

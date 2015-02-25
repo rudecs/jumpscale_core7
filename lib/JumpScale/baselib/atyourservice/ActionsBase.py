@@ -28,13 +28,13 @@ class ActionsBase():
         return True
 
     def _getDomainName(self, process):
-        domain=self.jp_instance.jp.domain
+        domain=self.serviceobject.jp.domain
         if process["name"]!="":
             name=process["name"]
         else:
-            name=self.jp_instance.jp.name
-            if self.jp_instance.instance!="main":
-                name+="__%s"%self.jp_instance.instance
+            name=self.serviceobject.jp.name
+            if self.serviceobject.instance!="main":
+                name+="__%s"%self.serviceobject.instance
         return domain, name
 
     def init(self,**args):
@@ -49,7 +49,7 @@ class ActionsBase():
         make sure to also call ActionBase.start(**args) in your implementation otherwise the default behaviour will not happen
         """
 
-        if self.jp_instance.getProcessDicts()==[]:
+        if self.serviceobject.getProcessDicts()==[]:
             return
 
         def start2(process):
@@ -66,14 +66,14 @@ class ActionsBase():
             tuser=process["user"]
             if tuser=="":
                 tuser="root"
-            tlog=self.jp_instance.hrd.getBool("process.log",default=True)
+            tlog=self.serviceobject.hrd.getBool("process.log",default=True)
             env=process["env"]
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(process)
             log("Starting %s:%s" % (domain, name))
 
-            j.do.delete(self.jp_instance.getLogPath())
+            j.do.delete(self.serviceobject.getLogPath())
 
             if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
                 cmd2="%s %s"%(tcmd,targs)
@@ -106,7 +106,7 @@ class ActionsBase():
                 j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
 
                 if tlog:
-                    j.system.platform.screen.logWindow(domain,name,self.jp_instance.getLogPath())
+                    j.system.platform.screen.logWindow(domain,name,self.serviceobject.getLogPath())
 
             else:
                 raise RuntimeError("startup method not known:'%s'"%startupmethod)
@@ -133,26 +133,26 @@ class ActionsBase():
         isrunning=self.check_up_local(wait=False)
         if isrunning:
             return
-        for process in self.jp_instance.getProcessDicts():
+        for process in self.serviceobject.getProcessDicts():
             start2(process)
 
         isrunning=self.check_up_local()
         if isrunning==False:
-            if j.system.fs.exists(path=self.jp_instance.getLogPath()):
-                logc=j.do.readFile(self.jp_instance.getLogPath()).strip()
+            if j.system.fs.exists(path=self.serviceobject.getLogPath()):
+                logc=j.do.readFile(self.serviceobject.getLogPath()).strip()
             else:
                 logc=""
 
             msg=""
 
-            if self.jp_instance.getTCPPorts()==[0]:
+            if self.serviceobject.getTCPPorts()==[0]:
                 print 'Done ...'
-            elif self.jp_instance.getTCPPorts()!=[]:
-                ports=",".join([str(item) for item in self.jp_instance.getTCPPorts()])
-                msg="Could not start:%s, could not connect to ports %s."%(self.jp_instance,ports)
+            elif self.serviceobject.getTCPPorts()!=[]:
+                ports=",".join([str(item) for item in self.serviceobject.getTCPPorts()])
+                msg="Could not start:%s, could not connect to ports %s."%(self.serviceobject,ports)
                 j.events.opserror_critical(msg,"jp.start.failed.ports")
             else:
-                j.events.opserror_critical("could not start:%s"%self.jp_instance,"jp.start.failed.other")
+                j.events.opserror_critical("could not start:%s"%self.serviceobject,"jp.start.failed.other")
 
     def stop(self,**args):
         """
@@ -161,7 +161,8 @@ class ActionsBase():
         return True if stop was ok, if not this step will have failed & halt will be executed.
         """
 
-        if self.jp_instance.getProcessDicts()==[]:
+        from ipdb import set_trace;set_trace()
+        if self.serviceobject.getProcessDicts()==[]:
             return
 
         def stop_process(process):
@@ -179,16 +180,16 @@ class ActionsBase():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)
 
-        if self.jp_instance.jp.name == 'redis':
+        if self.serviceobject.jp.name == 'redis':
             j.logger.redislogging = None
             j.logger.redis = None
 
         if 'process' in args:
             stop_process(args['process'])
         else:
-            processes = self.jp_instance.getProcessDicts()
+            processes = self.serviceobject.getProcessDicts()
             if processes:
-                log("Stopping %s" % self.jp_instance)
+                log("Stopping %s" % self.serviceobject)
                 for process in processes:
                     stop_process(process)
         return True
@@ -196,9 +197,9 @@ class ActionsBase():
     def get_pids(self, processes=None, **kwargs):
         pids = set()
         if processes is None:
-            processes = self.jp_instance.getProcessDicts()
+            processes = self.serviceobject.getProcessDicts()
         for process in processes:
-            for port in self.jp_instance.getTCPPorts(process):
+            for port in self.serviceobject.getTCPPorts(process):
                 pids.update(j.system.process.getPidsByPort(port))
             if process.get('filterstr', None):
                 pids.update(j.system.process.getPidsByFilter(process['filterstr']))
@@ -234,7 +235,7 @@ class ActionsBase():
         this happens on system where process is
         """
         def do(process):
-            ports=self.jp_instance.getTCPPorts()
+            ports=self.serviceobject.getTCPPorts()
             timeout=process["timeout_start"]
             if timeout==0:
                 timeout=2
@@ -264,13 +265,13 @@ class ActionsBase():
                     now=j.base.time.getTimeEpoch()
                 return False
 
-        for process in self.jp_instance.getProcessDicts():
+        for process in self.serviceobject.getProcessDicts():
             result=do(process)
             if result==False:
                 domain, name = self._getDomainName(process)
                 log("Status %s:%s not running" % (domain,name))
                 return False
-        log("Status %s is running" % (self.jp_instance))
+        log("Status %s is running" % (self.serviceobject))
         return True
 
     def check_down_local(self,**args):
@@ -280,10 +281,10 @@ class ActionsBase():
         return True when down
         """
         def do(process):
-            if not self.jp_instance.hrd.exists("process.cwd"):
+            if not self.serviceobject.hrd.exists("process.cwd"):
                 return
 
-            ports=self.jp_instance.getTCPPorts()
+            ports=self.serviceobject.getTCPPorts()
 
             if len(ports)>0:
                 timeout=process["timeout_stop"]
@@ -300,7 +301,7 @@ class ActionsBase():
                     raise RuntimeError("Process filterstr cannot be empty.")
                 return j.system.process.checkProcessRunning(filterstr)==False
 
-        for process in self.jp_instance.getProcessDicts():
+        for process in self.serviceobject.getProcessDicts():
             result=do(process)
             if result==False:
                 return False
