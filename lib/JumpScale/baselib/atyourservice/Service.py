@@ -114,7 +114,7 @@ class Service(object):
             else:
                 path=j.system.fs.joinPaths(parent.path,"%s__%s"%(self.name,self.instance))
         self.path=path
-        
+
         self._hrd=None
         self._actions=None
         self._loaded=False
@@ -127,8 +127,6 @@ class Service(object):
         self._init=False
         self.parent=parent
 
-       
-
     @property
     def hrd(self):
         hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
@@ -136,7 +134,6 @@ class Service(object):
             return self._hrd
         if not j.system.fs.exists(hrdpath):
             self._apply()
-        self._hrd = j.core.hrd.get(hrdpath)
         return self._hrd
 
     @property
@@ -149,7 +146,8 @@ class Service(object):
     def init(self):
         if self._init==False:
             hrd=self.hrd
-            actions=self.actions             
+            actions=self.actions
+            self.log("init")
             # import JumpScale.baselib.remote.cuisine
             # import JumpScale.lib.docker
             # if self.actions.init():
@@ -232,7 +230,6 @@ class Service(object):
         self._actions.serviceobject=self  #@remark: did rename of service_... to serviceobject
 
     def _apply(self):
-        hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
         j.do.createDir(self.path)
         source="%s/actions.py"%self.templatepath
         j.do.copyFile(source,"%s/actions.py"%self.path)
@@ -240,20 +237,11 @@ class Service(object):
         if j.system.fs.exists(source):
             j.do.copyFile(source,"%s/actions.lua"%self.path)
 
-        self._hrd=j.core.hrd.get(hrdpath,args=self.hrddata)
-        from IPython import embed
-        print "DEBUG NOW ooo"
-        embed()
-        
+        hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
+        self._hrd=j.core.hrd.get(hrdpath,args=self.hrddata,prefixWithName=False)
         self._hrd.applyTemplates(path="%s/service.hrd"%self.templatepath,prefix="service")
         self._hrd.applyTemplates(path="%s/instance.hrd"%self.templatepath,prefix="instance")
 
-        from IPython import embed
-        print "DEBUG NOW id"
-        embed()
-        s
-        
-       
         actionPy = "%s/actions.py"%self.path
         self._hrd.applyOnFile(actionPy, additionalArgs=self.args)
         j.application.config.applyOnFile(actionPy, additionalArgs=self.args)
@@ -264,7 +252,6 @@ class Service(object):
             j.application.config.applyOnFile(actionLua, additionalArgs=self.args)
 
         j.application.config.applyOnFile(hrdpath, additionalArgs=self.args)
-        self._hrd=j.core.hrd.get(hrdpath)
         self._loadActionModule()
 
     def _getRepo(self,url,recipeitem=None,dest=None):
@@ -495,7 +482,7 @@ class Service(object):
     def install(self, start=True,deps=True, reinstall=False):
         """
         Install Service.
-        
+
         Keyword arguments:
         start     -- whether Service should start after install (default True)
         deps      -- install the Service dependencies (default True)

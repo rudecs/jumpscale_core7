@@ -336,7 +336,7 @@ class HRD(HRDBase):
                 if key2 in self.args:
                     #means key does already exist in HRD arguments, will use that value
                     hrdtemplateitem=hrdtemplate.items[key]
-                    self.set(key2,self.args[key],comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
+                    self.set(key2,self.args[key2],comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
                     continue                    
                 elif key2 not in self.items: #is dict so uses the keys
                     #its not in hrd yet
