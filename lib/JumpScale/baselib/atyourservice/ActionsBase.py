@@ -3,23 +3,37 @@ import JumpScale.baselib.screen
 import os
 import signal
 
-CATEGORY = "jpactions"
+CATEGORY = "atyourservice"
 
 def log(msg, level=2):
     j.logger.log(msg, level=level, category=CATEGORY)
+
+#decorator to execute an action on a remote machine
+def remote(F): # F is func or method without instance
+    def wrapper(actions, *args,**kwargs): # class instance in args[0] for method
+        service=args[0]
+        service.init()
+        host=service.hrd.get("instance.host",default="")
+        if host !="":
+            parentNode = j.atyourservice.findParent(host)
+            return self.executeaction(service,actionname=F.func_name)
+        else:
+            return F(service, *args,**kwargs)
+    return wrapper
 
 class ActionsBase():
     """
     implement methods of this class to change behaviour of lifecycle management of service
     """
 
-    # @remote
+    @remote
     def prepare(self,serviceobj):
         """
         this gets executed before the files are downloaded & installed on approprate spots
         """
         return True
 
+    @remote
     def configure(self,serviceobj):
         """
         this gets executed when files are installed
@@ -44,6 +58,7 @@ class ActionsBase():
         """
         return True
 
+    @remote
     def start(self,serviceobj):
         """
         start happens because of info from main.hrd file but we can overrule this
@@ -155,6 +170,7 @@ class ActionsBase():
             else:
                 j.events.opserror_critical("could not start:%s"%serviceobj,"service.start.failed.other")
 
+    @remote
     def stop(self,serviceobj):
         """
         if you want a gracefull shutdown implement this method
@@ -194,6 +210,7 @@ class ActionsBase():
                     stop_process(process)
         return True
 
+    @remote
     def get_pids(self, processes=None, **kwargs):
         pids = set()
         if processes is None:
@@ -205,6 +222,7 @@ class ActionsBase():
                 pids.update(j.system.process.getPidsByFilter(process['filterstr']))
         return list(pids)
 
+    @remote
     def halt(self,serviceobj):
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
@@ -217,18 +235,21 @@ class ActionsBase():
             j.events.opserror_critical("could not halt:%s"%self,"service.halt")
         return True
 
+    @remote
     def build(self,serviceobj):
         """
         build instructions for the service, make sure the builded service ends up in right directory, this means where otherwise binaries would run from
         """
         pass
 
+    @remote
     def package(self,serviceobj):
         """
         copy the files from the production location on the filesystem to the appropriate binary git repo
         """
         pass
 
+    @remote
     def check_up_local(self, serviceobj, wait=True):
         """
         do checks to see if process(es) is (are) running.
@@ -274,6 +295,7 @@ class ActionsBase():
         log("Status %s is running" % (serviceobj))
         return True
 
+    @remote
     def check_down_local(self,serviceobj):
         """
         do checks to see if process(es) are all down
@@ -307,6 +329,7 @@ class ActionsBase():
                 return False
         return True
 
+    @remote
     def check_requirements(self,serviceobj):
         """
         do checks if requirements are met to install this app
@@ -314,20 +337,22 @@ class ActionsBase():
         """
         return True
 
+    @remote
     def monitor_local(self,serviceobj):
         """
-        do checks to see if all is ok locally to do with this package
+        do checks to see if all is ok locally to do with this service
         this happens on system where process is
         """
         return True
 
     def monitor_remote(self,serviceobj):
         """
-        do checks to see if all is ok from remote to do with this package
+        do checks to see if all is ok from remote to do with this service
         this happens on system from which we install or monitor (unless if defined otherwise in hrd)
         """
         return True
 
+    @remote
     def cleanup(self,serviceobj):
         """
         regular cleanup of env e.g. remove logfiles, ...
@@ -335,6 +360,7 @@ class ActionsBase():
         """
         return True
 
+    @remote
     def data_export(self,serviceobj):
         """
         export data of app to a central location (configured in hrd under whatever chosen params)
@@ -343,6 +369,7 @@ class ActionsBase():
         """
         return False
 
+    @remote
     def data_import(self,id,serviceobj):
         """
         import data of app to local location
@@ -350,24 +377,28 @@ class ActionsBase():
         """
         return False
 
+    @remote
     def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
+    @remote
     def removedata(self,serviceobj):
         """
         remove all data from the app (called when doing a reset)
         """
         pass
 
+    @remote
     def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
+    @remote
     def test(self,serviceobj):
         """
         test the service on appropriate behaviour
@@ -377,7 +408,7 @@ class ActionsBase():
     def execute(self,serviceobj):
         """
         execute is not relevant for each type of service
-        for e.g. a node.ms1 package it would mean remote some shell command on that machine
+        for e.g. a node.ms1 service it would mean remote some shell command on that machine
         for e.g. postgresql it would mean execute a sql query
         """
         pass
@@ -401,4 +432,7 @@ class ActionsBase():
         on central side only
         execute something in the service instance
         """
-        pass
+        host=service.hrd.get("instance.host")
+        parentNode = j.atyourservice.findParent(host)        
+        self.upload(parentNode.path,j.dirs.hrdDir)
+        self.execute("source /opt/jumpscale7/env.sh;atys %s -n %s -i %s"%(actionname,servicename=serviceobj.name,instance=serviceobj.instance))

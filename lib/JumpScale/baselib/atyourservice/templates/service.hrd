@@ -70,6 +70,7 @@ instances.maxnr=1
 #optional category of service, default = app ()
 category=app
 
-#optinal parent on wich this service is deployed e.g. app on top of node, portforward rule on top of firewall
-parent=
+#optional host on wich this service is deployed e.g. app on top of node, portforward rule on top of firewall
+#if specified then we will look for a service starting with the name mentioned e.g. 'node.' and call the upload & execute statements there to remotely execute the service.$action
+host=
 

@@ -15,33 +15,33 @@ def loadmodule(name, path):
     mod = imp.load_source(name, path)
     return mod
 
-#decorator to execute an action on a remote machine
-def remote(F): # F is func or method without instance
-    def wrapper(service, *args,**kwargs): # class instance in args[0] for method
-        service.init()
-        isInstall = (F.func_name == "install")
-        serviceisNode = j.atyourservice.isNode(service)
-        parentisNode = False
-        if service.parent:
-            parentisNode = j.atyourservice.isNode(service.parent)
-        cl = None
+# #decorator to execute an action on a remote machine
+# def remote(F): # F is func or method without instance
+#     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
+#         service.init()
+#         isInstall = (F.func_name == "install")
+#         serviceisNode = j.atyourservice.isNode(service)
+#         parentisNode = False
+#         if service.parent:
+#             parentisNode = j.atyourservice.isNode(service.parent)
+#         cl = None
 
-        if not parentisNode:
-            return F(service, *args,**kwargs)
-        else:
-            if service.parent:
-                if service.args.get('lua', False):
-                    cl = j.atyourservice.remote.sshLua(service.parent)
-                else:
-                    cl = j.atyourservice.remote.sshPython(service.parent)
-            else:
-                if service.args.get('lua', False):
-                    cl = j.atyourservice.remote.sshLua(service)
-                else:
-                    cl = j.atyourservice.remote.sshPython(service)
-        cl.executeJP(F.func_name)
+#         if not parentisNode:
+#             return F(service, *args,**kwargs)
+#         else:
+#             if service.parent:
+#                 if service.args.get('lua', False):
+#                     cl = j.atyourservice.remote.sshLua(service.parent)
+#                 else:
+#                     cl = j.atyourservice.remote.sshPython(service.parent)
+#             else:
+#                 if service.args.get('lua', False):
+#                     cl = j.atyourservice.remote.sshLua(service)
+#                 else:
+#                     cl = j.atyourservice.remote.sshPython(service)
+#         cl.executeJP(F.func_name)
 
-    return wrapper
+#     return wrapper
 
 #decorator to get dependencies
 def deps(F): # F is func or method without instance
@@ -379,7 +379,7 @@ class Service(object):
             return False
         return service.name == self.name and self.domain == service.domain and self.instance == service.instance
 
-    @remote
+    
     def stop(self,deps=True):
         self.log("stop instance")
         self.actions.stop(self)
@@ -415,12 +415,11 @@ class Service(object):
         else:
             self.actions.build(self)
 
-    @remote
+    
     def _build(self,deps=True):
         self.action.build(**self.args)
 
-    @deps
-    @remote
+    @deps    
     def start(self,deps=True):
         self.log("start instance")
         self.actions.start(self)
@@ -453,8 +452,7 @@ class Service(object):
 
         return procs
 
-    @deps
-    @remote
+    @deps 
     def prepare(self,deps=False, reverse=True):
         self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
@@ -673,7 +671,6 @@ class Service(object):
         self.actions.package(self)
 
     @deps
-    @remote
     def update(self,deps=True):
         """
         - go over all related repo's & do an update
@@ -726,7 +723,6 @@ class Service(object):
         j.do.delete(self.hrdpath,force=True)
 
     @deps
-    @remote
     def removedata(self,deps=False):
         """
         - remove build repo's !!!
@@ -737,7 +733,6 @@ class Service(object):
         self.actions.removedata(self)
 
     @deps
-    @remote
     def execute(self,deps=False):
         """
         execute cmd on service
@@ -746,14 +741,12 @@ class Service(object):
         self.actions.execute(self)
 
     @deps
-    @remote
     def uninstall(self,deps=True):
         self.log("uninstall instance")
         self.reset()
         self.actions.uninstall(self)
 
     @deps
-    @remote
     def monitor(self,deps=True):
         """
         do all monitor checks and return True if they all succeed
@@ -764,20 +757,17 @@ class Service(object):
         return res
 
     @deps
-    @remote
     def iimport(self,url,deps=True):
         self.log("import instance data")
         self.actions.data_import(url,self)
 
     @deps
-    @remote
     def export(self,url,deps=True):
         self.log("export instance data")
         self.actions.data_export(url,self)
 
 
     @deps
-    @remote
     def configure(self,deps=True,restart=True):
         self.log("configure instance")
         self.actions.configure(self)
