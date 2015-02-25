@@ -64,8 +64,8 @@ class GitlabInstance():
 
         self.gitlab=gitlab3.GitLab(self.addr)
         self.isLoggedIn = False
-        self._cache = {}
-        self._cache_lifetime_seconds = 360
+        self._cache = j.clients.redis.getByInstance('system')
+        self._cache_expire = 300 #seconds (5 minutes)
 
     def _getFromCache(self, username, key):
         """
@@ -75,38 +75,21 @@ class GitlabInstance():
         otherwise returns null.
         
         """
-        now = datetime.datetime.now()
-        user_cache = self._cache.get(username)
-        res = {'expired':True, 'data':None}
-        if user_cache:
-            cache = user_cache.get(key)
-            if cache:
-                timestamp = cache.get('timestamp')
-                if (now - timestamp).seconds < self._cache_lifetime_seconds:
-                    res['data'] = cache.get('value')
-                    res['expired'] = False
-                else:
-                    res['expired'] = True
-        return res
-                
+        cachespace = "gitlabClient_%s_%s" % (username, str(key))
+        res = self._cache.get(cachespace)
+        if res:
+            return {'expired':False, 'data':json.loads(res)}
+        return {'expired':True, 'data':None}
+
     def _addToCache(self, username, key, value):
         """
         Since gitlab client is way to slow, we need to cache results
         for performance sake.
         This function used to add key/value to cache
         
-        Cache data model:
-        
-        {'faragh':{'userspaces':'value':['portal_one', 'portal_two'], 'timestamp':datetime.datetime(2015, 2, 22, 14, 13, 24, 332260)}}
-        
         """
-        now = datetime.datetime.now()
-        if not username in self._cache:
-            self._cache[username] = {}
-        if not key in self._cache[username]:
-            self._cache[username][key] = {}
-        self._cache[username][key]['value'] = value
-        self._cache[username][key]['timestamp'] = now
+        cachespace = "gitlabClient_%s_%s" % (username, str(key))
+        self._cache.set(cachespace, json.dumps(value), ex=self._cache_expire )
 
     def authenticate(self, login, password):
         """
@@ -142,7 +125,7 @@ class GitlabInstance():
         self._addToCache(self.login, key, group)
         
         if group:
-            return group
+            return self._getFromCache(self.login, key)['data']
         if die:
             j.events.inputerror_critical("Cannot find group with name:%s"%groupname)
         else:
@@ -170,7 +153,7 @@ class GitlabInstance():
         p = self.gitlab.find_project(name=name)
         self._addToCache(self.login, key, p)
         if p:
-            return p
+            return self._getFromCache(self.login, key)['data']
         if die:
             j.events.inputerror_critical("Cannot find project with name:%s"%name)
     
@@ -229,7 +212,7 @@ class GitlabInstance():
                 return result['data']
         u = self.gitlab.find_user(username=username)
         self._addToCache(self.login, key, u)
-        return u
+        return self._getFromCache(self.login, key)['data']
 
     @lazyLogIn
     def userExists(self, username, force_cache_renew=False):
@@ -237,7 +220,7 @@ class GitlabInstance():
         Check user exists
         
         @param username: username
-        @type username: ``str``
+        @type username: ``str``No JSON object could be decoded
         @return: ``bool`` 
         """
         return bool(self.getUserInfo(username, force_cache_renew))
@@ -266,7 +249,7 @@ class GitlabInstance():
                 return result['data']
         users =  self.gitlab.users()
         self._addToCache(self.login, 'users', users)
-        return users
+        return self._getFromCache(self.login, 'users')['data']
 
     @lazyLogIn
     def listGroups(self, force_cache_renew=False):
@@ -283,7 +266,7 @@ class GitlabInstance():
                 return result['data']
         all_groups = self.gitlab.groups()
         self._addToCache(self.login, 'groups', all_groups)
-        return all_groups
+        return self._getFromCache(self.login, 'groups')['data']
     
     @lazyLogIn
     def getGroups(self,username, force_cache_renew=False):
@@ -304,10 +287,9 @@ class GitlabInstance():
         try:
             groups =  [ group.name for group in self.gitlab.groups(sudo=username) ]
             self._addToCache(username, 'groups', groups)
-            return groups
         except gitlab3.exceptions.ForbiddenRequest:
             self._addToCache(username, 'groups', [])
-            return []
+        return self._getFromCache(username, 'groups')['data']
     
     @lazyLogIn
     def getUserSpaceRights(self, username, space, **kwargs):
@@ -349,10 +331,9 @@ class GitlabInstance():
         try:
             userspaces =  [p for p in self.gitlab.find_projects_by_name('portal_', sudo=username)]
             self._addToCache(username, 'spaces', userspaces)
-            return userspaces
         except gitlab3.exceptions.ForbiddenRequest:
             self._addToCache(username, 'spaces', [])
-            return []
+        return self._getFromCache(username, 'spaces')['data']
         
     
     @lazyLogIn
@@ -366,5 +347,4 @@ class GitlabInstance():
         @param bypass_cache: If True, Force getting data from gitlab backend, otherwise try to get it from cache 1st 
         @type bypass_cache:`bool` 
         """
-        return [p.name for p in self.getUserSpacesObjects(username, force_cache_renew)]
-    
+        return [p['name'] for p in self.getUserSpacesObjects(username, force_cache_renew)]

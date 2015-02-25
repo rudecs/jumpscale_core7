@@ -22,14 +22,16 @@ def action(username, spacename):
     print "**********************************************"
     client = j.clients.gitlab.get()
     spaces = client.getUserSpacesObjects(username)
-    spaces_names = [s.name for s in spaces]
+    spaces_names = [s['name'] for s in spaces]
     try:
         idx = spaces_names.index(spacename)
-        web_url = spaces[idx].web_url.split('//')
+        
+        web_url = spaces[idx]['web_url'].split('//')
         credentials = "%s:%s" % (client.login, client.passwd)
         web_url.insert(1, '//%s@' % credentials)
         web_url = ''.join(web_url)
-        basedir = "/opt/jumpscale7/apps/portals/main/base/%s" % spacename
+        gitlab_spacename = spaces[idx]['namespace']['name']
+        basedir = "/opt/jumpscale7/apps/portals/main/base/%s_%s" % (gitlab_spacename, spacename)
         repo = j.clients.git.getClient(basedir=basedir, remoteUrl=web_url)
         repo.fetch()
     except ValueError:

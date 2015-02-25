@@ -23,7 +23,7 @@ def action(username):
     client = j.clients.gitlab.get()
     projects = client.getUserSpacesObjects(username)
     for p in projects:
-        web_url = p.web_url.split('//')
+        web_url = p['web_url'].split('//')
         credentials = "%s:%s" % (client.login, client.passwd)
         web_url.insert(1, '//%s@' % credentials)
         web_url = ''.join(web_url)
