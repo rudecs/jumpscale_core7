@@ -77,7 +77,6 @@ class AtYourServiceFactory():
         if instance!="":
             res=[]
             for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
-                from ipdb import set_trace;set_trace()
                 namefound=j.system.fs.getBaseName(path)
                 name,instance=namefound.split("__",1)
                 instance=instance.split(".",1)[0]
@@ -142,6 +141,17 @@ class AtYourServiceFactory():
                 j.events.inputerror_critical("Found more than %s service for query '%s':'%s'"%(maxnr,domain,name))
 
             return finalRes
+
+    def findParent(self,service,parentName):
+        start = service.path.find(parentName)
+        end = service.path.find("/",start)
+        parentName = service.path[start:end]
+
+        ss = parentName.split("__")
+        parentName = ss[0]
+        parentInstance = ss[1]
+        parentPath = j.system.fs.joinPaths(j.dirs.hrdDir,parentName)
+        return self.get(name=parentName,instance=parentInstance)
 
     def new(self,domain="",name="",instance="main",parent=None,args={}):
         """
