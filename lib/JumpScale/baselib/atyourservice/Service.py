@@ -134,6 +134,8 @@ class Service(object):
             return self._hrd
         if not j.system.fs.exists(hrdpath):
             self._apply()
+        else:
+            self._hrd=j.core.hrd.get(hrdpath,prefixWithName=False)
         return self._hrd
 
     @property
@@ -218,10 +220,11 @@ class Service(object):
         return 199
 
     def _loadActions(self):
-        # if not j.system.fs.exists("%s/actions.py"%self.path):
-        self._apply()
-        # else:
-            # self._loadActionModule()
+        actionsPath = j.system.fs.joinPaths(self.path,"actions.py")
+        if not j.system.fs.exists(actionsPath):
+            self._apply()
+        else:
+            self._loadActionModule()
 
     def _loadActionModule(self):
         modulename="JumpScale.atyourservice.%s.%s.%s"%(self.domain,self.name,self.instance)
