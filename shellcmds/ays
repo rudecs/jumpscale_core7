@@ -60,6 +60,7 @@ jservice commands:
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
+parser.add_argument("--path", required=False, default="", help='path to git config repo to be use\n')
 
 group = parser.add_argument_group(title="Package Selection")
 group.add_argument('-q','--quiet', required=False, action='store_true', help='Put in quiet mode')
@@ -88,7 +89,6 @@ group = parser.add_argument_group(title="List")
 group.add_argument('--installed', required=False, action='store_true',default=None, help='List installed jservices')
 
 
-
 def sorter(jp1, jp2):
     prio1 = jp1.getPriority()
     prio2 = jp2.getPriority()
@@ -104,6 +104,7 @@ def getService(args):
     instance = args.instance.strip()
 
     service = j.atyourservice.get(name=name,instance=instance)
+    service.init()
 
     return service
 
@@ -113,6 +114,12 @@ if '--help' in sys.argv or '-h' in sys.argv:
 
 args = parser.parse_args()
 args.deps=not args.nodeps
+
+if args.path != "":
+    if not j.dirs.isGitConfigRepo(args.path):
+        print "path is not a git config repo"
+        sys.exit(1)
+    j.dirs.gitConfigDir = path
 
 # hrddata={}
 # if args.data<>None:
@@ -145,7 +152,8 @@ if args.quiet:
     sys.stdout = NullDevice();
 
 if args.action == 'configure':
-    services = getService(args)
+    from ipdb import set_trace;set_trace()
+    service = getService(args)
     service.configure()
 
 elif args.action == 'install':

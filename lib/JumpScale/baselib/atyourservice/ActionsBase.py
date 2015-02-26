@@ -405,7 +405,7 @@ class ActionsBase():
         """
         pass
 
-    def execute(self,serviceobj, **kwargs):
+    def execute(self,serviceobj, cmd):
         """
         execute is not relevant for each type of service
         for e.g. a node.ms1 service it would mean remote some shell command on that machine
@@ -416,15 +416,15 @@ class ActionsBase():
         keyname =  serviceobj.hrd.get('instance.ssh.key.name') if serviceobj.hrd.exists('instance.ssh.key.name') else None
         login = serviceobj.hrd.get('instance.ssh.user') if serviceobj.hrd.exists('instance.ssh.user') else None
         password = serviceobj.hrd.get('instance.ssh.pwd') if serviceobj.hrd.exists('instance.ssh.pwd') else None
-        keyHRD = j.application.getAppInstanceHRD("sshkey",self.keyname) if self.keyname != None else None
+        keyHRD = j.application.getAppInstanceHRD("sshkey",keyname) if keyname != None else None
 
         cl = None
-        if self._keyhrd !=None:
-            c.fabric.env["key"] = self._keyhrd.get('instance.ssh.key.priv')
-            cl = c.connect(self.ip,self.port)
+        c = j.remote.cuisine
+        if keyHRD !=None:
+            c.fabric.env["key"] = keyHRD.get('instance.ssh.key.priv')
+            cl = c.connect(ip,port)
         else:
-            cl = c.connect(self.ip,self.port,self.passwd)
-        cmd = kwargs['cmd']
+            cl = c.connect(ip,port,password)
         cl.run(cmd)
 
     def upload(self,serviceobj,source,dest):
@@ -463,7 +463,8 @@ class ActionsBase():
         # host=serviceobj.hrd.get("instance.host")
         # parentNode = j.atyourservice.findParent(serviceobj,host)
         self.upload(serviceobj,serviceobj.path,j.dirs.hrdDir)
-        self.execute(serviceobj,cmd="source /opt/jumpscale7/env.sh;atys %s -n %s -i %s"%(actionname,serviceobj.name,serviceobj.instance))
+        self.execute(serviceobj,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
+                            %(actionname,serviceobj.name,serviceobj.instance, serviceobj.path))
 
     def _rsync(self,source,dest,key,port=22):
         def generateUniq(name):
@@ -475,11 +476,11 @@ class ActionsBase():
         # if not j.do.exists(source):
             # raise RuntimeError("copytree:Cannot find source:%s"%source)
 
-        if j.do.isDir(source):
-            if dest[-1]!="/":
-                dest+="/"
-            if source[-1]!="/":
-                source+="/"
+        # if j.do.isDir(source):
+        #     if dest[-1]!="/":
+        #         dest+="/"
+        #     if source[-1]!="/":
+        #         source+="/"
 
         keyloc = "/tmp/%s" % generateUniq('id_dsa')
         j.system.fs.writeFile(keyloc,key)
@@ -491,7 +492,7 @@ class ActionsBase():
         verbose = "-q"
         if j.application.debug:
             verbose = "-v"
-        cmd="rsync -Ra --rsync-path=\"mkdir -p %s && rsync\" %s %s %s %s"%(destPath,verbose,ssh,source,dest)
+        cmd="rsync -a --rsync-path=\"mkdir -p %s && rsync\" %s %s %s %s"%(destPath,verbose,ssh,source,dest)
         print cmd
         j.do.execute(cmd)
         j.system.fs.remove(keyloc)

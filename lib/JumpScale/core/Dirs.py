@@ -93,7 +93,7 @@ class Dirs(object):
     #         paths=[path]
     #     else:
     #         paths=j.system.fs.listFilesInDir(path,recursive,filter)
-            
+
     #     for path in paths:
     #         content=j.system.fs.fileGetContents(path)
     #         content2=self.replaceTxtDirVars(content,additionalArgs)
@@ -162,7 +162,7 @@ class Dirs(object):
         return os.sep.join(parts)
 
     def _getLibPath(self):
-        parent = self._getParent        
+        parent = self._getParent
         libDir=parent(parent(__file__))
         libDir=os.path.abspath(libDir).rstrip("/")
         return libDir
@@ -231,13 +231,9 @@ class Dirs(object):
                 return True
         return False
 
-    def amInGitConfigRepo(self):
-        """
-        return parent path where .git is or None when not found
-        """
+    def isGitConfigRepo(self,path):
         if self.gitConfigDir!=None and self.gitConfigDir!="unknown":
             return self.gitConfigDir
-        path=j.system.fs.getcwd()
         while path.strip("/")!="":
             if ".git" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False)\
                 and "servicetemplates" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
@@ -252,7 +248,14 @@ class Dirs(object):
         self.gitConfigDir=None
         return None
 
-            
+    def amInGitConfigRepo(self):
+        """
+        return parent path where .git is or None when not found
+        """
+        path=j.system.fs.getcwd()
+        return self.isGitConfigRepo(path)
+
+
     def __str__(self):
         return str(self.__dict__) #@todo P3 implement (thisnis not working)
 

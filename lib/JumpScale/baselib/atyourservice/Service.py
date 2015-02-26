@@ -771,8 +771,8 @@ class Service(object):
     def configure(self,deps=True,restart=True):
         self.log("configure instance")
         self.actions.configure(self)
-        if restart:
-            self.restart(deps=False)
+        # if restart:
+            # self.restart(deps=False)
 
     def __repr__(self):
         return "%-15s:%-15s:%s"%(self.domain,self.name,self.instance)
