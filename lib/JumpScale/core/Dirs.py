@@ -231,7 +231,7 @@ class Dirs(object):
                 return True
         return False
 
-    def gitConfigRepo(path):
+    def _gitConfigRepo(self,path):
         if self.gitConfigDir!=None and self.gitConfigDir!="unknown":
             return self.gitConfigDir
         while path.strip("/")!="":
@@ -249,7 +249,7 @@ class Dirs(object):
         return None
 
     def isGitConfigRepo(self,path):
-        if gitConfigRepo(path) != None:
+        if self._gitConfigRepo(path) != None:
             return True
         return False
 
@@ -258,7 +258,7 @@ class Dirs(object):
         return parent path where .git is or None when not found
         """
         path=j.system.fs.getcwd()
-        return gitConfigRepo(path)
+        return self._gitConfigRepo(path)
 
 
     def __str__(self):
