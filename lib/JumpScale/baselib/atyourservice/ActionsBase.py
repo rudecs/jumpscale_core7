@@ -464,7 +464,7 @@ class ActionsBase():
         # parentNode = j.atyourservice.findParent(serviceobj,host)
         self.upload(serviceobj,serviceobj.path,j.dirs.hrdDir)
         self.execute(serviceobj,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
-                            %(actionname,serviceobj.name,serviceobj.instance,j.dir.hrdDir))
+                            %(actionname,serviceobj.name,serviceobj.instance,j.dirs.hrdDir))
 
     def _rsync(self,source,dest,key,port=22):
         def generateUniq(name):

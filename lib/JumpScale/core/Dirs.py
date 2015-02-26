@@ -256,9 +256,9 @@ class Dirs(object):
         return self._gitConfigRepo(path)
 
     def createGitConfigRepo(self,path):
-        j.system.fs._createDir(j.system.fs.joinPaths(path,"services"))
-        j.system.fs._createDir(j.system.fs.joinPaths(path,"servicetemplates"))
-        j.system.fs._createDir(j.system.fs.joinPaths(path,".git"))
+        j.system.fs.createDir(j.system.fs.joinPaths(path,"services"))
+        j.system.fs.createDir(j.system.fs.joinPaths(path,"servicetemplates"))
+        j.system.fs.createDir(j.system.fs.joinPaths(path,".git"))
 
     def __str__(self):
         return str(self.__dict__) #@todo P3 implement (thisnis not working)
