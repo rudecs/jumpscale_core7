@@ -116,9 +116,6 @@ args = parser.parse_args()
 args.deps=not args.nodeps
 
 if args.path != "":
-    if not j.dirs.isGitConfigRepo(args.path):
-        print "path is not a git config repo"
-        sys.exit(1)
     j.dirs.gitConfigDir = path
 
 # hrddata={}
