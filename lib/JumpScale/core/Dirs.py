@@ -235,13 +235,8 @@ class Dirs(object):
         if self.gitConfigDir!=None and self.gitConfigDir!="unknown":
             return self.gitConfigDir
         while path.strip("/")!="":
-            if ".git" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False)\
-                and "servicetemplates" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
-                #are in git repo which can be used as root for configuration mgmt
-                # j.system.fs.createDir("%s/self/hrd"%path)
-                # j.system.fs.createDir("%s/self/actions"%path)
-                # j.system.fs.createDir("%s/self/state"%path)
-                # j.system.fs.createDir("%s/nodes"%path)
+            if ".git" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False) and\
+            "servicetemplates"  in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
                 self.gitConfigDir=path
                 return path
             path=j.system.fs.getParent(path)
@@ -260,6 +255,10 @@ class Dirs(object):
         path=j.system.fs.getcwd()
         return self._gitConfigRepo(path)
 
+    def createGitConfigRepo(self,path):
+        j.system.fs._createDir(j.system.fs.joinPaths(path,"services"))
+        j.system.fs._createDir(j.system.fs.joinPaths(path,"servicetemplates"))
+        j.system.fs._createDir(j.system.fs.joinPaths(path,".git"))
 
     def __str__(self):
         return str(self.__dict__) #@todo P3 implement (thisnis not working)

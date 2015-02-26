@@ -116,7 +116,8 @@ args = parser.parse_args()
 args.deps=not args.nodeps
 
 if args.path != "":
-    j.dirs.gitConfigDir = path
+    j.dirs.createGitConfigRepo(args.path)
+    j.dirs.gitConfigDir = args.path
 
 # hrddata={}
 # if args.data<>None:
