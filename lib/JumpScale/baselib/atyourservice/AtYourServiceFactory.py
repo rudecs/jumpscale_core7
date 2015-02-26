@@ -121,7 +121,8 @@ class AtYourServiceFactory():
                         if namefound not in res:
                             res.append((domainfound,namefound,path))
                     elif domain=="" and name!="":
-                        if namefound.find(name)==0: #match beginning of str so can do search like node.
+                        # if namefound.find(name)==0: #match beginning of str so can do search like node.
+                        if namefound==name:
                             if namefound not in res:
                                 res.append((domainfound,namefound,path))
                     elif domain!="" and name=="":

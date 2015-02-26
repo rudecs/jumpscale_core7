@@ -460,10 +460,10 @@ class ActionsBase():
         on central side only
         execute something in the service instance
         """
-        # host=serviceobj.hrd.get("instance.host")
-        # parentNode = j.atyourservice.findParent(serviceobj,host)
-        self.upload(serviceobj,serviceobj.path,j.dirs.hrdDir)
-        self.execute(serviceobj,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
+        host=serviceobj.hrd.get("service.host")
+        parentNode = j.atyourservice.findParent(serviceobj,host)
+        self.upload(parentNode,serviceobj.path,j.dirs.hrdDir)
+        self.execute(parentNode,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
                             %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo()))
 
     def _rsync(self,source,dest,key,port=22):
