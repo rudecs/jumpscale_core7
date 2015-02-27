@@ -462,7 +462,7 @@ class ActionsBase():
         """
         host=serviceobj.hrd.get("service.host")
         parentNode = j.atyourservice.findParent(serviceobj,host)
-        self.upload(parentNode,serviceobj.path,j.dirs.hrdDir)
+        self.upload(parentNode,serviceobj.path,serviceobj.path)
         self.execute(parentNode,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
                             %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo()))
 
@@ -476,11 +476,11 @@ class ActionsBase():
         # if not j.do.exists(source):
             # raise RuntimeError("copytree:Cannot find source:%s"%source)
 
-        # if j.do.isDir(source):
-        #     if dest[-1]!="/":
-        #         dest+="/"
-        #     if source[-1]!="/":
-        #         source+="/"
+        if j.do.isDir(source):
+            if dest[-1]!="/":
+                dest+="/"
+            if source[-1]!="/":
+                source+="/"
 
         keyloc = "/tmp/%s" % generateUniq('id_dsa')
         j.system.fs.writeFile(keyloc,key)
