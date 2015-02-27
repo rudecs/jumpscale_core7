@@ -148,6 +148,10 @@ class Service(object):
         if self._init==False:
             hrd=self.hrd
             actions=self.actions
+
+            host = self.hrd.get("service.host",default="")
+            if self.parent == None and host != "" and host != self.name:
+                self.parent = j.atyourservice.findParent(self,host)
             self.log("init")
             # import JumpScale.baselib.remote.cuisine
             # import JumpScale.lib.docker

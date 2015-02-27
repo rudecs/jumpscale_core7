@@ -60,7 +60,7 @@ jservice commands:
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
-parser.add_argument("-p","--path", required=False, help='path to git config repo to be use\n')
+parser.add_argument("--path", required=False, help='path to git config repo to be use\n')
 
 group = parser.add_argument_group(title="Package Selection")
 group.add_argument('-q','--quiet', required=False, action='store_true', help='Put in quiet mode')
@@ -102,9 +102,11 @@ def sorter(jp1, jp2):
 def getService(args):
     name = args.name.strip()
     instance = args.instance.strip()
-
-    service = j.atyourservice.get(name=name,instance=instance)
-    service.init()
+    services = j.atyourservice.find(name=name,instance=instance)
+    service = None
+    if len(services) == 1:
+        service = services[0]
+        service.init()
 
     return service
 
