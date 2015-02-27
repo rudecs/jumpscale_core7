@@ -91,7 +91,6 @@ def deps(F): # F is func or method without instance
             for dep in packagechain:
                 if dep.name not in j.atyourservice._justinstalled:
                     dep.args = service.args
-                    dep.node = service.args.get("node2execute","")
                     result=processresult(result,F(dep, *args, **kwargs))
                     j.atyourservice._justinstalled.append(dep.name)
         else:
@@ -382,7 +381,7 @@ class Service(object):
             return False
         return service.name == self.name and self.domain == service.domain and self.instance == service.instance
 
-    
+
     def stop(self,deps=True):
         self.log("stop instance")
         self.actions.stop(self)
@@ -392,10 +391,6 @@ class Service(object):
     # @deps
     def build(self, deps=True):
         self.log("build instance")
-        if self.node:
-            node = j.atyourservice.remote.sshPython(service=self.service,node=self.node)
-        else:
-            node = None
 
         for dep in self.getDependencies(build=True):
             if dep.service.name not in j.atyourservice._justinstalled:
@@ -410,19 +405,9 @@ class Service(object):
             #pull the required repo
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
-            if node:
-                dest = "root@%s:%s" %(node.ip, "/opt/build/%s"%name)
-                node.copyTree("/opt/build/%s"%name,dest)
-        if node:
-            self._build()
-        else:
             self.actions.build(self)
 
-    
-    def _build(self,deps=True):
-        self.action.build(**self.args)
-
-    @deps    
+    @deps
     def start(self,deps=True):
         self.log("start instance")
         self.actions.start(self)
@@ -455,7 +440,7 @@ class Service(object):
 
         return procs
 
-    @deps 
+    @deps
     def prepare(self,deps=False, reverse=True):
         self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
@@ -509,11 +494,6 @@ class Service(object):
 
     @deps
     def _install(self,start=True,deps=True, reinstall=False):
-        if self.node:
-            node = j.atyourservice.remote.sshPython(service=self.service,node=self.node)
-        else:
-            node = None
-
         #download
         for recipeitem in self.hrd.getListFromPrefix("web.export"):
             if "dest" not in recipeitem:
@@ -533,9 +513,6 @@ class Service(object):
             elif j.system.fs.exists(dest):
                 j.system.fs.remove(dest)
             j.system.net.download(fullurl, dest)
-            if node:
-                remoteDest = "root@%s:%s" %(node.ip,dest)
-                node.copyTree(dest,remoteDest)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             # print recipeitem
@@ -575,10 +552,6 @@ class Service(object):
                     raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
                 if dest[0]!="/":
                     dest="/%s"%dest
-                if node:
-                    # copy file on remote node with rsync
-                    dest = "root@%s:%s" %(node.ip,dest)
-                    node.copyTree(src,dest)
                 else:
                     if link:
                         if not j.system.fs.exists(dest):
@@ -594,15 +567,6 @@ class Service(object):
                             j.system.fs.copyDirTree(src, dest, eraseDestination=False, overwriteFiles=delete)
                         else:
                             j.system.fs.copyFile(src, dest, True, overwriteFile=delete)
-
-        # if node:
-        #     # install the hrd to the remote host
-        #     hrdPath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(self.node),self.name,self.instance)
-        #     if not j.system.fs.exists(hrdPath):
-        #         raise RuntimeError("The hrd (%s) for this services doesn't exists")
-        #     hrdContent = j.system.fs.fileGetContents(hrdPath)
-        #     destPath = "%s/apps/%s.%s.%s.hrd" % (j.dirs.hrdDir, self.domain, self.name, self.instance)
-        #     node.writeFile(destPath,hrdContent)
 
         self.configure(deps=False)
 

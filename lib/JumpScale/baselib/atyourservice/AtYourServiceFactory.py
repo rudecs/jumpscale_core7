@@ -78,16 +78,15 @@ class AtYourServiceFactory():
             res=[]
             for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
                 namefound=j.system.fs.getBaseName(path)
-                name,instance=namefound.split("__",1)
-                instance=instance.split(".",1)[0]
-                # TODO: bug here, should pass servicetemplate to Service constructor
-                res.append(Service(instance=instance,path=path))
+                namefound,instancefound=namefound.split("__",1)
+                if namefound == name and instancefound == instance:
+                    serviceTmpl = ServiceTemplate(domain="",name=name,path=path)
+                    res.append(Service(instance,serviceTmpl,path=path))
             return res
-
         else:
             #we look for service template
             self._doinit()
-                    
+
             #create some shortcuts for fast return
             if domain!="":
                 if domain not in self.domains:
@@ -156,7 +155,7 @@ class AtYourServiceFactory():
 
     def new(self,domain="",name="",instance="main",parent=None,args={}):
         """
-        will create a new service 
+        will create a new service
         """
         self._doinit()
         services=self.find(domain,name,1)
