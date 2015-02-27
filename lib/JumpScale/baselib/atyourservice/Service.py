@@ -490,7 +490,7 @@ class Service(object):
         if self.isLatest() and not reinstall:
             log("Latest %s already installed" % self)
             return
-        self._apply()
+        # self._apply()
         self.stop(deps=False)
         self.prepare(deps=True, reverse=True)
         self.log("install instance")
