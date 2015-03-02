@@ -304,9 +304,14 @@ class GitlabInstance():
         @param space: user space (Project) in gitlab
         @type space: ```gitlab3.Project```
         """
+        prefix = "%s_" % username
+        if  prefix in space:
+            space = space.replace(prefix, '')
+
         space = self.getSpace(space)
         if not space:
             raise RuntimeError("Space %s not found" % space)
+        
         rights = space.find_member(username=username)
         if rights:
             return username, self.PERMISSIONS[rights.access_level]
