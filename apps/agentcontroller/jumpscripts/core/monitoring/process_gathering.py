@@ -19,9 +19,7 @@ log=False
 roles = []
 
 def action():
-    if not hasattr(j.core, 'processmanager'):
-        import JumpScale.grid.processmanager
-        j.core.processmanager.loadMonitorObjectTypes()
+    j.core.processmanager.loadMonitorObjectTypes()
 
     import time
     import psutil
