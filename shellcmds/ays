@@ -76,7 +76,7 @@ group.add_argument('--verbose', required=False, action='store_true',default=Fals
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
 # group.add_argument('--data', required=False, help='use this to pass hrd information to jservice e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
-# group.add_argument('--cmd', required=False, help='use this to pass cmd to jservice e.g. \'ls -l\'')
+group.add_argument('--cmd', required=False, help='use this to pass cmd to jservice e.g. \'ls -l\'')
 group.add_argument('-r', '--reinstall', required=False, action='store_true', help='Reinstall found service')
 # group.add_argument('-s', '--single', required=False, action='store_true', help='Do not install dependencies')
 
@@ -107,7 +107,8 @@ def getService(args):
     if len(services) == 1:
         service = services[0]
         service.init()
-
+    else:
+        raise RuntimeError("service %s not found" % args.name)
     return service
 
 
@@ -139,7 +140,7 @@ if args.path != "":
 #     jpargs["lua"]=args.lua
 
 # if args.cmd is not None:
-#     jpargs['cmd'] = args.cmd.strip()
+    # jpargs['cmd'] = args.cmd.strip()
 
 
 
@@ -206,6 +207,7 @@ elif args.action == 'stop':
 
 elif args.action == 'execute':
     service = getService(args)
+    service.args['cmd'] = args.cmd
     service.execute(deps=args.deps)
 
 elif args.action == 'build':

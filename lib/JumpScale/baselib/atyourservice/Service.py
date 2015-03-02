@@ -708,8 +708,11 @@ class Service(object):
         """
         execute cmd on service
         """
-        self.log("execute cmd:'%s' on instance"%self.args["cmd"])
-        self.actions.execute(self)
+        cmd = ""
+        if "cmd" in self.args:
+            cmd = self.args['cmd']
+        self.log("execute cmd:'%s' on instance"%cmd)
+        self.actions.execute(self,cmd=cmd)
 
     @deps
     def uninstall(self,deps=True):
