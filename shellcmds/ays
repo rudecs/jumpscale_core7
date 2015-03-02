@@ -205,7 +205,7 @@ elif args.action == 'stop':
     service.stop(deps=False)
 
 elif args.action == 'execute':
-    services = getService(args)
+    service = getService(args)
     service.execute(deps=args.deps)
 
 elif args.action == 'build':
