@@ -431,6 +431,6 @@ class ActionsBase():
         """
         host=serviceobj.hrd.get("service.host")
         parentNode = j.atyourservice.findParent(serviceobj,host)
-        self.upload(parentNode,serviceobj.path,serviceobj.path)
+        parentNode.actions.upload(parentNode,serviceobj.path,serviceobj.path)
         parentNode.actions.execute(parentNode,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
                             %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo()))

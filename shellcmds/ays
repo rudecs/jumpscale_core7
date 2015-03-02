@@ -60,7 +60,7 @@ jservice commands:
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
-parser.add_argument("--path", required=False, help='path to git config repo to be use\n')
+parser.add_argument("--path", required=False, help='path to git config repo to be use\n',default=None)
 
 group = parser.add_argument_group(title="Package Selection")
 group.add_argument('-q','--quiet', required=False, action='store_true', help='Put in quiet mode')
@@ -104,7 +104,7 @@ def getService(args):
     instance = args.instance.strip()
     services = j.atyourservice.find(name=name,instance=instance)
     service = None
-    if len(services) == 1:
+    if len(services) >= 1:
         service = services[0]
         service.init()
     else:
@@ -118,7 +118,7 @@ if '--help' in sys.argv or '-h' in sys.argv:
 args = parser.parse_args()
 args.deps=not args.nodeps
 
-if args.path != "":
+if args.path != None:
     j.dirs.createGitConfigRepo(args.path)
     j.dirs.gitConfigDir = args.path
 
