@@ -20,6 +20,9 @@ log=False
 def action(username, spacename):
     print "Cloning gitlab space %s for user %s " % (spacename, username)
     print "**********************************************"
+    hrd = j.application.getAppInstanceHRD(name='portal', instance='main')
+    gitlabcontentdir = hrd.getStr('param.cfg.contentdirs')
+
     client = j.clients.gitlab.get()
     spaces = client.getUserSpacesObjects(username)
     spaces_names = [s['name'] for s in spaces]
@@ -31,11 +34,14 @@ def action(username, spacename):
         web_url.insert(1, '//%s@' % credentials)
         web_url = ''.join(web_url)
         gitlab_spacename = spaces[idx]['namespace']['name']
-        basedir = "/opt/jumpscale7/apps/portals/main/base/%s_%s" % (gitlab_spacename, spacename)
+        basedir = "%s/%s_%s" % (gitlabcontentdir, gitlab_spacename, spacename)
         repo = j.clients.git.getClient(basedir=basedir, remoteUrl=web_url)
         repo.fetch()
     except ValueError:
         raise RuntimeError("Insufficient permissions to clone space %s for user %s" % (spacename, username))
 
-if __name__ == '__name__':
-    action()
+if __name__ == '__main__':
+    if not len(sys.argv) == 3:
+        print "Usage: python clonegitlabspace username spacename"
+    else:
+        action(sys.argv[1], sys.argv[2])
