@@ -1,7 +1,7 @@
 from JumpScale import j
 from .ServiceTemplate import ServiceTemplate
 from .Service import Service
-
+import copy
 from .ActionsBase import ActionsBase
 
 class AtYourServiceFactory():
@@ -13,6 +13,8 @@ class AtYourServiceFactory():
         self.hrd=None
         self._justinstalled=[]
         self._type = None
+        self._cachefind={}
+        self._cache={}
 
         self.indocker=False
 
@@ -72,75 +74,113 @@ class AtYourServiceFactory():
         return self.domains.keys()
 
 
-    def find(self,domain="",name="",maxnr=None,instance=""):
-        #lets ignore domain when instance is known, this could be issue but lets try
-        if instance!="":
-            res=[]
-            for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
+    def findTemplates(self,domain="",name=""):
+        key="%s__%s"%(domain,name)
+        if self._cachefind.has_key(key):
+            return self._cachefind[key]
+
+        self._doinit()
+                
+        #create some shortcuts for fast return
+        if domain!="":
+            if domain not in self.domains:
+                return[]
+            if name!="":
+                if not j.system.fs.exists(path="%s/%s"%(self.domains[domain],name)):
+                    return []
+
+        baseDomains=j.application.config.getDictFromPrefix("jpackage.metadata")
+        def sorter(domain1,domain2):
+            if domain1 in baseDomains:
+                return 1
+            return -1
+
+        res = []
+        items=j.application.config.getDictFromPrefix("jpackage.metadata")
+        for domainfound in sorted(self.domains.keys(), cmp=sorter):
+            for path in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
                 namefound=j.system.fs.getBaseName(path)
-                namefound,instancefound=namefound.split("__",1)
-                if namefound == name and instancefound == instance:
-                    serviceTmpl = ServiceTemplate(domain="",name=name,path=path)
-                    res.append(Service(instance,serviceTmpl,path=path))
-            return res
-        else:
-            #we look for service template
-            self._doinit()
 
-            #create some shortcuts for fast return
-            if domain!="":
-                if domain not in self.domains:
-                    return[]
-                if name!="":
-                    if not j.system.fs.exists(path="%s/%s"%(self.domains[domain],name)):
-                        return []
+                if path.find("/.git")!=-1:
+                    continue
 
-            baseDomains=j.application.config.getDictFromPrefix("jpackage.metadata")
-            def sorter(domain1,domain2):
-                if domain1 in baseDomains:
-                    return 1
-                return -1
+                #TEMP untill upgraded
+                if j.system.fs.exists(path="%s/%s"%(path,"jp.hrd")):
+                    j.system.fs.renameFile("%s/%s"%(path,"jp.hrd"),"%s/%s"%(path,"service.hrd"))
 
-            res = []
-            items=j.application.config.getDictFromPrefix("jpackage.metadata")
-            for domainfound in sorted(self.domains.keys(), cmp=sorter):
-                for path in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
-                    namefound=j.system.fs.getBaseName(path)
-
-                    if path.find("/.git")!=-1:
-                        continue
-
-                    #TEMP untill upgraded
-                    if j.system.fs.exists(path="%s/%s"%(path,"jp.hrd")):
-                        j.system.fs.renameFile("%s/%s"%(path,"jp.hrd"),"%s/%s"%(path,"service.hrd"))
-
-                    if not j.system.fs.exists(path="%s/%s"%(path,"service.hrd")):
-                        continue
-                    if domain=="" and name=="":
+                if not j.system.fs.exists(path="%s/%s"%(path,"service.hrd")):
+                    continue
+                if domain=="" and name=="":
+                    if namefound not in res:
+                        res.append((domainfound,namefound,path))
+                elif domain=="" and name!="":
+                    # if namefound.find(name)==0: #match beginning of str so can do search like node.
+                    if namefound==name:
                         if namefound not in res:
                             res.append((domainfound,namefound,path))
-                    elif domain=="" and name!="":
-                        # if namefound.find(name)==0: #match beginning of str so can do search like node.
-                        if namefound==name:
-                            if namefound not in res:
-                                res.append((domainfound,namefound,path))
-                    elif domain!="" and name=="":
-                        if domain==domainfound:
-                            if namefound not in res:
-                                res.append((domainfound,namefound,path))
-                    else:
-                        if domain==domainfound and namefound.find(name)==0:
-                            if namefound not in res:
-                                res.append((domainfound,namefound,path))
+                elif domain!="" and name=="":
+                    if domain==domainfound:
+                        if namefound not in res:
+                            res.append((domainfound,namefound,path))
+                else:
+                    if domain==domainfound and namefound.find(name)==0:
+                        if namefound not in res:
+                            res.append((domainfound,namefound,path))
 
-            finalRes=[]
-            for domainfound,namefound,path in res:
-                finalRes.append(ServiceTemplate(domainfound,namefound,path))
-            #now name & domain is known
-            if maxnr!=None and len(finalRes)>maxnr:
-                j.events.inputerror_critical("Found more than %s service for query '%s':'%s'"%(maxnr,domain,name))
+        finalRes=[]
+        for domainfound,namefound,path in res:
+            finalRes.append(ServiceTemplate(domainfound,namefound,path))
 
-            return finalRes
+        self._cachefind[key]=finalRes
+        return finalRes
+
+
+    def findServices(self,domain="",name="",instance=""):
+        key="%s__%s__%s"%(domain,name,instance)
+        if name!="" and instance!="":            
+            if self._cachefind.has_key(key):
+                return self._cachefind[key]
+
+        self._doinit()
+
+        res=[]
+        for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
+            namefound=j.system.fs.getBaseName(path)
+            name,instance=namefound.split("__",1)
+            instance=instance.split(".",1)[0]
+            
+            key="%s__%s__%s"%(domain,name,instance)
+            if self._cache.has_key(key):
+                service=self._cache[key]
+            else:
+                servicetemplate=self.findTemplates(domain=domain,name=name)[0]
+                service=Service(instance=instance,servicetemplate=servicetemplate,path=path)
+                self._cache[key]=service
+                
+            res.append(service)
+
+        if name!="" and instance!="":
+            self._cachefind[key]=res
+        return res
+
+
+    def findParents(self,service):
+
+        path=service.path
+        basename=j.system.fs.getBaseName(path)
+        res=[]
+        while True:
+            path=j.system.fs.getParent(path)
+            basename=j.system.fs.getBaseName(path)
+            if basename=="services":
+                break
+
+            ss = basename.split("__")
+            parentName = ss[0]
+            parentInstance = ss[1]
+
+            res.append(self.get(name=parentName,instance=parentInstance))
+        return res
 
     def findParent(self,service,parentName):
         start = service.path.find(parentName)
@@ -157,25 +197,32 @@ class AtYourServiceFactory():
         """
         will create a new service
         """
+        key="%s__%s__%s"%(domain,name,instance)
+        if self._cache.has_key(key):
+            return self._cache[key]
         self._doinit()
-        services=self.find(domain,name,1)
+        services=self.findTemplates(domain,name)
         if len(services)==0:
-            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
-        services[0]=services[0].newInstance(instance,parent=parent, args=args)
-        return services[0]
+            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))            
+        obj=services[0].newInstance(instance,parent=parent, args=args)
+        self._cache[key]=obj
+        return obj
 
-    def get(self,domain="",name="",instance="main",parent=None,args={}):
+    def get(self,domain="",name="",instance="main"):
+        key="%s__%s__%s"%(domain,name,instance)
+        if self._cache.has_key(key):
+            return self._cache[key]
         self._doinit()
-        services=self.find(domain,name,1)
+        services=self.findServices(domain,name,instance=instance)
         if len(services)==0:
             j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
-        services[0]=services[0].getInstance(instance,parent=parent,args=args)
-        return services[0]
+        self._cache[key]=services[0]
+        return self._cache[key]
 
 
     def exists(self,domain="",name="",instance="main",node=""):
         self._doinit()
-        services=self.find(domain,name,1)
+        services=self.findServices(domain,name,1)
         if len(services)==0:
             return False
         return  services[0].existsInstance(instance=instance,node=node)

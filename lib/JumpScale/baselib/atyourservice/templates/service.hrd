@@ -74,3 +74,9 @@ category=app
 #if specified then we will look for a service starting with the name mentioned e.g. 'node.' and call the upload & execute statements there to remotely execute the service.$action
 host=
 
+service.producer.1=
+    descr:'',
+    to:'firewall.portforward',
+    nr.childs.min:0,
+    nr.childs.max:100,
+    
