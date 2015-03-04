@@ -21,6 +21,9 @@ def remote(F): # F is func or method without instance
             return F(service, *args,**kwargs)
     return wrapper
 
+
+# import JumpScale.baselib.remote.cuisine
+
 class ActionsBase():
     """
     implement methods of this class to change behaviour of lifecycle management of service
@@ -411,8 +414,8 @@ class ActionsBase():
         for e.g. a node.ms1 service it would mean remote some shell command on that machine
         for e.g. postgresql it would mean execute a sql query
         """
-        ip = serviceobj.hrd.get("instance.machine.ssh.ip")
-        port = serviceobj.hrd.get("instance.machine.ssh.port")
+        ip = serviceobj.hrd.get("instance.ip")
+        port = serviceobj.hrd.get("instance.ssh.port")
         keyname =  serviceobj.hrd.get('instance.ssh.key.name') if serviceobj.hrd.exists('instance.ssh.key.name') else None
         login = serviceobj.hrd.get('instance.ssh.user') if serviceobj.hrd.exists('instance.ssh.user') else None
         password = serviceobj.hrd.get('instance.ssh.pwd') if serviceobj.hrd.exists('instance.ssh.pwd') else None
@@ -436,8 +439,8 @@ class ActionsBase():
         sshkeyHRD = j.application.getAppInstanceHRD("sshkey",keyname)
         sshkey = sshkeyHRD.get("instance.ssh.key.priv")
 
-        ip = serviceobj.hrd.get("instance.machine.ssh.ip")
-        port = serviceobj.hrd.get("instance.machine.ssh.port")
+        ip = serviceobj.hrd.get("instance.ip")
+        port = serviceobj.hrd.get("instance.ssh.port")
         dest = "%s:%s" % (ip,dest)
         self._rsync(source,dest,sshkey,port)
 
@@ -450,8 +453,8 @@ class ActionsBase():
         sshkeyHRD = j.application.getAppInstanceHRD("sshkey",keyname)
         sshkey = sshkeyHRD.get("instance.ssh.key.priv")
 
-        ip = serviceobj.hrd.get("instance.machine.ssh.ip")
-        port = serviceobj.hrd.get("instance.machine.ssh.port")
+        ip = serviceobj.hrd.get("instance.ip")
+        port = serviceobj.hrd.get("instance.ssh.port")
         source = "%s:%s" % (ip,source)
         self._rsync(source,dest,sshkey,port)
 

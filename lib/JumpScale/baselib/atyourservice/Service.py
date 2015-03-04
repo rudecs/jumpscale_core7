@@ -777,6 +777,54 @@ class Service(object):
         # if restart:
             # self.restart(deps=False)
 
+    def findParents(self):
+        return j.atyourservice.findParents(self)
+
+
+    def consume(self,producerprefix):
+        """
+        create connection between consumer & producer
+        @param producerprefix is start of name of producer
+        """
+        for item in self.findParents():
+            if item.name.find(producerprefix)==0:
+                #found producer
+                portname=self.instance
+
+                for key,servicedeliver in item.hrd.getDictFromPrefix("service.deliver").iteritems():
+                    if self.name.find(servicedeliver["name"])==0:
+                        #found the required producing service
+                        # consumedict={}
+                        # consumedict["name"]=item.name
+                        # consumedict["instance"]=item.instance
+                        # consumedict["descr"]=servicedeliver["descr"]
+                        # consumedict["action"]=servicedeliver["action"]
+
+                        self.hrd.set("producer.%s.instance"%item.name,item.instance)
+                        return
+
+                        #@todo we need to check the max nr & min nr of instances
+
+        raise RuntimeError("Could not find producer:%s"%producerprefix)
+                
+    def link(self,name,instance):
+        """
+        create link between 2 instances
+        """
+        other=self.get(name=name,instance=instance)
+
+        for key,linkobj in item.hrd.getDictFromPrefix("service.link").iteritems():
+            if self.name.find(linkobj["name"])==0:
+                self.hrd.set("link.%s.instance"%item.name,item.instance)
+                self.hrd.set("link.%s.type"%item.name,linkobj["type"])
+                return
+
+                #@todo we need to check the max nr & min nr of instances
+
+        raise RuntimeError("Could not find producer:%s"%producerprefix)
+
+
+
     def __repr__(self):
         return "%-15s:%-15s:%s"%(self.domain,self.name,self.instance)
 
