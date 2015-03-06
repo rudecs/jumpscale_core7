@@ -1,4 +1,5 @@
 from JumpScale import j
+from .actorgen import ActorGen
 import json as json
 import jinja2
 import urlparse
@@ -107,6 +108,9 @@ class SwaggerGen(object):
         self.server['handlers'] = self._generateHandlers(self.spec)
         server = self._renderServer(self.server)
         j.system.fs.writeFile(outputPath, server.strip())
+
+    def generateActors(self, destpath):
+        ActorGen(self).generate(destpath)
 
     def generateClient(self, outputPath):
         if len(self.server['handlers']) == 0:

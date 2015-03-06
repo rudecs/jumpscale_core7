@@ -34,6 +34,7 @@ class Dirs(object):
         self.varDir = j.application.config.get("system.paths.var")
         self.tmpDir = j.application.config.get("system.paths.tmp")
         self.cfgDir = j.application.config.get("system.paths.cfg")
+        self.hrdDir = j.application.config.get("system.paths.hrd")
         self.libDir = j.application.config.get("system.paths.lib")
         self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
         self.logDir = j.application.config.get("system.paths.log")
