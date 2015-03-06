@@ -5,6 +5,3 @@ parentclass=j.core.osis.getOsisImplementationParentClass("_modelobjects")  #is t
 class mainclass(parentclass):
     """
     """
-    def getObject(self,ddict={}):
-        obj=j.core.grid.zobjects.getModelObject(ddict=ddict)
-        return obj
