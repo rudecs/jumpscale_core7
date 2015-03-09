@@ -20,15 +20,10 @@ log=False
 
 
 def action(port):
-    print "Checking TCP/UDP port (%s) open " % str(port)
-    print "**********************************************"
-    res = subprocess.call(["netstat  -ano   | grep %s" % str(port)], shell=True)
-    if res == 0:
-        return True
-    return False
+    return j.system.net.checkListenPort(int(port))
 
 if __name__ == '__main__':
     if not len(sys.argv) == 2:
         print "Usage: python checkportopen.py port"
     else:
-        action(sys.argv[1])
+        print action(sys.argv[1])
