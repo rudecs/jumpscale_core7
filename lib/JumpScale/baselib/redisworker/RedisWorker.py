@@ -124,11 +124,11 @@ class RedisWorkerFactory(object):
         return job
 
     def getJob(self,jobid):
-        jobdict=self.redis.hget("workers:jobs",jobid)
+        jobdict=self.redis.get("workers:jobs:%s" % jobid)
         if jobdict:
             jobdict=json.loads(jobdict)
         else:
-            raise RuntimeError("cannot find job with id:%s"%jobid)
+            raise KeyError("cannot find job with id:%s"%jobid)
         return jobdict
 
 
@@ -292,11 +292,11 @@ class RedisWorkerFactory(object):
             return "job", Job(ddict=jobdict)
 
     def waitJob(self,job,timeout=600):
-        result=self.redis.blpop("workers:return:%s"%job.id, timeout=timeout)        
+        result=self.redis.blpop("workers:return:%s"%job.id, timeout=timeout)
         if result==None:            
             job.state="TIMEOUT"
             job.timeStop=int(time.time())
-            self.redis.hset("workers:jobs",job.id, json.dumps(job.__dict__))
+            self.redis.set("workers:jobs%s" % job.id, json.dumps(job.__dict__), ex=60)
             j.events.opserror("timeout on job:%s"%job, category='workers.job.wait.timeout', e=None)
         else:
             job=self.getJob(job.id)
@@ -322,9 +322,8 @@ class RedisWorkerFactory(object):
         queue=self.queue[qname]
 
         # if not self.jobExistsInQueue(qname,job):
-        self.redis.hset("workers:jobs",job.id, json.dumps(job.__dict__))
+        self.redis.set("workers:jobs:%s" % job.id, json.dumps(job.__dict__))
         queue.put(job)
-
 
     def scheduleJob(self, job):
         jobobj = Job(ddict=job)

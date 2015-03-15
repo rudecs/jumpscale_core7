@@ -209,8 +209,9 @@ class Worker(object):
 
         if job.internal:
             #means is internal job
-            self.redisw.redis.hset("workers:jobs",job.id, json.dumps(job.__dict__))
-            self.redisw.redis.rpush("workers:return:%s"%job.id,time.time())            
+            self.redisw.redis.set("workers:jobs:%s" % job.id, json.dumps(job.__dict__), ex=60)
+            self.redisw.redis.rpush("workers:return:%s"%job.id,time.time())
+            self.redisw.redis.expire("workers:return:%s"%job.id, 60)
         else:
             try:
                 acclient = self.getClient(job)
@@ -219,13 +220,12 @@ class Worker(object):
                 return
             #jumpscripts coming from AC
             if job.state!="OK":
+                self.redisw.redis.expire("workers:jobs:%s" % job.id, 60)
                 try:
                     acclient.notifyWorkCompleted(job.__dict__)
                 except Exception as e:
                     j.events.opserror("could not report job in error to agentcontroller", category='workers.errorreporting', e=e)
                     return
-                #lets keep the errors
-                # self.redis.hdel("workers:jobs",job.id)
             else:
                 if job.log or job.wait:
                     try:
@@ -235,7 +235,7 @@ class Worker(object):
                         return
                     # job.state=="OKR" #means ok reported
                     #we don't have to keep status of local job result, has been forwarded to AC
-                self.redisw.redis.hdel("workers:jobs",job.id)
+                self.redisw.redis.delete("workers:jobs:%s" % job.id)
 
 
     def log(self, message, category='',level=5, time=None):
