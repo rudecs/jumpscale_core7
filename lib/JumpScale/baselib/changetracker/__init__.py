@@ -1,7 +1,7 @@
 from JumpScale import j
 
 def cb():
-    from .BackupFactory import *
+    from .BackupFactory import BackupFactory
     import JumpScale.baselib.hash
     return BackupFactory()
 
