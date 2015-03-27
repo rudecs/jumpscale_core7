@@ -244,8 +244,10 @@ class Service(object):
             j.do.copyFile(source,"%s/actions.lua"%self.path)
 
         hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
-        self._hrd=j.core.hrd.get(hrdpath,args=self.hrddata,prefixWithName=False)
-        self._hrd=j.core.hrd.get(hrdpath,args=self.args,prefixWithName=False)
+        mergeArgsHDRData = self.args.copy()
+        mergeArgsHDRData.update(self.args)
+        self._hrd=j.core.hrd.get(hrdpath,args=mergeArgsHDRData,prefixWithName=False)
+        # self._hrd=j.core.hrd.get(hrdpath,args=self.args,prefixWithName=False)
         self._hrd.applyTemplates(path="%s/service.hrd"%self.templatepath,prefix="service")
         self._hrd.applyTemplates(path="%s/instance.hrd"%self.templatepath,prefix="instance")
 
