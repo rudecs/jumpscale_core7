@@ -779,22 +779,22 @@ class Service(object):
                         #@todo we need to check the max nr & min nr of instances
 
         raise RuntimeError("Could not find producer:%s"%producerprefix)
-                
+
     def link(self,name,instance):
         """
         create link between 2 instances
         """
-        other=self.get(name=name,instance=instance)
+        other=j.atyourservice.get(name=name,instance=instance)
 
-        for key,linkobj in item.hrd.getDictFromPrefix("service.link").iteritems():
+        for key,linkobj in other.hrd.getDictFromPrefix("service.link").iteritems():
             if self.name.find(linkobj["name"])==0:
-                self.hrd.set("link.%s.instance"%item.name,item.instance)
-                self.hrd.set("link.%s.type"%item.name,linkobj["type"])
+                self.hrd.set("link.%s.instance"%other.name,other.instance)
+                # self.hrd.set("link.%s.type"%other.name,linkobj["type"])
                 return
 
                 #@todo we need to check the max nr & min nr of instances
 
-        raise RuntimeError("Could not find producer:%s"%producerprefix)
+        raise RuntimeError("Could not find link:%s"%producerprefix)
 
 
 
