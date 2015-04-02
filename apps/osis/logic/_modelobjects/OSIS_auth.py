@@ -6,7 +6,7 @@ class AUTH():
     def load(self,osis):
         pass
         
-    def authenticate(self,osis,method,user,passwd, session):
+    def authenticate(self,osis,method,user,passwd):
         if j.core.osis.cmds._authenticateAdmin(user=user,passwd=passwd):
             return True
         return False

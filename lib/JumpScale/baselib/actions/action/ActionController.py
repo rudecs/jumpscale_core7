@@ -21,27 +21,27 @@ class ActionController(object):
         from IPython import embed
         print "DEBUG NOW reset ActionController"
         embed()
-        
-    def _getPathMD(self,category):
-        return "%s/%s.json"%(j.dirs.getStatePath(),category)
 
-    def getActionNamesDone(self,category):
-        path=self._getPathMD(category)
+    def _getPathMD(self,action):
+        return j.system.fs.joinPaths(action.serviceObj.path,"state.json")
+
+    def getActionNamesDone(self,action):
+        path=self._getPathMD(action)
         if j.system.fs.exists(path):
             return json.loads(j.do.readFile(path))
         else:
             return []
 
     def setActionNamesDone(self,action):
-        md=self.getActionNamesDone(action.category)        
+        md=self.getActionNamesDone(action)
         if action.name not in md:
             md.append(action.name)
-            path=self._getPathMD(action.category)
+            path=self._getPathMD(action)
             j.system.fs.createDir(j.system.fs.getDirName(path))
             j.do.writeFile(path,json.dumps(md))
 
     def start(self, description="", cmds="",action=None,actionRecover=None,actionArgs={},category="unknown",name="unknown",\
-            errorMessage="", resolutionMessage="", loglevel=1,die=True,stdOutput=True,errorOutput=True,retry=1,jp=None):
+            errorMessage="", resolutionMessage="", loglevel=1,die=True,stdOutput=True,errorOutput=True,retry=1,serviceObj=None):
         '''
         @param id is unique id which allows finding back of action
         @param description: Action description (what are we doing)
@@ -54,9 +54,9 @@ class ActionController(object):
         @param cmds is list of commands to execute on os
         @param state : INIT,RUNNING,OK,ERROR
         '''
-        action=Action(description, cmds,action,actionRecover,actionArgs,category,name,errorMessage, resolutionMessage,  loglevel,die,stdOutput,errorOutput,retry,jp=jp)
-        
-        md=self.getActionNamesDone(action.category)
+        action=Action(description, cmds,action,actionRecover,actionArgs,category,name,errorMessage, resolutionMessage,  loglevel,die,stdOutput,errorOutput,retry,serviceObj=serviceObj)
+
+        md=self.getActionNamesDone(action)
         if action.name in md:
             print "* %-20s: %-40s %-40s ALREADY DONE"%(action.category,action.name,action.description)
             return

@@ -305,7 +305,10 @@ class HRD(HRDBase):
         else:
             return "base"
 
-    def applyTemplates(self,path="",hrd=None):
+    def applyTemplates(self,path="",hrd=None,prefix=""):
+        """
+        input is path or hrd, if hrd none then path will define hrd to read
+        """
 
         if self.istemplate:
             return
@@ -321,15 +324,21 @@ class HRD(HRDBase):
             templates.append(HRD(path=path,istemplate=True))
 
         change=False
+
+        if prefix!="":
+            prefix+="."
+
         for hrdtemplate in templates:
 
             for key in list(hrdtemplate.items.keys()):
-                if key in self.args:
+
+                key2=prefix+key
+                if key2 in self.args:
                     #means key does already exist in HRD arguments, will use that value
                     hrdtemplateitem=hrdtemplate.items[key]
-                    self.set(hrdtemplateitem.name,self.args[key],comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
+                    self.set(key2,self.args[key2],comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
                     continue                    
-                elif key not in self.items:
+                elif key2 not in self.items: #is dict so uses the keys
                     #its not in hrd yet
                     change=True
                     hrdtemplateitem=hrdtemplate.items[key]
@@ -337,17 +346,17 @@ class HRD(HRDBase):
                         ttype, val=j.tools.text.ask(hrdtemplateitem.data,name=key,args=self.args)
                         if not ttype:
                             ttype = hrdtemplateitem.ttype
-                        self.set(hrdtemplateitem.name,val,comments=hrdtemplateitem.comments,persistent=False,ttype=ttype)
+                        self.set(key2,val,comments=hrdtemplateitem.comments,persistent=False,ttype=ttype)
                     else:
-                        self.set(hrdtemplateitem.name,hrdtemplateitem.get(),comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
+                        self.set(key2,hrdtemplateitem.get(),comments=hrdtemplateitem.comments,persistent=False,ttype=hrdtemplateitem.ttype)
         
 
         for key in self.args:
             self.set(key,self.args[key])
 
-        if templates<>[]:
-            if change:
-                self.save()
+        # if templates<>[]:
+        #     if change:
+        self.save()
 
 
     def process(self,content):

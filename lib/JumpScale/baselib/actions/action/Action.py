@@ -4,7 +4,7 @@ import time
 
 class Action:    
     def __init__(self, description="", cmds="",action=None,actionRecover=None,actionArgs={},category="unknown",name="unknown",\
-        errorMessage="", resolutionMessage="", loglevel=1,die=True,stdOutput=False,errorOutput=True,retry=1,jp=None):
+        errorMessage="", resolutionMessage="", loglevel=1,die=True,stdOutput=False,errorOutput=True,retry=1,serviceObj=None):
         '''
         @param id is unique id which allows finding back of action
         @param description: Action description (what are we doing)
@@ -17,12 +17,12 @@ class Action:
         @param actionArgs is dict with arguments
         @param cmds is list of commands to execute on os
         @param state : INIT,RUNNING,OK,ERROR
-        @param jp: jpackage, will be used to get category filled in
+        @param serviceObj: service, will be used to get category filled in
         '''
         self.category=category
-        if self.category=="unknown" and jp<>None:
-            self.category="jp_%s_%s_%s"%(jp.jp.domain,jp.jp.name,jp.instance)
-        self.jp=jp
+        if self.category=="unknown" and serviceObj<>None:
+            self.category="%s__%s"%(serviceObj.name,serviceObj.instance)
+        self.serviceObj=serviceObj
         self.name=name
         self.action=action
         self.actionRecover=actionRecover

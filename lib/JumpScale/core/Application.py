@@ -219,14 +219,17 @@ class Application:
             return False
         return True
 
-    def getAppInstanceHRD(self,name,instance,domain="jumpscale"):
+    def getAppInstanceHRD(self,name,instance,domain="jumpscale",parent=None):
         """
         returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
         """
-        if j.packages.type!="c":
-            path='%s/%s.%s.%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
+        if j.atyourservice.type!="c":
+            path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s.%s.hrd"%(name,instance))
         else:
-            path='%s/%s.%s.hrd' % (j.dirs.getHrdDir(),name,instance)
+            if parent:
+                path = j.system.fs.joinPaths(parent.path,"%s__%s"%(name,instance),"service.hrd")
+            else:
+                path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(name,instance),"service.hrd")
         if not j.system.fs.exists(path=path):
             j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
         return j.core.hrd.get(path)
@@ -245,17 +248,16 @@ class Application:
         returns hrd instance names for specific appname (default domain=jumpscale)
         """
 
-        names=[j.system.fs.getBaseName(item)[:-4] for item in j.system.fs.listFilesInDir(j.dirs.getHrdDir(),False)]
+        names=[j.system.fs.getBaseName(item) for item in j.system.fs.listDirsInDir(j.dirs.hrdDir,False)]
         res=[]
         for name1 in names:
             if j.packages.type!="c":
                 if name1.startswith(domain):
                     name1=name1[len(domain)+1:]
             if name1.startswith(name):
-                instance=name1[len(name)+1:]
+                instance=name1.split("__")[1]
                 if instance not in res:
                     res.append(instance)
-                
         res.sort()
         return res
 

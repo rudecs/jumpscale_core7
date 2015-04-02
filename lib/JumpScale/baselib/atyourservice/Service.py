@@ -15,21 +15,33 @@ def loadmodule(name, path):
     mod = imp.load_source(name, path)
     return mod
 
-#decorator to execute an action on a remote machine
-def remote(F): # F is func or method without instance
-    def wrapper(jp, *args,**kwargs): # class instance in args[0] for method
-        jp.init()
-        if not jp.node:
-            return F(jp, *args,**kwargs)
-        else:
-            node = jp.node
-            if jp.args.get('lua', False):
-                cl = j.atyourservice.remote.sshLua(jp, node)
-            else:
-                cl = j.atyourservice.remote.sshPython(jp, node)
+# #decorator to execute an action on a remote machine
+# def remote(F): # F is func or method without instance
+#     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
+#         service.init()
+#         isInstall = (F.func_name == "install")
+#         serviceisNode = j.atyourservice.isNode(service)
+#         parentisNode = False
+#         if service.parent:
+#             parentisNode = j.atyourservice.isNode(service.parent)
+#         cl = None
 
-            cl.executeJP(F.func_name)
-    return wrapper
+#         if not parentisNode:
+#             return F(service, *args,**kwargs)
+#         else:
+#             if service.parent:
+#                 if service.args.get('lua', False):
+#                     cl = j.atyourservice.remote.sshLua(service.parent)
+#                 else:
+#                     cl = j.atyourservice.remote.sshPython(service.parent)
+#             else:
+#                 if service.args.get('lua', False):
+#                     cl = j.atyourservice.remote.sshLua(service)
+#                 else:
+#                     cl = j.atyourservice.remote.sshPython(service)
+#         cl.executeJP(F.func_name)
+
+#     return wrapper
 
 #decorator to get dependencies
 def deps(F): # F is func or method without instance
@@ -65,32 +77,31 @@ def deps(F): # F is func or method without instance
             raise RuntimeError("did not expect this result, needs to be str,list,bool,int,dict")
         return result
 
-    def wrapper(jp, *args,**kwargs): # class instance in args[0] for method
+    def wrapper(service, *args,**kwargs): # class instance in args[0] for method
         result=None
 
         deps = kwargs.get('deps', False)
         reverse = kwargs.get('reverse', False)
         if deps:
             j.atyourservice._justinstalled=[]
-            packagechain = jp.getDependencyChain()
-            packagechain.append(jp)
+            packagechain = service.getDependencyChain()
+            packagechain.append(service)
             if reverse:
                 packagechain.reverse()
             for dep in packagechain:
-                if dep.jp.name not in j.atyourservice._justinstalled:
-                    dep.args = jp.args
-                    dep.node = jp.args.get("node2execute","")
+                if dep.name not in j.atyourservice._justinstalled:
+                    dep.args = service.args
                     result=processresult(result,F(dep, *args, **kwargs))
-                    j.atyourservice._justinstalled.append(dep.jp.name)
+                    j.atyourservice._justinstalled.append(dep.name)
         else:
-            result=processresult(result,F(jp, *args,**kwargs))
+            result=processresult(result,F(service, *args,**kwargs))
         return result
     return wrapper
 
 
 class Service(object):
 
-    def __init__(self,instance,servicetemplate,path="",args=None,parent=None):
+    def __init__(self,instance,servicetemplate,path="",args=None, parent=None):
         self.domain=servicetemplate.domain
         self.instance=instance
         self.name=servicetemplate.name
@@ -98,33 +109,32 @@ class Service(object):
         self.templatepath=servicetemplate.metapath
         if path=="":
             if parent==None:
-                path="%s/%s__%s"%(j.dirs.hrdDir,self.name,self.instance)
+                path=j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(self.name,self.instance))
             else:
-                path="%s/%s__%s"%(parent.path,self.name,self.instance)
+                path=j.system.fs.joinPaths(parent.path,"%s__%s"%(self.name,self.instance))
         self.path=path
-        
+
         self._hrd=None
         self._actions=None
         self._loaded=False
         self._reposDone={}
         self.args=args or {}
         self.hrddata = {}
-        self.hrddata["jp.name"]=self.name
-        self.hrddata["jp.domain"]=self.domain
-        self.hrddata["jp.instance"]=self.instance
+        self.hrddata["service.name"]=self.name
+        self.hrddata["service.domain"]=self.domain
+        self.hrddata["service.instance"]=self.instance
         self._init=False
         self.parent=parent
 
-        hrd=self.hrd
-        actions=self.actions        
-
     @property
     def hrd(self):
+        hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
         if self._hrd:
             return self._hrd
-        if not j.system.fs.exists(self.path):
+        if not j.system.fs.exists(hrdpath):
             self._apply()
-        self._hrd = j.core.hrd.get(self.path)
+        else:
+            self._hrd=j.core.hrd.get(hrdpath,prefixWithName=False)
         return self._hrd
 
     @property
@@ -134,30 +144,37 @@ class Service(object):
         return self._actions
 
 
-    # def init(self):
-    #     if self._init==False:
-    #         import JumpScale.baselib.remote.cuisine
-    #         import JumpScale.lib.docker
-    #         if self.actions.init():
-    #             #did something
-    #             pass
-    #             #@todo need to reload HRD's
-    #     self._init=True
+    def init(self):
+        if self._init==False:
+            hrd=self.hrd
+            actions=self.actions
+
+            host = self.hrd.get("service.host",default="")
+            if self.parent == None and host != "" and host != self.name:
+                self.parent = j.atyourservice.findParent(self,host)
+            self.log("init")
+            # import JumpScale.baselib.remote.cuisine
+            # import JumpScale.lib.docker
+            # if self.actions.init():
+            #     #did something
+            #     pass
+            #     #@todo need to reload HRD's
+        self._init=True
 
     # def getLogPath(self):
-    #     logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.jp.domain, self.jp.name,self.instance))
+    #     logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.service.domain, self.service.name,self.instance))
     #     return logpath
 
     def isInstalled(self):
-        hrdpath = self.getHRDPath()
-        if j.system.fs.exists(hrdpath) and self.hrd.exists('jp.installed.checksum'):
+        hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
+        if j.system.fs.exists(hrdpath) and self.hrd.exists('service.installed.checksum'):
             return True
         return False
 
     def isLatest(self):
         if not self.isInstalled():
             return False
-        checksum = self.hrd.get('jp.installed.checksum')
+        checksum = self.hrd.get('service.installed.checksum')
         if checksum != self._getMetaChecksum():
             return False
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
@@ -206,16 +223,17 @@ class Service(object):
         return 199
 
     def _loadActions(self):
-        # if not j.system.fs.exists("%s/actions.py"%self.path):
-        self._apply()
-        # else:
-            # self._loadActionModule()
+        actionsPath = j.system.fs.joinPaths(self.path,"actions.py")
+        if not j.system.fs.exists(actionsPath):
+            self._apply()
+        else:
+            self._loadActionModule()
 
     def _loadActionModule(self):
-        modulename="JumpScale.jpackages.%s.%s.%s"%(self.domain,self.name,self.instance)
+        modulename="JumpScale.atyourservice.%s.%s.%s"%(self.domain,self.name,self.instance)
         mod = loadmodule(modulename, "%s/actions.py"%self.path)
         self._actions=mod.Actions()
-        self._actions.serviceobject=self  #@remark: did rename of jp_... to serviceobject
+        # self._actions.serviceobject=self  serviceobj is now an argument of each Action() method
 
     def _apply(self):
         j.do.createDir(self.path)
@@ -225,10 +243,14 @@ class Service(object):
         if j.system.fs.exists(source):
             j.do.copyFile(source,"%s/actions.lua"%self.path)
 
-        self._hrd=j.core.hrd.get("%s/service.hrd"%self.path,args=self.hrddata,\
-                templates=["%s/instance.hrd"%self.templatepath,"%s/service.hrd"%self.templatepath])
-        self._hrd.save()
-       
+        hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
+        mergeArgsHDRData = self.args.copy()
+        mergeArgsHDRData.update(self.args)
+        self._hrd=j.core.hrd.get(hrdpath,args=mergeArgsHDRData,prefixWithName=False)
+        # self._hrd=j.core.hrd.get(hrdpath,args=self.args,prefixWithName=False)
+        self._hrd.applyTemplates(path="%s/service.hrd"%self.templatepath,prefix="service")
+        self._hrd.applyTemplates(path="%s/instance.hrd"%self.templatepath,prefix="instance")
+
         actionPy = "%s/actions.py"%self.path
         self._hrd.applyOnFile(actionPy, additionalArgs=self.args)
         j.application.config.applyOnFile(actionPy, additionalArgs=self.args)
@@ -238,8 +260,7 @@ class Service(object):
             self._hrd.applyOnFile(actionLua, additionalArgs=self.args)
             j.application.config.applyOnFile(actionLua, additionalArgs=self.args)
 
-        j.application.config.applyOnFile("%s/service.hrd"%self.path, additionalArgs=self.args)
-        self._hrd=j.core.hrd.get(self.path)
+        j.application.config.applyOnFile(hrdpath, additionalArgs=self.args)
         self._loadActionModule()
 
     def _getRepo(self,url,recipeitem=None,dest=None):
@@ -326,11 +347,32 @@ class Service(object):
             if instance=="":
                 instance="main"
 
-            jp=j.atyourservice.get(name=name, instance=instance, hrddata=hrddata)
+            service=j.atyourservice.get(name=name, instance=instance, hrddata=hrddata)
 
-            res.append(jp)
+            res.append(service)
 
         return res
+
+    def log(self,msg):
+        logpath = j.system.fs.joinPaths(self.path,"log.txt")
+        if not j.system.fs.exists(self.path):
+            j.system.fs.createDir(self.path)
+        msg = "%s : %s\n" % (j.base.time.formatTime(j.base.time.getTimeEpoch()), msg)
+        j.system.fs.writeFile(logpath,msg,append=True)
+
+    def listChilds(self):
+        childDirs = j.system.fs.listDirsInDir(self.path)
+        childs = {}
+        for path in childDirs:
+            child = j.system.fs.getBaseName(path)
+            ss = child.split("__")
+            name = ss[0]
+            instance = ss[1]
+            if name not in childs:
+                childs[name] = []
+            childs[name].append(instance)
+        return childs
+
 
     def getDependencyChain(self, chain=None):
         chain = chain  if chain is not None else []
@@ -340,27 +382,26 @@ class Service(object):
                 chain.append(dep)
         return chain
 
-    def __eq__(self, jp):
-        return jp.name == self.name and self.domain == jp.domain and self.instance == jp.instance
+    def __eq__(self, service):
+        if service is None:
+            return False
+        return service.name == self.name and self.domain == service.domain and self.instance == service.instance
 
-    @remote
+
     def stop(self,deps=True):
-        self.actions.stop(**self.args)
-        if not self.actions.check_down_local(**self.args):
-            self.actions.halt(**self.args)
+        self.log("stop instance")
+        self.actions.stop(self)
+        if not self.actions.check_down_local(self):
+            self.actions.halt(self)
 
     # @deps
     def build(self, deps=True):
-
-        if self.node:
-            node = j.atyourservice.remote.sshPython(jp=self.jp,node=self.node)
-        else:
-            node = None
+        self.log("build instance")
 
         for dep in self.getDependencies(build=True):
-            if dep.jp.name not in j.atyourservice._justinstalled:
+            if dep.service.name not in j.atyourservice._justinstalled:
                 dep.install()
-                j.atyourservice._justinstalled.append(dep.jp.name)
+                j.atyourservice._justinstalled.append(dep.service.name)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             #pull the required repo
@@ -370,22 +411,12 @@ class Service(object):
             #pull the required repo
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
-            if node:
-                dest = "root@%s:%s" %(node.ip, "/opt/build/%s"%name)
-                node.copyTree("/opt/build/%s"%name,dest)
-        if node:
-            self._build()
-        else:
-            self.actions.build(**self.args)
-
-    @remote
-    def _build(self,deps=True):
-        self.action.build(**self.args)
+            self.actions.build(self)
 
     @deps
-    @remote
     def start(self,deps=True):
-        self.actions.start(**self.args)
+        self.log("start instance")
+        self.actions.start(self)
 
     @deps
     def restart(self,deps=True):
@@ -405,7 +436,7 @@ class Service(object):
             process["test"]=1
 
             if process["name"].strip()=="":
-                process["name"]="%s_%s"%(self.hrd.get("jp.name"),self.hrd.get("jp.instance"))
+                process["name"]="%s_%s"%(self.hrd.get("service.name"),self.hrd.get("service.instance"))
 
             if self.hrd.exists("env.process.%s"%counter):
                 process["env"]=self.hrd.getDict("env.process.%s"%counter)
@@ -416,8 +447,8 @@ class Service(object):
         return procs
 
     @deps
-    @remote
     def prepare(self,deps=False, reverse=True):
+        self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
             src=src.replace(";",":")
             if src.strip()!="":
@@ -442,12 +473,12 @@ class Service(object):
             if packages:
                 j.do.execute("apt-get install -y -f %s"% " ".join(packages) ,dieOnNonZeroExitCode=True)
 
-        self.actions.prepare()
+        self.actions.prepare(self)
 
     def install(self, start=True,deps=True, reinstall=False):
         """
         Install Service.
-        
+
         Keyword arguments:
         start     -- whether Service should start after install (default True)
         deps      -- install the Service dependencies (default True)
@@ -461,18 +492,14 @@ class Service(object):
         if self.isLatest() and not reinstall:
             log("Latest %s already installed" % self)
             return
-        self._apply()
+        # self._apply()
         self.stop(deps=False)
         self.prepare(deps=True, reverse=True)
+        self.log("install instance")
         self._install(start=start, deps=deps, reinstall=reinstall)
 
     @deps
     def _install(self,start=True,deps=True, reinstall=False):
-        if self.node:
-            node = j.atyourservice.remote.sshPython(jp=self.jp,node=self.node)
-        else:
-            node = None
-
         #download
         for recipeitem in self.hrd.getListFromPrefix("web.export"):
             if "dest" not in recipeitem:
@@ -492,9 +519,6 @@ class Service(object):
             elif j.system.fs.exists(dest):
                 j.system.fs.remove(dest)
             j.system.net.download(fullurl, dest)
-            if node:
-                remoteDest = "root@%s:%s" %(node.ip,dest)
-                node.copyTree(dest,remoteDest)
 
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             # print recipeitem
@@ -534,10 +558,6 @@ class Service(object):
                     raise RuntimeError("a dest in coderecipe cannot be empty for %s"%self)
                 if dest[0]!="/":
                     dest="/%s"%dest
-                if node:
-                    # copy file on remote node with rsync
-                    dest = "root@%s:%s" %(node.ip,dest)
-                    node.copyTree(src,dest)
                 else:
                     if link:
                         if not j.system.fs.exists(dest):
@@ -554,19 +574,10 @@ class Service(object):
                         else:
                             j.system.fs.copyFile(src, dest, True, overwriteFile=delete)
 
-        if node:
-            # install the hrd to the remote host
-            hrdPath = "%s/%s.%s.hrd" % (j.dirs.getHrdDir(self.node),self.name,self.instance)
-            if not j.system.fs.exists(hrdPath):
-                raise RuntimeError("The hrd (%s) for this jpackages doesn't exists")
-            hrdContent = j.system.fs.fileGetContents(hrdPath)
-            destPath = "%s/apps/%s.%s.%s.hrd" % (j.dirs.hrdDir, self.domain, self.name, self.instance)
-            node.writeFile(destPath,hrdContent)
-
         self.configure(deps=False)
 
         self.start()
-        self.hrd.set('jp.installed.checksum', self._getMetaChecksum())
+        self.hrd.set('service.installed.checksum', self._getMetaChecksum())
 
         # else:
         #     #now bootstrap docker
@@ -583,9 +594,9 @@ class Service(object):
         #     vols=vols.strip().strip("#").strip()
 
         #     if self.instance!="main":
-        #         name="%s_%s"%(self.jp.name,self.instance)
+        #         name="%s_%s"%(self.service.name,self.instance)
         #     else:
-        #         name="%s"%(self.jp.name)
+        #         name="%s"%(self.service.name)
 
         #     image=self.hrd.get("docker.base",default="despiegk/mc")
 
@@ -612,10 +623,10 @@ class Service(object):
         #     self.hrd.set("docker.name",name)
         #     self.hrd.save()
 
-        #     hrdname="jpackage.%s.%s.%s.hrd"%(self.jp.domain,self.jp.name,self.instance)
+        #     hrdname="service.%s.%s.%s.hrd"%(self.service.domain,self.service.name,self.instance)
         #     src="/%s/hrd/apps/%s"%(j.dirs.baseDir,hrdname)
         #     j.tools.docker.copy(name,src,src)
-        #     j.tools.docker.run(name,"jpackage install -n %s -d %s"%(self.jp.name,self.jp.domain))
+        #     j.tools.docker.run(name,"service install -n %s -d %s"%(self.service.name,self.service.domain))
 
     @deps
     def publish(self,deps=True):
@@ -623,22 +634,23 @@ class Service(object):
         check which repo's are used & push the info
         this does not use the build repo's
         """
-        self.actions.publish(**self.args)
+        self.log("publish instance")
+        self.actions.publish(self)
 
     @deps
     def package(self,deps=True):
         """
         """
-        self.actions.package(**self.args)
+        self.actions.package(self)
 
     @deps
-    @remote
     def update(self,deps=True):
         """
         - go over all related repo's & do an update
         - copy the files again
         - restart the app
         """
+        self.log("update instance")
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             #pull the required repo
             self._getRepo(recipeitem['url'],recipeitem=recipeitem)
@@ -654,13 +666,14 @@ class Service(object):
 
     @deps
     def resetstate(self,deps=True):
+        self.log("resetstate instance")
         if self.actionspath.find(".py") == -1:
             j.do.delete(self.actionspath+".py",force=True)
             j.do.delete(self.actionspath+"pyc",force=True) #for .pyc file
         else:
             j.do.delete(self.actionspath,force=True)
             j.do.delete(self.actionspath+"c",force=True) #for .pyc file
-        actioncat="jp_%s_%s_%s"%(self.jp.domain,self.jp.name,self.instance)
+        actioncat="service_%s_%s_%s"%(self.service.domain,self.service.name,self.instance)
         j.do.delete("%s/%s.json"%(j.dirs.getStatePath(),actioncat),force=True)
 
 
@@ -671,6 +684,7 @@ class Service(object):
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app
         """
+        self.log("reset instance")
         self.resetstate()
         #remove build repo's
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
@@ -678,61 +692,111 @@ class Service(object):
             dest="/opt/build/%s"%name
             j.do.delete(dest)
 
-        self.actions.removedata(**self.args)
+        self.actions.removedata(self)
         j.do.delete(self.hrdpath,force=True)
 
     @deps
-    @remote
     def removedata(self,deps=False):
         """
         - remove build repo's !!!
         - remove state of the app (same as resetstate) in jumpscale (the configuration info)
         - remove data of the app
         """
-        self.actions.removedata(**self.args)
+        self.log("removedata instance")
+        self.actions.removedata(self)
 
     @deps
-    @remote
     def execute(self,deps=False):
         """
-        execute cmd on jpackage
+        execute cmd on service
         """
-        self.actions.execute(**self.args)
+        cmd = ""
+        if "cmd" in self.args:
+            cmd = self.args['cmd']
+        self.log("execute cmd:'%s' on instance"%cmd)
+        self.actions.execute(self,cmd=cmd)
 
     @deps
-    @remote
     def uninstall(self,deps=True):
+        self.log("uninstall instance")
         self.reset()
-        self.actions.uninstall(**self.args)
+        self.actions.uninstall(self)
 
     @deps
-    @remote
     def monitor(self,deps=True):
         """
         do all monitor checks and return True if they all succeed
         """
-        res=self.actions.check_up_local(**self.args)
-        res=res and self.actions.monitor_local(**self.args)
-        res=res and self.actions.monitor_remove(**self.args)
+        res=self.actions.check_up_local(self)
+        res=res and self.actions.monitor_local(self)
+        res=res and self.actions.monitor_remove(self)
         return res
 
     @deps
-    @remote
     def iimport(self,url,deps=True):
-        self.actions.iimport(url,**self.args)
+        self.log("import instance data")
+        self.actions.data_import(url,self)
 
     @deps
-    @remote
     def export(self,url,deps=True):
-        self.actions.export(url,**self.args)
+        self.log("export instance data")
+        self.actions.data_export(url,self)
 
 
     @deps
-    @remote
     def configure(self,deps=True,restart=True):
-        self.actions.configure(**self.args)
-        if restart:
-            self.restart(deps=False)
+        self.log("configure instance")
+        self.actions.configure(self)
+        # if restart:
+            # self.restart(deps=False)
+
+    def findParents(self):
+        return j.atyourservice.findParents(self)
+
+
+    def consume(self,producerprefix):
+        """
+        create connection between consumer & producer
+        @param producerprefix is start of name of producer
+        """
+        for item in self.findParents():
+            if item.name.find(producerprefix)==0:
+                #found producer
+                portname=self.instance
+
+                for key,servicedeliver in item.hrd.getDictFromPrefix("service.deliver").iteritems():
+                    if self.name.find(servicedeliver["name"])==0:
+                        #found the required producing service
+                        # consumedict={}
+                        # consumedict["name"]=item.name
+                        # consumedict["instance"]=item.instance
+                        # consumedict["descr"]=servicedeliver["descr"]
+                        # consumedict["action"]=servicedeliver["action"]
+
+                        self.hrd.set("producer.%s.instance"%item.name,item.instance)
+                        return
+
+                        #@todo we need to check the max nr & min nr of instances
+
+        raise RuntimeError("Could not find producer:%s"%producerprefix)
+
+    def link(self,name,instance):
+        """
+        create link between 2 instances
+        """
+        other=j.atyourservice.get(name=name,instance=instance)
+
+        for key,linkobj in other.hrd.getDictFromPrefix("service.link").iteritems():
+            if self.name.find(linkobj["name"])==0:
+                self.hrd.set("link.%s.instance"%other.name,other.instance)
+                # self.hrd.set("link.%s.type"%other.name,linkobj["type"])
+                return
+
+                #@todo we need to check the max nr & min nr of instances
+
+        raise RuntimeError("Could not find link:%s"%producerprefix)
+
+
 
     def __repr__(self):
         return "%-15s:%-15s:%s"%(self.domain,self.name,self.instance)
