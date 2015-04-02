@@ -223,13 +223,10 @@ class Application:
         """
         returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
         """
-        if j.atyourservice.type!="c":
-            path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s.%s.hrd"%(name,instance))
+        if parent:
+            path = j.system.fs.joinPaths(parent.path,"%s__%s"%(name,instance),"service.hrd")
         else:
-            if parent:
-                path = j.system.fs.joinPaths(parent.path,"%s__%s"%(name,instance),"service.hrd")
-            else:
-                path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(name,instance),"service.hrd")
+            path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(name,instance),"service.hrd")
         if not j.system.fs.exists(path=path):
             j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
         return j.core.hrd.get(path)
