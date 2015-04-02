@@ -430,7 +430,7 @@ class Service(object):
         defaults={"prio":10,"timeout_start":10,"timeout_start":10,"startupmanager":"tmux"}
         musthave=["cmd","args","prio","env","cwd","timeout_start","timeout_start","ports","startupmanager","filterstr","name","user"]
 
-        procs=self.hrd.getListFromPrefixEachItemDict("process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
+        procs=self.hrd.getListFromPrefixEachItemDict("service.process",musthave=musthave,defaults=defaults,aredict=['env'],arelist=["ports"],areint=["prio","timeout_start","timeout_start"])
         for process in procs:
             counter+=1
 
@@ -502,7 +502,7 @@ class Service(object):
     @deps
     def _install(self,start=True,deps=True, reinstall=False):
         #download
-        for recipeitem in self.hrd.getListFromPrefix("web.export"):
+        for recipeitem in self.hrd.getListFromPrefix("service.web.export"):
             if "dest" not in recipeitem:
                 raise RuntimeError("could not find dest in hrditem for %s %s"%(recipeitem,self))
             fullurl = "%s/%s" % (recipeitem['url'], recipeitem['source'].lstrip('/'))
@@ -521,7 +521,8 @@ class Service(object):
                 j.system.fs.remove(dest)
             j.system.net.download(fullurl, dest)
 
-        for recipeitem in self.hrd.getListFromPrefix("git.export"):
+        from ipdb import set_trace;set_trace()
+        for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
             # print recipeitem
             #pull the required repo
             dest0=self._getRepo(recipeitem['url'],recipeitem=recipeitem)
