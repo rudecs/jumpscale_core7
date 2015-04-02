@@ -270,23 +270,23 @@ class Service(object):
 
         login=None
         passwd=None
-        if recipeitem<>None and "login" in recipeitem:
+        if recipeitem!=None and "login" in recipeitem:
             login=recipeitem["login"]
             if login=="anonymous" or login.lower()=="none" or login=="" or login.lower()=="guest" :
                 login="guest"
-        if recipeitem<>None and "passwd" in recipeitem:
+        if recipeitem!=None and "passwd" in recipeitem:
             passwd=recipeitem["passwd"]
 
         branch='master'
-        if recipeitem<>None and "branch" in recipeitem:
+        if recipeitem!=None and "branch" in recipeitem:
             branch=recipeitem["branch"]
 
         revision=None
-        if recipeitem<>None and "revision" in recipeitem:
+        if recipeitem!=None and "revision" in recipeitem:
             revision=recipeitem["revision"]
 
         depth=1
-        if recipeitem<>None and "depth" in recipeitem:
+        if recipeitem!=None and "depth" in recipeitem:
             depth=recipeitem["depth"]
             if isinstance(depth,str) and depth.lower()=="all":
                 depth=None
