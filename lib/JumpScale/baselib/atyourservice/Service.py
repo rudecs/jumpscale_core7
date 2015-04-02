@@ -161,9 +161,9 @@ class Service(object):
             #     #@todo need to reload HRD's
         self._init=True
 
-    # def getLogPath(self):
-    #     logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.service.domain, self.service.name,self.instance))
-    #     return logpath
+    def getLogPath(self):
+        logpath=j.system.fs.joinPaths(j.dirs.logDir,"startup", "%s_%s_%s.log" % (self.domain, self.name,self.instance))
+        return logpath
 
     def isInstalled(self):
         hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")

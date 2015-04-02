@@ -65,14 +65,13 @@ class ActionsBase():
         start happens because of info from main.hrd file but we can overrule this
         make sure to also call ActionBase.start(serviceobj) in your implementation otherwise the default behaviour will not happen
         """
-
         if serviceobj.getProcessDicts()==[]:
             return
 
         def start2(process):
 
             cwd=process["cwd"]
-            args['process'] = process
+            # args['process'] = process
             self.stop(serviceobj)
 
             tcmd=process["cmd"]
@@ -87,7 +86,7 @@ class ActionsBase():
             env=process["env"]
 
             startupmethod=process["startupmanager"]
-            domain, name = self._getDomainName(process)
+            domain, name = self._getDomainName(serviceobj, process)
             log("Starting %s:%s" % (domain, name))
 
             j.do.delete(serviceobj.getLogPath())
@@ -147,13 +146,13 @@ class ActionsBase():
                 # self.raiseError(msg)
                 # return
 
-        isrunning=self.check_up_local(wait=False)
+        isrunning=self.check_up_local(serviceobj,wait=False)
         if isrunning:
             return
         for process in serviceobj.getProcessDicts():
             start2(process)
 
-        isrunning=self.check_up_local()
+        isrunning=self.check_up_local(serviceobj)
         if isrunning==False:
             if j.system.fs.exists(path=serviceobj.getLogPath()):
                 logc=j.do.readFile(serviceobj.getLogPath()).strip()
@@ -184,12 +183,12 @@ class ActionsBase():
 
         def stop_process(process):
             currentpids = (os.getpid(), os.getppid())
-            for pid in self.get_pids([process]):
+            for pid in self.get_pids(serviceobj,[process]):
                 if pid not in currentpids :
                     j.system.process.kill(pid, signal.SIGTERM)
 
             startupmethod=process["startupmanager"]
-            domain, name = self._getDomainName(process)
+            domain, name = self._getDomainName(serviceobj, process)
             if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
                 j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
             elif startupmethod=="tmux":
@@ -197,22 +196,18 @@ class ActionsBase():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)
 
-        if serviceobj.sername == 'redis':
+        if serviceobj.name == 'redis':
             j.logger.redislogging = None
             j.logger.redis = None
 
-        if 'process' in args:
-            stop_process(args['process'])
-        else:
-            processes = serviceobj.getProcessDicts()
-            if processes:
-                log("Stopping %s" % serviceobj)
-                for process in processes:
-                    stop_process(process)
+        processes = serviceobj.getProcessDicts()
+        if processes:
+            log("Stopping %s" % serviceobj)
+            for process in processes:
+                stop_process(process)
         return True
 
-    @remote
-    def get_pids(self, processes=None, **kwargs):
+    def get_pids(self,serviceobj,processes=None, **kwargs):
         pids = set()
         if processes is None:
             processes = serviceobj.getProcessDicts()
@@ -229,7 +224,7 @@ class ActionsBase():
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
         """
         currentpids = (os.getpid(), os.getppid())
-        for pid in self.get_pids():
+        for pid in self.get_pids(serviceobj):
             if pid not in currentpids :
                 j.system.process.kill(pid, signal.SIGKILL)
         if not self.check_down_local(serviceobj):
@@ -250,7 +245,6 @@ class ActionsBase():
         """
         pass
 
-    @remote
     def check_up_local(self, serviceobj, wait=True):
         """
         do checks to see if process(es) is (are) running.
@@ -290,13 +284,12 @@ class ActionsBase():
         for process in serviceobj.getProcessDicts():
             result=do(process)
             if result==False:
-                domain, name = self._getDomainName(process)
+                domain, name = self._getDomainName(serviceobj,process)
                 log("Status %s:%s not running" % (domain,name))
                 return False
         log("Status %s is running" % (serviceobj))
         return True
 
-    @remote
     def check_down_local(self,serviceobj):
         """
         do checks to see if process(es) are all down
