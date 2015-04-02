@@ -245,9 +245,8 @@ class Service(object):
 
         hrdpath = j.system.fs.joinPaths(self.path,"service.hrd")
         mergeArgsHDRData = self.args.copy()
-        mergeArgsHDRData.update(self.args)
+        mergeArgsHDRData.update(self.hrddata)
         self._hrd=j.core.hrd.get(hrdpath,args=mergeArgsHDRData,prefixWithName=False)
-        # self._hrd=j.core.hrd.get(hrdpath,args=self.args,prefixWithName=False)
         self._hrd.applyTemplates(path="%s/service.hrd"%self.templatepath,prefix="service")
         self._hrd.applyTemplates(path="%s/instance.hrd"%self.templatepath,prefix="instance")
 
@@ -261,6 +260,8 @@ class Service(object):
             j.application.config.applyOnFile(actionLua, additionalArgs=self.args)
 
         j.application.config.applyOnFile(hrdpath, additionalArgs=self.args)
+        self._hrd.process("") #replace $() with actual data
+
         self._loadActionModule()
 
     def _getRepo(self,url,recipeitem=None,dest=None):
