@@ -182,17 +182,6 @@ class AtYourServiceFactory():
             res.append(self.get(name=parentName,instance=parentInstance))
         return res
 
-    def findParent(self,service,parentName):
-        start = service.path.find(parentName)
-        end = service.path.find("/",start)
-        parentName = service.path[start:end]
-
-        ss = parentName.split("__")
-        parentName = ss[0]
-        parentInstance = ss[1]
-        parentPath = j.system.fs.joinPaths(j.dirs.hrdDir,parentName)
-        return self.get(name=parentName,instance=parentInstance)
-
     def new(self,domain="",name="",instance="main",parent=None,args={}):
         """
         will create a new service
