@@ -80,7 +80,7 @@ class AtYourServiceFactory():
             return self._cachefind[key]
 
         self._doinit()
-                
+
         #create some shortcuts for fast return
         if domain!="":
             if domain not in self.domains:
@@ -137,7 +137,7 @@ class AtYourServiceFactory():
 
     def findServices(self,domain="",name="",instance=""):
         key="%s__%s__%s"%(domain,name,instance)
-        if name!="" and instance!="":            
+        if name!="" and instance!="":
             if self._cachefind.has_key(key):
                 return self._cachefind[key]
 
@@ -146,9 +146,11 @@ class AtYourServiceFactory():
         res=[]
         for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
             namefound=j.system.fs.getBaseName(path)
+            # if namefound == "system": # needed because of the /opt/jumpscale7/hrd/system directory
+            #     continue
             name,instance=namefound.split("__",1)
             instance=instance.split(".",1)[0]
-            
+
             key="%s__%s__%s"%(domain,name,instance)
             if self._cache.has_key(key):
                 service=self._cache[key]
@@ -156,7 +158,7 @@ class AtYourServiceFactory():
                 servicetemplate=self.findTemplates(domain=domain,name=name)[0]
                 service=Service(instance=instance,servicetemplate=servicetemplate,path=path)
                 self._cache[key]=service
-                
+
             res.append(service)
 
         if name!="" and instance!="":
@@ -192,7 +194,7 @@ class AtYourServiceFactory():
         self._doinit()
         services=self.findTemplates(domain,name)
         if len(services)==0:
-            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))            
+            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
         obj=services[0].newInstance(instance,parent=parent, args=args)
         self._cache[key]=obj
         return obj

@@ -48,7 +48,6 @@ class ServiceTemplate():
         files = j.system.fs.listFilesInDir(j.dirs.hrdDir,recursive=True,filter="%s"%self.name)
         instances = list()
         for path in files:
-            from ipdb import set_trace;set_trace()
             name_instance = path.split('/')[-2]
             instances.append()
         return instances

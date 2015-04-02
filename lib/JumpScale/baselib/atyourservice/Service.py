@@ -521,7 +521,6 @@ class Service(object):
                 j.system.fs.remove(dest)
             j.system.net.download(fullurl, dest)
 
-        from ipdb import set_trace;set_trace()
         for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
             # print recipeitem
             #pull the required repo

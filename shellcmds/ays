@@ -252,7 +252,7 @@ elif args.action == 'start':
 elif args.action == 'stop':
     services = getService(args,expandInstances=True,list=True)
     for service in sorted(services, cmp=sorter):
-        service.restart(deps=args.deps)
+        service.stop(deps=args.deps)
 
 elif args.action == 'execute':
     services = getService(args,expandInstances=True)
