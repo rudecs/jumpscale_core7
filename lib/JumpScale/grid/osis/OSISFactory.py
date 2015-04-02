@@ -99,10 +99,10 @@ class OSISClientFactory(object):
                 instance = 'main'
         hrdinstance= j.application.getAppInstanceHRD(name="osis_client",instance=instance) 
         if hrdinstance:
-            ipaddr=hrdinstance.get("param.osis.client.addr")
-            port=int(hrdinstance.get("param.osis.client.port"))
-            user=hrdinstance.get("param.osis.client.login")
-            passwd=hrdinstance.get("param.osis.client.passwd")
+            ipaddr=hrdinstance.get("instance.param.osis.client.addr")
+            port=int(hrdinstance.get("instance.param.osis.client.port"))
+            user=hrdinstance.get("instance.param.osis.client.login")
+            passwd=hrdinstance.get("instance.param.osis.client.passwd")
             return self.get(ipaddr=ipaddr, port=port, user=user, passwd=passwd, ssl=ssl, gevent=gevent)
         if die:
             j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)

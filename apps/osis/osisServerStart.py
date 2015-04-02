@@ -10,7 +10,7 @@ if __name__ == '__main__':
     args=sys.argv
     osis_instance=args[1]
     osishrd = j.application.getAppInstanceHRD(name="osis",instance=osis_instance)
-    connectionsconfig = osishrd.getDictFromPrefix('param.osis.connection')
+    connectionsconfig = osishrd.getDictFromPrefix('instance.param.osis.connection')
     connections = {}
 
     for dbname, instancename in connectionsconfig.items():
@@ -32,7 +32,7 @@ if __name__ == '__main__':
             client = j.clients.influxdb.getByInstance(instancename)
             databases = [db['name'] for db in client.get_list_database()]
             hrd = j.application.getAppInstanceHRD(instance=instancename, name='influxdb_client')
-            database_name = hrd.getStr('param.influxdb.client.dbname')
+            database_name = hrd.getStr('instance.param.influxdb.client.dbname')
             if database_name not in databases:
                 client.create_database(database_name)
             else:
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
         connections["%s_%s"%(dbname,instancename)]=client
 
-    superadminpasswd = osishrd.get("param.osis.superadmin.passwd")
+    superadminpasswd = osishrd.get("instance.param.osis.superadmin.passwd")
 
     j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=osishrd)
 
