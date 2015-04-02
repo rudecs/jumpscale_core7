@@ -18,7 +18,8 @@ def remote(F): # F is func or method without instance
             parentNode = j.atyourservice.findParent(service,host)
             return actions.executeaction(service,actionname=F.func_name)
         else:
-            return F(service, *args,**kwargs)
+            result = F(actions, service,**kwargs)
+            return result
     return wrapper
 
 class ActionsBase():
