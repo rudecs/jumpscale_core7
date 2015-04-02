@@ -65,7 +65,7 @@ parser.add_argument("--path", required=False, help='path to git config repo to b
 group = parser.add_argument_group(title="Package Selection")
 group.add_argument('-q','--quiet', required=False, action='store_true', help='Put in quiet mode')
 group.add_argument('-n','--name',required=False, help='Name of jservice to be installed',default="")
-# group.add_argument('-d','--domain',required=False, help='Name of jservice domain to be installed',default="")
+group.add_argument('-d','--domain',required=False, help='Name of jservice domain to be installed',default="")
 group.add_argument('-i','--instance',required=False, help='Instance of jservice (default main)',default=None)
 group.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
 group.add_argument('--nodeps',required=False, action='store_true',help='Don\'t perfomr action on dependencies, default False',default=False)
@@ -99,17 +99,58 @@ def sorter(jp1, jp2):
         key2 = "%s_%s" % (jp2.domain, jp2.name)
         return cmp(key1, key2)
 
-def getService(args):
-    name = args.name.strip()
-    instance = args.instance.strip()
-    services = j.atyourservice.find(name=name,instance=instance)
-    service = None
-    if len(services) >= 1:
-        service = services[0]
-        service.init()
+def getService(args, debug=None,update=False,expandInstances=True,toinstall=False,list=False, jpargs={}, hrddata=None):
+    serviceTemplates=[]
+
+    name=args.name.strip()
+    if name=="*":
+        name=""
+
+    if name!="" and name.find("*")==-1:
+        for pname in args.name.split(","):
+            if pname.strip()!="":
+                serviceTemplates += j.atyourservice.findTemplates(name=pname.strip(), domain=args.domain)
     else:
-        raise RuntimeError("service %s not found" % args.name)
-    return service
+        serviceTemplates += j.atyourservice.findTemplates(domain=args.domain)
+        if len(serviceTemplates) > 1 and name.find("*")!=-1:
+            tofind=name.replace("*","")
+            serviceTemplates=[item for item in serviceTemplates if item.name.find(tofind)!=-1]
+
+        if len(serviceTemplates) > 1 and name.find("*")!=-1:
+            pass #no need to ask interactive
+        elif len(serviceTemplates) > 1 and list==False:
+            if not j.application.interactive:
+                print(("Found multiple serviceTemplates %s, cannot continue in non interactive mode" % (serviceTemplates)))
+                j.application.stop(1)
+            else:
+                serviceTemplates = j.console.askChoiceMultiple(serviceTemplates, "Multiple serviceTemplates found. Select:")
+
+
+    if len(serviceTemplates) == 0:
+        print(("Could not find service template with name '%s' in domain '%s' " % (args.name, args.domain)))
+        j.application.stop(1)
+
+    if toinstall and args.instance<>"main" and len(serviceTemplates)>1:
+        raise RuntimeError("Can only get service if only 1 service when instance set or more serviceTemplates when instance=main")
+
+    if toinstall:
+        serviceTemplates=[template.getInstance(args.instance, args=jpargs) for template in serviceTemplates]
+        expandInstances = False
+
+    if expandInstances:
+        rawTemplates = serviceTemplates
+        serviceTemplates = []
+        for templates in rawTemplates:
+            if args.instance is None:
+                for instance in templates.listInstances():
+                    serviceTemplates.append(templates.getInstance(instance, args=jpargs))
+            else:
+                serviceTemplates.append(templates.getInstance(args.instance, args=jpargs))
+
+    if serviceTemplates==[]:
+        raise RuntimeError("Cannot find serviceTemplates, need at least 1")
+
+    return serviceTemplates
 
 
 if '--help' in sys.argv or '-h' in sys.argv:
@@ -153,115 +194,126 @@ if args.quiet:
     sys.stdout = NullDevice();
 
 if args.action == 'configure':
-    from ipdb import set_trace;set_trace()
-    service = getService(args)
-    service.configure()
+    services = getService(args,toinstall=True)
+    for service in services:
+        service.configure(deps=args.deps)
+        service.start()
 
 elif args.action == 'install':
-    service = getService(args)
-    service.install()
+    services = getService(args,toinstall=True)
+    for service in services:
+        service.install(deps=args.deps, reinstall=args.reinstall)
 
 elif args.action == 'update':
-    service = getService(args)
-    service.update(deps=args.deps)
+    services = getService(args,toinstall=True)
+    for service in services:
+        service.update(deps=args.deps, reinstall=args.reinstall)
 
 elif args.action == 'monitor':
-    service = getService(args)
-    service.monitor()
+    # TODO
+    pass
 
 elif args.action == 'publish':
-    service = getService(args)
-    service.publish(deps=args.deps)
+    # TODO
+    pass
 
 elif args.action == 'reset':
-    service = getService(args)
-    service.reset(deps=args.deps)
+    # TODO
+    pass
 
 elif args.action == 'removedata':
-    service = getService(args)
-    service.removedata(deps=args.deps)
+    services = getService(args,toinstall=True)
+    for service in services:
+        service.removedata(deps=args.deps)
 
 elif args.action == 'resetstate':
-    service = getService(args)
-    service.resetstate(deps=args.deps)
+    services = getService(args,toinstall=True)
+    for service in services:
+        service.resetstate(deps=args.deps)
 
 elif args.action == 'export':
-    service = getService(args)
-    service.export(url=args.url,deps=args.deps)
+    # TODO
+    pass
 
 elif args.action == 'import':
-    service = getService(args)
-    service.iimport(url=args.url,deps=args.deps)
+    # TODO
+    pass
 
 elif args.action == 'restart':
-    service = getService(args)
-    service.restart(deps=args.deps)
+    services = getService(args,expandInstances=True,list=True)
+    for service in services:
+        service.restart(deps=args.deps)
 
 elif args.action == 'start':
-    service = getService(args)
-    service.start(deps=args.deps)
+    services = getService(args,expandInstances=True,list=True)
+    for service in sorted(services, cmp=sorter):
+        service.start(deps=args.deps)
 
 elif args.action == 'stop':
-    service = getService(args)
-    service.stop(deps=False)
+    services = getService(args,expandInstances=True,list=True)
+    for service in sorted(services, cmp=sorter):
+        service.restart(deps=args.deps)
 
 elif args.action == 'execute':
-    service = getService(args)
-    service.args['cmd'] = args.cmd
-    service.execute(deps=args.deps)
+    services = getService(args,expandInstances=True)
+    for service in sorted(services, cmp=sorter):
+        service.args['cmd'] = args.cmd
+        service.execute(deps=args.deps)
 
 elif args.action == 'build':
-    service = getService(args)
-    service.build(deps=args.deps)
+    services = getService(args,toinstall=True)
+    for service in sorted(services, cmp=sorter):
+        service.build(deps=args.deps)
 
 elif args.action == 'uninstall':
-    service = getService(args)
-    service.uninstall(deps=args.deps)
+    services = getService(args,toinstall=True)
+    for service in sorted(services, cmp=sorter):
+        service.uninstall(deps=args.deps)
 
 elif args.action == 'push':
-    service = getService(args)
-    service.push(deps=args.deps)
+    # TODO
+    pass
 
-# elif args.action == 'list':
-#     def printServices(services):
-#         form = '%(domain)-15s %(name)-20s %(version)8s %(buildnr)8s %(debug)5s %(debugInJservice)5s'
-#         print form % {'domain': 'DOMAIN', 'name': 'NAME', 'version': 'VERSION', 'debug': 'DEBUG', \
-#             'buildnr':'BUILDNR','debugInJservice':'DEBUG_JP'}
-#         print '=' * 70
-#         print ''
-#         for service in sorted(services, key=lambda p: "%s_%s" % (p.domain, p.name)):
-#             # debugINJP = 'yes' if service.getDebugModeInJservice() else 'no'
-#             # debug = 'yes' if service.debug else 'no'
-#             debug="?"
-#             debugINJP="?"
-#             buildNr="?"
-#             version="?"
-#             print form % {'name': service.name, 'domain': service.domain, 'version': version, \
-#             'debug': debug, 'buildnr': buildNr,'debugInJservice':debugINJP}
+elif args.action == 'list':
+    def printServices(services):
+        form = '%(domain)-15s %(name)-20s %(version)8s %(buildnr)8s %(debug)5s %(debugInJservice)5s'
+        print form % {'domain': 'DOMAIN', 'name': 'NAME', 'version': 'VERSION', 'debug': 'DEBUG', \
+            'buildnr':'BUILDNR','debugInJservice':'DEBUG_JP'}
+        print '=' * 70
+        print ''
+        for service in sorted(services, key=lambda p: "%s_%s" % (p.domain, p.name)):
+            # debugINJP = 'yes' if service.getDebugModeInJservice() else 'no'
+            # debug = 'yes' if service.debug else 'no'
+            debug="?"
+            debugINJP="?"
+            buildNr="?"
+            version="?"
+            print form % {'name': service.name, 'domain': service.domain, 'version': version, \
+            'debug': debug, 'buildnr': buildNr,'debugInJservice':debugINJP}
 
-#     jps=getService(args,list=True,expandInstances=args.installed, jpargs=jpargs)
-#     printServices(jps)
+    services=getService(args,list=True,expandInstances=args.installed)
+    printServices(services)
 
-# elif args.action == 'status':
-#     j.logger.consolelogCategories.remove('jpactions')
-#     j.logger.consolelogCategories.append('nologs') # dont leave categories empty
-#     def printServices(services):
+elif args.action == 'status':
+    j.logger.consolelogCategories.remove('jpactions')
+    j.logger.consolelogCategories.append('nologs') # dont leave categories empty
+    def printServices(services):
 
-#         form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s %(ports)s'
-#         print form % {'domain': 'DOMAIN', 'name': 'NAME', 'instance': 'Instance', 'prio': 'Prio', 'status': 'Status', \
-#             'ports': 'Ports'}
-#         print '=' * 70
-#         print ''
-#         for service in sorted(services, cmp=sorter):
-#             if not service.getProcessDicts():
-#                 continue
-#             isrunning = service.actions.check_up_local(wait=False)
-#             status = 'RUNNING' if isrunning else 'HALTED'
-#             ports = ', '.join( str(x) for x in service.getTCPPorts() )
-#             print form % {'name': service.name, 'domain': service.domain, 'instance': service.instance, 'prio': service.getPriority(), 'status': status, 'ports': ports}
+        form = '%(domain)-15s %(name)-20s %(instance)-10s %(prio)4s %(status)-8s %(ports)s'
+        print form % {'domain': 'DOMAIN', 'name': 'NAME', 'instance': 'Instance', 'prio': 'Prio', 'status': 'Status', \
+            'ports': 'Ports'}
+        print '=' * 70
+        print ''
+        for service in sorted(services, cmp=sorter):
+            if not service.getProcessDicts():
+                continue
+            isrunning = service.actions.check_up_local(wait=False)
+            status = 'RUNNING' if isrunning else 'HALTED'
+            ports = ', '.join( str(x) for x in service.getTCPPorts() )
+            print form % {'name': service.name, 'domain': service.domain, 'instance': service.instance, 'prio': service.getPriority(), 'status': status, 'ports': ports}
 
-#     jps = services = getService(args,expandInstances=True, toinstall=False,list=True, jpargs=jpargs)
-#     printServices(jps)
+    jps = services = getService(args,expandInstances=True, toinstall=False,list=True)
+    printServices(jps)
 
 # elif args.action == 'nodes':
 #     def printNodes(allNodes):

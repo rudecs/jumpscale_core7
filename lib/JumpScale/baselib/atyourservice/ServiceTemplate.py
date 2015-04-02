@@ -26,13 +26,15 @@ class ServiceTemplate():
     def getInstance(self,instance=None, args={},parent=None):
         # get first installed or main
         if instance is None:
-            instances = self.listInstances(node=node)
+            instances = self.listInstances()
             if instances:
                 instance = instances[0]
             else:
                 instance = 'main'
         # return j.atyourservice.find(domain=self.domain,name=self.name,maxnr=1,instance=instance)[0]
-        return Service(instance=instance,servicetemplate=self, args=args,parent=parent)
+        service = Service(instance=instance,servicetemplate=self, args=args,parent=parent)
+        service.init()
+        return service
 
     def existsInstance(self,instance):
         res=j.atyourservice.find(domain=self.domain,name=self.name,maxnr=1,instance=instance)
@@ -43,10 +45,13 @@ class ServiceTemplate():
 
     def listInstances(self):
         res=[]
-        
-        from IPython import embed
-        print "DEBUG NOW listInstances"
-        embed()
+        files = j.system.fs.listFilesInDir(j.dirs.hrdDir,recursive=True,filter="%s"%self.name)
+        instances = list()
+        for path in files:
+            from ipdb import set_trace;set_trace()
+            name_instance = path.split('/')[-2]
+            instances.append()
+        return instances
 
 
     def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None):
