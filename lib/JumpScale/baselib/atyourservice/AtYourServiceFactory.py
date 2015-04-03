@@ -138,6 +138,19 @@ class AtYourServiceFactory():
         """
         FindServices looks for actual services that are created
         """
+        def createService(domain,name,instance,path):
+                    targetKey="%s__%s__%s"%(domain,name,instance)
+                    if name!="" and instance!="" and self._cache.has_key(targetKey):
+                        return self._cache[targetKey]
+
+                    servicetemplates=self.findTemplates(domain=domain,name=name)
+                    if len(servicetemplates) <= 0:
+                        j.events.opserror_critical("services template %s__%s not found"%(domain,name))
+                    service=Service(instance=instance,servicetemplate=servicetemplates[0],path=path)
+                    if name!="" and instance!="":
+                        self._cache[targetKey]=service
+                    return service
+
         targetKey="%s__%s__%s"%(domain,name,instance)
         if name!="" and instance!="":
             if self._cachefind.has_key(targetKey):
@@ -146,7 +159,7 @@ class AtYourServiceFactory():
         self._doinit()
 
         res=[]
-        for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=True, findDirectorySymlinks=True):
+        for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
             namefound=j.system.fs.getBaseName(path)
 
             # if the directory name has not the good format, skip it
@@ -154,19 +167,18 @@ class AtYourServiceFactory():
                 continue
 
             namefound,instancefound=namefound.split("__",1)
-            foundKey="%s__%s__%s"%(domain,namefound,instancefound)
-
-            if foundKey.find(targetKey) != -1:
-                if self._cache.has_key(targetKey):
-                    service=self._cache[targetKey]
-                else:
-                    servicetemplates=self.findTemplates(domain=domain,name=name)
-                    if len(servicetemplates) <= 0:
-                        j.events.opserror_critical("services template %s__%s not found"%(domain,name))
-                    service=Service(instance=instancefound,servicetemplate=servicetemplates[0],path=path)
-                    if name!="" and instance!="":
-                        self._cache[targetKey]=service
-
+            service=None
+            if instance=="" and name=="":
+                service =createService(domain,namefound,instancefound,path)
+            elif instance=="" and name!="":
+                if namefound==name:
+                    service = createService(domain,namefound,instancefound,path)
+            elif instance!="" and name=="":
+                if instance==instancefound:
+                    service = createService(domain,namefound,instancefound,path)
+            elif instance==instancefound and namefound == name:
+                    service = createService(domain,namefound,instancefound,path)
+            if service != None:
                 res.append(service)
 
         if name!="" and instance!="":
