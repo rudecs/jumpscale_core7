@@ -70,7 +70,7 @@ class ServiceTemplate():
         """
 
         service=self.newInstance(instance=instance, args=args ,parent=parent)
-        service.install(self, start=start,deps=deps, reinstall=reinstall)
+        service.install(start=start,deps=deps, reinstall=reinstall)
 
 
 
