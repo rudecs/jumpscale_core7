@@ -145,7 +145,7 @@ class AtYourServiceFactory():
 
                     servicetemplates=self.findTemplates(domain=domain,name=name)
                     if len(servicetemplates) <= 0:
-                        j.events.opserror_critical("services template %s__%s not found"%(domain,name))
+                        raise RuntimeError("services template %s__%s not found"%(domain,name))
                     service=Service(instance=instance,servicetemplate=servicetemplates[0],path=path)
                     if name!="" and instance!="":
                         self._cache[targetKey]=service
@@ -210,14 +210,14 @@ class AtYourServiceFactory():
         """
         serviceTmpls=None
         key="%s__%s__%s"%(domain,name,instance)
-        if self._cachefind.has_key(key):
+        if self._cache.has_key(key):
              serviceTmpls = self._cache[key]
 
         self._doinit()
 
         serviceTmpls=self.findTemplates(domain,name)
         if len(serviceTmpls)==0:
-            j.events.opserror_critical("cannot find service template %s/%s"%(domain,name))
+            raise RuntimeError("cannot find service template %s__%s"%(domain,name))
         obj=serviceTmpls[0].newInstance(instance,parent=parent, args=args)
         self._cache[key]=obj
         return obj
@@ -233,9 +233,9 @@ class AtYourServiceFactory():
         self._doinit()
         services=self.findServices(domain,name,instance=instance)
         if len(services)==0:
-            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
+            raise RuntimeError("cannot find service %s__%s"%(domain,name))
         if len(services)>1:
-            j.events.opserror_critical("multiple service found, be more precise %s/%s"%(domain,name))
+            raise RuntimeError("multiple service found, be more precise %s%s"%(domain,name))
         self._cache[key]=services[0]
         return self._cache[key]
 
