@@ -19,43 +19,47 @@ class ServiceTemplate():
         self.metapath=path
 
     def newInstance(self,instance="main", args={},hrddata={}, parent=None):
+        # TODO, should take in account the domain too
+        services = j.atyourservice.findServices(name=self.name,instance=instance)
+        if len(services)>0:
+            j.events.opserror_critical("service %s__%s__%s already exists"%(self.domain,self.name,instance))
         service = Service(instance=instance,servicetemplate=self,args=args,parent=parent)
-        # service.log("create instance")
         return service
 
-    def getInstance(self,instance=None, args={},parent=None):
-        # get first installed or main
+    def getInstance(self,instance=None):
+        """
+        get first installed or main
+        """
         if instance is None:
             instances = self.listInstances()
             if instances:
                 instance = instances[0]
             else:
                 instance = 'main'
-        # return j.atyourservice.find(domain=self.domain,name=self.name,maxnr=1,instance=instance)[0]
-        service = Service(instance=instance,servicetemplate=self, args=args,parent=parent)
-        service.init()
-        return service
+        services =  j.atyourservice.findServices(domain=self.domain,name=self.name,instance=instance)
+        if len(services) <= 0:
+            j.events.opserror_critical("no instance found for %s__%s__%s"%(self.domain,self.name,instance))
+        return services[0]
 
     def existsInstance(self,instance):
-        res=j.atyourservice.find(domain=self.domain,name=self.name,maxnr=1,instance=instance)
-        if res!=[]:
+        if instance == "" or instance == None:
+            j.events.opserror_critical("instance can't be empty")
+
+        services =  j.atyourservice.findServices(domain=self.domain,name=self.name,instance=instance)
+        if len(services) > 0:
             return True
         else:
             return False
 
     def listInstances(self):
-        res=[]
-        files = j.system.fs.listFilesInDir(j.dirs.hrdDir,recursive=True,filter="%s"%self.name)
-        instances = list()
-        for path in files:
-            name_instance = path.split('/')[-2]
-            instances.append()
-        return instances
+        return j.atyourservice.findServices(domain=self.domain,name=self.name)
 
 
     def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None):
         """
         Install Service.
+
+        Default instance = main
 
         Keyword arguments:
         start     -- whether Service should start after install (default True)
@@ -66,9 +70,7 @@ class ServiceTemplate():
         """
 
         service=self.newInstance(instance=instance, args=args ,parent=parent)
-        from IPython import embed
-        print "DEBUG NOW install service"
-        embed()
+        service.install(self, start=start,deps=deps, reinstall=reinstall)
 
 
 
