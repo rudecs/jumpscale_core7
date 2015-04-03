@@ -96,7 +96,6 @@ class AtYourServiceFactory():
             return -1
 
         res = []
-        items=j.application.config.getDictFromPrefix("jpackage.metadata")
         for domainfound in sorted(self.domains.keys(), cmp=sorter):
             for path in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
                 namefound=j.system.fs.getBaseName(path)
@@ -114,7 +113,6 @@ class AtYourServiceFactory():
                     if namefound not in res:
                         res.append((domainfound,namefound,path))
                 elif domain=="" and name!="":
-                    # if namefound.find(name)==0: #match beginning of str so can do search like node.
                     if namefound==name:
                         if namefound not in res:
                             res.append((domainfound,namefound,path))
@@ -136,33 +134,40 @@ class AtYourServiceFactory():
 
 
     def findServices(self,domain="",name="",instance=""):
-        key="%s__%s__%s"%(domain,name,instance)
+        """
+        FindServices looks for actual services that are created
+        """
+        targetKey="%s__%s__%s"%(domain,name,instance)
         if name!="" and instance!="":
-            if self._cachefind.has_key(key):
-                return self._cachefind[key]
+            if self._cachefind.has_key(targetKey):
+                return self._cachefind[targetKey]
 
         self._doinit()
 
         res=[]
-        for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
+        for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=True, findDirectorySymlinks=True):
             namefound=j.system.fs.getBaseName(path)
-            # if namefound == "system": # needed because of the /opt/jumpscale7/hrd/system directory
-            #     continue
-            name,instance=namefound.split("__",1)
-            instance=instance.split(".",1)[0]
 
-            key="%s__%s__%s"%(domain,name,instance)
-            if self._cache.has_key(key):
-                service=self._cache[key]
-            else:
-                servicetemplate=self.findTemplates(domain=domain,name=name)[0]
-                service=Service(instance=instance,servicetemplate=servicetemplate,path=path)
-                self._cache[key]=service
+            # if the directory name has not the good format, skip it
+            if namefound.find("__")==-1:
+                continue
 
-            res.append(service)
+            namefound,instancefound=namefound.split("__",1)
+            foundKey="%s__%s__%s"%(domain,namefound,instancefound)
+
+            if foundKey.find(targetKey) != -1:
+                if self._cache.has_key(targetKey):
+                    service=self._cache[targetKey]
+                else:
+                    servicetemplate=self.findTemplates(domain=domain,name=name)[0]
+                    service=Service(instance=instancefound,servicetemplate=servicetemplate,path=path)
+                    if name!="" and instance!="":
+                        self._cache[targetKey]=service
+
+                res.append(service)
 
         if name!="" and instance!="":
-            self._cachefind[key]=res
+            self._cachefind[targetKey]=res
         return res
 
 
@@ -188,18 +193,25 @@ class AtYourServiceFactory():
         """
         will create a new service
         """
+        serviceTmpls=None
         key="%s__%s__%s"%(domain,name,instance)
-        if self._cache.has_key(key):
-            return self._cache[key]
+        if self._cachefind.has_key(key):
+             serviceTmpls = self._cache[key]
+
         self._doinit()
-        services=self.findTemplates(domain,name)
-        if len(services)==0:
-            j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
-        obj=services[0].newInstance(instance,parent=parent, args=args)
+
+        serviceTmpls=self.findTemplates(domain,name)
+        if len(serviceTmpls)==0:
+            j.events.opserror_critical("cannot find service template %s/%s"%(domain,name))
+        obj=serviceTmpls[0].newInstance(instance,parent=parent, args=args)
         self._cache[key]=obj
         return obj
 
-    def get(self,domain="",name="",instance="main"):
+    def get(self,domain="",name="",instance=""):
+        """
+        Return service indentifier by domain,name and instance
+        throw error if service is not found or if more than one service is found
+        """
         key="%s__%s__%s"%(domain,name,instance)
         if self._cache.has_key(key):
             return self._cache[key]
@@ -207,21 +219,18 @@ class AtYourServiceFactory():
         services=self.findServices(domain,name,instance=instance)
         if len(services)==0:
             j.events.opserror_critical("cannot find service %s/%s"%(domain,name))
+        if len(services)>1:
+            j.events.opserror_critical("multiple service found, be more precise %s/%s"%(domain,name))
         self._cache[key]=services[0]
         return self._cache[key]
 
 
-    def exists(self,domain="",name="",instance="main",node=""):
+    def exists(self,domain="",name="",instance=""):
         self._doinit()
-        services=self.findServices(domain,name,1)
+        services=self.findServices(domain,name,instance)
         if len(services)==0:
             return False
-        return  services[0].existsInstance(instance=instance,node=node)
-
-    def isNode(self,service):
-        nodeDir = j.system.fs.joinPaths(j.dirs.serviceTemplateDir,"node")
-        nodes = [j.system.fs.getBaseName(n) for n in j.system.fs.listDirsInDir(nodeDir)]
-        return service.name in nodes
+        return  True
 
     def __str__(self):
         return self.__repr__()
