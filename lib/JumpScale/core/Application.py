@@ -229,7 +229,8 @@ class Application:
             path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(name,instance),"service.hrd")
         if not j.system.fs.exists(path=path):
             j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
-        return j.core.hrd.get(path)
+
+        return j.core.hrd.get(path,prefixWithName=False)
 
     def getAppInstanceHRDs(self,name,domain="jumpscale"):
         """
