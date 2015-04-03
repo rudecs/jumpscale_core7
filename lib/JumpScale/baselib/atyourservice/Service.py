@@ -15,34 +15,6 @@ def loadmodule(name, path):
     mod = imp.load_source(name, path)
     return mod
 
-# #decorator to execute an action on a remote machine
-# def remote(F): # F is func or method without instance
-#     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
-#         service.init()
-#         isInstall = (F.func_name == "install")
-#         serviceisNode = j.atyourservice.isNode(service)
-#         parentisNode = False
-#         if service.parent:
-#             parentisNode = j.atyourservice.isNode(service.parent)
-#         cl = None
-
-#         if not parentisNode:
-#             return F(service, *args,**kwargs)
-#         else:
-#             if service.parent:
-#                 if service.args.get('lua', False):
-#                     cl = j.atyourservice.remote.sshLua(service.parent)
-#                 else:
-#                     cl = j.atyourservice.remote.sshPython(service.parent)
-#             else:
-#                 if service.args.get('lua', False):
-#                     cl = j.atyourservice.remote.sshLua(service)
-#                 else:
-#                     cl = j.atyourservice.remote.sshPython(service)
-#         cl.executeJP(F.func_name)
-
-#     return wrapper
-
 #decorator to get dependencies
 def deps(F): # F is func or method without instance
     def processresult(result,newresult):
@@ -153,12 +125,6 @@ class Service(object):
             if self.parent == None and host != "" and host != self.name:
                 self.parent = j.atyourservice.findParent(self,host)
             self.log("init")
-            # import JumpScale.baselib.remote.cuisine
-            # import JumpScale.lib.docker
-            # if self.actions.init():
-            #     #did something
-            #     pass
-            #     #@todo need to reload HRD's
         self._init=True
 
     def getLogPath(self):
@@ -306,7 +272,7 @@ class Service(object):
         @type build: bool
         """
         res=[]
-        for item in self.hrd.getListFromPrefix("dependencies"):
+        for item in self.hrd.getListFromPrefix("service.dependencies"):
 
             if isinstance(item,str):
                 if item.strip()=="":
@@ -348,7 +314,12 @@ class Service(object):
             if instance=="":
                 instance="main"
 
-            service=j.atyourservice.get(name=name, instance=instance, hrddata=hrddata)
+            try:
+                service=j.atyourservice.get(name=name, instance=instance)
+            except:
+                print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
+                service=j.atyourservice.new(domain=domain,name=name, instance=instance)
+
 
             res.append(service)
 
