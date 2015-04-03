@@ -86,7 +86,8 @@ class AtYourServiceFactory():
             if domain not in self.domains:
                 return[]
             if name!="":
-                if not j.system.fs.exists(path="%s/%s"%(self.domains[domain],name)):
+                path = j.system.fs.joinPaths(self.domains[domain],name)
+                if not j.system.fs.exists(path=path):
                     return []
 
         baseDomains=j.application.config.getDictFromPrefix("jpackage.metadata")
@@ -126,8 +127,8 @@ class AtYourServiceFactory():
                             res.append((domainfound,namefound,path))
 
         finalRes=[]
-        for domainfound,namefound,path in res:
-            finalRes.append(ServiceTemplate(domainfound,namefound,path))
+        for domain,name,path in res:
+            finalRes.append(ServiceTemplate(domain,name,path))
 
         self._cachefind[key]=finalRes
         return finalRes
@@ -159,8 +160,10 @@ class AtYourServiceFactory():
                 if self._cache.has_key(targetKey):
                     service=self._cache[targetKey]
                 else:
-                    servicetemplate=self.findTemplates(domain=domain,name=name)[0]
-                    service=Service(instance=instancefound,servicetemplate=servicetemplate,path=path)
+                    servicetemplates=self.findTemplates(domain=domain,name=name)
+                    if len(servicetemplates) <= 0:
+                        j.events.opserror_critical("services template %s__%s not found"%(domain,name))
+                    service=Service(instance=instancefound,servicetemplate=servicetemplates[0],path=path)
                     if name!="" and instance!="":
                         self._cache[targetKey]=service
 
@@ -225,12 +228,13 @@ class AtYourServiceFactory():
         return self._cache[key]
 
 
-    def exists(self,domain="",name="",instance=""):
-        self._doinit()
-        services=self.findServices(domain,name,instance)
-        if len(services)==0:
-            return False
-        return  True
+    # def exists(self,domain="",name="",instance=""):
+    #     self._doinit()
+    #     tmpls=self.findTemplates(domain,name)
+    #     if len(tmpls)==0:
+    #         return False
+    #     from ipdb import set_trace;set_trace()
+    #     return  tmpls[0].existsInstance(instance)
 
     def __str__(self):
         return self.__repr__()
