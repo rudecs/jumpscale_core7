@@ -221,16 +221,18 @@ class Application:
 
     def getAppInstanceHRD(self,name,instance,domain="jumpscale",parent=None):
         """
-        returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
+        returns hrd for specific domain,name and & instance name
         """
-        if parent:
-            path = j.system.fs.joinPaths(parent.path,"%s__%s"%(name,instance),"service.hrd")
-        else:
-            path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(name,instance),"service.hrd")
-        if not j.system.fs.exists(path=path):
-            j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
+        service = j.atyourservice.get(domain=domain,name=name,instance=instance)
+        return service.hrd
+        # if parent:
+        #     path = j.system.fs.joinPaths(parent.path,"%s__%s"%(name,instance),"service.hrd")
+        # else:
+        #     path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(name,instance),"service.hrd")
+        # if not j.system.fs.exists(path=path):
+        #     j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
 
-        return j.core.hrd.get(path,prefixWithName=False)
+        # return j.core.hrd.get(path,prefixWithName=False)
 
     def getAppInstanceHRDs(self,name,domain="jumpscale"):
         """
