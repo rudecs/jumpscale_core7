@@ -22,7 +22,10 @@ class ServiceTemplate():
         # TODO, should take in account the domain too
         services = j.atyourservice.findServices(name=self.name,instance=instance)
         if len(services)>0:
-            j.events.opserror_critical("service %s__%s__%s already exists"%(self.domain,self.name,instance))
+            print "service %s__%s__%s already exists"%(self.domain,self.name,instance)
+            print "no creation, just retreive existing service"
+            return services[0]
+
         service = Service(instance=instance,servicetemplate=self,args=args,parent=parent)
         return service
 
