@@ -111,7 +111,8 @@ class Dirs(object):
         if self.amInGitConfigRepo()!=None:
             self._hrdDir="%s/services/"%(self.amInGitConfigRepo())
         else:
-            self._hrdDir = j.application.config.get("system.paths.hrd")
+            path = j.system.fs.joinPaths(j.application.config.get("system.paths.hrd"),"apps")
+            self._hrdDir = path
         return self._hrdDir
 
     @property

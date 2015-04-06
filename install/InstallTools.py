@@ -1377,7 +1377,7 @@ class InstallTools():
             self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
         print ("pull core")
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1)    
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1,branch="@ys")    
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         if pythonversion==2:
@@ -1440,10 +1440,11 @@ class InstallTools():
         for item in j.application.config.getListFromPrefix("system.paths"):
             self.createDir(item)
 
-        self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
+        # not needed with @ys
+        # self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
 
-        print("Get jpackages metadata.")
-        self.pullGitRepo("https://github.com/Jumpscale/jp_jumpscale7",depth=1)
+        print("Get atYourService metadata.")
+        self.pullGitRepo("https://github.com/Jumpscale/ays_jumpscale7",depth=1)
 
         print ("install was successfull")
         if pythonversion==2:
@@ -1498,10 +1499,10 @@ git.passwd              =
         C="""
 #here domain=jumpscale, change name for more domains
 metadata.jumpscale = 
-    url:'https://github.com/Jumpscale/jp_jumpscale7',
+    url:'https://github.com/Jumpscale/ays_jumpscale7',
 
 """
-        hpath="%s/hrd/system/jpackage.hrd"%basedir
+        hpath="%s/hrd/system/atyourservice.hrd"%basedir
         if not self.exists(path=hpath):
             self.writeFile(hpath,C)
 
