@@ -186,7 +186,7 @@ class AtYourServiceFactory():
         return res
 
 
-    def findParents(self,service):
+    def findParents(self,service,name=""):
 
         path=service.path
         basename=j.system.fs.getBaseName(path)
@@ -194,14 +194,16 @@ class AtYourServiceFactory():
         while True:
             path=j.system.fs.getParent(path)
             basename=j.system.fs.getBaseName(path)
-            if basename=="services":
+            if basename=="services" or basename=="apps":
                 break
 
             ss = basename.split("__")
             parentName = ss[0]
             parentInstance = ss[1]
-
-            res.append(self.get(name=parentName,instance=parentInstance))
+            service = self.get(name=parentName,instance=parentInstance)
+            if name!="" and service.name == name:
+                return service
+            res.append(service)
         return res
 
     def new(self,domain="",name="",instance="main",parent=None,args={}):
