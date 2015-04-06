@@ -4,7 +4,7 @@ try:
 except ImportError:
     from urllib import urlopen
 import random
-handle = urlopen("https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%40ys/install/InstallTools.py?%s"%random.randint(1, 10000000)) #this is to protect against caching proxy servers
+handle = urlopen("https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/@ys/install/InstallTools.py?%s"%random.randint(1, 10000000)) #this is to protect against caching proxy servers
 exec(handle.read())
 
 
