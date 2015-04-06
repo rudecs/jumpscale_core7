@@ -245,6 +245,7 @@ class ActionsBase():
         """
         pass
 
+    @remote
     def check_up_local(self, serviceobj, wait=True):
         """
         do checks to see if process(es) is (are) running.
@@ -290,6 +291,7 @@ class ActionsBase():
         log("Status %s is running" % (serviceobj))
         return True
 
+    @remote
     def check_down_local(self,serviceobj):
         """
         do checks to see if process(es) are all down
@@ -339,6 +341,7 @@ class ActionsBase():
         """
         return True
 
+    @remote
     def monitor_remote(self,serviceobj):
         """
         do checks to see if all is ok from remote to do with this service
@@ -423,8 +426,12 @@ class ActionsBase():
         on central side only
         execute something in the service instance
         """
-        parent=serviceobj.hrd.get("service.parent")
-        host = serviceobj.parent if parent != '' else serviceobj
+        host = None
+        hoststr=serviceobj.hrd.get("service.host")
+        if serviceobj.name == hoststr:
+            host = serviceobj
+        else:
+            host = j.atyourservice.findParents(serviceobj,hoststr)
         # parentNode = j.atyourservice.findParent(serviceobj,parent)
         host.actions.upload(host,serviceobj.path,serviceobj.path)
         host.actions.execute(host,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\

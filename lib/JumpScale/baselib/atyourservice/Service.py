@@ -97,6 +97,17 @@ class Service(object):
         self.hrddata["service.instance"]=self.instance
         self._init=False
         self.parent=parent
+        if self.parent != None:
+            chain = self._parentChain(self.parent)
+            if len(chain) > 0:
+                self.hrddata["service.parents"]= chain
+
+    def _parentChain(self,parent):
+        chain = []
+        while parent != None:
+            chain.append(parent.name)
+            parent=parent.parent
+        return chain
 
     @property
     def hrd(self):
