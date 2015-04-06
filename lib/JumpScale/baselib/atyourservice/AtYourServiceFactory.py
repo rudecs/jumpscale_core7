@@ -47,7 +47,7 @@ class AtYourServiceFactory():
                 self.domains[j.system.fs.getBaseName(configpath)]="%s/servicetemplates/"%configpath
 
             # always load base domaim
-            items=j.application.config.getDictFromPrefix("jpackage.metadata")
+            items=j.application.config.getDictFromPrefix("atyourservice.metadata")
             repos=j.do.getGitReposListLocal()
             for domain in items.keys():
                 url=items[domain]['url']
