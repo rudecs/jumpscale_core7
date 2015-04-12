@@ -90,7 +90,7 @@ class AtYourServiceFactory():
                 if not j.system.fs.exists(path=path):
                     return []
 
-        baseDomains=j.application.config.getDictFromPrefix("jpackage.metadata")
+        baseDomains=j.application.config.getDictFromPrefix("atyourservice.metadata")
         def sorter(domain1,domain2):
             if domain1 in baseDomains:
                 return 1
@@ -110,6 +110,7 @@ class AtYourServiceFactory():
 
                 if not j.system.fs.exists(path="%s/%s"%(path,"service.hrd")):
                     continue
+
                 if domain=="" and name=="":
                     if namefound not in res:
                         res.append((domainfound,namefound,path))
@@ -139,17 +140,26 @@ class AtYourServiceFactory():
         FindServices looks for actual services that are created
         """
         def createService(domain,name,instance,path):
-                    targetKey="%s__%s__%s"%(domain,name,instance)
-                    if name!="" and instance!="" and self._cache.has_key(targetKey):
-                        return self._cache[targetKey]
+            targetKey="%s__%s__%s"%(domain,name,instance)
+            if name!="" and instance!="" and self._cache.has_key(targetKey):
+                return self._cache[targetKey]
 
-                    servicetemplates=self.findTemplates(domain=domain,name=name)
-                    if len(servicetemplates) <= 0:
-                        raise RuntimeError("services template %s__%s not found"%(domain,name))
-                    service=Service(instance=instance,servicetemplate=servicetemplates[0],path=path)
-                    if name!="" and instance!="":
-                        self._cache[targetKey]=service
-                    return service
+            # try to load service from instance file is they exists
+            hrdpath = j.system.fs.joinPaths(path,"service.hrd")
+            actionspath = j.system.fs.joinPaths(path,"actions.py")
+            if j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
+                service = j.atyourservice.loadService(path)
+            else:
+            # create service from templates
+                servicetemplates=self.findTemplates(domain=domain,name=name)
+                if len(servicetemplates) <= 0:
+                    raise RuntimeError("services template %s__%s not found"%(domain,name))
+                service=Service(instance=instance,servicetemplate=servicetemplates[0],path=path)
+
+            # update cache
+            if name!="" and instance!="":
+                self._cache[targetKey]=service
+            return service
 
         targetKey="%s__%s__%s"%(domain,name,instance)
         if name!="" and instance!="":
@@ -166,23 +176,24 @@ class AtYourServiceFactory():
             if namefound.find("__")==-1:
                 continue
 
-            namefound,instancefound=namefound.split("__",1)
+            domainfoud,namefound,instancefound=namefound.split("__",2)
             service=None
             if instance=="" and name=="":
-                service =createService(domain,namefound,instancefound,path)
+                service = createService(domainfoud,namefound,instancefound,path)
             elif instance=="" and name!="":
                 if namefound==name:
-                    service = createService(domain,namefound,instancefound,path)
+                    service = createService(domainfoud,namefound,instancefound,path)
             elif instance!="" and name=="":
                 if instance==instancefound:
-                    service = createService(domain,namefound,instancefound,path)
+                    service = createService(domainfoud,namefound,instancefound,path)
             elif instance==instancefound and namefound == name:
-                    service = createService(domain,namefound,instancefound,path)
+                    service = createService(domainfoud,namefound,instancefound,path)
             if service != None:
                 res.append(service)
 
         if name!="" and instance!="":
             self._cachefind[targetKey]=res
+
         return res
 
 
@@ -234,7 +245,7 @@ class AtYourServiceFactory():
         if self._cache.has_key(key):
             return self._cache[key]
         self._doinit()
-        services=self.findServices(domain,name,instance=instance)
+        services=self.findServices(domain=domain,name=name,instance=instance)
         if len(services)==0:
             raise RuntimeError("cannot find service %s__%s"%(domain,name))
         if len(services)>1:
@@ -242,7 +253,32 @@ class AtYourServiceFactory():
         self._cache[key]=services[0]
         return self._cache[key]
 
+    def loadService(self,path):
+        """
+        Load a service instance from files located at path.
+        path should point to a directory that contains these files:
+            service.hrd
+            actions.py
+        """
+        hrdpath = j.system.fs.joinPaths(path,"service.hrd")
+        actionspath = j.system.fs.joinPaths(path,"actions.py")
+        if not j.system.fs.exists(hrdpath) or not j.system.fs.exists(actionspath):
+            raise RuntimeError("path doesn't contain service.hrd and actions.py")
 
+        service = Service()
+        service.path = path
+        service._hrd = j.core.hrd.get(hrdpath,prefixWithName=False)
+        service.domain=service.hrd.get("service.domain")
+        service.instance=service.hrd.get("service.instance")
+        service.name=service.hrd.get("service.name")
+
+        if service.hrd.exists("service.parents"):
+            parents = service.hrd.get("service.parents")
+            parentInsances = j.atyourservice.findParents(service,parents[0])
+            service.parent = parentInsances[0]
+
+        service._init=True
+        return service
     # def exists(self,domain="",name="",instance=""):
     #     self._doinit()
     #     tmpls=self.findTemplates(domain,name)
