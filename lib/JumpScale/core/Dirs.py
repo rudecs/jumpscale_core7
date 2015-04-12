@@ -111,9 +111,23 @@ class Dirs(object):
         if self.amInGitConfigRepo()!=None:
             self._hrdDir="%s/services/"%(self.amInGitConfigRepo())
         else:
-            path = j.system.fs.joinPaths(j.application.config.get("system.paths.hrd"),"apps")
-            self._hrdDir = path
+            # path = j.system.fs.joinPaths(j.application.config.get("system.paths.hrd"),"apps")
+            self._hrdDir = j.application.config.get("system.paths.hrd")
         return self._hrdDir
+
+    def getHrdDir(self,system=False):
+        hrdDir = ""
+        if system==False :
+            hrdDir = self.amInGitConfigRepo()
+            if hrdDir != None:
+                hrdDir = self.hrdDir
+            else:
+                hrdDir = self.hrdDir+"/apps"
+        else:
+            hrdDir = self.hrdDir+"/system"
+        if not j.system.fs.exists(hrdDir):
+            j.system.fs.createDir(hrdDir)
+        return  hrdDir
 
     @property
     def serviceTemplateDir(self):
