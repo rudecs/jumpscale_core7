@@ -3,7 +3,7 @@ import JumpScale.baselib.screen
 import os
 import signal
 
-CATEGORY = "atyourservice"
+CATEGORY = "atyourserviceAction"
 
 def log(msg, level=2):
     j.logger.log(msg, level=level, category=CATEGORY)

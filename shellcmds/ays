@@ -8,7 +8,7 @@ import copy
 j.application.start('jservice')
 
 parser = cmdutils.ArgumentParser()
-j.logger.consolelogCategories.append('jpactions')
+j.logger.consolelogCategories.append('atyourserviceAction')
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
     "removedata","monitor","configure","cleanup","export","import","uninstall","push","execute", "status","nodes"]
@@ -264,7 +264,7 @@ elif args.action == 'list':
     printServices(services)
 
 elif args.action == 'status':
-    j.logger.consolelogCategories.remove('jpactions')
+    j.logger.consolelogCategories.remove('atyourserviceAction')
     j.logger.consolelogCategories.append('nologs') # dont leave categories empty
     def printServices(services):
 
