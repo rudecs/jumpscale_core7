@@ -73,28 +73,33 @@ def deps(F): # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self,instance,servicetemplate,path="",args=None, parent=None):
-        self.domain=servicetemplate.domain
+    def __init__(self,instance="",servicetemplate=None,path="",args=None, parent=None):
+        self.domain=""
         self.instance=instance
-        self.name=servicetemplate.name
+        self.name=""
         self.servicetemplate=servicetemplate
-        self.templatepath=servicetemplate.metapath
-        if path=="":
-            if parent==None:
-                path=j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(self.name,self.instance))
-            else:
-                path=j.system.fs.joinPaths(parent.path,"%s__%s"%(self.name,self.instance))
+        self.templatepath=""
         self.path=path
-
         self._hrd=None
         self._actions=None
-        self._loaded=False
+        self.parent=None
         self._reposDone={}
         self.args=args or {}
         self.hrddata = {}
-        self.hrddata["service.name"]=self.name
-        self.hrddata["service.domain"]=self.domain
-        self.hrddata["service.instance"]=self.instance
+        if servicetemplate is not None:
+            self.domain=servicetemplate.domain
+            self.name=servicetemplate.name
+            self.servicetemplate=servicetemplate
+            self.templatepath=servicetemplate.metapath
+        if path=="":
+            if parent==None:
+                self.path=j.system.fs.joinPaths(j.dirs.getHrdDir(),"%s__%s__%s"%(self.domain,self.name,self.instance))
+            else:
+                self.path=j.system.fs.joinPaths(parent.path,"%s__%s__%s"%(self.domain,self.name,self.instance))
+
+            self.hrddata["service.name"]=self.name
+            self.hrddata["service.domain"]=self.domain
+            self.hrddata["service.instance"]=self.instance
         self._init=False
         self.parent=parent
         if self.parent != None:
@@ -475,7 +480,6 @@ class Service(object):
         if self.isLatest() and not reinstall:
             log("Latest %s already installed" % self)
             return
-        # self._apply()
         self.stop(deps=False)
         self.prepare(deps=True, reverse=True)
         self.log("install instance")
