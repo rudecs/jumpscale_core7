@@ -8,6 +8,7 @@ import copy
 j.application.start('jservice')
 
 parser = cmdutils.ArgumentParser()
+j.logger.enabled = True
 j.logger.consolelogCategories.append('atyourserviceAction')
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
@@ -243,6 +244,10 @@ elif args.action == 'push':
     # TODO
     pass
 
+elif args.action == 'mdupdate':
+    cmd="jssync download -c jpackages -d"
+    j.system.process.executeWithoutPipe(cmd)
+
 elif args.action == 'list':
     def printServices(services):
         form = '%(domain)-15s %(name)-20s %(version)8s %(buildnr)8s %(debug)5s %(debugInJservice)5s'
@@ -301,3 +306,4 @@ elif args.action == 'status':
 #     printNodes(allNodes)
 
 j.application.stop()
+j.logger.enabled = False
