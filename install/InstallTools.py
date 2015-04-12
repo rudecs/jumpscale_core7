@@ -1358,8 +1358,11 @@ class InstallTools():
         if clean:
             self.cleanSystem()
 
-        if pythonversion==3 and base=="/opt/jumpscale7":
-            base="/opt/jumpscale73"
+        if sys.platform.startswith('win'):
+            base=os.environ['JSBASE']   
+        else:
+            if pythonversion==3 and base=="/opt/jumpscale7":
+                base="/opt/jumpscale73"
 
         self.debug=True
 

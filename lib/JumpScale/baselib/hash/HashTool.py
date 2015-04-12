@@ -1,7 +1,8 @@
 
 from JumpScale import j
-import ExtraTools
+# import ExtraTools
 
+import hashlib
 class HashTool:
     def hashDir(self,rootpath):
         """
@@ -24,9 +25,13 @@ class HashTool:
 #                print "realpath %s %s" % (rootpath,path2)
                 hhash=j.tools.hash.md5(realpath)
                 out+="%s|%s\n"%(hhash,path2)
-        return ExtraTools.ByteProcessor.hashMd5(out),out        
+                import hashlib
+        if isinstance(out, str):
+            out = out.encode('utf-8')
+        impl = hashlib.md5(out)
+        return impl.hexdigest(),out        
 
-import hashlib
+
 import zlib
 
 def _hash_funcs(alg):
@@ -162,6 +167,12 @@ def crc32_file(path):
     '''
     with open(path, 'rb') as fd:
         return crc32_fd(fd)
+
+# def hashMd5(s):
+#     if isinstance(s, str):
+#         s = s.encode('utf-8')
+#     impl = hashlib.md5(s)
+#     return impl.hexdigest()
 
 SUPPORTED_ALGORITHMS.append('crc32')
 __all__.extend(('crc32', 'crc32_fd', 'crc32_file', ))

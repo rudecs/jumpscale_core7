@@ -9,6 +9,11 @@
 import sys
 import os
 
+from IPython import embed
+print "DEBUG NOW 9999"
+embed()
+
+
 if not 'JSBASE' in os.environ:
     if sys.version.startswith("3"):
         base="/opt/jumpscale73"
@@ -87,7 +92,12 @@ j.dirs=Dirs()
 
 from .core import errorhandling
 
-loadSubModules(__file__)
+# loadSubModules(__file__)
+
+from IPython import embed
+print "DEBUG NOW 111"
+embed()
+
 
 j.application.init()
 
