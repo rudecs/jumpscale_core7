@@ -305,11 +305,17 @@ class Service(object):
 
             if "args" in item:
                 if isinstance(item['args'], dict):
+                    hrddata={}
+                    for k,v in item['args'].iteritems():
+                        hrddata["instance.%s"%k] = v
                     hrddata = item['args']
                 else:
                     argskey = item['args']
-                    if self.hrd.exists(argskey):
-                        hrddata=self.hrd.getDict(argskey)
+                    if self.hrd.exists('service.'+argskey):
+                        argsDict = self.hrd.getDict('service.'+argskey)
+                        hrddata={}
+                        for k,v in argsDict.iteritems():
+                            hrddata["instance.%s"%k] = v
                     else:
                         hrddata = {}
             else:
@@ -330,12 +336,12 @@ class Service(object):
             if instance=="":
                 instance="main"
 
-            try:
-                service=j.atyourservice.get(name=name, instance=instance)
-            except:
+            services=j.atyourservice.findServices(name=name, instance=instance)
+            if len(services)>0:
+                service=services[0]
+            else:
                 print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
-                service=j.atyourservice.new(domain=domain,name=name, instance=instance)
-
+                service=j.atyourservice.new(domain=domain,name=name, instance=instance,args=hrddata)
 
             res.append(service)
 
