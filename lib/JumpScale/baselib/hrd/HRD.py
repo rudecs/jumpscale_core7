@@ -247,7 +247,8 @@ class HRD(HRDBase):
         else:
             out=str(self)
 
-        j.system.fs.writeFile(self.path,out)
+        if self.path != '' and self.path is not None:
+            j.system.fs.writeFile(self.path,out)
 
     def getHrd(self,key):
         #to keep common functions working
