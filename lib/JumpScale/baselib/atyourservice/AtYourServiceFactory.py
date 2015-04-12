@@ -198,11 +198,12 @@ class AtYourServiceFactory():
                 break
 
             ss = basename.split("__")
-            parentName = ss[0]
-            parentInstance = ss[1]
+            domainName=ss[0]
+            parentName = ss[1]
+            parentInstance = ss[2]
             service = self.get(name=parentName,instance=parentInstance)
             if name!="" and service.name == name:
-                return service
+                return [service]
             res.append(service)
         return res
 

@@ -431,7 +431,7 @@ class ActionsBase():
         if serviceobj.name == hoststr:
             host = serviceobj
         else:
-            host = j.atyourservice.findParents(serviceobj,hoststr)
+            host = j.atyourservice.findParents(serviceobj,hoststr)[0]
         # parentNode = j.atyourservice.findParent(serviceobj,parent)
         host.actions.upload(host,serviceobj.path,serviceobj.path)
         host.actions.execute(host,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
