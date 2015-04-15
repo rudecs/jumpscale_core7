@@ -44,5 +44,11 @@ class HRDFactory:
                 out+="%s.%s\n"%(prefix,line)
             else:
                 out+="%s\n"%(line)
-        return self.getHRDFromContent(out)        
+        return self.getHRDFromContent(out)   
 
+
+    def getHRDFromDict(self,ddict={}):
+        hrd=self.get(content=" ",prefixWithName=False)
+        for key,val in ddict.iteritems():
+            hrd.set(key,val)  
+        return hrd

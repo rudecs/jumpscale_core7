@@ -9,11 +9,6 @@
 import sys
 import os
 
-from IPython import embed
-print "DEBUG NOW 9999"
-embed()
-
-
 if not 'JSBASE' in os.environ:
     if sys.version.startswith("3"):
         base="/opt/jumpscale73"
@@ -64,7 +59,9 @@ def loadSubModules(filepath, prefix='JumpScale'):
             pass
 
 j = JumpScale()
-from . import base
+
+#doesn't do anything, don't see where its coming from
+# from . import base
 
 j.core=Core()
 j.events=EventsTemp()
@@ -87,17 +84,14 @@ j.console=Console()
 from .baselib import hrd
 j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
 
+j.logger.enable=j.application.config.getBool("system.logging")
+
 from .core.Dirs import Dirs
 j.dirs=Dirs()
 
 from .core import errorhandling
 
-# loadSubModules(__file__)
-
-from IPython import embed
-print "DEBUG NOW 111"
-embed()
-
+loadSubModules(__file__)
 
 j.application.init()
 
