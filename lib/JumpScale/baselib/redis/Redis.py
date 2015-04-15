@@ -100,8 +100,8 @@ class RedisFactory:
     def getByInstance(self, instance, gevent=False):
         if not instance in self._config:
             hrd = j.application.getAppInstanceHRD(name="redis",instance=instance)
-            password = hrd.get('instance.passwd')
-            port = hrd.getInt('instance.port')
+            password = hrd.get('instance.param.passwd')
+            port = hrd.getInt('instance.param.port')
             password = None if not password.strip() else password
             self._config[instance] = {'password': password, 'port':port}
 
@@ -162,11 +162,12 @@ class RedisFactory:
         raise RuntimeError("Could not find redis port in config file %s" % cpath)
 
     def isRunning(self, name):
-        jpd = j.atyourservice.findTemplates('','redis')[0]
-        if name not in jpd.listInstances():
+        tmpl = j.atyourservice.findTemplates('','redis')[0]
+        if name not in tmpl.listInstances():
             return False
         try:
-            self.getByInstance('system').ping()
+            ins = self.getByInstance('system')
+            ins.ping()
             return True
         except:
             return False

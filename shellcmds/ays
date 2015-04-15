@@ -8,7 +8,8 @@ import copy
 j.application.start('jservice')
 
 parser = cmdutils.ArgumentParser()
-j.logger.consolelogCategories.append('jpactions')
+j.logger.enabled = True
+j.logger.consolelogCategories.append('atyourserviceAction')
 
 commands = ['install','list','stop','start','restart','build',"mdupdate","update","reset","resetstate",\
     "removedata","monitor","configure","cleanup","export","import","uninstall","push","execute", "status","nodes"]
@@ -161,7 +162,7 @@ if args.action == 'configure':
         service.start()
 
 elif args.action == 'install':
-    if args.path != "":
+    if args.path != None:
         service = j.atyourservice.get(domain=args.domain,name=args.name,instance=args.instance)
         service.install(start=True,deps=True,reinstall=args.reinstall)
     else:
@@ -243,6 +244,10 @@ elif args.action == 'push':
     # TODO
     pass
 
+elif args.action == 'mdupdate':
+    cmd="jssync download -c jpackages -d"
+    j.system.process.executeWithoutPipe(cmd)
+
 elif args.action == 'list':
     def printServices(services):
         form = '%(domain)-15s %(name)-20s %(version)8s %(buildnr)8s %(debug)5s %(debugInJservice)5s'
@@ -259,12 +264,14 @@ elif args.action == 'list':
             version="?"
             print form % {'name': service.name, 'domain': service.domain, 'version': version, \
             'debug': debug, 'buildnr': buildNr,'debugInJservice':debugINJP}
-
-    services = j.atyourservice.findServices(args.domain,args.name,args.instance)
+    if args.installed:
+        services = j.atyourservice.findServices(args.domain,args.name,args.instance)
+    else:
+        services = j.atyourservice.findTemplates(args.domain,args.name)
     printServices(services)
 
 elif args.action == 'status':
-    j.logger.consolelogCategories.remove('jpactions')
+    j.logger.consolelogCategories.remove('atyourserviceAction')
     j.logger.consolelogCategories.append('nologs') # dont leave categories empty
     def printServices(services):
 
@@ -274,8 +281,8 @@ elif args.action == 'status':
         print '=' * 70
         print ''
         for service in sorted(services, cmp=sorter):
-            # if not service.getProcessDicts():
-                # continue
+            if not service.getProcessDicts():
+                continue
             isrunning = service.actions.check_up_local(service,wait=False)
             status = 'RUNNING' if isrunning else 'HALTED'
             ports = ', '.join( str(x) for x in service.getTCPPorts() )
@@ -299,3 +306,4 @@ elif args.action == 'status':
 #     printNodes(allNodes)
 
 j.application.stop()
+j.logger.enabled = False

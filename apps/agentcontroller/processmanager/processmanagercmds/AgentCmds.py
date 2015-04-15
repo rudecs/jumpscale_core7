@@ -29,7 +29,7 @@ class AgentCmds():
             self._adminAuth(session.user,session.passwd)
 
         self._killGreenLets()
-        acinstance = j.application.instanceconfig.get('agentcontroller.connection')
+        acinstance = j.application.instanceconfig.get('instance.agentcontroller.connection')
         config = j.clients.agentcontroller.getInstanceConfig(acinstance)
         ipaddr = config.pop('addr')
         for acip in ipaddr.split(','):

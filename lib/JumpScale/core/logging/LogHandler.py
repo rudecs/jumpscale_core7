@@ -153,7 +153,7 @@ class LogHandler(object):
         self.utils = LogUtils()
         self.reset()     
         self.redislogging=None
-
+        self.redis=None
         self.maxlevel = 5
         self.consoleloglevel = 2
         self.consolelogCategories=[]
@@ -236,6 +236,7 @@ class LogHandler(object):
         self.consolelogCategories=[]
         self.lastmessage = ""
         # self.lastloglevel=0
+        self.nolog = False
         self.enabled = True
 
     def disable(self):

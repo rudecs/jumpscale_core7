@@ -73,28 +73,33 @@ def deps(F): # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self,instance,servicetemplate,path="",args=None, parent=None):
-        self.domain=servicetemplate.domain
+    def __init__(self,instance="",servicetemplate=None,path="",args=None, parent=None):
+        self.domain=""
         self.instance=instance
-        self.name=servicetemplate.name
+        self.name=""
         self.servicetemplate=servicetemplate
-        self.templatepath=servicetemplate.metapath
-        if path=="":
-            if parent==None:
-                path=j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(self.name,self.instance))
-            else:
-                path=j.system.fs.joinPaths(parent.path,"%s__%s"%(self.name,self.instance))
+        self.templatepath=""
         self.path=path
-
         self._hrd=None
         self._actions=None
-        self._loaded=False
+        self.parent=None
         self._reposDone={}
         self.args=args or {}
         self.hrddata = {}
-        self.hrddata["service.name"]=self.name
-        self.hrddata["service.domain"]=self.domain
-        self.hrddata["service.instance"]=self.instance
+        if servicetemplate is not None:
+            self.domain=servicetemplate.domain
+            self.name=servicetemplate.name
+            self.servicetemplate=servicetemplate
+            self.templatepath=servicetemplate.metapath
+        if path=="":
+            if parent==None:
+                self.path=j.system.fs.joinPaths(j.dirs.getHrdDir(),"%s__%s__%s"%(self.domain,self.name,self.instance))
+            else:
+                self.path=j.system.fs.joinPaths(parent.path,"%s__%s__%s"%(self.domain,self.name,self.instance))
+
+            self.hrddata["service.name"]=self.name
+            self.hrddata["service.domain"]=self.domain
+            self.hrddata["service.instance"]=self.instance
         self._init=False
         self.parent=parent
         if self.parent != None:
@@ -300,11 +305,17 @@ class Service(object):
 
             if "args" in item:
                 if isinstance(item['args'], dict):
+                    hrddata={}
+                    for k,v in item['args'].iteritems():
+                        hrddata["instance.%s"%k] = v
                     hrddata = item['args']
                 else:
                     argskey = item['args']
-                    if self.hrd.exists(argskey):
-                        hrddata=self.hrd.getDict(argskey)
+                    if self.hrd.exists('service.'+argskey):
+                        argsDict = self.hrd.getDict('service.'+argskey)
+                        hrddata={}
+                        for k,v in argsDict.iteritems():
+                            hrddata["instance.%s"%k] = v
                     else:
                         hrddata = {}
             else:
@@ -325,12 +336,12 @@ class Service(object):
             if instance=="":
                 instance="main"
 
-            try:
-                service=j.atyourservice.get(name=name, instance=instance)
-            except:
+            services=j.atyourservice.findServices(name=name, instance=instance)
+            if len(services)>0:
+                service=services[0]
+            else:
                 print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
-                service=j.atyourservice.new(domain=domain,name=name, instance=instance)
-
+                service=j.atyourservice.new(domain=domain,name=name, instance=instance,args=hrddata)
 
             res.append(service)
 
@@ -475,7 +486,6 @@ class Service(object):
         if self.isLatest() and not reinstall:
             log("Latest %s already installed" % self)
             return
-        # self._apply()
         self.stop(deps=False)
         self.prepare(deps=True, reverse=True)
         self.log("install instance")
