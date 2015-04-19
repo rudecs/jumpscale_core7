@@ -26,11 +26,6 @@ bootstrap.passwd=rooter
 bootstrap.type=ssh
 fabric.module=openwrt
 
-mount using curlftpfs
-
-apt-get install curlftpfs -y
-mkdir -p /mnt/ftp
-curlftpfs pub:pub1234@git.aydo.com /mnt/ftp
 mkdir -p /mnt/vmstor/kvm/images
 rsync -arv --partial --progress /mnt/ftp/images/ubuntu1404/ /mnt/vmstor/kvm/images/
 rsync -arv --partial --progress /mnt/ftp/images/openwrt/ /mnt/vmstor/kvm/images/
