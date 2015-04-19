@@ -230,7 +230,7 @@ class Code():
                     value.append(todict(item,{},ignoreKeys))
                 return value
             elif isinstance(obj, unicode):
-                return str(obj)
+                return obj.encode('utf8')
             elif isinstance(obj, (int,str,float,bool,long)) or obj==None:
                 return obj
             elif isinstance(obj, bytes) or obj==None:
