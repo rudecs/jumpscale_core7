@@ -13,10 +13,13 @@ def remote(F): # F is func or method without instance
     def wrapper(actions, *args,**kwargs): # class instance in args[0] for method
         service=args[0]
         service.init()
-        host=service.hrd.get("instance.host",default="")
-        if host !="":
-            parentNode = j.atyourservice.findParent(service,host)
-            return actions.executeaction(service,actionname=F.func_name)
+
+        # host=service.hrd.get("instance.host",default="")
+        # if host !="":
+        if not hasattr(service,'noremote') or service.noremote == False:
+            parents = j.atyourservice.findParents(service,limit=1)
+            if len(parents) > 0 :
+                return actions.executeaction(service,actionname=F.func_name)
         else:
             result = F(actions, service,**kwargs)
             return result
@@ -245,7 +248,6 @@ class ActionsBase():
         """
         pass
 
-    @remote
     def check_up_local(self, serviceobj, wait=True):
         """
         do checks to see if process(es) is (are) running.
@@ -291,7 +293,6 @@ class ActionsBase():
         log("Status %s is running" % (serviceobj))
         return True
 
-    @remote
     def check_down_local(self,serviceobj):
         """
         do checks to see if process(es) are all down
@@ -325,7 +326,6 @@ class ActionsBase():
                 return False
         return True
 
-    @remote
     def check_requirements(self,serviceobj):
         """
         do checks if requirements are met to install this app
@@ -333,7 +333,6 @@ class ActionsBase():
         """
         return True
 
-    @remote
     def monitor_local(self,serviceobj):
         """
         do checks to see if all is ok locally to do with this service
@@ -341,7 +340,6 @@ class ActionsBase():
         """
         return True
 
-    @remote
     def monitor_remote(self,serviceobj):
         """
         do checks to see if all is ok from remote to do with this service
@@ -402,6 +400,7 @@ class ActionsBase():
         """
         pass
 
+    @remote
     def execute(self,serviceobj, cmd):
         """
         execute is not relevant for each type of service
@@ -426,15 +425,21 @@ class ActionsBase():
         on central side only
         execute something in the service instance
         """
+
         host = None
-        hoststr=serviceobj.hrd.get("service.host")
-        if serviceobj.name == hoststr:
-            host = serviceobj
-        else:
-            host = j.atyourservice.findParents(serviceobj,hoststr)[0]
+        # hoststr=serviceobj.hrd.get("service.host")
+        # if serviceobj.name == hoststr:
+            # host = serviceobj
+        # else:
+        parentNode = j.atyourservice.findParents(serviceobj)[0]
         # parentNode = j.atyourservice.findParent(serviceobj,parent)
-        host.actions.upload(host,serviceobj.path,serviceobj.path)
-        host.actions.execute(host,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s"\
+
+        # use the upload method from the parentNode to send file of the parentNode service
+        parentNode.actions.upload(parentNode,parentNode.path,parentNode.path)
+        # use the upload method from the parentNode to send file of the child service
+        parentNode.actions.upload(parentNode,serviceobj.path,serviceobj.path)
+        # execute the action of the child service througth the parent node
+        parentNode.actions.execute(parentNode,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s --noremote"\
                             %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo()))
 
     def _rsync(self,source,dest,key,port=22):

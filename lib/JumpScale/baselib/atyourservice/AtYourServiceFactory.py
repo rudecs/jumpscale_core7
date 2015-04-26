@@ -197,12 +197,14 @@ class AtYourServiceFactory():
         return res
 
 
-    def findParents(self,service,name=""):
+    def findParents(self,service,name="",limit=None):
 
         path=service.path
         basename=j.system.fs.getBaseName(path)
         res=[]
         while True:
+            if limit and len(res)>=limit:
+                return res
             path=j.system.fs.getParent(path)
             basename=j.system.fs.getBaseName(path)
             if basename=="services" or basename=="apps":
@@ -272,10 +274,13 @@ class AtYourServiceFactory():
         service.instance=service.hrd.get("service.instance")
         service.name=service.hrd.get("service.name")
 
-        if service.hrd.exists("service.parents"):
-            parents = service.hrd.get("service.parents")
-            parentInsances = j.atyourservice.findParents(service,parents[0])
-            service.parent = parentInsances[0]
+        # TODO: if we try to load the parent dynamycly, we end up loading all the tree.
+        # which is not good cause on a remote location, the all tree may not be there...
+
+        # if service.hrd.exists("service.parents"):
+            # parents = service.hrd.get("service.parents")
+            # parentInsances = j.atyourservice.findParents(service,parents[0],limit=1)
+            # service.parent = parentInsances[0]
 
         service._init=True
         return service
