@@ -28,7 +28,7 @@ class Dirs(object):
 
         import sys
 
-        if sys.platform.startswith('win'):
+        if sys.platform.startswith('win') or sys.platform.startswith('darwin'):
             base=os.environ['JSBASE']   
             self.baseDir=base
             self.appDir = j.system.fs.joinPaths(base,"apps")
