@@ -159,7 +159,7 @@ class LogHandler(object):
         self.consolelogCategories=[]
         self.lastmessage = ""
         # self.lastloglevel=0
-        self.enabled = False        
+        self.enabled = False   
 
     def init(self):
         if self.enabled:

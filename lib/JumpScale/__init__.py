@@ -82,6 +82,7 @@ from .core.Console import Console
 j.console=Console()
 
 from .baselib import hrd
+
 j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
 
 j.logger.enable=j.application.config.getBool("system.logging")

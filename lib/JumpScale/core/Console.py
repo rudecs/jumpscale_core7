@@ -568,7 +568,7 @@ class Console:
     def hideOutput(self):
         pass   
 
-    def enableOutput(self):
+    def printOutput(self):
         pass
 
     def showArray(self,array,header=True):
