@@ -1477,6 +1477,9 @@ paths.pid=$(paths.var)/pid
 
 paths.cfg=$(paths.base)/cfg
 paths.hrd=$(paths.base)/hrd
+
+system.logging = 1
+
 """
         C=C.replace("$base",basedir.rstrip("/"))
         self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
