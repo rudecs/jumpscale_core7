@@ -1436,8 +1436,6 @@ class InstallTools():
             sys.path=[]
         sys.path.insert(0,"%s/lib"%basedir)
         
-        print "SSSSSSS"
-
         from JumpScale import j
 
         #make sure all configured paths are created
