@@ -42,7 +42,7 @@ class ErrorConditionHandler():
         self.escalateToRedis=None
 
     def _send2Redis(self,eco):
-        if self.redis==None:
+        if j.logger.enabled and self.redis==None:
             if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
                 import JumpScale.baselib.redis
                 self.redis=j.clients.redis.getByInstance("system", gevent=True)
