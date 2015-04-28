@@ -1436,6 +1436,8 @@ class InstallTools():
         if not insystem:
             sys.path=[]
         sys.path.insert(0,"%s/lib"%basedir)
+        
+        print "SSSSSSS"
 
         from JumpScale import j
 
