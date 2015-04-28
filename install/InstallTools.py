@@ -1373,8 +1373,6 @@ class InstallTools():
         
         print ("pull binaries")
         self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)    
-        
-        sys.exit()
 
         print ("copy binaries")
         # self.createDir(base)        
@@ -1396,6 +1394,8 @@ class InstallTools():
         self.createDir("%s/bin"%base)
         self.createDir("%s/hrd/system"%base)
         self.createDir("%s/hrd/apps"%base)
+
+        sys.exit()
 
         dest="%s/lib/JumpScale"%base
         self.createDir(dest)
