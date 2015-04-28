@@ -28,6 +28,9 @@ class Dirs(object):
 
         import sys
 
+        self._hrdDir=None
+        self._serviceTemplateDir=None
+
         if sys.platform.startswith('win') or sys.platform.startswith('darwin'):
             base=os.environ['JSBASE']   
             self.baseDir=base
@@ -45,8 +48,6 @@ class Dirs(object):
                 self.codeDir = j.system.fs.joinPaths(self.varDir,"code")
             self.libExtDir = j.system.fs.joinPaths(self.jsLibDir,"lib")             
         else:        
-            self._hrdDir=None
-            self._serviceTemplateDir=None
             self.baseDir=j.application.config.get("system.paths.base")
             self.appDir = j.application.config.get("system.paths.app")
             self.varDir = j.application.config.get("system.paths.var")
