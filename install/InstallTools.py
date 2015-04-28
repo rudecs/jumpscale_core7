@@ -1398,9 +1398,6 @@ class InstallTools():
         dest="%s/lib/JumpScale"%base
         self.createDir(dest)
         self.symlinkFilesInDir(src, dest, includeDirs=True)
-        
-        print 9
-        sys.exit()
 
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
         desttest="/usr/local/bin/js"
@@ -1410,8 +1407,7 @@ class InstallTools():
         
         dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
-
-        print ("copycore")
+        
         for item in ["InstallTools","ExtraTools"]:
             src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
             dest="%s/lib/%s.py"%(base,item)
