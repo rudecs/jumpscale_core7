@@ -39,7 +39,10 @@ class Dirs(object):
             self.jsLibDir = j.system.fs.joinPaths(base,"Lib","site-packages","JumpScale")
             self.logDir = j.system.fs.joinPaths(self.varDir,"log")
             self.pidDir = j.system.fs.joinPaths(self.varDir,"pid")
-            self.codeDir = j.system.fs.joinPaths(self.varDir,"code")
+            if sys.platform.startswith('darwin'):
+                self.codeDir = j.system.fs.joinPaths("opt","code")
+            else:
+                self.codeDir = j.system.fs.joinPaths(self.varDir,"code")
             self.libExtDir = j.system.fs.joinPaths(self.jsLibDir,"lib")             
         else:        
             self._hrdDir=None
