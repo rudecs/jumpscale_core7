@@ -168,7 +168,8 @@ class HRDItem():
             self.value="BINARY"
 
         else:
-            self.value=j.tools.text.str2var(data)
+            # print "DATA:\n%s\nDATA"%data
+            self.value=j.tools.text.str2var(data.strip())
 
         if self.hrd.changed:
             self.hrd.save()
@@ -209,6 +210,8 @@ class HRD(HRDBase):
         """
         key=key.lower()
         if self.prefixWithName:
+            if self.name=="":
+                raise RuntimeError("name cannot be empoty when prefixWithName used.")
             key = key.replace('%s.' % self.name, '')
         if key not in self.items:
             self.items[key]=HRDItem(name=key,hrd=self,ttype=ttype,data=value,comments="")
@@ -248,6 +251,7 @@ class HRD(HRDBase):
             out=str(self)
 
         if self.path != '' and self.path is not None:
+
             j.system.fs.writeFile(self.path,out)
 
     def getHrd(self,key):
@@ -286,7 +290,7 @@ class HRD(HRDBase):
         j.system.fs.writeFile(self.path,out)
 
     def read(self):
-        if not j.system.fs.exists(path=self.path):
+        if not j.system.fs.exists(path=self.path) and self.path.strip()!="":
             j.do.writeFile(self.path,"")
         content=j.system.fs.fileGetContents(self.path)
         self.process(content)

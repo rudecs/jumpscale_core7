@@ -25,6 +25,7 @@ class AtYourServiceFactory():
         configpath=j.dirs.amInGitConfigRepo()
         if configpath!=None:
             self._type="c"
+            j.system.fs.createDir(j.dirs.hrdDir)
         return self._type
 
     @type.setter
