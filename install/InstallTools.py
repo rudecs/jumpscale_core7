@@ -1372,7 +1372,9 @@ class InstallTools():
             gitbase="base_python3"
         
         print ("pull binaries")
-        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)        
+        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)    
+        
+        sys.exit()
 
         print ("copy binaries")
         # self.createDir(base)        
