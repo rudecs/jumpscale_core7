@@ -1395,11 +1395,12 @@ class InstallTools():
         self.createDir("%s/hrd/system"%base)
         self.createDir("%s/hrd/apps"%base)
 
-        sys.exit()
-
         dest="%s/lib/JumpScale"%base
         self.createDir(dest)
         self.symlinkFilesInDir(src, dest, includeDirs=True)
+        
+        print 9
+        sys.exit()
 
         src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
         desttest="/usr/local/bin/js"
