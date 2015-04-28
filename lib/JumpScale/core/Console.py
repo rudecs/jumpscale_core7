@@ -571,6 +571,9 @@ class Console:
     def printOutput(self):
         pass
 
+    def enableOutput(self):
+	pass
+
     def showArray(self,array,header=True):
         choices=self._array2list(array,header)
         out=""
