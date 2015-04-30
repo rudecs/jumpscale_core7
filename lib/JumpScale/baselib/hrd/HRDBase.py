@@ -72,7 +72,7 @@ class HRDBase():
         return key in self.items
 
     def getList(self,key):
-        lst=self.get(key)
+        lst=self.get(key,"")
         if j.basetype.list.check(lst):
             return lst
         lst=str(lst)

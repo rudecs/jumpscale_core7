@@ -221,6 +221,12 @@ class AtYourServiceFactory():
             res.append(service)
         return res
 
+    def findProducer(self,producercategory,instancename):
+        for item in self.findServices(instance=instancename):
+            if producercategory in item.categories:
+                return item
+        
+
     def new(self,domain="",name="",instance="main",parent=None,args={}):
         """
         will create a new service
@@ -283,7 +289,8 @@ class AtYourServiceFactory():
             # parentInsances = j.atyourservice.findParents(service,parents[0],limit=1)
             # service.parent = parentInsances[0]
 
-        service._init=True
+        service.init()
+
         return service
     # def exists(self,domain="",name="",instance=""):
     #     self._doinit()

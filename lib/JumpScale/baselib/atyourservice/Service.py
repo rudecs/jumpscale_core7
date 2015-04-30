@@ -91,6 +91,7 @@ class Service(object):
             self.name=servicetemplate.name
             self.servicetemplate=servicetemplate
             self.templatepath=servicetemplate.metapath
+
         if path=="":
             if parent==None:
                 self.path=j.system.fs.joinPaths(j.dirs.getHrdDir(),"%s__%s__%s"%(self.domain,self.name,self.instance))
@@ -101,6 +102,7 @@ class Service(object):
             self.hrddata["service.domain"]=self.domain
             self.hrddata["service.instance"]=self.instance
         self._init=False
+        self.categories=[]
         self.parent=parent
         if self.parent != None:
             chain = self._parentChain(self.parent)
@@ -140,7 +142,10 @@ class Service(object):
             host = self.hrd.get("service.host",default="")
             if self.parent == None and host != "" and host != self.name:
                 self.parent = j.atyourservice.findParent(self,host)
+            self.categories=self.hrd.getList("service.category")
+            self.producers=self.hrd.getDictFromPrefix("producer")            
             self.log("init")
+
         self._init=True
 
     def getLogPath(self):
@@ -354,7 +359,7 @@ class Service(object):
         msg = "%s : %s\n" % (j.base.time.formatTime(j.base.time.getTimeEpoch()), msg)
         j.system.fs.writeFile(logpath,msg,append=True)
 
-    def listChilds(self):
+    def listChildren(self):
         childDirs = j.system.fs.listDirsInDir(self.path)
         childs = {}
         for path in childDirs:
@@ -747,48 +752,24 @@ class Service(object):
         return j.atyourservice.findParents(self)
 
 
-    def consume(self,producerprefix):
+    def consume(self,producercategory,instancename):
         """
-        create connection between consumer & producer
-        @param producerprefix is start of name of producer
+        create connection between consumer (this service) & producer
+        producer category is category of service
         """
-        for item in self.findParents():
-            if item.name.find(producerprefix)==0:
-                #found producer
-                portname=self.instance
-
-                for key,servicedeliver in item.hrd.getDictFromPrefix("service.deliver").iteritems():
-                    if self.name.find(servicedeliver["name"])==0:
-                        #found the required producing service
-                        # consumedict={}
-                        # consumedict["name"]=item.name
-                        # consumedict["instance"]=item.instance
-                        # consumedict["descr"]=servicedeliver["descr"]
-                        # consumedict["action"]=servicedeliver["action"]
-
-                        self.hrd.set("producer.%s.instance"%item.name,item.instance)
-                        return
-
-                        #@todo we need to check the max nr & min nr of instances
-
-        raise RuntimeError("Could not find producer:%s"%producerprefix)
-
-    def link(self,name,instance):
-        """
-        create link between 2 instances
-        """
-        other=j.atyourservice.get(name=name,instance=instance)
-
-        for key,linkobj in other.hrd.getDictFromPrefix("service.link").iteritems():
-            if self.name.find(linkobj["name"])==0:
-                self.hrd.set("link.%s.instance"%other.name,other.instance)
-                # self.hrd.set("link.%s.type"%other.name,linkobj["type"])
+        
+        for item in j.atyourservice.findServices(instance=instancename):
+            if producercategory in item.categories:
+                self.hrd.set("producer.%s"%producercategory,item.instance)
                 return
+        
+        raise RuntimeError("Could not find producer:%s for instance:%s"%(producercategory,instancename))
 
-                #@todo we need to check the max nr & min nr of instances
-
-        raise RuntimeError("Could not find link:%s"%producerprefix)
-
+    def getproducer(self,producercategory):
+        if not self.producers.has_key(producercategory):
+            j.events.inputerror_critical("cannot find producer with category:%s"%producercategory,"ays.getproducer")
+        instancename=self.producers[producercategory]
+        return j.atyourservice.findProducer(producercategory,instancename)
 
 
     def __repr__(self):
