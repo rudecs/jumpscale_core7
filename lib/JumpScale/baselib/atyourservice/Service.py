@@ -732,15 +732,10 @@ class Service(object):
         """
         execute cmd on service
         """
-        from ipdb import set_trace;set_trace()
-        toexec = ""
         if cmd:
-            toexec = cmd
-        elif self.cmd:
-            toexec = self.cmd
-        else:
-            return
-        self.actions.execute(self,cmd=toexec)
+            self.cmd = cmd
+        if self.cmd:
+            self.actions.execute(self,cmd=self.cmd)
 
     @deps
     @remote
