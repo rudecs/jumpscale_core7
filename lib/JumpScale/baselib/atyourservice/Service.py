@@ -70,10 +70,21 @@ def deps(F): # F is func or method without instance
         return result
     return wrapper
 
+def remote(F): # F is func or method without instance
+    def wrapper(service, *args,**kwargs): # class instance in args[0] for method
+        # service=args[0]
+        # service.init()
+
+            producer = service.getproducer('node')
+            if producer:
+                return service.actions.executeaction(service,actionname=F.func_name)
+            else:
+                return F(service,**kwargs)
+    return wrapper
 
 class Service(object):
 
-    def __init__(self,instance="",servicetemplate=None,path="",args=None, parent=None):
+    def __init__(self,instance="",servicetemplate=None,path="",args=None,cmd=None,parent=None):
         self.domain=""
         self.instance=instance
         self.name=""
@@ -86,6 +97,9 @@ class Service(object):
         self._reposDone={}
         self.args=args or {}
         self.hrddata = {}
+        self.categories=[]
+        self.producers={}
+        self.cmd = cmd
         if servicetemplate is not None:
             self.domain=servicetemplate.domain
             self.name=servicetemplate.name
@@ -104,10 +118,10 @@ class Service(object):
         self._init=False
         self.categories=[]
         self.parent=parent
-        if self.parent != None:
-            chain = self._parentChain(self.parent)
-            if len(chain) > 0:
-                self.hrddata["service.parents"]= chain
+        # if self.parent != None:
+        #     chain = self._parentChain(self.parent)
+        #     if len(chain) > 0:
+        #         self.hrddata["service.parents"]= chain
 
     def _parentChain(self,parent):
         chain = []
@@ -143,7 +157,7 @@ class Service(object):
             if self.parent == None and host != "" and host != self.name:
                 self.parent = j.atyourservice.findParent(self,host)
             self.categories=self.hrd.getList("service.category")
-            self.producers=self.hrd.getDictFromPrefix("producer")            
+            self.producers=self.hrd.getDictFromPrefix("producer")
             self.log("init")
 
         self._init=True
@@ -386,7 +400,7 @@ class Service(object):
             return False
         return service.name == self.name and self.domain == service.domain and self.instance == service.instance
 
-
+    @remote
     def stop(self,deps=True):
         self.log("stop instance")
         self.actions.stop(self)
@@ -394,6 +408,7 @@ class Service(object):
             self.actions.halt(self)
 
     # @deps
+    @remote
     def build(self, deps=True):
         self.log("build instance")
 
@@ -413,11 +428,13 @@ class Service(object):
             self.actions.build(self)
 
     @deps
+    @remote
     def start(self,deps=True):
         self.log("start instance")
         self.actions.start(self)
 
     @deps
+    @remote
     def restart(self,deps=True):
         self.stop()
         self.start()
@@ -446,6 +463,7 @@ class Service(object):
         return procs
 
     @deps
+    @remote
     def prepare(self,deps=False, reverse=True):
         self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
@@ -474,6 +492,7 @@ class Service(object):
 
         self.actions.prepare(self)
 
+    @remote
     def install(self, start=True,deps=True, reinstall=False):
         """
         Install Service.
@@ -636,12 +655,14 @@ class Service(object):
         self.actions.publish(self)
 
     @deps
+    @remote
     def package(self,deps=True):
         """
         """
         self.actions.package(self)
 
     @deps
+    @remote
     def update(self,deps=True):
         """
         - go over all related repo's & do an update
@@ -663,6 +684,7 @@ class Service(object):
         self.restart()
 
     @deps
+    @remote
     def resetstate(self,deps=True):
         self.log("resetstate instance")
         if self.actionspath.find(".py") == -1:
@@ -694,6 +716,7 @@ class Service(object):
         j.do.delete(self.hrdpath,force=True)
 
     @deps
+    @remote
     def removedata(self,deps=False):
         """
         - remove build repo's !!!
@@ -704,17 +727,23 @@ class Service(object):
         self.actions.removedata(self)
 
     @deps
-    def execute(self,deps=False):
+    @remote
+    def execute(self,cmd=None,deps=False):
         """
         execute cmd on service
         """
-        cmd = ""
-        if "cmd" in self.args:
-            cmd = self.args['cmd']
-        self.log("execute cmd:'%s' on instance"%cmd)
-        self.actions.execute(self,cmd=cmd)
+        from ipdb import set_trace;set_trace()
+        toexec = ""
+        if cmd:
+            toexec = cmd
+        elif self.cmd:
+            toexec = self.cmd
+        else:
+            return
+        self.actions.execute(self,cmd=toexec)
 
     @deps
+    @remote
     def uninstall(self,deps=True):
         self.log("uninstall instance")
         self.reset()
@@ -742,6 +771,7 @@ class Service(object):
 
 
     @deps
+    @remote
     def configure(self,deps=True,restart=True):
         self.log("configure instance")
         self.actions.configure(self)
@@ -757,17 +787,18 @@ class Service(object):
         create connection between consumer (this service) & producer
         producer category is category of service
         """
-        
+
         for item in j.atyourservice.findServices(instance=instancename):
             if producercategory in item.categories:
                 self.hrd.set("producer.%s"%producercategory,item.instance)
                 return
-        
+
         raise RuntimeError("Could not find producer:%s for instance:%s"%(producercategory,instancename))
 
     def getproducer(self,producercategory):
         if not self.producers.has_key(producercategory):
-            j.events.inputerror_critical("cannot find producer with category:%s"%producercategory,"ays.getproducer")
+            # j.events.inputerror_warning("cannot find producer with category:%s"%producercategory,"ays.getproducer")
+            return None
         instancename=self.producers[producercategory]
         return j.atyourservice.findProducer(producercategory,instancename)
 

@@ -8,36 +8,19 @@ CATEGORY = "atyourserviceAction"
 def log(msg, level=2):
     j.logger.log(msg, level=level, category=CATEGORY)
 
-#decorator to execute an action on a remote machine
-def remote(F): # F is func or method without instance
-    def wrapper(actions, *args,**kwargs): # class instance in args[0] for method
-        service=args[0]
-        service.init()
-
-        # host=service.hrd.get("instance.host",default="")
-        # if host !="":
-        if not hasattr(service,'noremote') or service.noremote == False:
-            parents = j.atyourservice.findParents(service,limit=1)
-            if len(parents) > 0 :
-                return actions.executeaction(service,actionname=F.func_name)
-        else:
-            result = F(actions, service,**kwargs)
-            return result
-    return wrapper
-
 class ActionsBase():
     """
     implement methods of this class to change behaviour of lifecycle management of service
     """
 
-    @remote
+    # @remote
     def prepare(self,serviceobj):
         """
         this gets executed before the files are downloaded & installed on approprate spots
         """
         return True
 
-    @remote
+    # @remote
     def configure(self,serviceobj):
         """
         this gets executed when files are installed
@@ -62,7 +45,7 @@ class ActionsBase():
         """
         return True
 
-    @remote
+    # @remote
     def start(self,serviceobj):
         """
         start happens because of info from main.hrd file but we can overrule this
@@ -173,7 +156,7 @@ class ActionsBase():
             else:
                 j.events.opserror_critical("could not start:%s"%serviceobj,"service.start.failed.other")
 
-    @remote
+    # @remote
     def stop(self,serviceobj):
         """
         if you want a gracefull shutdown implement this method
@@ -221,7 +204,7 @@ class ActionsBase():
                 pids.update(j.system.process.getPidsByFilter(process['filterstr']))
         return list(pids)
 
-    @remote
+    # @remote
     def halt(self,serviceobj):
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
@@ -234,14 +217,14 @@ class ActionsBase():
             j.events.opserror_critical("could not halt:%s"%self,"service.halt")
         return True
 
-    @remote
+    # @remote
     def build(self,serviceobj):
         """
         build instructions for the service, make sure the builded service ends up in right directory, this means where otherwise binaries would run from
         """
         pass
 
-    @remote
+    # @remote
     def package(self,serviceobj):
         """
         copy the files from the production location on the filesystem to the appropriate binary git repo
@@ -347,7 +330,7 @@ class ActionsBase():
         """
         return True
 
-    @remote
+    # @remote
     def cleanup(self,serviceobj):
         """
         regular cleanup of env e.g. remove logfiles, ...
@@ -355,7 +338,7 @@ class ActionsBase():
         """
         return True
 
-    @remote
+    # @remote
     def data_export(self,serviceobj):
         """
         export data of app to a central location (configured in hrd under whatever chosen params)
@@ -364,7 +347,7 @@ class ActionsBase():
         """
         return False
 
-    @remote
+    # @remote
     def data_import(self,id,serviceobj):
         """
         import data of app to local location
@@ -372,35 +355,35 @@ class ActionsBase():
         """
         return False
 
-    @remote
+    # @remote
     def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
-    @remote
+    # @remote
     def removedata(self,serviceobj):
         """
         remove all data from the app (called when doing a reset)
         """
         pass
 
-    @remote
+    # @remote
     def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
-    @remote
+    # @remote
     def test(self,serviceobj):
         """
         test the service on appropriate behaviour
         """
         pass
 
-    @remote
+    # @remote
     def execute(self,serviceobj, cmd):
         """
         execute is not relevant for each type of service
@@ -426,21 +409,16 @@ class ActionsBase():
         execute something in the service instance
         """
 
-        host = None
-        # hoststr=serviceobj.hrd.get("service.host")
-        # if serviceobj.name == hoststr:
-            # host = serviceobj
-        # else:
-        parentNode = j.atyourservice.findParents(serviceobj)[0]
-        # parentNode = j.atyourservice.findParent(serviceobj,parent)
-
-        # use the upload method from the parentNode to send file of the parentNode service
-        parentNode.actions.upload(parentNode,parentNode.path,parentNode.path)
-        # use the upload method from the parentNode to send file of the child service
-        parentNode.actions.upload(parentNode,serviceobj.path,serviceobj.path)
+        node = serviceobj.getproducer('node')
+        # TODO should upload to temporary destination firsts
+        node.actions.upload(node,serviceobj.path,serviceobj.path)
         # execute the action of the child service througth the parent node
-        parentNode.actions.execute(parentNode,"source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s --noremote"\
-                            %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo()))
+        cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s --noremote"\
+                            %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo())
+
+        if actionname == "execute" and serviceobj.cmd:
+            cmd += "--cmd %s"%serviceobj.cmd
+        node.actions.execute(node,cmd)
 
     def _rsync(self,source,dest,key,port=22):
         """
