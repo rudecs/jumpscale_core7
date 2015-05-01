@@ -415,7 +415,6 @@ class ActionsBase():
         # execute the action of the child service througth the parent node
         cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s --noremote"\
                             %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo())
-        from ipdb import set_trace;set_trace()
         if actionname == "execute" and serviceobj.cmd:
             cmd += " --cmd %s"%serviceobj.cmd
         node.actions.execute(node,cmd)

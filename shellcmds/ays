@@ -128,6 +128,9 @@ def getServices(args):
     if args.noremote:
         for service in services:
             service.noremote = True
+    if args.cmd:
+        for service in services:
+            service.cmd = args.cmd
     return services
 
 if '--help' in sys.argv or '-h' in sys.argv:

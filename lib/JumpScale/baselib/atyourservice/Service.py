@@ -86,7 +86,7 @@ def remote(F): # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self,instance="",servicetemplate=None,path="",args=None,cmd=None,parent=None):
+    def __init__(self,instance="",servicetemplate=None,path="",args=None,parent=None):
         self.domain=""
         self.instance=instance
         self.name=""
@@ -101,7 +101,7 @@ class Service(object):
         self.hrddata = {}
         self.categories=[]
         self.producers={}
-        self.cmd = cmd
+        self.cmd = None
         if servicetemplate is not None:
             self.domain=servicetemplate.domain
             self.name=servicetemplate.name
