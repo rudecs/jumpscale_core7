@@ -75,13 +75,14 @@ def remote(F): # F is func or method without instance
         # service=args[0]
         # service.init()
 
+        if not hasattr(service,'noremote'):
             producer = service.getproducer('node')
             if producer:
                 if 'cmd' in kwargs:
                     service.cmd = kwargs['cmd']
                 return service.actions.executeaction(service,actionname=F.func_name)
-            else:
-                return F(service,**kwargs)
+        else:
+            return F(service,**kwargs)
     return wrapper
 
 class Service(object):
