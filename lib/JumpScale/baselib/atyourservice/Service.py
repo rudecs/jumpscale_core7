@@ -77,6 +77,8 @@ def remote(F): # F is func or method without instance
 
             producer = service.getproducer('node')
             if producer:
+                if 'cmd' in kwargs:
+                    service.cmd = kwargs['cmd']
                 return service.actions.executeaction(service,actionname=F.func_name)
             else:
                 return F(service,**kwargs)
@@ -732,10 +734,7 @@ class Service(object):
         """
         execute cmd on service
         """
-        if cmd:
-            self.cmd = cmd
-        if self.cmd:
-            self.actions.execute(self,cmd=self.cmd)
+        self.actions.execute(self,cmd=self.cmd)
 
     @deps
     @remote
