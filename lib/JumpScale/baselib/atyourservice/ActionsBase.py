@@ -416,7 +416,7 @@ class ActionsBase():
         cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --path %s --noremote"\
                             %(actionname,serviceobj.name,serviceobj.instance,j.dirs.amInGitConfigRepo())
         if actionname == "execute" and serviceobj.cmd:
-            cmd += " --cmd %s"%serviceobj.cmd
+            cmd += " --cmd '%s'"%serviceobj.cmd
         node.actions.execute(node,cmd)
 
     def _rsync(self,source,dest,key,port=22):
