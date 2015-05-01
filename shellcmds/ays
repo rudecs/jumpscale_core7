@@ -180,6 +180,7 @@ elif args.action == 'install':
     # if path is present, it means the is triggerd by remote, so service.hrd and actions.py is already present on system.
     if args.path != None:
         service = j.atyourservice.get(domain=args.domain,name=args.name,instance=args.instance)
+        service.noremote = True
         service.install(start=True,deps=True,reinstall=args.reinstall)
     else:
         tmpls = j.atyourservice.findTemplates(domain=args.domain,name=args.name)
