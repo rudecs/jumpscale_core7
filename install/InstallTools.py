@@ -64,20 +64,20 @@ class InstallTools():
         from IPython import embed
         print(44)
         embed()
-        #@todo not working yet                
+        #@todo not working yet
 
     def log(self,msg, level=None):
         if self.debug:
             print(msg)
 
-    def readFile(self,filename): 
+    def readFile(self,filename):
         """Read a file and get contents of that file
         @param filename: string (filename to open for reading )
         @rtype: string representing the file contents
         """
         with open(filename) as fp:
             data = fp.read()
-        return data    
+        return data
 
     def writeFile(self,path,content):
         fo = open(path, "w")
@@ -88,21 +88,21 @@ class InstallTools():
 
         if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin","/opt/code"]:
             raise RuntimeError('cannot delete protected dirs')
-        
+
         if not force and path.find("/opt/code")!=-1:
             raise RuntimeError('cannot delete protected dirs')
-        
+
         if self.debug:
             print(("delete: %s" % path))
         if os.path.exists(path) or os.path.islink(path):
             if os.path.isdir(path):
-                #print "delete dir %s" % path           
+                #print "delete dir %s" % path
                 if os.path.islink(path):
                     os.remove(path)
                 else:
                     shutil.rmtree(path)
             else:
-                #print "delete file %s" % path           
+                #print "delete file %s" % path
                 os.remove(path)
 
     def joinPaths(self,*args):
@@ -138,13 +138,13 @@ class InstallTools():
             cmd="rsync "
             if sshkey:
                 cmd += "-e 'ssh -i %s'" % sshkey
-            cmd+=" -a --no-compress --max-delete=0 %s %s %s"%(excl,source,dest)                 
+            cmd+=" -a --no-compress --max-delete=0 %s %s %s"%(excl,source,dest)
             self.execute(cmd)
             return()
         else:
             old_debug=self.debug
             self.debug=False
-            self._copyTree(source, dest, keepsymlinks, deletefirst, overwriteFiles,ignoredir=ignoredir,ignorefiles=ignorefiles)    
+            self._copyTree(source, dest, keepsymlinks, deletefirst, overwriteFiles,ignoredir=ignoredir,ignorefiles=ignorefiles)
             self.debug=  old_debug
 
     def _copyTree(self, src, dst, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info","__pycache__"],ignorefiles=[".egg-info"]):
@@ -167,7 +167,7 @@ class InstallTools():
                     if src.find(item)!=-1:
                         return
             names = os.listdir(src)
- 
+
             if not self.exists(dst):
                 self.createDir(dst)
 
@@ -263,7 +263,7 @@ class InstallTools():
     #     while path[-1]=="/" or path[-1]=="\\":
     #         path=path[:-1]
     #     return os.readLink(path)
-    
+
     def isFile(self, path, followSoftlink = False):
         """Check if the specified file exists for the given path
         @param path: string
@@ -301,13 +301,13 @@ class InstallTools():
                 return True
             else:
                 return False
-            
+
         if(os.path.islink(path)):
             # self.log('path %s is a link'%path,8)
             return True
         # self.log('path %s is not a link'%path,8)
-        return False            
-      
+        return False
+
     def list(self,path):
         # self.log("list:%s"%path)
         if(self.isDir(path)):
@@ -351,18 +351,18 @@ class InstallTools():
         dest is where the link will be created pointing to src
         """
         if self.debug:
-            print(("symlink: src:%s dest(islink):%s" % (src,dest)))        
-            
+            print(("symlink: src:%s dest(islink):%s" % (src,dest)))
+
         if self.isLink(dest):
             self.removesymlink(dest)
-        
+
         if delete:
             if self.TYPE=="WIN":
                 self.removesymlink(dest)
                 self.delete(dest)
             else:
                 self.delete(dest)
-            
+
         if self.TYPE=="WIN":
             cmd="junction %s %s 2>&1 > null" % (dest,src)
             os.system(cmd)
@@ -388,7 +388,7 @@ class InstallTools():
 
     def removesymlink(self,path):
         if self.TYPE=="WIN":
-            try:            
+            try:
                 cmd="junction -d %s 2>&1 > null" % (path)
                 print(cmd)
                 os.system(cmd)
@@ -473,7 +473,7 @@ class InstallTools():
         items=self._listAllInDir(path=path, recursive=True, followSymlinks=False,listSymlinks=True)
         items=[item for item in items[0] if self.isLink(item)]
         for item in items:
-            self.unlink(item)        
+            self.unlink(item)
 
     def _listInDir(self, path,followSymlinks=True):
         """returns array with dirs & files in directory
@@ -593,7 +593,7 @@ class InstallTools():
 
         for direntry in dircontent:
             fullpath = self.joinPaths(path, direntry)
-                
+
 
             if followSymlinks:
                 if self.isLink(fullpath):
@@ -615,9 +615,9 @@ class InstallTools():
                             if matcher(direntry, excludeItem):
                                 includeFile=False
                     if includeFile:
-                        filesreturn.append(fullpath)                    
+                        filesreturn.append(fullpath)
             elif self.isDir(fullpath):
-                if "d" in type:                                                                 
+                if "d" in type:
                     if not(listSymlinks==False and self.isLink(fullpath)):
                         filesreturn.append(fullpath)
                 if recursive:
@@ -629,13 +629,13 @@ class InstallTools():
                             for excludeItem in exclude:
                                 if matcher(fullpath, excludeItem):
                                     exclmatch=True
-                        if exclmatch==False:            
+                        if exclmatch==False:
                             if not(followSymlinks==False and self.isLink(fullpath)):
                                 r,depth = self._listAllInDir(fullpath, recursive, filter, minmtime, maxmtime,depth=depth,type=type,exclude=exclude,followSymlinks=followSymlinks,listSymlinks=listSymlinks)
-                                if len(r) > 0: 
+                                if len(r) > 0:
                                     filesreturn.extend(r)
             elif self.isLink(fullpath) and followSymlinks==False and listSymlinks:
-                filesreturn.append(fullpath)                
+                filesreturn.append(fullpath)
 
         return filesreturn,depth
 
@@ -664,19 +664,19 @@ class InstallTools():
         return ext
 
     def chown(self,path,user):
-        from pwd import getpwnam  
+        from pwd import getpwnam
         getpwnam(user)[2]
         uid=getpwnam(user).pw_uid
         gid=getpwnam(user).pw_gid
         os.chown(path, uid, gid)
-        for root, dirs, files in os.walk(path):  
-            for ddir in dirs:  
+        for root, dirs, files in os.walk(path):
+            for ddir in dirs:
                 path = os.path.join(root, ddir)
                 try:
                     os.chown(path, uid, gid)
                 except Exception as e:
                     if str(e).find("No such file or directory")==-1:
-                        raise RuntimeError("%s"%e)                
+                        raise RuntimeError("%s"%e)
             for file in files:
                 path = os.path.join(root, file)
                 try:
@@ -690,15 +690,15 @@ class InstallTools():
         @param permissions e.g. 0o660 (USE OCTAL !!!)
         """
         os.chmod(path,permissions)
-        for root, dirs, files in os.walk(path):  
-            for ddir in dirs:  
+        for root, dirs, files in os.walk(path):
+            for ddir in dirs:
                 path = os.path.join(root, ddir)
                 try:
                     os.chmod(path,permissions)
                 except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
-                    
+
             for file in files:
                 path = os.path.join(root, file)
                 try:
@@ -731,7 +731,7 @@ class InstallTools():
     #         proc = subprocess.Popen(command, bufsize=0, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True)
     #     except Exception,e:
     #         raise RuntimeError("Cannot execute cmd:%s, could not launch process, error was %s"%(command,e))
-            
+
     #     poll_seconds = .250
     #     deadline = time.time()+timeout
     #     while time.time() < deadline and proc.poll() == None:
@@ -763,7 +763,7 @@ class InstallTools():
             return True
         return False
 
-    def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=120,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):        
+    def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=120,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):
         rc_=""
         out_=""
         err_=""
@@ -791,9 +791,9 @@ class InstallTools():
         if msg!="":
             part1 = MIMEText(str(msg), 'plain')
             msg.attach(part1)
-        
+
         if html!="":
-            part2 = MIMEText(html, 'html')            
+            part2 = MIMEText(html, 'html')
             msg.attach(part2)
 
         s = smtplib.SMTP(smtpserver, port)
@@ -801,7 +801,7 @@ class InstallTools():
         s.login(smtpuser, smtppasswd)
         s.sendmail(msg['From'], msg['To'], msg.as_string())
 
-        s.quit()        
+        s.quit()
 
     def execute(self, command , outputStdout=True, outputStderr=True, useShell=True, log=True, cwd=None, timeout=0, errors=[], ok=[], captureout=True, dieOnNonZeroExitCode=True):
         """
@@ -812,8 +812,8 @@ class InstallTools():
         # print command
         os.environ["PYTHONUNBUFFERED"]="1"
         ON_POSIX = 'posix' in sys.builtin_module_names
- 
-        popenargs={}        
+
+        popenargs={}
         if not subprocess.mswindows:
             # Reset all signals before calling execlp but after forking. This
             # fixes Python issue 1652 (http://bugs.python.org/issue1652) and
@@ -860,9 +860,9 @@ class InstallTools():
             t1.start()
             t2 = Thread(target=strerr1)
             t2.setDaemon(True)
-            t2.start()    
-            return queue,t1,t2 
-            
+            t2.start()
+            return queue,t1,t2
+
         inp,t1,t2=Pump(sout,serr)
 
         start=time.time()
@@ -891,7 +891,7 @@ class InstallTools():
                             break
                         # if err.find(item)!=-1:
                         #     rc=1
-                        #     break  
+                        #     break
                     if rc==997 or rc==0:
                         break
 
@@ -933,7 +933,7 @@ class InstallTools():
                 raise RuntimeError("Could not execute cmd:\n'%s'\nout:\n%s"%(command,out))
 
         return rc,out,err
-        
+
 
 
     # def execute(self, command , dieOnNonZeroExitCode=True, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None):
@@ -1018,13 +1018,13 @@ class InstallTools():
     #             poll=childprocess.poll()
     #             print "EXEC DONE1"
     #             print "exitcode:%s"%exitcode
-    #             print "output:'%s'"%output   
+    #             print "output:'%s'"%output
 
     #             from IPython import embed
     #             print "DEBUG NOW ooo"
     #             embed()
     #             p
-                
+
 
     #         elif self.isWindows():
     #             import subprocess, win32pipe, msvcrt, pywintypes
@@ -1056,22 +1056,22 @@ class InstallTools():
     #     except Exception as e:
     #         print e
     #         raise RuntimeError("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
-        
-    #     output=output.decode('utf8')#'ascii')  
+
+    #     output=output.decode('utf8')#'ascii')
     #     print "EXEC DONE2"
     #     print "exitcode:%s"%exitcode
-    #     print "output:'%s'"%output          
+    #     print "output:'%s'"%output
     #     error=error.decode('utf8')#'ascii')
 
     #     if (int(exitcode)!=0 or str(error)!=""):
-    #         errmsg="**ERROR**: execute cmd '%s' exitcode(%s)\nOutput:%s\nError:%s\n" % (command,exitcode, output, error)  
-    #         if dieOnNonZeroExitCode:                
+    #         errmsg="**ERROR**: execute cmd '%s' exitcode(%s)\nOutput:%s\nError:%s\n" % (command,exitcode, output, error)
+    #         if dieOnNonZeroExitCode:
     #             print (errmsg)
     #             raise RuntimeError(errmsg)
     #         if not ignoreErrorOutput:
     #             print (errmsg)
-            
-    #     return output        
+
+    #     return output
 
     def executeInteractive(self,command):
         exitcode = os.system(command)
@@ -1093,7 +1093,7 @@ class InstallTools():
             raise RuntimeError("Can only expand a tar gz file now %s"%path)
         tarfilename=".".join(basename.split(".gz")[:-1])
         self.delete(tarfilename)
-        
+
         if deleteDestFirst:
             self.delete(destdir)
 
@@ -1109,7 +1109,7 @@ class InstallTools():
             handle.close()
 
         t = tarfile.open(tarfilename, 'r')
-        t.extractall(destdir)    
+        t.extractall(destdir)
         t.close()
 
         self.delete(tarfilename)
@@ -1124,10 +1124,10 @@ class InstallTools():
         return "%s/jumpscaleinstall/%s"%(self.TMP,filename)
 
     def downloadJumpScaleCore(self,dest):
-        #csid=getLastChangeSetBitbucket()        
+        #csid=getLastChangeSetBitbucket()
         self.download ("https://bitbucket.org/jumpscale/jumpscale-core/get/default.tar.gz","%s/pl6core.tgz"%self.TMP)
         self.expand("%s/pl6core.tgz"%self.TMP,dest)
-            
+
     def getPythonSiteConfigPath(self):
         minl=1000000
         result=""
@@ -1245,7 +1245,7 @@ class InstallTools():
                 print(("git pull, ignore changes %s -> %s"%(url,dest)))
                 cmd="cd %s;git fetch"%dest
                 if depth!=None:
-                    cmd+=" --depth %s"%depth    
+                    cmd+=" --depth %s"%depth
                 self.execute(cmd)
                 if branch!=None:
                     self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
@@ -1269,14 +1269,14 @@ class InstallTools():
             print cmd
 
             if depth!=None:
-                cmd+=" --depth %s"%depth        
+                cmd+=" --depth %s"%depth
             self.execute(cmd,timeout=600)
 
         if revision!=None:
             cmd="cd %s;git checkout %s"%(dest,revision)
             print cmd
             self.execute(cmd,timeout=600)
-            
+
         return dest
 
     def getGitReposListLocal(self,provider="",account="",name="",errorIfNone=True):
@@ -1286,11 +1286,11 @@ class InstallTools():
                 continue
             for accountfound in self.listDirsInDir("/opt/code/%s"%top, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                 if account!="" and account!=accountfound:
-                    continue                
+                    continue
                 accountfounddir="/opt/code/%s/%s"%(top,accountfound)
                 for reponame in self.listDirsInDir("/opt/code/%s/%s"%(top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                     if name!="" and name!=reponame:
-                        continue                          
+                        continue
                     repodir="/opt/code/%s/%s/%s"%(top,accountfound,reponame)
                     if self.exists(path="%s/.git"%repodir):
                         repos[reponame]=repodir
@@ -1344,7 +1344,7 @@ class InstallTools():
                 text2=text.replace(item,newitem)
             if text2!=text:
                 print(("changed login/passwd on %s"%configpath))
-                self.writeFile(configpath,text2)            
+                self.writeFile(configpath,text2)
 
 
 ############# package installation
@@ -1359,7 +1359,7 @@ class InstallTools():
             self.cleanSystem()
 
         if sys.platform.startswith('win'):
-            base=os.environ['JSBASE']   
+            base=os.environ['JSBASE']
         else:
             if pythonversion==3 and base=="/opt/jumpscale7":
                 base="/opt/jumpscale73"
@@ -1370,24 +1370,24 @@ class InstallTools():
             gitbase="base_python"
         else:
             gitbase="base_python3"
-        
+
         print ("pull binaries")
-        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)    
+        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
         print ("copy binaries")
-        # self.createDir(base)        
+        # self.createDir(base)
         if copybinary:
             self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
         print ("pull core")
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7",depth=1,branch="@ys")    
+        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7", depth=1)
         src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
         self.debug=False
         if pythonversion==2:
             dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
         else:
             dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
-        if insystem or not self.exists(dest):            
+        if insystem or not self.exists(dest):
             self.symlink(src, dest)
 
         self.createDir("%s/lib"%base)
@@ -1404,25 +1404,25 @@ class InstallTools():
         if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
             self.symlinkFilesInDir(src, dest)
-        
+
         dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
-        
+
         for item in ["InstallTools","ExtraTools"]:
             src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
             dest="%s/lib/%s.py"%(base,item)
-            self.symlink(src, dest) 
-            if insystem:      
+            self.symlink(src, dest)
+            if insystem:
                 dest="/usr/local/lib/python2.7/dist-packages/%s.py"%(item)
-                self.symlink(src, dest) 
+                self.symlink(src, dest)
 
         if web:
             if pythonversion==2:
                 gitbase="web_python"
             else:
                 gitbase="web_python3"
-            self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)  
-            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base) 
+            self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
+            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
 
 
         if pythonversion==2:
@@ -1435,7 +1435,7 @@ class InstallTools():
         if not insystem:
             sys.path=[]
         sys.path.insert(0,"%s/lib"%basedir)
-        
+
         from JumpScale import j
 
         #make sure all configured paths are created
@@ -1491,10 +1491,10 @@ system.logging = 1
 # """
 
         C="""
-email                   = 
-fullname                = 
-git.login               = 
-git.passwd              = 
+email                   =
+fullname                =
+git.login               =
+git.passwd              =
 """
 
         hpath="%s/hrd/system/whoami.hrd"%basedir
@@ -1503,7 +1503,7 @@ git.passwd              =
 
         C="""
 #here domain=jumpscale, change name for more domains
-metadata.jumpscale = 
+metadata.jumpscale =
     url:'https://github.com/Jumpscale/ays_jumpscale7',
 
 """
@@ -1516,7 +1516,7 @@ export PATH=$base/bin:$PATH
 export JSBASE=$base
 export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
 #export PYTHONHOME=$base
-export LD_LIBRARY_PATH=$base/bin    
+export LD_LIBRARY_PATH=$base/bin
 """
         C=C.replace("$base",basedir)
         self.writeFile("%s/env.sh"%basedir,C)
@@ -1542,18 +1542,18 @@ $base/bin/python "$@"
 # set -ex
 # #export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu:$PYTHONPATH
 # /usr/bin/python "$@"
-# """            
+# """
             # C2=C2.replace("$base",basedir)
             dest="/usr/local/bin/jspython"
             self.delete(dest)#to remove link
-            
+
             self.writeFile(dest,C2)
             self.chmod(dest, 0o770)
 
             dest="/usr/bin/jspython"
             self.delete(dest)
 
-        #change site.py file        
+        #change site.py file
         def changesite(path):
             if self.exists(path=path):
                 C=self.readFile(path)
@@ -1576,7 +1576,7 @@ $base/bin/python "$@"
     def loadScript(self,path):
         print(("load jumpscript: %s"%path))
         source = self.readFile(path)
-        out,tags=self._preprocess(source)        
+        out,tags=self._preprocess(source)
         md5sum=j.tools.hash.md5_string(out)
         modulename = 'JumpScale.jumpscript_%s' % md5sum
 
@@ -1680,15 +1680,15 @@ apt-get install mc git ssh python2.7 python-requests  -y
 
     def gitConfig(self,name,email):
         self.execute("git config --global user.email \"%s\""%email)
-        self.execute("git config --global user.name \"%s\""%name)      
-        
+        self.execute("git config --global user.name \"%s\""%name)
+
     def replacesitecustomize(self):
         if not self.TYPE=="WIN":
             ppath="/usr/lib/python2.7/sitecustomize.py"
             if ppath.find(ppath):
                 os.remove(ppath)
             self.symlink("%s/utils/sitecustomize.py"%self.BASE,ppath)
-                
+
             def do(path,dirname,names):
                 if path.find("sitecustomize")!=-1:
                     self.symlink("%s/utils/sitecustomize.py"%self.BASE,path)
@@ -1703,7 +1703,7 @@ apt-get install mc git ssh python2.7 python-requests  -y
         if not self._extratools:
             if not self.exists("ExtraTools.py"):
                 url="https://raw.githubusercontent.com/Jumpscale/jumpscale_core/master/install/ExtraTools.py"
-                self.download(url,"/tmp/ExtraTools.py")            
+                self.download(url,"/tmp/ExtraTools.py")
                 if "/tmp" not in sys.path:
                     sys.path.append("/tmp")
             from ExtraTools import extra
@@ -1715,5 +1715,3 @@ apt-get install mc git ssh python2.7 python-requests  -y
         return self.extra.getWalker(self)
 
 do=InstallTools()
-
-
