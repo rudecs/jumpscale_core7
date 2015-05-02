@@ -16,6 +16,10 @@ def isPrimAttribute(obj, key):
     isprimtype=not hasattr(obj,funcprop)
     return isprimtype, funcprop
 
+class Struct(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
 class Code():
 
     def __init__(self):
@@ -75,6 +79,8 @@ class Code():
     #     return Appserver6GreenletTaskletsBase
 
     def dict2object(self,obj,data):
+        if obj is None:
+            return Struct(**data)
         if hasattr(obj,"_dict2obj"):
             return obj._dict2obj(data)
         if isinstance(data, dict):
@@ -230,7 +236,7 @@ class Code():
                     value.append(todict(item,{},ignoreKeys))
                 return value
             elif isinstance(obj, unicode):
-                return str(obj)
+                return obj.encode('utf8')
             elif isinstance(obj, (int,str,float,bool,long)) or obj==None:
                 return obj
             elif isinstance(obj, bytes) or obj==None:

@@ -362,10 +362,10 @@ class Text:
                 else:
                     for key,item in list(string.items()):
                         result[key]=str(Text.machinetext2val(item)) 
-            elif isinstance(string,str) or isinstance(string,float) or isinstance(string,int):
-                ttype,result=Text._str2var(str(string))
+            elif isinstance(string,basestring) or isinstance(string,float) or isinstance(string,int):
+                ttype,result=Text._str2var(j.tools.text.toStr(string))
             else:
-                j.events.inputerror_critical("Could not convert '%s' to basetype, input was no string, dict or list."%(string),"text.str2var")    
+                j.events.inputerror_critical("Could not convert '%s' to basetype, input was %s. Expected string, dict or list."%(string, type(string)),"text.str2var")    
             return result
         except Exception as e:
             j.events.inputerror_critical("Could not convert '%s' to basetype, error was %s"%(string,e),"text.str2var")
