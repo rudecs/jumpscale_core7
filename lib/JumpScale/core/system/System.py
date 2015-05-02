@@ -21,7 +21,8 @@ from JumpScale.core.system.net import SystemNet
 from JumpScale.core.system.process import SystemProcess
 
 if sys.platform.startswith('win'):
-    from JumpScale.core.system.windows import WindowsSystem
+    # from JumpScale.core.system.windows import WindowsSystem
+    pass
 else:
     from JumpScale.core.system.unix import UnixSystem
 
@@ -124,7 +125,8 @@ class System(Loader):
         self.string=String()
         self.process = SystemProcess()
         if sys.platform.startswith('win'):
-            self.windows = WindowsSystem()
+            # self.windows = WindowsSystem()
+            pass
         else:
             self.unix = UnixSystem()
             

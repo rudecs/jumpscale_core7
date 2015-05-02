@@ -55,7 +55,11 @@ class ServiceTemplate():
             return False
 
     def listInstances(self):
-        return j.atyourservice.findServices(domain=self.domain,name=self.name)
+        """
+        return a list of instance name for this template
+        """
+        services =  j.atyourservice.findServices(domain=self.domain,name=self.name)
+        return [service.instance for service in services]
 
 
     def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None):

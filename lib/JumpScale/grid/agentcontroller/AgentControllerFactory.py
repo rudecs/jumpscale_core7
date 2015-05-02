@@ -29,9 +29,9 @@ class AgentControllerFactory(object):
 
     def getInstanceConfig(self, instance=None):
         if instance is None:
-            instance = j.application.instanceconfig.get('agentcontroller.connection')
+            instance = j.application.instanceconfig.get('instance.agentcontroller.connection')
         hrd = j.application.getAppInstanceHRD('agentcontroller_client', instance)
-        prefix = 'agentcontroller.client.'
+        prefix = 'instance.agentcontroller.client.'
         result = dict()
         for key in hrd.prefix(prefix):
             attrib = key[len(prefix):]

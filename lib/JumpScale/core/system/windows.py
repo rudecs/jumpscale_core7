@@ -25,7 +25,7 @@ except ImportError:
 
 # from win32shell import shell
 from win32com.shell import shellcon
-import winreg as reg
+import _winreg as reg
 from JumpScale.core.enumerators.WinRegHiveType import WinRegHiveType
 from JumpScale.core.enumerators.WinRegValueType import WinRegValueType
 

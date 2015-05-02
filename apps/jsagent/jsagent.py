@@ -118,10 +118,11 @@ class ProcessManager():
         j.system.fs.createDir(self.dir_data)
 
         if j.system.net.tcpPortConnectionTest("localhost",9999)==False:
-            jps = j.packages.find('jumpscale', "redis")
-            jp = jps[0].getInstance('system')
-            if not jp.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
-                jp.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40})
+            # jps = j.packages.find('jumpscale', "redis")
+            # jp = jps[0].getInstance('system')
+            redisService = j.atyourservice.get('jumpscale','redis','system')
+            if not redisService.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
+                redisService.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40})
             if j.system.net.waitConnectionTest("localhost",9999,10)==False:
                 j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 
@@ -138,15 +139,19 @@ class ProcessManager():
         self.hrd=j.application.instanceconfig
 
 
-        acclientinstancename = self.hrd.get('agentcontroller.connection')
+        acclientinstancename = self.hrd.get('instance.agentcontroller.connection')
         acconfig = j.application.getAppInstanceHRD('agentcontroller_client', acclientinstancename)
 
-        acip = acconfig.get("agentcontroller.client.addr",default="")
+        acip = acconfig.get("instance.agentcontroller.client.addr",default="")
 
         if "hekad" in self.services:
-            jp=j.packages.findNewest("jumpscale","hekad")
-            if not jp.isInstalled(instance="0"):
-                jp.install(hrddata={},instance="hekad")
+            # jp=j.packages.findNewest("jumpscale","hekad")
+            hekaServices=j.atyourservice.findservices("jumpscale","hekad")
+            # if not jp.isInstalled(instance="0"):
+            if len(hekaServices)==0:
+                hekad=j.atyourservice.new(name='hekad',instance='hekad')
+                hekad.install()
+                # jp.install(hrddata={},instance="hekad")
 
             p=Process()
             p.domain="jumpscale"
@@ -162,11 +167,11 @@ class ProcessManager():
 
             if j.application.config.exists("grid.id"):
                 if j.application.config.get("grid.id")=="" or j.application.config.getInt("grid.id")==0:
-                    j.application.config.set("grid.id",self.hrd.get("grid.id"))
+                    j.application.config.set("grid.id",self.hrd.get("instance.grid.id"))
 
-            acport = acconfig.getInt("agentcontroller.client.port")
-            aclogin = acconfig.get("agentcontroller.client.login",default="node")
-            acpasswd = acconfig.get("agentcontroller.client.passwd",default="")
+            acport = acconfig.getInt("instance.agentcontroller.client.port")
+            aclogin = acconfig.get("instance.agentcontroller.client.login",default="node")
+            acpasswd = acconfig.get("instance.agentcontroller.client.passwd",default="")
 
             #processmanager enabled
             while j.system.net.waitConnectionTest(acip,acport,2)==False:

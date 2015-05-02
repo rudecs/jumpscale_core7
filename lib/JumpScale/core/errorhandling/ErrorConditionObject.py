@@ -12,7 +12,7 @@ except ImportError:
 
 
 import JumpScale.baselib.hash
-import ExtraTools
+
 
 
 LEVELMAP = {1: 'CRITICAL', 2: 'WARNING', 3: 'INFO', 4: 'DEBUG'}
@@ -344,4 +344,4 @@ class ErrorConditionObject():
             dd.pop("guid")
         if "sguid" in dd:
             dd.pop("sguid")
-        return ExtraTools.ByteProcessor.hashMd5(str(dd))
+        return j.tools.hash.md5_string(str(dd))

@@ -70,33 +70,68 @@ def deps(F): # F is func or method without instance
         return result
     return wrapper
 
+def remote(F): # F is func or method without instance
+    def wrapper(service, *args,**kwargs): # class instance in args[0] for method
+        # service=args[0]
+        # service.init()
+
+        if not hasattr(service,'noremote'):
+            producer = service.getproducer('node')
+            if producer:
+                if 'cmd' in kwargs:
+                    service.cmd = kwargs['cmd']
+                return service.actions.executeaction(service,actionname=F.func_name)
+        else:
+            return F(service,**kwargs)
+    return wrapper
 
 class Service(object):
 
-    def __init__(self,instance,servicetemplate,path="",args=None, parent=None):
-        self.domain=servicetemplate.domain
+    def __init__(self,instance="",servicetemplate=None,path="",args=None,parent=None):
+        self.domain=""
         self.instance=instance
-        self.name=servicetemplate.name
+        self.name=""
         self.servicetemplate=servicetemplate
-        self.templatepath=servicetemplate.metapath
-        if path=="":
-            if parent==None:
-                path=j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(self.name,self.instance))
-            else:
-                path=j.system.fs.joinPaths(parent.path,"%s__%s"%(self.name,self.instance))
+        self.templatepath=""
         self.path=path
-
         self._hrd=None
         self._actions=None
-        self._loaded=False
+        self.parent=None
         self._reposDone={}
         self.args=args or {}
         self.hrddata = {}
-        self.hrddata["service.name"]=self.name
-        self.hrddata["service.domain"]=self.domain
-        self.hrddata["service.instance"]=self.instance
+        self.categories=[]
+        self.producers={}
+        self.cmd = None
+        if servicetemplate is not None:
+            self.domain=servicetemplate.domain
+            self.name=servicetemplate.name
+            self.servicetemplate=servicetemplate
+            self.templatepath=servicetemplate.metapath
+
+        if path=="":
+            if parent==None:
+                self.path=j.system.fs.joinPaths(j.dirs.getHrdDir(),"%s__%s__%s"%(self.domain,self.name,self.instance))
+            else:
+                self.path=j.system.fs.joinPaths(parent.path,"%s__%s__%s"%(self.domain,self.name,self.instance))
+
+            self.hrddata["service.name"]=self.name
+            self.hrddata["service.domain"]=self.domain
+            self.hrddata["service.instance"]=self.instance
         self._init=False
+        self.categories=[]
         self.parent=parent
+        # if self.parent != None:
+        #     chain = self._parentChain(self.parent)
+        #     if len(chain) > 0:
+        #         self.hrddata["service.parents"]= chain
+
+    def _parentChain(self,parent):
+        chain = []
+        while parent != None:
+            chain.append(parent.name)
+            parent=parent.parent
+        return chain
 
     @property
     def hrd(self):
@@ -124,7 +159,10 @@ class Service(object):
             host = self.hrd.get("service.host",default="")
             if self.parent == None and host != "" and host != self.name:
                 self.parent = j.atyourservice.findParent(self,host)
+            self.categories=self.hrd.getList("service.category")
+            self.producers=self.hrd.getDictFromPrefix("producer")
             self.log("init")
+
         self._init=True
 
     def getLogPath(self):
@@ -289,11 +327,17 @@ class Service(object):
 
             if "args" in item:
                 if isinstance(item['args'], dict):
+                    hrddata={}
+                    for k,v in item['args'].iteritems():
+                        hrddata["instance.%s"%k] = v
                     hrddata = item['args']
                 else:
                     argskey = item['args']
-                    if self.hrd.exists(argskey):
-                        hrddata=self.hrd.getDict(argskey)
+                    if self.hrd.exists('service.'+argskey):
+                        argsDict = self.hrd.getDict('service.'+argskey)
+                        hrddata={}
+                        for k,v in argsDict.iteritems():
+                            hrddata["instance.%s"%k] = v
                     else:
                         hrddata = {}
             else:
@@ -314,12 +358,12 @@ class Service(object):
             if instance=="":
                 instance="main"
 
-            try:
-                service=j.atyourservice.get(name=name, instance=instance)
-            except:
+            services=j.atyourservice.findServices(name=name, instance=instance)
+            if len(services)>0:
+                service=services[0]
+            else:
                 print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
-                service=j.atyourservice.new(domain=domain,name=name, instance=instance)
-
+                service=j.atyourservice.new(domain=domain,name=name, instance=instance,args=hrddata)
 
             res.append(service)
 
@@ -332,7 +376,7 @@ class Service(object):
         msg = "%s : %s\n" % (j.base.time.formatTime(j.base.time.getTimeEpoch()), msg)
         j.system.fs.writeFile(logpath,msg,append=True)
 
-    def listChilds(self):
+    def listChildren(self):
         childDirs = j.system.fs.listDirsInDir(self.path)
         childs = {}
         for path in childDirs:
@@ -359,7 +403,7 @@ class Service(object):
             return False
         return service.name == self.name and self.domain == service.domain and self.instance == service.instance
 
-
+    @remote
     def stop(self,deps=True):
         self.log("stop instance")
         self.actions.stop(self)
@@ -367,6 +411,7 @@ class Service(object):
             self.actions.halt(self)
 
     # @deps
+    @remote
     def build(self, deps=True):
         self.log("build instance")
 
@@ -386,11 +431,13 @@ class Service(object):
             self.actions.build(self)
 
     @deps
+    @remote
     def start(self,deps=True):
         self.log("start instance")
         self.actions.start(self)
 
     @deps
+    @remote
     def restart(self,deps=True):
         self.stop()
         self.start()
@@ -419,6 +466,7 @@ class Service(object):
         return procs
 
     @deps
+    @remote
     def prepare(self,deps=False, reverse=True):
         self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
@@ -447,6 +495,7 @@ class Service(object):
 
         self.actions.prepare(self)
 
+    @remote
     def install(self, start=True,deps=True, reinstall=False):
         """
         Install Service.
@@ -464,7 +513,6 @@ class Service(object):
         if self.isLatest() and not reinstall:
             log("Latest %s already installed" % self)
             return
-        # self._apply()
         self.stop(deps=False)
         self.prepare(deps=True, reverse=True)
         self.log("install instance")
@@ -610,12 +658,14 @@ class Service(object):
         self.actions.publish(self)
 
     @deps
+    @remote
     def package(self,deps=True):
         """
         """
         self.actions.package(self)
 
     @deps
+    @remote
     def update(self,deps=True):
         """
         - go over all related repo's & do an update
@@ -637,6 +687,7 @@ class Service(object):
         self.restart()
 
     @deps
+    @remote
     def resetstate(self,deps=True):
         self.log("resetstate instance")
         if self.actionspath.find(".py") == -1:
@@ -668,6 +719,7 @@ class Service(object):
         j.do.delete(self.hrdpath,force=True)
 
     @deps
+    @remote
     def removedata(self,deps=False):
         """
         - remove build repo's !!!
@@ -678,17 +730,15 @@ class Service(object):
         self.actions.removedata(self)
 
     @deps
-    def execute(self,deps=False):
+    @remote
+    def execute(self,cmd=None,deps=False):
         """
         execute cmd on service
         """
-        cmd = ""
-        if "cmd" in self.args:
-            cmd = self.args['cmd']
-        self.log("execute cmd:'%s' on instance"%cmd)
-        self.actions.execute(self,cmd=cmd)
+        self.actions.execute(self,cmd=self.cmd)
 
     @deps
+    @remote
     def uninstall(self,deps=True):
         self.log("uninstall instance")
         self.reset()
@@ -716,6 +766,7 @@ class Service(object):
 
 
     @deps
+    @remote
     def configure(self,deps=True,restart=True):
         self.log("configure instance")
         self.actions.configure(self)
@@ -726,48 +777,25 @@ class Service(object):
         return j.atyourservice.findParents(self)
 
 
-    def consume(self,producerprefix):
+    def consume(self,producercategory,instancename):
         """
-        create connection between consumer & producer
-        @param producerprefix is start of name of producer
+        create connection between consumer (this service) & producer
+        producer category is category of service
         """
-        for item in self.findParents():
-            if item.name.find(producerprefix)==0:
-                #found producer
-                portname=self.instance
 
-                for key,servicedeliver in item.hrd.getDictFromPrefix("service.deliver").iteritems():
-                    if self.name.find(servicedeliver["name"])==0:
-                        #found the required producing service
-                        # consumedict={}
-                        # consumedict["name"]=item.name
-                        # consumedict["instance"]=item.instance
-                        # consumedict["descr"]=servicedeliver["descr"]
-                        # consumedict["action"]=servicedeliver["action"]
-
-                        self.hrd.set("producer.%s.instance"%item.name,item.instance)
-                        return
-
-                        #@todo we need to check the max nr & min nr of instances
-
-        raise RuntimeError("Could not find producer:%s"%producerprefix)
-
-    def link(self,name,instance):
-        """
-        create link between 2 instances
-        """
-        other=j.atyourservice.get(name=name,instance=instance)
-
-        for key,linkobj in other.hrd.getDictFromPrefix("service.link").iteritems():
-            if self.name.find(linkobj["name"])==0:
-                self.hrd.set("link.%s.instance"%other.name,other.instance)
-                # self.hrd.set("link.%s.type"%other.name,linkobj["type"])
+        for item in j.atyourservice.findServices(instance=instancename):
+            if producercategory in item.categories:
+                self.hrd.set("producer.%s"%producercategory,item.instance)
                 return
 
-                #@todo we need to check the max nr & min nr of instances
+        raise RuntimeError("Could not find producer:%s for instance:%s"%(producercategory,instancename))
 
-        raise RuntimeError("Could not find link:%s"%producerprefix)
-
+    def getproducer(self,producercategory):
+        if not self.producers.has_key(producercategory):
+            # j.events.inputerror_warning("cannot find producer with category:%s"%producercategory,"ays.getproducer")
+            return None
+        instancename=self.producers[producercategory]
+        return j.atyourservice.findProducer(producercategory,instancename)
 
 
     def __repr__(self):

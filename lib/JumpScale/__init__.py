@@ -9,6 +9,15 @@
 import sys
 import os
 
+if sys.platform.startswith("darwin"):
+    os.environ['JSBASE']='/Users/Shared/jumpscale/'
+    if not 'APPDATA' in os.environ:
+        os.environ['APPDATA']='/Users/Shared/jumpscale/var'
+    if not 'TMP' in os.environ:
+        os.environ['TMP']=  os.environ['TMPDIR']+"jumpscale/"
+
+
+
 if not 'JSBASE' in os.environ:
     if sys.version.startswith("3"):
         base="/opt/jumpscale73"
@@ -16,6 +25,9 @@ if not 'JSBASE' in os.environ:
         base="/opt/jumpscale7"
 else:
     base=os.environ['JSBASE']
+
+
+
 
 
 class Loader(object):
@@ -59,7 +71,9 @@ def loadSubModules(filepath, prefix='JumpScale'):
             pass
 
 j = JumpScale()
-from . import base
+
+#doesn't do anything, don't see where its coming from
+# from . import base
 
 j.core=Core()
 j.events=EventsTemp()
@@ -80,7 +94,10 @@ from .core.Console import Console
 j.console=Console()
 
 from .baselib import hrd
+
 j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
+
+j.logger.enable=j.application.config.getBool("system.logging",default=False)
 
 from .core.Dirs import Dirs
 j.dirs=Dirs()

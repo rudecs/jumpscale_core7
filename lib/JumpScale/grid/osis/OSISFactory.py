@@ -50,18 +50,19 @@ class OSISClientFactory(object):
 
     def get(self, ipaddr=None, port=5544,user=None,passwd=None,ssl=False,gevent=False):
         if ipaddr==None or user==None or passwd==None:
-            osisjp=j.packages.find(name="osis_client",domain="jumpscale")[0]
-            inames=osisjp.listInstances()
-            if len(inames)==1:
-                osisjp=osisjp.load(instance=inames[0])
-                hrd=osisjp.hrd_instance
+            osisInstances=j.atyourservice.findServices(name="osis_client",domain="jumpscale")
+            # inames=osisjp.listInstances()
+            if len(osisInstances)>0:
+                osisService = osisInstances[0]
+                # osisjp=osisjp.load(instance=inames[0])
+                hrd=osisService.hrd
                 if ipaddr==None:
-                    ipaddr=hrd.get("osis.client.addr")
+                    ipaddr=hrd.get("instance.param.osis.client.addr")
                 if user==None:
-                    user=hrd.get("osis.client.login")
+                    user=hrd.get("instance.param.osis.client.login")
                 if passwd==None:
-                    passwd=hrd.get("osis.client.passwd")
-                port=int(hrd.get("osis.client.port"))
+                    passwd=hrd.get("instance.param.osis.client.passwd")
+                port=int(hrd.get("instance.param.osis.client.port"))
 
         if passwd=="EMPTY":
             passwd=""
@@ -94,7 +95,7 @@ class OSISClientFactory(object):
     def getByInstance(self, instance=None, ssl=False, gevent=False,die=True):
         if instance is None:
             if hasattr(j.application, 'instanceconfig'):
-                instance = j.application.instanceconfig.get('osis.connection')
+                instance = j.application.instanceconfig.get('instance.osis.connection')
             else:
                 instance = 'main'
         hrdinstance= j.application.getAppInstanceHRD(name="osis_client",instance=instance) 

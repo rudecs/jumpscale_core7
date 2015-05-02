@@ -568,8 +568,11 @@ class Console:
     def hideOutput(self):
         pass   
 
-    def enableOutput(self):
+    def printOutput(self):
         pass
+
+    def enableOutput(self):
+	pass
 
     def showArray(self,array,header=True):
         choices=self._array2list(array,header)

@@ -152,14 +152,22 @@ class LogHandler(object):
         '''
         self.utils = LogUtils()
         self.reset()     
-        self.redis=None
         self.redislogging=None
+        self.redis=None
+        self.maxlevel = 5
+        self.consoleloglevel = 2
+        self.consolelogCategories=[]
+        self.lastmessage = ""
+        # self.lastloglevel=0
+        self.enabled = False   
 
     def init(self):
-        self.connectRedis()
+        if self.enabled:
+            self.connectRedis()
 
     def connectRedis(self):
-        if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
+        # if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
+        if self.redis!=None:
             #found redis        
             import JumpScale.baselib.redis
             if j.clients.redis.isRunning('system'):
@@ -168,9 +176,9 @@ class LogHandler(object):
                 if j.system.fs.exists(path=luapath):
                     lua=j.system.fs.fileGetContents(luapath)
                     self.redislogging=self.redis.register_script(lua)
-        else:
-            self.redis=None
-            self.redislogging=None
+        # else:
+        #     self.redis=None
+        #     self.redislogging=None
 
     def _send2Redis(self,obj):
         if self.redis!=None and self.redislogging!=None:
@@ -228,7 +236,6 @@ class LogHandler(object):
         self.consolelogCategories=[]
         self.lastmessage = ""
         # self.lastloglevel=0
-
         self.nolog = False
         self.enabled = True
 

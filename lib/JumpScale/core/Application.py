@@ -45,24 +45,30 @@ class Application:
 
         self.interactive=True
 
-    def init(self):
+        self.redis=None
 
-        j.logger.init()
+    def init(self):
 
         self.initWhoAmI()
 
         self.connectRedis()
 
+        if j.logger.enabled:
+            j.logger.redis=self.redis
+            j.logger.init()
+
     def loadConfig(self):
         self.config = j.core.hrd.get(path="%s/system" % j.dirs.hrdDir)
 
     def connectRedis(self):
-        if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
-            import JumpScale.baselib.redis
-            if j.clients.redis.isRunning('system'):
-                self.redis = j.clients.redis.getByInstance('system')
-                return
-        self.redis=None
+        if j.logger.enabled:
+            if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
+                import JumpScale.baselib.redis
+                if j.clients.redis.isRunning('system'):
+                    self.redis = j.clients.redis.getByInstance('system')
+                    return        
+            print "WARNING: no system redis found."
+            j.logger.enabled=False
 
     def initWhoAmI(self, reload=False):
         """

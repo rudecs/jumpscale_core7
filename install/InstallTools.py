@@ -1358,8 +1358,11 @@ class InstallTools():
         if clean:
             self.cleanSystem()
 
-        if pythonversion==3 and base=="/opt/jumpscale7":
-            base="/opt/jumpscale73"
+        if sys.platform.startswith('win'):
+            base=os.environ['JSBASE']   
+        else:
+            if pythonversion==3 and base=="/opt/jumpscale7":
+                base="/opt/jumpscale73"
 
         self.debug=True
 
@@ -1369,7 +1372,7 @@ class InstallTools():
             gitbase="base_python3"
         
         print ("pull binaries")
-        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)        
+        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)    
 
         print ("copy binaries")
         # self.createDir(base)        
@@ -1404,8 +1407,7 @@ class InstallTools():
         
         dest="%s/bin"%base
         self.symlinkFilesInDir(src, dest)
-
-        print ("copycore")
+        
         for item in ["InstallTools","ExtraTools"]:
             src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
             dest="%s/lib/%s.py"%(base,item)
@@ -1433,7 +1435,7 @@ class InstallTools():
         if not insystem:
             sys.path=[]
         sys.path.insert(0,"%s/lib"%basedir)
-
+        
         from JumpScale import j
 
         #make sure all configured paths are created
@@ -1474,6 +1476,9 @@ paths.pid=$(paths.var)/pid
 
 paths.cfg=$(paths.base)/cfg
 paths.hrd=$(paths.base)/hrd
+
+system.logging = 1
+
 """
         C=C.replace("$base",basedir.rstrip("/"))
         self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
@@ -1615,6 +1620,7 @@ rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale/
 rm /usr/local/bin/js*
 rm /usr/local/bin/jpack*
 rm /usr/local/bin/osis*
+rm -rf /opt/jumpscale7/lib/JumpScale
 rm -rf /opt/sentry/
 sudo stop redisac
 sudo stop redisp

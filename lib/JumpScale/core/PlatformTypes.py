@@ -44,6 +44,7 @@ class PlatformTypes():
         self.addPlatform("win7",parent="win")
         self.addPlatform("win8",parent="win")
         self.addPlatform("vista",parent="win")
+        self.addPlatform("darwin",parent="unix")
         self.addPlatform("win2008_64",parent="win64")
         self.addPlatform("win2012_64",parent="win64")
         
@@ -133,8 +134,8 @@ class PlatformTypes():
         elif sys.platform.startswith("cygwin"):
             _platform = "cygwin"
 
-        # elif sys.platform.startswith("darwin"):
-        #     _platform = PlatformType.DARWIN
+        elif sys.platform.startswith("darwin"):
+            _platform = "darwin"
 
         else:
             raise RuntimeError("can't establish platform name")
