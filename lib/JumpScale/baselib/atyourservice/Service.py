@@ -72,17 +72,13 @@ def deps(F): # F is func or method without instance
 
 def remote(F): # F is func or method without instance
     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
-        # service=args[0]
-        # service.init()
-
-        if not hasattr(service,'noremote'):
+        if service.noremote is False:
             producer = service.getproducer('node')
             if producer:
                 if 'cmd' in kwargs:
                     service.cmd = kwargs['cmd']
                 return service.actions.executeaction(service,actionname=F.func_name)
-        else:
-            return F(service,**kwargs)
+        return F(service,**kwargs)
     return wrapper
 
 class Service(object):
@@ -103,6 +99,7 @@ class Service(object):
         self.categories=[]
         self.producers={}
         self.cmd = None
+        self.noremote = False
         if servicetemplate is not None:
             self.domain=servicetemplate.domain
             self.name=servicetemplate.name
