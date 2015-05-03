@@ -182,10 +182,11 @@ class ProcessManager():
             res=self.acclient.registerNode(hostname=socket.gethostname(), machineguid=j.application.getUniqueMachineId())
 
             nid=res["node"]["id"]
-            j.application.config.set("grid.node.id",nid)
+            jsagentService = j.atyourservice.get('jumpscale', 'jsagent')
+            jsagentService.hrd.set("grid.node.id",nid)
 
-            j.application.config.set("grid.id",res["node"]["gid"])
-            j.application.config.set("grid.node.machineguid",j.application.getUniqueMachineId())
+            jsagentService.hrd.set("grid.id",res["node"]["gid"])
+            jsagentService.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
             
             self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
