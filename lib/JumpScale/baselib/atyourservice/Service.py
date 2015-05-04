@@ -97,7 +97,7 @@ class Service(object):
         self.args=args or {}
         self.hrddata = {}
         self.categories=[]
-        self.producers={}
+        self._producers=None
         self.cmd = None
         self.noremote = False
         if servicetemplate is not None:
@@ -147,6 +147,11 @@ class Service(object):
             self._loadActions()
         return self._actions
 
+    @property
+    def producers(self):
+        if self._producers is None:
+            self._producers = self.hrd.getDictFromPrefix("producer")
+        return self._producers
 
     def init(self):
         if self._init==False:
@@ -157,7 +162,6 @@ class Service(object):
             if self.parent == None and host != "" and host != self.name:
                 self.parent = j.atyourservice.findParent(self,host)
             self.categories=self.hrd.getList("service.category")
-            self.producers=self.hrd.getDictFromPrefix("producer")
             self.log("init")
 
         self._init=True
@@ -355,12 +359,17 @@ class Service(object):
             if instance=="":
                 instance="main"
 
-            services=j.atyourservice.findServices(name=name, instance=instance)
-            if len(services)>0:
-                service=services[0]
+            services = j.atyourservice.findServices(name=name, instance=instance)
+            if len(services) > 0:
+                service = services[0]
             else:
                 print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
-                service=j.atyourservice.new(domain=domain,name=name, instance=instance,args=hrddata)
+                service = j.atyourservice.new(domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
+                if len(self.producers):
+                    for cat, prod in self.producers.iteritems():
+                        service.init()
+                        service.consume(cat, prod)
+                service.noremote = self.noremote
 
             res.append(service)
 
@@ -427,14 +436,14 @@ class Service(object):
             self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
             self.actions.build(self)
 
-    @deps
     @remote
+    @deps
     def start(self,deps=True):
         self.log("start instance")
         self.actions.start(self)
 
-    @deps
     @remote
+    @deps
     def restart(self,deps=True):
         self.stop()
         self.start()
@@ -462,8 +471,8 @@ class Service(object):
 
         return procs
 
-    @deps
     @remote
+    @deps
     def prepare(self,deps=False, reverse=True):
         self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
@@ -492,6 +501,7 @@ class Service(object):
 
         self.actions.prepare(self)
 
+    @deps
     @remote
     def install(self, start=True,deps=True, reinstall=False):
         """
@@ -654,15 +664,15 @@ class Service(object):
         self.log("publish instance")
         self.actions.publish(self)
 
-    @deps
     @remote
+    @deps
     def package(self,deps=True):
         """
         """
         self.actions.package(self)
 
-    @deps
     @remote
+    @deps
     def update(self,deps=True):
         """
         - go over all related repo's & do an update
@@ -683,8 +693,8 @@ class Service(object):
 
         self.restart()
 
-    @deps
     @remote
+    @deps
     def resetstate(self,deps=True):
         self.log("resetstate instance")
         if self.actionspath.find(".py") == -1:
@@ -715,8 +725,8 @@ class Service(object):
         self.actions.removedata(self)
         j.do.delete(self.hrdpath,force=True)
 
-    @deps
     @remote
+    @deps
     def removedata(self,deps=False):
         """
         - remove build repo's !!!
@@ -726,16 +736,16 @@ class Service(object):
         self.log("removedata instance")
         self.actions.removedata(self)
 
-    @deps
     @remote
+    @deps
     def execute(self,cmd=None,deps=False):
         """
         execute cmd on service
         """
         self.actions.execute(self,cmd=self.cmd)
 
-    @deps
     @remote
+    @deps
     def uninstall(self,deps=True):
         self.log("uninstall instance")
         self.reset()
