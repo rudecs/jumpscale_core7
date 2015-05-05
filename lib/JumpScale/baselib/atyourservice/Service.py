@@ -73,7 +73,11 @@ def deps(F): # F is func or method without instance
 def remote(F): # F is func or method without instance
     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
         if service.noremote is False:
-            producer = service.getproducer('node')
+            try:
+                producer = service.getproducer('node')
+            except:
+                # can't load producer, execute locally
+                return F(service,**kwargs)
             if producer:
                 if 'cmd' in kwargs:
                     service.cmd = kwargs['cmd']
