@@ -454,7 +454,7 @@ class ActionsBase():
         j.system.fs.writeFile(keyloc,key)
         j.system.fs.chmod(keyloc,0o600)
         login = login or 'root'
-        ssh = "-e 'ssh -i %s -p %s -l %s'" % (keyloc,port, login)
+        ssh = "-e 'ssh -o StrictHostKeyChecking=no -i %s -p %s -l %s'" % (keyloc,port, login)
 
         destPath = dest
         if dest.find(":") != -1:
