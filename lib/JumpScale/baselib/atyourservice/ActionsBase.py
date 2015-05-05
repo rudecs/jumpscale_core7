@@ -422,7 +422,7 @@ class ActionsBase():
             cmd += " --cmd '%s'"%serviceobj.cmd
         node.actions.execute(node,cmd)
 
-    def _rsync(self,source,dest,key,port=22):
+    def _rsync(self,source,dest,key,port=22, login=None):
         """
         helper method that can be used by services implementation for upload/download actions
         """
@@ -453,7 +453,8 @@ class ActionsBase():
         keyloc = "/tmp/%s" % generateUniq('id_dsa')
         j.system.fs.writeFile(keyloc,key)
         j.system.fs.chmod(keyloc,0o600)
-        ssh = "-e 'ssh -i %s -p %s'" % (keyloc,port)
+        login = login or 'root'
+        ssh = "-e 'ssh -i %s -p %s -l %s'" % (keyloc,port, login)
 
         destPath = dest
         if dest.find(":") != -1:
