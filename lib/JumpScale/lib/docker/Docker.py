@@ -41,7 +41,7 @@ class Docker():
     def copy(self,name,src,dest):        
         rndd=j.base.idgenerator.generateRandomInt(10,1000000)
         dest0="/var/docker/%s/%s"%(name,rndd)
-        if j.s.system.fs.isDir(src):
+        if j.system.fs.isDir(src):
             j.do.copyTree(src,dest0)
         else:
             j.do.copyFile(src,dest0)
