@@ -41,11 +41,14 @@ class Docker():
     def copy(self,name,src,dest):        
         rndd=j.base.idgenerator.generateRandomInt(10,1000000)
         dest0="/var/docker/%s/%s"%(name,rndd)
-        j.do.copyFile(src,dest0)
+        if j.s.system.fs.isDir(src):
+            j.do.copyTree(src,dest0)
+        else:
+            j.do.copyFile(src,dest0)
         ddir=j.system.fs.getDirName(dest)
         cmd="mkdir -p %s"%(ddir)
         self.run(name,cmd)
-        cmd="cp /var/jumpscale/%s %s"%(rndd,dest)
+        cmd="cp -a /var/jumpscale/%s %s"%(rndd,dest)
         self.run(name,cmd)
         j.do.delete(dest0)
 
