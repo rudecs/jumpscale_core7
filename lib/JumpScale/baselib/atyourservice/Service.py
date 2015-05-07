@@ -1,10 +1,12 @@
 from JumpScale import j
-import imp
-import sys
-
 import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
+
+import imp
+import sys
+from functools import wraps
+
 
 def log(msg, level=1):
     j.logger.log(msg, level=level, category='JSERVICE')
@@ -49,6 +51,7 @@ def deps(F): # F is func or method without instance
             raise RuntimeError("did not expect this result, needs to be str,list,bool,int,dict")
         return result
 
+    @wraps(F)
     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
         result=None
 
@@ -71,6 +74,7 @@ def deps(F): # F is func or method without instance
     return wrapper
 
 def remote(F): # F is func or method without instance
+    @wraps(F)
     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
         if service.noremote is False:
             try:
