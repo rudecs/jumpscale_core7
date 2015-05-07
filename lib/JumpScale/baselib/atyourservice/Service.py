@@ -483,26 +483,26 @@ class Service(object):
     @deps
     def prepare(self,deps=False, reverse=True):
         self.log("prepare install for instance")
-        for src in self.hrd.getListFromPrefix("ubuntu.apt.source"):
+        for src in self.hrd.getListFromPrefix("service.ubuntu.apt.source"):
             src=src.replace(";",":")
             if src.strip()!="":
                 j.system.platform.ubuntu.addSourceUri(src)
 
-        for src in self.hrd.getListFromPrefix("ubuntu.apt.key.pub"):
+        for src in self.hrd.getListFromPrefix("service.ubuntu.apt.key.pub"):
             src=src.replace(";",":")
             if src.strip()!="":
                 cmd="wget -O - %s | apt-key add -"%src
                 j.do.execute(cmd,dieOnNonZeroExitCode=False)
 
-        if self.hrd.getBool("ubuntu.apt.update",default=False):
+        if self.hrd.getBool("service.ubuntu.apt.update",default=False):
             log("apt update")
             j.do.execute("apt-get update -y",dieOnNonZeroExitCode=False)
 
-        if self.hrd.getBool("ubuntu.apt.upgrade",default=False):
+        if self.hrd.getBool("service.ubuntu.apt.upgrade",default=False):
             j.do.execute("apt-get upgrade -y",dieOnNonZeroExitCode=False)
 
-        if self.hrd.exists("ubuntu.packages"):
-            packages = self.hrd.getList("ubuntu.packages")
+        if self.hrd.exists("service.ubuntu.packages"):
+            packages = self.hrd.getList("service.ubuntu.packages")
             packages = [ pkg.strip() for pkg in packages if pkg.strip() != "" ]
             if packages:
                 j.do.execute("apt-get install -y -f %s"% " ".join(packages) ,dieOnNonZeroExitCode=True)
