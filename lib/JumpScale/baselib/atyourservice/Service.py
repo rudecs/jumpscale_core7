@@ -704,15 +704,11 @@ class Service(object):
     @remote
     @deps
     def resetstate(self,deps=True):
-        self.log("resetstate instance")
-        if self.actionspath.find(".py") == -1:
-            j.do.delete(self.actionspath+".py",force=True)
-            j.do.delete(self.actionspath+"pyc",force=True) #for .pyc file
-        else:
-            j.do.delete(self.actionspath,force=True)
-            j.do.delete(self.actionspath+"c",force=True) #for .pyc file
-        actioncat="service_%s_%s_%s"%(self.service.domain,self.service.name,self.instance)
-        j.do.delete("%s/%s.json"%(j.dirs.getStatePath(),actioncat),force=True)
+        """
+        remove state of a service.
+        """
+        path = j.system.fs.joinPaths(self.path,"state.json")
+        j.do.delete(path)
 
 
     @deps
@@ -731,7 +727,7 @@ class Service(object):
             j.do.delete(dest)
 
         self.actions.removedata(self)
-        j.do.delete(self.hrdpath,force=True)
+        j.do.delete(self.path,force=True)
 
     @remote
     @deps

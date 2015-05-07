@@ -205,8 +205,9 @@ elif args.action == 'publish':
     pass
 
 elif args.action == 'reset':
-    # TODO
-    pass
+    services = getServices(args)
+    for service in services:
+        service.reset(deps=args.deps)
 
 elif args.action == 'removedata':
     services = getServices(args)
