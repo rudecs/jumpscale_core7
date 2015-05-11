@@ -428,17 +428,16 @@ class Service(object):
     @remote
     def build(self, deps=True):
         self.log("build instance")
-
         for dep in self.getDependencies(build=True):
-            if dep.service.name not in j.atyourservice._justinstalled:
+            if dep.name not in j.atyourservice._justinstalled:
                 dep.install()
-                j.atyourservice._justinstalled.append(dep.service.name)
+                j.atyourservice._justinstalled.append(dep.name)
 
-        for recipeitem in self.hrd.getListFromPrefix("git.export"):
+        for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
             #pull the required repo
             self._getRepo(recipeitem['url'],recipeitem=recipeitem)
 
-        for recipeitem in self.hrd.getListFromPrefix("git.build"):
+        for recipeitem in self.hrd.getListFromPrefix("service.git.build"):
             #pull the required repo
             name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
             self._getRepo(recipeitem['url'],recipeitem=recipeitem,dest="/opt/build/%s"%name)
