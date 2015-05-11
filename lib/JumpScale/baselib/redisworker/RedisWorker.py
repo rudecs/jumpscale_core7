@@ -323,6 +323,7 @@ class RedisWorkerFactory(object):
 
         # if not self.jobExistsInQueue(qname,job):
         self.redis.set("workers:jobs:%s" % job.id, json.dumps(job.__dict__))
+        queue.put(job)
 
     def scheduleJob(self, job):
         jobobj = Job(ddict=job)

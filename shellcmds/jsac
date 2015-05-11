@@ -28,9 +28,7 @@ if opts.action == 'reload':
 elif opts.action == 'listsessions':
     import yaml
     sessions = ac.listSessions()
-    hrd = j.core.hrd.get()
-    hrd.set('sessions', sessions, False)
-    print('Sessions:\n\n %s' % hrd)
+    print('Sessions:\n\n %s' % yaml.dump(sessions))
 elif opts.action == 'exec':
     import yaml
     args = dict()
