@@ -69,7 +69,7 @@ class AgentControllerProxyClient():
         if not instances:
             raise RuntimeError('AgentController Client must be configured')
         acconfig = j.application.getAppInstanceHRD('agentcontroller_client', instances[0])
-        passwd = acconfig.get("agentcontroller.client.passwd")
+        passwd = acconfig.get("instance.agentcontroller.client.passwd")
         login = 'root'
         client= j.servers.geventws.getClient(self.ipaddr, PORT, user=login, passwd=passwd,category="processmanager_%s"%category)
         self.__dict__.update(client.__dict__)
@@ -92,7 +92,7 @@ class AgentControllerClient():
             if not instances:
                 raise RuntimeError('AgentController Client must be configured')
             acconfig = j.application.getAppInstanceHRD('agentcontroller_client', instances[0])
-            passwd = acconfig.get("agentcontroller.client.passwd")
+            passwd = acconfig.get("instance.agentcontroller.client.passwd")
         if login == 'node' and passwd is None:
             passwd = j.application.getUniqueMachineId()
         client= j.servers.geventws.getHAClient(connections, user=login, passwd=passwd,category="agent", reconnect=True)
