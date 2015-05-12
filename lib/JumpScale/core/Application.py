@@ -253,19 +253,21 @@ class Application:
         """
         returns hrd instance names for specific appname (default domain=jumpscale)
         """
-
-        names=[j.system.fs.getBaseName(item) for item in j.system.fs.listDirsInDir(j.dirs.hrdDir,False)]
-        res=[]
-        for name1 in names:
-            if j.packages.type!="c":
-                if name1.startswith(domain):
-                    name1=name1[len(domain)+1:]
-            if name1.startswith(name):
-                instance=name1.split("__")[1]
-                if instance not in res:
-                    res.append(instance)
-        res.sort()
-        return res
+        names = [item.instance for item in j.atyourservice.findServices(domain=domain, name=name)]
+        names.sort()
+        return names
+        # names=[j.system.fs.getBaseName(item) for item in j.system.fs.listDirsInDir(j.dirs.getHrdDir(),False)]
+        # res=[]
+        # from ipdb import set_trace;set_trace()
+        # for name1 in names:
+        #     if j.atyourservice.type!="c":
+        #         if name1.startswith(domain):
+        #             name1=name1[len(domain)+1:]
+        #     if name1.startswith(name):
+        #         instance=name1.split("__")[1]
+        #         if instance not in res:
+        #             res.append(instance)
+        # return res
 
     def getCPUUsage(self):
         """
