@@ -76,7 +76,6 @@ class AtYourServiceFactory():
 
 
     def findTemplates(self,domain="",name=""):
-        from ipdb import set_trace;set_trace()
         key="%s__%s"%(domain,name)
         if self._cachefind.has_key(key):
             return self._cachefind[key]
