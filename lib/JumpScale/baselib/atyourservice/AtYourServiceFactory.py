@@ -76,6 +76,7 @@ class AtYourServiceFactory():
 
 
     def findTemplates(self,domain="",name=""):
+        from ipdb import set_trace;set_trace()
         key="%s__%s"%(domain,name)
         if self._cachefind.has_key(key):
             return self._cachefind[key]
@@ -86,10 +87,6 @@ class AtYourServiceFactory():
         if domain!="":
             if domain not in self.domains:
                 return[]
-            if name!="":
-                path = j.system.fs.joinPaths(self.domains[domain],name)
-                if not j.system.fs.exists(path=path):
-                    return []
 
         baseDomains=j.application.config.getDictFromPrefix("atyourservice.metadata")
         def sorter(domain1,domain2):
