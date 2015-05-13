@@ -183,13 +183,6 @@ class JumpscriptFactory:
     """
     def __init__(self):
         self.basedir = j.system.fs.joinPaths(j.dirs.baseDir, 'apps', 'processmanager')
-        secretkey = "agentcontroller.webdiskey"
-        hrd = j.application.getAppInstanceHRD('agentcontroller', 'main', 'jumpscale')
-        if hrd.exists(secretkey)==False or hrd.get(secretkey)=="":
-            pass
-            # raise RuntimeError("please configure %s" % secretkey)
-        else:
-            self.secret = hrd.get(secretkey)
 
     def getJSClass(self):
         return Jumpscript
