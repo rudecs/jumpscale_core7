@@ -184,6 +184,7 @@ class ProcessManager():
             nid=res["node"]["id"]
             jsagentService = j.atyourservice.get('jumpscale', 'jsagent')
             jsagentService.hrd.set("grid.node.id",nid)
+            j.application.config.set('grid.node.id',nid)
 
             jsagentService.hrd.set("grid.id",res["node"]["gid"])
             jsagentService.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
