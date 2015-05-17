@@ -20,6 +20,9 @@ class Nginx(object):
         configfiles = self.remoteApi.run('ls %s' % self.configPath)
         return configfiles.split('  ')
 
+    def load(self, path='/etc/nginx/nginx.conf'):
+        return NginxConfig(path)
+
     def configure(self, fwObject):
         json = j.db.serializers.getSerializerType('j')
         fwDict = json.loads(fwObject)
@@ -75,3 +78,61 @@ server {
 
     def restart(self):
         self.remoteApi.run('service nginx restart')
+
+class NginxBaseConfig(object):
+    def __init__(self, config):
+        self._properties = list()
+        for key, value in config:
+            if isinstance(value, basestring):
+                self._properties.append([key, value])
+            else:
+                self._specialconfig(key, value)
+
+    @property
+    def properties(self):
+        return self._properties
+
+class NginxConfig(NginxBaseConfig):
+    def __init__(self, path):
+        self._path = path
+        self.http = None
+        self.events = None
+        import nginxparser
+        config = nginxparser.loads(j.system.fs.fileGetContents(path))
+        super(NginxConfig, self).__init__(config)
+
+    def _specialconfig(self, key, value):
+        if key[0] == 'http':
+            self.http = NginxHTTP(value)
+        elif key[0] == 'events':
+            self.events = NginxEvents(value)
+
+    def write(self):
+        pass
+
+class NginxEvents(NginxBaseConfig):
+    pass
+
+class NginxHTTP(NginxBaseConfig):
+    def __init__(self, config):
+        self.servers = list()
+        super(NginxHTTP, self).__init__(config)
+
+    def _specialconfig(self, key, value):
+        if key[0] == 'server':
+            self.servers.append(NginxServer(value))
+
+class NginxServer(NginxBaseConfig):
+    def __init__(self, config):
+        self.locations = list()
+        super(NginxServer, self).__init__(config)
+
+    def _specialconfig(self, key, value):
+        if key[0] == 'location':
+            self.locations.append(NginxLocation(key[1], value))
+
+
+class NginxLocation(NginxBaseConfig):
+    def __init__(self, path, config):
+        self.path = path
+        super(NginxLocation, self).__init__(config)
