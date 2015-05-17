@@ -62,7 +62,7 @@ class ServiceTemplate():
         return [service.instance for service in services]
 
 
-    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None):
+    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False):
         """
         Install Service.
 
@@ -77,6 +77,7 @@ class ServiceTemplate():
         """
 
         service=self.newInstance(instance=instance, args=args ,parent=parent)
+        service.noremote=noremote
         service.install(start=start,deps=deps, reinstall=reinstall)
 
 
