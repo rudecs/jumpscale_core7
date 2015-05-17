@@ -166,10 +166,11 @@ class Service(object):
             hrd=self.hrd
             actions=self.actions
 
-            host = self.hrd.get("service.host",default="")
-            if self.parent == None and host != "" and host != self.name:
-                self.parent = j.atyourservice.findParent(self,host)
-            self.categories=self.hrd.getList("service.category")
+            if self.parent is None:
+                parents = j.atyourservice.findParents(self, limit=1)
+                if len(parents) >= 1:
+                    self.parent = parents[0]
+            self.categories = self.hrd.getList("service.category")
             self.log("init")
 
         self._init=True
@@ -367,13 +368,13 @@ class Service(object):
             if instance=="":
                 instance="main"
 
-            services = j.atyourservice.findServices(name=name, instance=instance)
+            services = j.atyourservice.findServices(name=name, instance=instance, parent=self.parent)
             if len(services) > 0:
                 service = services[0]
             else:
                 print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
                 service = j.atyourservice.new(domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
-                if len(self.producers):
+                if self.noremote is False and len(self.producers):
                     for cat, prod in self.producers.iteritems():
                         service.init()
                         service.consume(cat, prod)

@@ -132,7 +132,7 @@ class AtYourServiceFactory():
         return finalRes
 
 
-    def findServices(self,domain="",name="",instance=""):
+    def findServices(self,domain="",name="",instance="",parent=None):
         """
         FindServices looks for actual services that are created
         """
@@ -166,6 +166,7 @@ class AtYourServiceFactory():
         self._doinit()
 
         res=[]
+        parentInstance = ""
         for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
             namefound=j.system.fs.getBaseName(path)
 
@@ -176,17 +177,30 @@ class AtYourServiceFactory():
             domainfoud,namefound,instancefound=namefound.split("__",2)
             service=None
             if instance=="" and name=="":
-                service = createService(domainfoud,namefound,instancefound,path)
+                if parent is None:
+                    service = createService(domainfoud,namefound,instancefound,path)
+                elif parentInstance == parent.instance:
+                    service = createService(domainfoud,namefound,instancefound,path)
             elif instance=="" and name!="":
                 if namefound==name:
-                    service = createService(domainfoud,namefound,instancefound,path)
+                    if parent is None:
+                        service = createService(domainfoud,namefound,instancefound,path)
+                    elif parentInstance == parent.instance:
+                        service = createService(domainfoud,namefound,instancefound,path)
             elif instance!="" and name=="":
                 if instance==instancefound:
-                    service = createService(domainfoud,namefound,instancefound,path)
+                    if parent is None:
+                        service = createService(domainfoud,namefound,instancefound,path)
+                    elif parentInstance == parent.instance:
+                        service = createService(domainfoud,namefound,instancefound,path)
             elif instance==instancefound and namefound == name:
+                if parent is None:
+                    service = createService(domainfoud,namefound,instancefound,path)
+                elif parentInstance == parent.instance:
                     service = createService(domainfoud,namefound,instancefound,path)
             if service != None:
                 res.append(service)
+            parentInstance=instancefound
 
         if name!="" and instance!="":
             self._cachefind[targetKey]=res
