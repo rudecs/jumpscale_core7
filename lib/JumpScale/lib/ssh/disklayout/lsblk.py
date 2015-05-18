@@ -1,40 +1,12 @@
 import re
-
+from disk import DiskInfo, PartitionInfo
 
 COMMAND = 'lsblk -bnP -o NAME,TYPE,UUID,FSTYPE,SIZE,MOUNTPOINT -e 7,1'
 
 _extract_pattern = re.compile('\s*([^=]+)="([^"]*)"')
 
 
-class BlkInfo(object):
-    def __init__(self, name, type, size):
-        self.name = name
-        self.type = type
-        self.size = size
-
-    def __str__(self):
-        return '%s %s' % (self.name, self.size)
-
-    def __repr__(self):
-        return str(self)
-
-
-class DiskInfo(BlkInfo):
-    def __init__(self, name, size):
-        super(DiskInfo, self).__init__(name, 'disk', size)
-        self.partitions = list()
-
-
-class PartitionInfo(BlkInfo):
-    def __init__(self, name, size, uuid, fstype, mount):
-        super(PartitionInfo, self).__init__(name, 'part', size)
-        self.uuid = uuid
-        self.fstype = fstype
-        self.mount = mount
-        self.hrd = None
-
-
-def parse(output):
+def parse(con, output):
     """
     Parses the output of command
     `lsblk -abnP -o NAME,TYPE,UUID,FSTYPE,SIZE`
@@ -51,7 +23,7 @@ def parse(output):
         info = dict(_extract_pattern.findall(line))
         name = '/dev/%s' % info['NAME']
         if info['TYPE'] == 'disk':
-            disk = DiskInfo(name, info['SIZE'])
+            disk = DiskInfo(con, name, info['SIZE'])
             disks.append(disk)
         elif info['TYPE'] == 'part':
             if disk is None:
@@ -59,7 +31,7 @@ def parse(output):
                     ('Parition "%s" does not have a parent disk' %
                         info['NAME'])
                 )
-            part = PartitionInfo(name, info['SIZE'],
+            part = PartitionInfo(con, name, info['SIZE'],
                                  info['UUID'], info['FSTYPE'],
                                  info['MOUNTPOINT'])
             disk.partitions.append(part)

@@ -22,7 +22,7 @@ class DiskManager(object):
 
     def getInfo(self):
         output = self.con.run(lsblk.COMMAND)
-        disks = lsblk.parse(output)
+        disks = lsblk.parse(self.con, output)
 
         # loading hrds
         for disk in disks:
@@ -33,11 +33,9 @@ class DiskManager(object):
                 if partition.mount and partition.fstype != 'btrfs':
                     # partition is already mounted, no need to remount it
                     hrd = self._loadhrd(partition.mount)
-                else:
-                    mnt = mount.Mount(self.con, partition.name,
-                                      options='ro')
-
-                    with mnt:
+                elif partition.fstype:
+                    with mount.Mount(self.con, partition.name,
+                                     options='ro') as mnt:
                         hrd = self._loadhrd(mnt.path)
 
                 partition.hrd = hrd

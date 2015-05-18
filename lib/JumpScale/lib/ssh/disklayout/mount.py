@@ -34,12 +34,21 @@ class Mount(object):
         return self._path
 
     def __enter__(self):
+        return self.mount()
+
+    def __exit__(self, type, value, traceback):
+        return self.umount()
+
+    def mount(self):
         with settings(abort_exception=MountError):
             self._con.dir_ensure(self.path, recursive=True)
             self._con.run(self._mount)
 
-    def __exit__(self, type, value, traceback):
+        return self
+
+    def umount(self):
         with settings(abort_exception=MountError):
             self._con.run(self._umount)
             if self._autoClean:
                 self._con.dir_remove(self.path)
+        return self
