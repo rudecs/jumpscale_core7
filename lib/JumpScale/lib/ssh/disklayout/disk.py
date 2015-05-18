@@ -162,7 +162,16 @@ class PartitionInfo(BlkInfo):
                     mnt.path,
                     '.disk.hrd'
                 )
-                self.con.file_write(filepath, content=str(self.hrd))
+                self.con.file_write(filepath, content=str(self.hrd),
+                                    mode=400)
+
+    def delete(self):
+        """Delete partition"""
+        if self.mount:
+            raise Exception('Partition is mounted on %s' % self.mount)
+
+        if self.hrd is None:
+            raise Exception('No HRD attached to disk')
 
     def mount(self):
         if self.hrd is None:

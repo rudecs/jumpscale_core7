@@ -20,7 +20,7 @@ class DiskManager(object):
         if self.con.file_exists(hrdpath):
             return j.core.hrd.get(content=self.con.file_read(hrdpath))
 
-    def getInfo(self):
+    def getinfo(self):
         output = self.con.run(lsblk.COMMAND)
         disks = lsblk.parse(self.con, output)
 
