@@ -34,6 +34,9 @@ def _parse(con, output):
 
 def lsblk(con, device=None):
     with settings(abort_exception=LsblkError):
-        output = con.run(COMMAND)
+        command = COMMAND
+        if device:
+            command = '%s %s' % (COMMAND, device)
+        output = con.run(command)
 
     return _parse(con, output)

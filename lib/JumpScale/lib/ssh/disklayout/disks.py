@@ -4,13 +4,18 @@ from fabric.api import settings
 
 from JumpScale import j
 from . import mount
+from . import lsblk
 
 
-class FormatError(Exception):
+class DiskError(Exception):
     pass
 
 
 class PartitionError(Exception):
+    pass
+
+
+class FormatError(Exception):
     pass
 
 
@@ -32,7 +37,7 @@ class BlkInfo(object):
         self.con = con
         self.name = name
         self.type = type
-        self.size = size
+        self.size = int(size)
 
     def __str__(self):
         return '%s %s' % (self.name, self.size)
@@ -107,6 +112,10 @@ class DiskInfo(BlkInfo):
         """
         # TODO: Validate HRD file
 
+        if not self.partitions:
+            # if no partitions, make sure to clear mbr to convert to gpt
+            self._clearMBR()
+
         parts = self._getpart()
         spot = self._findFreeSpot(parts, size)
         if not spot:
@@ -140,6 +149,24 @@ class DiskInfo(BlkInfo):
         self.partitions.append(partition)
         return partition
 
+    def _clearMBR(self):
+        with settings(abort_exception=DiskError):
+            self.con.run(
+                'parted -s {name} mktable gpt'.format(name=self.name)
+            )
+
+    def erase(self, force=False):
+        """
+        Clean up disk deleting all non protected partitions, unless force=True
+        """
+        if force:
+            self._clearMBR()
+            return
+
+        for partition in self.partitions:
+            if not partition.protected:
+                partition.delete()
+
 
 class PartitionInfo(BlkInfo):
     def __init__(self, con, name, size, uuid, fstype, mount):
@@ -149,19 +176,54 @@ class PartitionInfo(BlkInfo):
         self.mount = mount
         self.hrd = None
 
+        self._invalid = False
+
+    @property
+    def invalid(self):
+        return self._invalid
+
+    @property
+    def protected(self):
+        if self.hrd is None:
+            # that's an unmanaged partition, assume protected
+            return True
+
+        return bool(self.hrd.get('protected', True))
+
     def _formatter(self, name, fstype):
         fmtr = _formatters.get(fstype, _default_formatter)
         return fmtr(name, fstype)
+
+    def refresh(self):
+        """
+        Reload partition status to match current real state
+        """
+        try:
+            info = lsblk.lsblk(self.con, self.name)[0]
+        except lsblk.LsblkError:
+            self._invalid = True
+            info = {
+                'SIZE': 0,
+                'UUID': '',
+                'FSTYPE': '',
+                'MOUNT': ''
+            }
+
+        for key, val in info.iteritems():
+            setattr(self, key.lower(), val)
 
     def format(self):
         """
         Reformat the partition according to hrd
         """
+        if self.invalid:
+            raise PartitionError('Partition is invalid')
+
         if self.mount:
-            raise Exception('Partition is mounted on %s' % self.mount)
+            raise PartitionError('Partition is mounted on %s' % self.mount)
 
         if self.hrd is None:
-            raise Exception('No HRD attached to disk')
+            raise PartitionError('No HRD attached to disk')
 
         fstype = self.hrd.get('filesystem')
         command = self._formatter(self.name, fstype)
@@ -174,9 +236,13 @@ class PartitionInfo(BlkInfo):
                 )
                 self.con.file_write(filepath, content=str(self.hrd),
                                     mode=400)
+        self.refresh()
 
     def delete(self, force=False):
         """Delete partition"""
+        if self.invalid:
+            raise PartitionError('Partition is invalid')
+
         if self.mount:
             raise PartitionError('Partition is mounted on %s' % self.mount)
 
@@ -197,12 +263,18 @@ class PartitionInfo(BlkInfo):
         with settings(abort_exception=PartitionError):
             self.con.run(command)
 
+        self._invalid = True
+
     def mount(self):
         """Mount partition"""
+        if self.invalid:
+            raise PartitionError('Partition is invalid')
 
         if self.hrd is None:
-            raise Exception('No HRD attached to disk')
+            raise PartitionError('No HRD attached to disk')
 
         mnt = mount.Mount(self.name, self.hrd.get('mountpath'))
         mnt.mount()
+        self.refresh()
+
         return mnt
