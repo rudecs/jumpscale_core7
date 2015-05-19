@@ -24,6 +24,12 @@ _formatters = {
     'ntfs': lambda name, fstype: 'mkfs.ntfs -f {name}'.format(name=name)
 }
 
+isValidFS = lambda v: v.startswith('ext') or v in ('btrfs', 'ntfs')
+
+_hrd_validators = {
+    'filesystem': isValidFS
+}
+
 
 def _default_formatter(name, fstype):
     return 'mkfs.{fstype} {name}'.format(
@@ -112,6 +118,13 @@ class DiskInfo(BlkInfo):
                 raise PartitionError(
                     'Invalid hrd, missing mandatory field "%s"' % field
                 )
+            if field in _hrd_validators:
+                validator = _hrd_validators[field]
+                value = hrd.get(field)
+                if not validator(value):
+                    raise PartitionError('Invalid valud for %s: %s' % (
+                        field, value
+                    ))
 
     def format(self, size, hrd):
         """
@@ -142,8 +155,9 @@ class DiskInfo(BlkInfo):
         start, end = spot
         with settings(abort_exception=FormatError):
             self.con.run(
-                ('parted -s /dev/sdb unit B ' +
-                    'mkpart primary {start} {end}').format(start=start,
+                ('parted -s {name} unit B ' +
+                    'mkpart primary {start} {end}').format(name=self.name,
+                                                           start=start,
                                                            end=end)
             )
 
@@ -275,10 +289,7 @@ class PartitionInfo(BlkInfo):
                 'Partition is mounted on %s' % self.mountpoint
             )
 
-        if self.hrd is None:
-            raise PartitionError('No HRD attached to disk')
-
-        if self.hrd.get('protected', 1) and not force:
+        if self.protected and not force:
             raise PartitionError('Partition is protected')
 
         m = re.match('^(.+)(\d+)$', self.name)

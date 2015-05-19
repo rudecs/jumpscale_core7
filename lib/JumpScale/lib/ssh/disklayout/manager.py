@@ -66,7 +66,8 @@ class DiskManager(object):
         # loading hrds
         for disk in devices:
             for partition in disk.partitions:
-                if partition.fstype == 'swap':
+                if partition.fstype == 'swap' or\
+                        not disks.isValidFS(partition.fstype):
                     continue
 
                 if partition.mountpoint and partition.fstype != 'btrfs':
