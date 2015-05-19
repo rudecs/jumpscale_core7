@@ -66,9 +66,9 @@ class DiskManager(object):
                 if partition.fstype == 'swap':
                     continue
 
-                if partition.mount and partition.fstype != 'btrfs':
+                if partition.mountpoint and partition.fstype != 'btrfs':
                     # partition is already mounted, no need to remount it
-                    hrd = self._loadhrd(partition.mount)
+                    hrd = self._loadhrd(partition.mountpoint)
                 elif partition.fstype:
                     with mount.Mount(self.con, partition.name,
                                      options='ro') as mnt:

@@ -139,8 +139,8 @@ class DiskInfo(BlkInfo):
             name='%s%d' % (self.name, number),
             size=size,
             uuid='',
-            fstype=hrd.get('filesystem'),
-            mount=hrd.get('mountpath', '')
+            fstype='',
+            mount=''
         )
 
         partition.hrd = hrd
@@ -173,7 +173,7 @@ class PartitionInfo(BlkInfo):
         super(PartitionInfo, self).__init__(con, name, 'part', size)
         self.uuid = uuid
         self.fstype = fstype
-        self.mount = mount
+        self.mountpoint = mount
         self.hrd = None
 
         self._invalid = False
@@ -206,11 +206,20 @@ class PartitionInfo(BlkInfo):
                 'SIZE': 0,
                 'UUID': '',
                 'FSTYPE': '',
-                'MOUNT': ''
+                'MOUNTPOINT': ''
             }
 
         for key, val in info.iteritems():
             setattr(self, key.lower(), val)
+
+    def _dumpHRD(self):
+        with mount.Mount(self.con, self.name) as mnt:
+            filepath = j.system.fs.joinPaths(
+                mnt.path,
+                '.disk.hrd'
+            )
+            self.con.file_write(filepath, content=str(self.hrd),
+                                mode=400)
 
     def format(self):
         """
@@ -219,8 +228,10 @@ class PartitionInfo(BlkInfo):
         if self.invalid:
             raise PartitionError('Partition is invalid')
 
-        if self.mount:
-            raise PartitionError('Partition is mounted on %s' % self.mount)
+        if self.mountpoint:
+            raise PartitionError(
+                'Partition is mounted on %s' % self.mountpoint
+            )
 
         if self.hrd is None:
             raise PartitionError('No HRD attached to disk')
@@ -229,13 +240,8 @@ class PartitionInfo(BlkInfo):
         command = self._formatter(self.name, fstype)
         with settings(abort_exception=FormatError):
             self.con.run(command)
-            with mount.Mount(self.con, self.name) as mnt:
-                filepath = j.system.fs.joinPaths(
-                    mnt.path,
-                    '.disk.hrd'
-                )
-                self.con.file_write(filepath, content=str(self.hrd),
-                                    mode=400)
+            self._dumpHRD()
+
         self.refresh()
 
     def delete(self, force=False):
@@ -243,8 +249,10 @@ class PartitionInfo(BlkInfo):
         if self.invalid:
             raise PartitionError('Partition is invalid')
 
-        if self.mount:
-            raise PartitionError('Partition is mounted on %s' % self.mount)
+        if self.mountpoint:
+            raise PartitionError(
+                'Partition is mounted on %s' % self.mountpoint
+            )
 
         if self.hrd is None:
             raise PartitionError('No HRD attached to disk')
@@ -263,6 +271,8 @@ class PartitionInfo(BlkInfo):
         with settings(abort_exception=PartitionError):
             self.con.run(command)
 
+        self.unsetAutoMount()
+
         self._invalid = True
 
     def mount(self):
@@ -273,8 +283,86 @@ class PartitionInfo(BlkInfo):
         if self.hrd is None:
             raise PartitionError('No HRD attached to disk')
 
-        mnt = mount.Mount(self.name, self.hrd.get('mountpath'))
+        path = self.hrd.get('mountpath')
+        mnt = mount.Mount(self.con, self.name, path)
         mnt.mount()
         self.refresh()
 
-        return mnt
+    def umount(self):
+        """Unmount partition"""
+        if self.invalid:
+            raise PartitionError('Partition is invalid')
+
+        if self.hrd is None:
+            raise PartitionError('No HRD attached to disk')
+
+        path = self.hrd.get('mountpath')
+        mnt = mount.Mount(self.con, self.name, path)
+        mnt.umount()
+        self.refresh()
+
+    def unsetAutoMount(self):
+        """
+        remote partition from fstab
+        """
+        fstab = self.con.file_read('/etc/fstab').split('\n')
+        dirty = False
+
+        for i in range(len(fstab) - 1, -1, -1):
+            line = fstab[i]
+            if line.startswith('UUID=%s' % self.uuid):
+                del fstab[i]
+                dirty = True
+
+        if not dirty:
+            return
+
+        self.con.file_write(
+            '/etc/fstab',
+            content='\n'.join(fstab),
+            mode=644
+        )
+
+    def setAutoMount(self, options='defaults', _dump=0, _pass=0):
+        """
+        Configure partition automount `fstab` on given path
+        if path=None (default), remove fstab entry.
+        """
+        path = self.hrd.get('mountpath')
+        self.con.dir_ensure(path, recursive=True)
+
+        fstab = self.con.file_read('/etc/fstab').split('\n')
+        dirty = False
+
+        try:
+            for i in range(len(fstab) - 1, -1, -1):
+                line = fstab[i]
+                if line.startswith('UUID=%s' % self.uuid):
+                    del fstab[i]
+                    dirty = True
+                    break
+
+            if path is None:
+                return
+
+            entry = ('UUID={uuid}\t{path}\t{fstype}' +
+                     '\t{options}\t{_dump}\t{_pass}').format(
+                uuid=self.uuid,
+                path=path,
+                fstype=self.fstype,
+                options=options,
+                _dump=_dump,
+                _pass=_pass
+            )
+
+            fstab.append(entry)
+            dirty = True
+        finally:
+            if not dirty:
+                return
+
+            self.con.file_write(
+                '/etc/fstab',
+                content='\n'.join(fstab),
+                mode=644
+            )
