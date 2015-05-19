@@ -58,6 +58,9 @@ class DiskManager(object):
         return devices
 
     def getDisks(self):
+        """
+        Get list of all available disks on machine
+        """
         blks = lsblk.lsblk(self.con)
         devices = self._loaddisks(blks)
         # loading hrds

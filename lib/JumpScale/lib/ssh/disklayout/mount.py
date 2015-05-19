@@ -40,6 +40,9 @@ class Mount(object):
         return self.umount()
 
     def mount(self):
+        """
+        Mount partition
+        """
         with settings(abort_exception=MountError):
             self._con.dir_ensure(self.path, recursive=True)
             self._con.run(self._mount)
@@ -47,6 +50,9 @@ class Mount(object):
         return self
 
     def umount(self):
+        """
+        Umount partition
+        """
         with settings(abort_exception=MountError):
             self._con.run(self._umount)
             if self._autoClean:

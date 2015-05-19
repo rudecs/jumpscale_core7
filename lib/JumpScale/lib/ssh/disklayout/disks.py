@@ -47,6 +47,9 @@ class BlkInfo(object):
 
 
 class DiskInfo(BlkInfo):
+    """
+    Represents a disk
+    """
     def __init__(self, con, name, size):
         super(DiskInfo, self).__init__(con, name, 'disk', size)
         self.partitions = list()
@@ -103,14 +106,29 @@ class DiskInfo(BlkInfo):
 
         return start, start + size
 
+    def _validateHRD(self, hrd):
+        for field in ['filesystem', 'mountpath', 'protected', 'type']:
+            if not hrd.exists(field):
+                raise PartitionError(
+                    'Invalid hrd, missing mandatory field "%s"' % field
+                )
+
     def format(self, size, hrd):
         """
         Create new partition and format it as configured in hrd file
 
         :size: in bytes
         :hrd: the disk hrd info
+
+        Note:
+        hrd file must contain the following
+
+        filesystem                     = '<fs-type>'
+        mountpath                      = '<mount-path>'
+        protected                      = 0 or 1
+        type                           = data or root or tmp
         """
-        # TODO: Validate HRD file
+        self._validateHRD(hrd)
 
         if not self.partitions:
             # if no partitions, make sure to clear mbr to convert to gpt
@@ -157,7 +175,10 @@ class DiskInfo(BlkInfo):
 
     def erase(self, force=False):
         """
-        Clean up disk deleting all non protected partitions, unless force=True
+        Clean up disk by deleting all non protected partitions
+        if force=True, delete ALL partitions included protected
+
+        :force: delete protected partitions, default=False
         """
         if force:
             self._clearMBR()
