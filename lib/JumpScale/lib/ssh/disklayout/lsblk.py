@@ -1,12 +1,17 @@
 import re
-from disk import DiskInfo, PartitionInfo
+
+from fabric.api import settings
 
 COMMAND = 'lsblk -bnP -o NAME,TYPE,UUID,FSTYPE,SIZE,MOUNTPOINT -e 7,1'
 
 _extract_pattern = re.compile('\s*([^=]+)="([^"]*)"')
 
 
-def parse(con, output):
+class LsblkError(Exception):
+    pass
+
+
+def _parse(con, output):
     """
     Parses the output of command
     `lsblk -abnP -o NAME,TYPE,UUID,FSTYPE,SIZE`
@@ -17,26 +22,18 @@ def parse(con, output):
         FSTYPE="btrfs" SIZE="256059465728"
     NAME="sr0" TYPE="rom" UUID="" FSTYPE="" SIZE="1073741312"
     """
-    disks = []
-    disk = None
+    blks = []
     for line in output.split('\n'):
-        info = dict(_extract_pattern.findall(line))
-        name = '/dev/%s' % info['NAME']
-        if info['TYPE'] == 'disk':
-            disk = DiskInfo(con, name, info['SIZE'])
-            disks.append(disk)
-        elif info['TYPE'] == 'part':
-            if disk is None:
-                raise Exception(
-                    ('Parition "%s" does not have a parent disk' %
-                        info['NAME'])
-                )
-            part = PartitionInfo(con, name, info['SIZE'],
-                                 info['UUID'], info['FSTYPE'],
-                                 info['MOUNTPOINT'])
-            disk.partitions.append(part)
-        else:
-            # don't care about outher types.
-            disk = None
+        blk = dict(_extract_pattern.findall(line))
+        blk['NAME'] = '/dev/%s' % blk['NAME']
 
-    return disks
+        blks.append(blk)
+
+    return blks
+
+
+def lsblk(con, device=None):
+    with settings(abort_exception=LsblkError):
+        output = con.run(COMMAND)
+
+    return _parse(con, output)

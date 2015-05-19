@@ -1,10 +1,18 @@
-from JumpScale import j
+import re
+
 from fabric.api import settings
+
+from JumpScale import j
 from . import mount
 
 
 class FormatError(Exception):
     pass
+
+
+class PartitionError(Exception):
+    pass
+
 
 _formatters = {
     # specific format command per filesystem.
@@ -146,7 +154,9 @@ class PartitionInfo(BlkInfo):
         return fmtr(name, fstype)
 
     def format(self):
-        # format partition according to hrd attached.
+        """
+        Reformat the partition according to hrd
+        """
         if self.mount:
             raise Exception('Partition is mounted on %s' % self.mount)
 
@@ -165,15 +175,31 @@ class PartitionInfo(BlkInfo):
                 self.con.file_write(filepath, content=str(self.hrd),
                                     mode=400)
 
-    def delete(self):
+    def delete(self, force=False):
         """Delete partition"""
         if self.mount:
-            raise Exception('Partition is mounted on %s' % self.mount)
+            raise PartitionError('Partition is mounted on %s' % self.mount)
 
         if self.hrd is None:
-            raise Exception('No HRD attached to disk')
+            raise PartitionError('No HRD attached to disk')
+
+        if self.hrd.get('protected', 1) and not force:
+            raise PartitionError('Partition is protected')
+
+        m = re.match('^(.+)(\d+)$', self.name)
+        number = int(m.group(2))
+        device = m.group(1)
+
+        command = 'parted -s {device} rm {number}'.format(
+            device=device,
+            number=number
+        )
+        with settings(abort_exception=PartitionError):
+            self.con.run(command)
 
     def mount(self):
+        """Mount partition"""
+
         if self.hrd is None:
             raise Exception('No HRD attached to disk')
 
