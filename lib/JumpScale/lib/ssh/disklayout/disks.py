@@ -280,7 +280,11 @@ class PartitionInfo(BlkInfo):
         self.refresh()
 
     def delete(self, force=False):
-        """Delete partition"""
+        """
+        Delete partition
+
+        :force: Force delete protected partitions, default False
+        """
         if self.invalid:
             raise PartitionError('Partition is invalid')
 
@@ -308,7 +312,9 @@ class PartitionInfo(BlkInfo):
         self._invalid = True
 
     def mount(self):
-        """Mount partition"""
+        """
+        Mount partition to `mountpath` defined in HRD
+        """
         if self.invalid:
             raise PartitionError('Partition is invalid')
 
@@ -321,7 +327,9 @@ class PartitionInfo(BlkInfo):
         self.refresh()
 
     def umount(self):
-        """Unmount partition"""
+        """
+        Unmount partition
+        """
         if self.invalid:
             raise PartitionError('Partition is invalid')
 
@@ -357,8 +365,7 @@ class PartitionInfo(BlkInfo):
 
     def setAutoMount(self, options='defaults', _dump=0, _pass=0):
         """
-        Configure partition automount `fstab` on given path
-        if path=None (default), remove fstab entry.
+        Configure partition auto mount `fstab` on `mountpath` defined in HRD
         """
         path = self.hrd.get('mountpath')
         self.con.dir_ensure(path, recursive=True)
