@@ -19,7 +19,7 @@ class OSISStoreMongo(OSISStore):
 
     """
     def __init__(self, dbconnections):
-        self.dbclient = dbconnections.values()[0]
+        self.dbclient = dbconnections['mongodb_main']
 
     def _getDB(self):
         raise RuntimeError("Not Implemented")
