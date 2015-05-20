@@ -121,7 +121,7 @@ class UCI(object):
                     section[key] = list()
                 section[key].append(value)
             else:
-                raise Exception('Unkown type: %s' % line)
+                raise Exception('Unknown type: %s' % line)
 
     def dump(self, out):
         out.write('package %s\n\n' % self.package)

@@ -3,11 +3,10 @@ from StringIO import StringIO
 from fabric.api import settings
 
 from .uci import UCI
+from .dns import DNS
 
-WRT_SHELL = '/bin/ash -c'
 
-
-class UCIException(Exception):
+class UCIError(Exception):
     pass
 
 
@@ -20,8 +19,15 @@ class OpenWRTFactory(object):
 
 
 class OpenWRTManager(object):
+    WRT_SHELL = '/bin/ash -c'
+
     def __init__(self, con):
         self._con = con
+        self._dns = DNS(self)
+
+    @property
+    def dns(self):
+        return self._dns
 
     def get(self, name):
         """
@@ -29,10 +35,10 @@ class OpenWRTManager(object):
         """
         uci = UCI(name)
         try:
-            with settings(shell=WRT_SHELL, abort_exception=UCIException):
+            with settings(shell=self.WRT_SHELL, abort_exception=UCIError):
                 ucistr = self._con.run('uci export %s' % name)
             uci.loads(ucistr)
-        except UCIException:
+        except UCIError:
             pass
 
         return uci
@@ -49,5 +55,5 @@ class OpenWRTManager(object):
 
         command = buffer.getvalue()
 
-        with settings(shell=WRT_SHELL, abort_exception=UCIException):
+        with settings(shell=self.WRT_SHELL, abort_exception=UCIError):
             self._con.run(command)
