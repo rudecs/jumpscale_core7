@@ -19,11 +19,11 @@ class MongoDBClient:
         ipaddr = hrd.get("instance.param.addr")
         port = hrd.getInt("instance.param.port")    
         ssl = False
-        if j.application.config.exists('ssl'):
-            ssl = j.application.config.getBool('ssl')
+        if hrd.exists('instance.param.ssl'):
+            ssl = hrd.getBool('instance.param.ssl')
         replicaset = ""
-        if j.application.config.exists('replicaset'):
-            replicaset = j.application.config.get('replicaset')
+        if hrd.exists('instance.param.replicaset'):
+            replicaset = hrd.get('instance.param.replicaset')
         if replicaset == "":
             return MongoClient(host=ipaddr, port=port, ssl=ssl)
         else:
