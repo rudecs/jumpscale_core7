@@ -129,6 +129,55 @@ class Host(object):
         return str(self)
 
 
+class PXE(object):
+    def __init__(self, section):
+        self._section = section
+
+    @property
+    def section(self):
+        return self._section
+
+    @property
+    def filename(self):
+        return self._section.get('filename', '')
+
+    @filename.setter
+    def filename(self, value):
+        self._section['filename'] = value
+
+    @property
+    def serveraddress(self):
+        return self._section.get('serveraddress', '')
+
+    @serveraddress.setter
+    def serveraddress(self, value):
+        self._section['serveraddress'] = value
+
+    @property
+    def servername(self):
+        return self._section.get('servername', '')
+
+    @servername.setter
+    def servername(self, value):
+        self._section['servername'] = value
+
+    @property
+    def options(self):
+        options = self._section.get('dhcp_option', list())
+        # make sure it's a list of options
+        if not isinstance(options, list):
+            options = [options]
+            self._options['dhcp_option'] = options
+
+        return options
+
+    def __str__(self):
+        return ('pxe %s%s' % (self.serveraddress, self.filename)).strip()
+
+    def __repr__(self):
+        return str(self)
+
+
 class DHCP(object):
     PACKAGE = 'dhcp'
 
@@ -144,6 +193,16 @@ class DHCP(object):
         if self._package is None:
             self._package = self._wrt.get(DHCP.PACKAGE)
         return self._package
+
+    @property
+    def pxe(self):
+        sections = self.package.find('boot', 'linux')
+        if not sections:
+            section = self.package.add('boot', 'linux')
+        else:
+            section = sections[0]
+
+        return PXE(section)
 
     @property
     def interfaces(self):
