@@ -20,8 +20,8 @@ class Nginx(object):
         configfiles = self.remoteApi.run('ls %s' % self.configPath)
         return configfiles.split('  ')
 
-    def load(self, path='/etc/nginx/nginx.conf'):
-        return NginxConfig(path)
+    def load(self, configContent):
+        return NginxConfig(configContent)
 
     def configure(self, fwObject):
         json = j.db.serializers.getSerializerType('j')
@@ -92,14 +92,20 @@ class NginxBaseConfig(object):
     def properties(self):
         return self._properties
 
+    def addProperty(self, directive, value):
+        self._properties.append((directive, value))
+
 class NginxConfig(NginxBaseConfig):
-    def __init__(self, path):
-        self._path = path
+    def __init__(self, configContent):
         self.http = None
         self.events = None
         import nginxparser
-        config = nginxparser.loads(j.system.fs.fileGetContents(path))
+        config = nginxparser.loads(configContent)
         super(NginxConfig, self).__init__(config)
+        if self.http is None:
+            self.http = NginxHTTP([])
+        if self.events is None:
+            self.events = NginxEvents([])
 
     def _specialconfig(self, key, value):
         if key[0] == 'http':
@@ -107,8 +113,13 @@ class NginxConfig(NginxBaseConfig):
         elif key[0] == 'events':
             self.events = NginxEvents(value)
 
-    def write(self):
-        pass
+    def returnContent(self):
+        import jinja2
+        import os
+        jinja = jinja2.Environment(trim_blocks=True, variable_start_string="${", variable_end_string="}", loader=jinja2.FileSystemLoader( os.path.join(os.path.dirname(__file__), 'templates') ))
+        template = jinja.get_template('nginxJinjaTemplate')
+        content = template.render(properties= self.properties, events= self.events.properties, http= self.http, servers= self.http.servers)
+        return content
 
 class NginxEvents(NginxBaseConfig):
     pass
@@ -122,6 +133,11 @@ class NginxHTTP(NginxBaseConfig):
         if key[0] == 'server':
             self.servers.append(NginxServer(value))
 
+    def addServer(self):
+        server = NginxServer([])
+        self.servers.append(server)
+        return server
+
 class NginxServer(NginxBaseConfig):
     def __init__(self, config):
         self.locations = list()
@@ -130,6 +146,11 @@ class NginxServer(NginxBaseConfig):
     def _specialconfig(self, key, value):
         if key[0] == 'location':
             self.locations.append(NginxLocation(key[1], value))
+
+    def addLocation(self, path):
+        location = NginxLocation(path, [])
+        self.locations.append(location)
+        return location
 
 
 class NginxLocation(NginxBaseConfig):

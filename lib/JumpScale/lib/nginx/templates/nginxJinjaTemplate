@@ -1,0 +1,38 @@
+{% if properties %}
+{% for key, value in properties %}
+${key} ${value};
+{% endfor %}
+{% endif %}
+
+{% if events %}
+events {
+{% for key, value in events %}
+    ${key} ${value};
+{% endfor %}
+}
+{% endif %}
+
+{% if http %}
+http{
+{% for key, value in http.properties %}
+    ${key} ${value};
+{% endfor %}
+
+{% for server in servers %}    
+    server{
+    {% if server.properties %}
+    {% for key, value in server.properties %}
+        ${key} ${value};
+    {% endfor %}
+    {% endif %}
+    {% for location in server.locations %}
+    location ${location.path} {
+    {% for key, value in location.properties %}
+        ${key} ${value};
+    {% endfor %}
+    }
+{% endfor %}
+    }
+{% endfor %}
+}
+{% endif %}
