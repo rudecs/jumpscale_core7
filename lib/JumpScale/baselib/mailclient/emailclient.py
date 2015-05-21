@@ -12,12 +12,12 @@ from email.mime.text import MIMEText
 class EmailClient(object):
     def __init__(self):
         hrd=j.application.getAppInstanceHRD("mailclient","main")
-        self._server = hrd.getStr("smtp.server",None)
-        self._port = hrd.getInt("smtp.port",None)
+        self._server = hrd.getStr("instance.smtp.server",None)
+        self._port = hrd.getInt("instance.smtp.port",None)
         self._ssl = False
-        self._username = hrd.getStr("smtp.login",None)
-        self._password = hrd.getStr("smtp.passwd",None)
-        self._sender = hrd.getStr("smtp.sender",'')
+        self._username = hrd.getStr("instance.smtp.login",None)
+        self._password = hrd.getStr("instance.smtp.passwd",None)
+        self._sender = hrd.getStr("instance.smtp.sender",'')
 
     def __str__(self):
         out="server=%s\n"%(self._server)

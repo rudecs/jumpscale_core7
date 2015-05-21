@@ -551,6 +551,9 @@ class Docker():
             idd=running[name]    
             self.client.kill(idd)
 
+    def restart(self,name):
+        self.client.restart(name)
+
     def commit(self,name,imagename):
         cmd="docker rmi %s"%imagename
         j.system.process.execute(cmd,dieOnNonZeroExitCode=False)

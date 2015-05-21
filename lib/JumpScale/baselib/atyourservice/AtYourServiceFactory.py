@@ -225,7 +225,7 @@ class AtYourServiceFactory():
             domainName=ss[0]
             parentName = ss[1]
             parentInstance = ss[2]
-            service = self.get(name=parentName,instance=parentInstance)
+            service = self.get(domain=domainName,name=parentName,instance=parentInstance)
             if name!="" and service.name == name:
                 return [service]
             res.append(service)
@@ -266,9 +266,9 @@ class AtYourServiceFactory():
         self._doinit()
         services=self.findServices(domain=domain,name=name,instance=instance)
         if len(services)==0:
-            raise RuntimeError("cannot find service %s__%s"%(domain,name))
+            raise RuntimeError("cannot find service %s__%s__%s"%(domain,name,instance))
         if len(services)>1:
-            raise RuntimeError("multiple service found, be more precise %s%s"%(domain,name))
+            raise RuntimeError("multiple service found :\n[%s]\n, be more precise %s%s"%(',\n'.join([str(s) for s in services]), domain,name))
         self._cache[key]=services[0]
         return self._cache[key]
 

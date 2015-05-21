@@ -533,7 +533,6 @@ class Service(object):
         self.log("install instance")
         self._install(start=start, deps=deps, reinstall=reinstall)
 
-    @deps
     def _install(self,start=True,deps=True, reinstall=False):
         #download
         for recipeitem in self.hrd.getListFromPrefix("service.web.export"):
