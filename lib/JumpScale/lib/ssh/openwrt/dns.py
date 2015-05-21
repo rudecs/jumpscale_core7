@@ -12,6 +12,7 @@ class DNS(object):
 
     ADD_OP = '+'
     REM_OP = '-'
+    REMALL_OP = '--'
 
     def __init__(self, wrt):
         self._wrt = wrt
@@ -27,6 +28,9 @@ class DNS(object):
 
     @property
     def domain(self):
+        """
+        Get DNS domain
+        """
         dnsmasq = self.package.find('dnsmasq')
         if not dnsmasq:
             return ''
@@ -35,6 +39,9 @@ class DNS(object):
 
     @domain.setter
     def domain(self, value):
+        """
+        Set DNS domain
+        """
         dnsmasq = self.package.find('dnsmasq')
         if not dnsmasq:
             section = self._wrt.add('dnsmasq')
@@ -45,6 +52,9 @@ class DNS(object):
 
     @property
     def records(self):
+        """
+        Return all custom DNS A records
+        """
         con = self._wrt.connection
         with settings(shell=self._wrt.WRT_SHELL, abort_exception=DNSError):
             if not con.file_exists(DNS.HOSTS):
@@ -63,7 +73,7 @@ class DNS(object):
                 hosts[name].append(ip)
             return hosts
 
-    def _applyTransactions(self):
+    def _runTransactions(self):
         # write hosts
         records = self.records
         for trans in self._transactions:
@@ -71,13 +81,15 @@ class DNS(object):
             if op == DNS.ADD_OP:
                 records.setdefault(name, list())
                 records[name].append(ip)
-            if op == DNS.REM_OP:
+            elif op == DNS.REM_OP:
                 if name not in records:
                     continue
                 if ip is None:
                     del records[name]
                 elif ip in records[name]:
                     records[name].remove(ip)
+            elif op == DNS.REMALL_OP:
+                records = {}
         return records
 
     def commit(self):
@@ -87,7 +99,7 @@ class DNS(object):
         # write main dns uci
         self._wrt.commit(self.package)
 
-        records = self._applyTransactions()
+        records = self._runTransactions()
         command = StringIO()
         command.write('cat > {file} <<HOSTS\n'.format(file=DNS.HOSTS))
         for host, ips in records.iteritems():
@@ -120,3 +132,9 @@ class DNS(object):
         :ip: Host IP, if None, remove all A records for the named host
         """
         self._transactions.append((DNS.REM_OP, name, ip))
+
+    def erase(self):
+        """
+        Remove all hosts (A records)
+        """
+        self._transactions.append((DNS.REMALL_OP, None, None))
