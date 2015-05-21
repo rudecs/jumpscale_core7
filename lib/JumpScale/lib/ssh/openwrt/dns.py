@@ -22,7 +22,7 @@ class DNS(object):
     @property
     def package(self):
         if self._package is None:
-            self._package = self._wrt.get(self.PACKAGE)
+            self._package = self._wrt.get(DNS.PACKAGE)
 
         return self._package
 
@@ -49,6 +49,7 @@ class DNS(object):
             section = dnsmasq[0]
 
         section['domain'] = value
+        section['local'] = '/%s/' % value
 
     @property
     def records(self):
