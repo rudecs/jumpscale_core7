@@ -26,6 +26,10 @@ class OpenWRTManager(object):
         self._dns = DNS(self)
 
     @property
+    def connection(self):
+        return self._con
+
+    @property
     def dns(self):
         return self._dns
 
