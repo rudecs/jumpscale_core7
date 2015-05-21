@@ -11,9 +11,6 @@ class UCISection(collections.OrderedDict):
         self.type = type
         self.name = name
 
-    def __cmp__(self, o):
-        return cmp(str(self), str(o))
-
     def __str__(self):
         name = '\'%s\'' % self.name if self.name else ''
         return 'config {type} {name}'.format(
