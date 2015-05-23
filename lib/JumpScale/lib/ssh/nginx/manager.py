@@ -1,8 +1,8 @@
 
 
 class NginxManagerFactory(object):
-    def get(self, con):
-        return NginxManager(con)
+    def get(self, con, path='/etc/nginx/nginx.conf'):
+        return NginxManager(con, path)
 
 
 class NginxManager(object):
@@ -12,16 +12,16 @@ class NginxManager(object):
         self._config = None
 
     def start(self):
-        self._con.upstart_start('nginx')
+        self._con.upstart_ensure('nginx')
 
     def stop(self):
-        pass
+        self._con.upstart_stop('nginx')
 
     def restart(self):
-        pass
+        self._con.upstart_restart('nginx')
 
     def reload(self):
-        pass
+        self._con.upstart_reload('nginx')
 
     @property
     def config(self):
@@ -122,9 +122,6 @@ class NginxServer(NginxBaseConfig):
         location = NginxLocation(path, [])
         self.locations.append(location)
         return location
-
-    def __repr__(self):
-        return 'Server HTTP/80'
 
 
 class NginxLocation(NginxBaseConfig):

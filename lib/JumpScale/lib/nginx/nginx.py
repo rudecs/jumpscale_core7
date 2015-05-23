@@ -20,9 +20,6 @@ class Nginx(object):
         configfiles = self.remoteApi.run('ls %s' % self.configPath)
         return configfiles.split('  ')
 
-    def load(self, configContent):
-        return NginxConfig(configContent)
-
     def configure(self, fwObject):
         json = j.db.serializers.getSerializerType('j')
         fwDict = json.loads(fwObject)
@@ -78,82 +75,3 @@ server {
 
     def restart(self):
         self.remoteApi.run('service nginx restart')
-
-class NginxBaseConfig(object):
-    def __init__(self, config):
-        self._properties = list()
-        for key, value in config:
-            if isinstance(value, basestring):
-                self._properties.append([key, value])
-            else:
-                self._specialconfig(key, value)
-
-    @property
-    def properties(self):
-        return self._properties
-
-    def addProperty(self, directive, value):
-        self._properties.append((directive, value))
-
-class NginxConfig(NginxBaseConfig):
-    def __init__(self, configContent):
-        self.http = None
-        self.events = None
-        import nginxparser
-        config = nginxparser.loads(configContent)
-        super(NginxConfig, self).__init__(config)
-        if self.http is None:
-            self.http = NginxHTTP([])
-        if self.events is None:
-            self.events = NginxEvents([])
-
-    def _specialconfig(self, key, value):
-        if key[0] == 'http':
-            self.http = NginxHTTP(value)
-        elif key[0] == 'events':
-            self.events = NginxEvents(value)
-
-    def returnContent(self):
-        import jinja2
-        import os
-        jinja = jinja2.Environment(trim_blocks=True, variable_start_string="${", variable_end_string="}", loader=jinja2.FileSystemLoader( os.path.join(os.path.dirname(__file__), 'templates') ))
-        template = jinja.get_template('nginxJinjaTemplate')
-        content = template.render(properties= self.properties, events= self.events.properties, http= self.http, servers= self.http.servers)
-        return content
-
-class NginxEvents(NginxBaseConfig):
-    pass
-
-class NginxHTTP(NginxBaseConfig):
-    def __init__(self, config):
-        self.servers = list()
-        super(NginxHTTP, self).__init__(config)
-
-    def _specialconfig(self, key, value):
-        if key[0] == 'server':
-            self.servers.append(NginxServer(value))
-
-    def addServer(self):
-        server = NginxServer([])
-        self.servers.append(server)
-        return server
-
-class NginxServer(NginxBaseConfig):
-    def __init__(self, config):
-        self.locations = list()
-        super(NginxServer, self).__init__(config)
-
-    def _specialconfig(self, key, value):
-        if key[0] == 'location':
-            self.locations.append(NginxLocation(key[1], value))
-
-    def addLocation(self, path):
-        location = NginxLocation(path, [])
-        self.locations.append(location)
-        return location
-
-
-class NginxLocation(NginxBaseConfig):
-    def __init__(self, path, config):
-        self.path = path
-        super(NginxLocation, self).__init__(config)
