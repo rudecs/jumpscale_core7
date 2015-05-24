@@ -21,6 +21,10 @@ class UCISection(collections.OrderedDict):
     def __repr__(self):
         return str(self)
 
+    def getBool(self, field, default=False):
+        value = self.get(field, default)
+        return bool(int(value))
+
     def dump(self, out):
         out.write(str(self) + '\n')
 
@@ -121,8 +125,6 @@ class UCI(object):
                 raise Exception('Unknown type: %s' % line)
 
     def dump(self, out):
-        out.write('package %s\n\n' % self.package)
-
         for section in self.sections:
             section.dump(out)
 

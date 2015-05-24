@@ -61,7 +61,7 @@ class Interface(object):
         """
         Enable DHCP on this interface
         """
-        return not bool(self._section.get('ignore'))
+        return not bool(self._section.getBool('ignore'))
 
     @enabled.setter
     def enabled(self, value):
