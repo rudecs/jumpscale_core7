@@ -8,8 +8,8 @@ class UCISection(collections.OrderedDict):
 
     def __init__(self, type, name=None, *args, **kwargs):
         super(UCISection, self).__init__(*args, **kwargs)
-        self.type = type
-        self.name = name
+        self.type = self._validate(type)
+        self.name = self._validate(name)
 
     def __str__(self):
         name = '\'%s\'' % self.name if self.name else ''
@@ -17,6 +17,14 @@ class UCISection(collections.OrderedDict):
             type=self.type,
             name=name
         ).strip()
+
+    def _validate(self, name):
+        for c in '- ':
+            if c in name:
+                raise ValueError(
+                    'Value "%s" has unsupported character (%s)' % (name, c)
+                )
+        return name
 
     def __repr__(self):
         return str(self)
