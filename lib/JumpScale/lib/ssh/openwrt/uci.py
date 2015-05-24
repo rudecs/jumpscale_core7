@@ -29,6 +29,10 @@ class UCISection(collections.OrderedDict):
         out.write(str(self) + '\n')
 
         for key, value in self.iteritems():
+            # skip None values
+            if value is None:
+                continue
+
             if isinstance(value, bool):
                 out.write(
                     UCISection._option.format(

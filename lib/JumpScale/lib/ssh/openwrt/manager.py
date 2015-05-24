@@ -6,6 +6,7 @@ from .uci import UCI
 from .dns import DNS
 from .dhcp import DHCP
 from .pureftp import PureFTP
+from .network import Network
 
 
 class UCIError(Exception):
@@ -28,6 +29,7 @@ class OpenWRTManager(object):
         self._dns = DNS(self)
         self._dhcp = DHCP(self)
         self._ftp = PureFTP(self)
+        self._network = Network(self)
 
     @property
     def connection(self):
@@ -53,6 +55,10 @@ class OpenWRTManager(object):
         PureFTP abstraction on top of UCI
         """
         return self._ftp
+
+    @property
+    def network(self):
+        return self._network
 
     def get(self, name):
         """
