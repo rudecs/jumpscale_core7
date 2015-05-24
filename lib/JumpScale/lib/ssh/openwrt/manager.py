@@ -5,6 +5,7 @@ from fabric.api import settings
 from .uci import UCI
 from .dns import DNS
 from .dhcp import DHCP
+from .pureftp import PureFTP
 
 
 class UCIError(Exception):
@@ -26,6 +27,7 @@ class OpenWRTManager(object):
         self._con = con
         self._dns = DNS(self)
         self._dhcp = DHCP(self)
+        self._ftp = PureFTP(self)
 
     @property
     def connection(self):
@@ -40,7 +42,17 @@ class OpenWRTManager(object):
 
     @property
     def dhcp(self):
+        """
+        DHCP abstraction on top of UCI
+        """
         return self._dhcp
+
+    @property
+    def ftp(self):
+        """
+        PureFTP abstraction on top of UCI
+        """
+        return self._ftp
 
     def get(self, name):
         """
