@@ -1,114 +1,81 @@
 from fabric.api import settings
-import functools
 
-EXPOSED_FIELDS = [
-    'authentication',
-    'logpid',
-    'fscharset',
-    'clientcharset',
-    'trustedgid',
-    'maxclientsnumber',
-    'maxclientsperip',
-    'syslogfacility',
-    'fortunesfile',
-    'pidfile',
-    'maxidletime',
-    'maxdiskusagepct',
-    'login',
-    'limitrecursion',
-    'maxload',
-    'natmode',
-    'uploadscript',
-    'altlog',
-    'passiveportrange',
-    'forcepassiveip',
-    'anonymousratio',
-    'userratio',
-    'autorename',
-    'antiwarez',
-    'bind',
-    'anonymousbandwidth',
-    'userbandwidth',
-    'minuid',
-    'umask',
-    'bonjour',
-    'trustedip',
-    'peruserlimits',
-    'customerproof'
-]
-
-EXPOSED_BOOLEAN_FIELDS = [
-    'enabled',
-    'notruncate',
-    'ipv4only',
-    'ipv6only',
-    'chrooteveryone',
-    'brokenclientscompatibility',
-    'daemonize',
-    'verboselog',
-    'displaydotfiles',
-    'anonymousonly',
-    'noanonymous',
-    'norename',
-    'dontresolve',
-    'anonymouscantupload',
-    'createhomedir',
-    'keepallfiles',
-    'anonymouscancreatedirs',
-    'nochmod',
-    'allowuserfxp',
-    'allowanonymousfxp',
-    'prohibitdotfileswrite',
-    'prohibitdotfilesread',
-    'allowdotfiles',
-]
+from .base import BaseService, BaseServiceSection
 
 
 class PureFTPError(Exception):
     pass
 
 
-class PureFTP(object):
+class PureFTP(BaseService, BaseServiceSection):
     PACKAGE = 'pure-ftpd'
     SECTION = 'pure-ftpd'
 
-    def __new__(cls, *args, **kwargs):
-        for field in EXPOSED_FIELDS:
-            prop = property(
-                functools.partial(cls._get, field=field),
-                functools.partial(cls._set, field=field)
-            )
+    EXPOSED_FIELDS = [
+        'port',
+        'authentication',
+        'logpid',
+        'fscharset',
+        'clientcharset',
+        'trustedgid',
+        'maxclientsnumber',
+        'maxclientsperip',
+        'syslogfacility',
+        'fortunesfile',
+        'pidfile',
+        'maxidletime',
+        'maxdiskusagepct',
+        'login',
+        'limitrecursion',
+        'maxload',
+        'natmode',
+        'uploadscript',
+        'altlog',
+        'passiveportrange',
+        'forcepassiveip',
+        'anonymousratio',
+        'userratio',
+        'autorename',
+        'antiwarez',
+        'bind',
+        'anonymousbandwidth',
+        'userbandwidth',
+        'minuid',
+        'umask',
+        'bonjour',
+        'trustedip',
+        'peruserlimits',
+        'customerproof'
+    ]
 
-            setattr(cls, field, prop)
-
-        for field in EXPOSED_BOOLEAN_FIELDS:
-            prop = property(
-                functools.partial(cls._getb, field=field),
-                functools.partial(cls._set, field=field)
-            )
-            setattr(cls, field, prop)
-
-        return super(PureFTP, cls).__new__(cls, *args, **kwargs)
+    EXPOSED_BOOLEAN_FIELDS = [
+        'enabled',
+        'notruncate',
+        'ipv4only',
+        'ipv6only',
+        'chrooteveryone',
+        'brokenclientscompatibility',
+        'daemonize',
+        'verboselog',
+        'displaydotfiles',
+        'anonymousonly',
+        'noanonymous',
+        'norename',
+        'dontresolve',
+        'anonymouscantupload',
+        'createhomedir',
+        'keepallfiles',
+        'anonymouscancreatedirs',
+        'nochmod',
+        'allowuserfxp',
+        'allowanonymousfxp',
+        'prohibitdotfileswrite',
+        'prohibitdotfilesread',
+        'allowdotfiles',
+    ]
 
     def __init__(self, wrt):
-        self._wrt = wrt
-        self._package = None
-
-    def _get(self, field):
-        return self.section.get(field)
-
-    def _getb(self, field):
-        return self.section.getBool(field, True)
-
-    def _set(self, value, field):
-        self.section[field] = value
-
-    @property
-    def package(self):
-        if self._package is None:
-            self._package = self._wrt.get(PureFTP.PACKAGE)
-
-        return self._package
+        super(PureFTP, self).__init__(wrt=wrt)
 
     @property
     def section(self):

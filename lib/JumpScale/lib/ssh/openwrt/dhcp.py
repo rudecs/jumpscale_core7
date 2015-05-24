@@ -1,21 +1,13 @@
 from fabric.api import settings
 
+from .base import BaseService, BaseServiceSection
+
 
 class DHCPError(Exception):
     pass
 
 
-class Interface(object):
-    def __init__(self, section):
-        self._section = section
-
-    @property
-    def section(self):
-        """
-        The low level UCI section
-        """
-        return self._section
-
+class Interface(BaseServiceSection):
     @property
     def name(self):
         """
@@ -74,17 +66,7 @@ class Interface(object):
         return str(self)
 
 
-class Host(object):
-    def __init__(self, section):
-        self._section = section
-
-    @property
-    def section(self):
-        """
-        The low level UCI section for that host
-        """
-        return self._section
-
+class Host(BaseServiceSection):
     @property
     def name(self):
         """
@@ -129,14 +111,7 @@ class Host(object):
         return str(self)
 
 
-class PXE(object):
-    def __init__(self, section):
-        self._section = section
-
-    @property
-    def section(self):
-        return self._section
-
+class PXE(BaseServiceSection):
     @property
     def filename(self):
         return self._section.get('filename', '')
@@ -178,21 +153,8 @@ class PXE(object):
         return str(self)
 
 
-class DHCP(object):
+class DHCP(BaseService):
     PACKAGE = 'dhcp'
-
-    def __init__(self, wrt):
-        self._wrt = wrt
-        self._package = None
-
-    @property
-    def package(self):
-        """
-        The low level UCI interface
-        """
-        if self._package is None:
-            self._package = self._wrt.get(DHCP.PACKAGE)
-        return self._package
 
     @property
     def pxe(self):

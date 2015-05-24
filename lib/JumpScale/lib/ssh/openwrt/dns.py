@@ -1,12 +1,14 @@
 from fabric.api import settings
 from StringIO import StringIO
 
+from .base import BaseService
+
 
 class DNSError(Exception):
     pass
 
 
-class DNS(object):
+class DNS(BaseService):
     PACKAGE = 'dhcp'
     HOSTS = '/tmp/hosts/jumpscale'
 
@@ -15,16 +17,8 @@ class DNS(object):
     REMALL_OP = '--'
 
     def __init__(self, wrt):
-        self._wrt = wrt
-        self._package = None
+        super(DNS, self).__init__(wrt)
         self._transactions = list()
-
-    @property
-    def package(self):
-        if self._package is None:
-            self._package = self._wrt.get(DNS.PACKAGE)
-
-        return self._package
 
     @property
     def domain(self):
