@@ -13,8 +13,8 @@ class AtYourServiceFactory():
         self.hrd=None
         self._justinstalled=[]
         self._type = None
-        self._cachefind={}
-        self._cache={}
+        # self._cachefind={}
+        # self._cache={}
 
         self.indocker=False
 
@@ -77,8 +77,8 @@ class AtYourServiceFactory():
 
     def findTemplates(self,domain="",name=""):
         key="%s__%s"%(domain,name)
-        if self._cachefind.has_key(key):
-            return self._cachefind[key]
+        # if self._cachefind.has_key(key):
+        #     return self._cachefind[key]
 
         self._doinit()
 
@@ -128,7 +128,7 @@ class AtYourServiceFactory():
         for domain,name,path in res:
             finalRes.append(ServiceTemplate(domain,name,path))
 
-        self._cachefind[key]=finalRes
+        # self._cachefind[key]=finalRes
         return finalRes
 
 
@@ -138,8 +138,8 @@ class AtYourServiceFactory():
         """
         def createService(domain,name,instance,path):
             targetKey="%s__%s__%s"%(domain,name,instance)
-            if name!="" and instance!="" and self._cache.has_key(targetKey):
-                return self._cache[targetKey]
+            # if name!="" and instance!="" and self._cache.has_key(targetKey):
+            #     return self._cache[targetKey]
 
             # try to load service from instance file is they exists
             hrdpath = j.system.fs.joinPaths(path,"service.hrd")
@@ -153,15 +153,15 @@ class AtYourServiceFactory():
                     raise RuntimeError("services template %s__%s not found"%(domain,name))
                 service=Service(instance=instance,servicetemplate=servicetemplates[0],path=path)
 
-            # update cache
-            if name!="" and instance!="":
-                self._cache[targetKey]=service
+            # # update cache
+            # if name!="" and instance!="":
+            #     self._cache[targetKey]=service
             return service
 
         targetKey="%s__%s__%s"%(domain,name,instance)
-        if name!="" and instance!="":
-            if self._cachefind.has_key(targetKey):
-                return self._cachefind[targetKey]
+        # if name!="" and instance!="":
+            # if self._cachefind.has_key(targetKey):
+                # return self._cachefind[targetKey]
 
         self._doinit()
 
@@ -202,8 +202,8 @@ class AtYourServiceFactory():
                 res.append(service)
             parentInstance=instancefound
 
-        if name!="" and instance!="":
-            self._cachefind[targetKey]=res
+        # if name!="" and instance!="":
+        #     self._cachefind[targetKey]=res
 
         return res
 
@@ -243,8 +243,8 @@ class AtYourServiceFactory():
         """
         serviceTmpls=None
         key="%s__%s__%s"%(domain,name,instance)
-        if self._cache.has_key(key):
-             serviceTmpls = self._cache[key]
+        # if self._cache.has_key(key):
+             # serviceTmpls = self._cache[key]
 
         self._doinit()
 
@@ -252,25 +252,26 @@ class AtYourServiceFactory():
         if len(serviceTmpls)==0:
             raise RuntimeError("cannot find service template %s__%s"%(domain,name))
         obj=serviceTmpls[0].newInstance(instance,parent=parent, args=args)
-        self._cache[key]=obj
+        # self._cache[key]=obj
         return obj
 
-    def get(self,domain="",name="",instance=""):
+    def get(self,domain="",name="",instance="",parent=None):
         """
         Return service indentifier by domain,name and instance
         throw error if service is not found or if more than one service is found
         """
         key="%s__%s__%s"%(domain,name,instance)
-        if self._cache.has_key(key):
-            return self._cache[key]
+        # if self._cache.has_key(key):
+            # return self._cache[key]
         self._doinit()
-        services=self.findServices(domain=domain,name=name,instance=instance)
+        services=self.findServices(domain=domain,name=name,instance=instance,parent=parent)
         if len(services)==0:
             raise RuntimeError("cannot find service %s__%s__%s"%(domain,name,instance))
         if len(services)>1:
             raise RuntimeError("multiple service found :\n[%s]\n, be more precise %s%s"%(',\n'.join([str(s) for s in services]), domain,name))
-        self._cache[key]=services[0]
-        return self._cache[key]
+        # self._cache[key]=services[0]
+        # return self._cache[key]
+        return services[0]
 
     def loadService(self,path):
         """
