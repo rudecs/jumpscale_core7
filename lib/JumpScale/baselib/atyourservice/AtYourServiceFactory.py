@@ -303,6 +303,15 @@ class AtYourServiceFactory():
         service.init()
 
         return service
+
+    def getFromStr(self, representation, parent=None):
+        """
+        return a service instance from its representation 'domain      :name       :instance'
+        """
+        ss = [r.strip() for r in representation.split(':')]
+        if len(ss) != 3:
+            return None
+        return j.atyourservice.get(domain=ss[0], name=ss[1], instance=ss[2],parent=parent)
     # def exists(self,domain="",name="",instance=""):
     #     self._doinit()
     #     tmpls=self.findTemplates(domain,name)
