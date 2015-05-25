@@ -15,7 +15,7 @@ def main(j, params, service, tags, tasklet):
                 'category': eco['category'],
                 'gid': eco['gid'],
                 'nid': eco['nid'],
-                'lasttime': eco['lasttime']}
+                'lasttime': eco.get('lasttime')}
     if not alerts:
         alert['inittime'] = eco['epoch']
         alert['state'] = 'ALERT'
