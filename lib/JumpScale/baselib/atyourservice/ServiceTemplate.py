@@ -18,18 +18,18 @@ class ServiceTemplate():
         self.hrd=None
         self.metapath=path
 
-    def newInstance(self,instance="main", args={},hrddata={}, parent=None):
+    def newInstance(self,instance="main", args={}, hrddata={}, parent=None):
         # TODO, should take in account the domain too
-        services = j.atyourservice.findServices(name=self.name,instance=instance)
+        services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent)
         if len(services)>0:
-            print "service %s__%s__%s already exists"%(self.domain,self.name,instance)
+            print "service %s__%s__%s already exists" % (self.domain,self.name,instance)
             print "no creation, just retreive existing service"
             return services[0]
 
-        service = Service(instance=instance,servicetemplate=self,args=args,parent=parent)
+        service = Service(instance=instance, servicetemplate=self, args=args, parent=parent)
         return service
 
-    def getInstance(self,instance=None):
+    def getInstance(self, instance=None, parent=None):
         """
         get first installed or main
         """
@@ -39,16 +39,16 @@ class ServiceTemplate():
                 instance = instances[0]
             else:
                 instance = 'main'
-        services =  j.atyourservice.findServices(domain=self.domain,name=self.name,instance=instance)
+        services = j.atyourservice.findServices(domain=self.domain, name=self.name, instance=instance, parent=parent)
         if len(services) <= 0:
-            j.events.opserror_critical("no instance found for %s__%s__%s"%(self.domain,self.name,instance))
+            j.events.opserror_critical("no instance found for %s__%s__%s" % (self.domain, self.name, instance))
         return services[0]
 
-    def existsInstance(self,instance):
-        if instance == "" or instance == None:
+    def existsInstance(self, instance, parent=None):
+        if instance == "" or instance is None:
             j.events.opserror_critical("instance can't be empty")
 
-        services =  j.atyourservice.findServices(domain=self.domain,name=self.name,instance=instance)
+        services = j.atyourservice.findServices(domain=self.domain, name=self.name, instance=instance, parent=parent)
         if len(services) > 0:
             return True
         else:
@@ -58,7 +58,7 @@ class ServiceTemplate():
         """
         return a list of instance name for this template
         """
-        services =  j.atyourservice.findServices(domain=self.domain,name=self.name)
+        services = j.atyourservice.findServices(domain=self.domain,name=self.name)
         return [service.instance for service in services]
 
 
@@ -76,15 +76,12 @@ class ServiceTemplate():
         parent    -- optional service which is mother e.g. install an app in a node.
         """
 
-        service=self.newInstance(instance=instance, args=args ,parent=parent)
-        service.noremote=noremote
-        service.install(start=start,deps=deps, reinstall=reinstall)
-
-
+        service = self.newInstance(instance=instance, args=args, parent=parent)
+        service.noremote = noremote
+        service.install(start=start, deps=deps, reinstall=reinstall)
 
     def __repr__(self):
-        return "%-15s:%s"%(self.domain,self.name)
+        return "%-15s:%s" % (self.domain, self.name)
 
     def __str__(self):
         return self.__repr__()
-

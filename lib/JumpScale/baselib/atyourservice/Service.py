@@ -104,7 +104,7 @@ class Service(object):
         self._reposDone={}
         self.args=args or {}
         self.hrddata = {}
-        self.categories=[]
+        self._categories=[]
         self._producers=None
         self.cmd = None
         self.noremote = False
@@ -124,7 +124,6 @@ class Service(object):
             self.hrddata["service.domain"]=self.domain
             self.hrddata["service.instance"]=self.instance
         self._init=False
-        self.categories=[]
         self.parent=parent
         # if self.parent != None:
         #     chain = self._parentChain(self.parent)
@@ -161,6 +160,14 @@ class Service(object):
             self._producers = self.hrd.getDictFromPrefix("producer")
         return self._producers
 
+    @property
+    def categories(self):
+        return self.hrd.getList("service.category")
+
+    @property
+    def id(self):
+        return j.atyourservice.getId(self.domain, self.name, self.instance, self.parent)
+
     def init(self):
         if self._init==False:
             hrd=self.hrd
@@ -170,7 +177,7 @@ class Service(object):
                 parents = j.atyourservice.findParents(self, limit=1)
                 if len(parents) >= 1:
                     self.parent = parents[0]
-            self.categories = self.hrd.getList("service.category")
+
             self.log("init")
 
         self._init=True
@@ -511,7 +518,7 @@ class Service(object):
 
     @deps
     @remote
-    def install(self, start=True,deps=True, reinstall=False):
+    def install(self, start=True, deps=True, reinstall=False):
         """
         Install Service.
 
@@ -718,15 +725,14 @@ class Service(object):
         - remove data of the app
         """
         self.log("reset instance")
-        self.resetstate()
-        #remove build repo's
+        # remove build repo's
         for recipeitem in self.hrd.getListFromPrefix("git.build"):
-            name=recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
-            dest="/opt/build/%s"%name
+            name = recipeitem['url'].replace("https://","").replace("http://","").replace(".git","")
+            dest = "/opt/build/%s"%name
             j.do.delete(dest)
 
         self.actions.removedata(self)
-        j.do.delete(self.path,force=True)
+        j.atyourservice.remove(self)
 
     @remote
     @deps
