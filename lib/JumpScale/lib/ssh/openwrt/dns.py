@@ -71,7 +71,8 @@ class DNS(BaseService):
     def _runTransactions(self):
         # write hosts
         records = self.records
-        for trans in self._transactions:
+        while self._transactions:
+            trans = self._transactions.pop(0)
             op, name, ip = trans
             if op == DNS.ADD_OP:
                 records.setdefault(name, list())
