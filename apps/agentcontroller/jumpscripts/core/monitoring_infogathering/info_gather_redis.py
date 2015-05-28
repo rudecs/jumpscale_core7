@@ -22,17 +22,15 @@ def action():
     import JumpScale.baselib.redis
     ports = {}
     
-    for redisdef in j.packages.find(name='redis'):
-        for instance in redisdef.listInstances():
-            jpinstance = redisdef.getInstance(instance)
-            
-            if not jpinstance.isInstalled():
-                continue
-            
-            for redisport in jpinstance.getTCPPorts():
-                if redisport:
-                    ports[jpinstance.instance] = ports.get(jpinstance.instance, [])
-                    ports[jpinstance.instance].append(int(redisport))
+    for instance in j.atyourservice.findServices(name='redis'):
+        
+        if not instance.isInstalled():
+            continue
+        
+        for redisport in instance.getTCPPorts():
+            if redisport:
+                ports[instance.instance] = ports.get(instance.instance, [])
+                ports[instance.instance].append(int(redisport))
     result = dict()
     for instance, ports_val in ports.iteritems():
         for port in ports_val:
