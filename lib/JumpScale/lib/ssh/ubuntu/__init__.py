@@ -1,9 +1,6 @@
 
 from JumpScale import j
 
-def ubuntu():
-    from .ubuntu import manager
-    return manager.UbuntuManagerFactory()
 
 def disklayout():
     from .disklayout import manager
@@ -30,4 +27,3 @@ j.ssh._register('disklayout', disklayout)
 j.ssh._register('openwrt', openwrt)
 j.ssh._register('nginx', nginx)
 j.ssh._register('ufw', ufw)
-j.ssh._register('ubuntu', ubuntu)
