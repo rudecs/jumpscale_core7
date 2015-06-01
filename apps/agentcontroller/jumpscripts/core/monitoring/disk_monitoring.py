@@ -29,10 +29,6 @@ def action():
     rediscl = j.clients.redis.getByInstance('system')
     stats = statsd.StatsClient()
     pipe = stats.pipeline()
-    pattern = None
-
-    if j.application.config.exists('gridmonitoring.disk.pattern'):
-        pattern = j.application.config.getStr('gridmonitoring.disk.pattern')
 
     disks = j.system.platform.diskmanager.partitionsFind(mounted=True, prefix='', minsize=0, maxsize=None)
 
@@ -40,9 +36,6 @@ def action():
     counters=psutil.disk_io_counters(True)
 
     for disk in disks:
-        if pattern and j.codetools.regex.match(pattern, disk.path) == True:
-            # pattern is a blacklist, continue if match
-            continue
 
         results = {'time_read': 0, 'time_write': 0, 'count_read': 0, 'count_write': 0,
                    'kbytes_read': 0, 'kbytes_write': 0, 
