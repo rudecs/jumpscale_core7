@@ -14,8 +14,18 @@ class DNS(object):
     def addRecord(self):
         raise NotImplemented()
     
-    def deleteRecord(self):
+    def deleteHost(self, host):
         raise NotImplemented()
     
+    def updateHostIp(self, host, ip):
+        raise NotImplemented()
+
     def zones(self):
         raise NotImplemented()
+    
+    def map(self):
+        raise NotImplemented()
+    
+    def reversemap(self):
+        raise NotImplemented()
+    
