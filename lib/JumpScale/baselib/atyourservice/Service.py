@@ -374,6 +374,7 @@ class Service(object):
             else:
                 print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
                 service = j.atyourservice.new(domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
+                j.atyourservice._justinstalled.append(service.name)
                 if self.noremote is False and len(self.producers):
                     for cat, prod in self.producers.iteritems():
                         service.init()

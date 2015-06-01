@@ -2,6 +2,7 @@ from JumpScale import j
 from .ServiceTemplate import ServiceTemplate
 from .Service import Service
 import copy
+import re
 from .ActionsBase import ActionsBase
 
 class AtYourServiceFactory():
@@ -158,7 +159,7 @@ class AtYourServiceFactory():
                 self._cache[targetKey]=service
             return service
 
-        targetKey="%s__%s__%s"%(domain,name,instance)
+        targetKey="%s__%s__%s" % (domain, name, instance)
         if name!="" and instance!="":
             if self._cachefind.has_key(targetKey):
                 return self._cachefind[targetKey]
@@ -167,40 +168,17 @@ class AtYourServiceFactory():
 
         res=[]
         parentInstance = ""
-        for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
-            namefound=j.system.fs.getBaseName(path)
 
-            # if the directory name has not the good format, skip it
-            if namefound.find("__")==-1:
-                continue
+        paths = j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True)
 
-            domainfoud,namefound,instancefound=namefound.split("__",2)
-            service=None
-            if instance=="" and name=="":
-                if parent is None:
-                    service = createService(domainfoud,namefound,instancefound,path)
-                elif parentInstance == parent.instance:
-                    service = createService(domainfoud,namefound,instancefound,path)
-            elif instance=="" and name!="":
-                if namefound==name:
-                    if parent is None:
-                        service = createService(domainfoud,namefound,instancefound,path)
-                    elif parentInstance == parent.instance:
-                        service = createService(domainfoud,namefound,instancefound,path)
-            elif instance!="" and name=="":
-                if instance==instancefound:
-                    if parent is None:
-                        service = createService(domainfoud,namefound,instancefound,path)
-                    elif parentInstance == parent.instance:
-                        service = createService(domainfoud,namefound,instancefound,path)
-            elif instance==instancefound and namefound == name:
-                if parent is None:
-                    service = createService(domainfoud,namefound,instancefound,path)
-                elif parentInstance == parent.instance:
-                    service = createService(domainfoud,namefound,instancefound,path)
+        regex = re.compile("%s__%s__%s"%(domain or '[a-zA-Z0-9]*', name or '[a-zA-Z0-9]*', instance or '[a-zA-Z0-9]*'))
+        matched = [m.string for service in paths for m in [regex.search(service)] if m]
+
+        for match in matched:
+            domainfoud, namefound, instancefound = match.split("__",2)
+            service = createService(domainfoud, namefound, instancefound, match)
             if service != None:
                 res.append(service)
-            parentInstance=instancefound
 
         if name!="" and instance!="":
             self._cachefind[targetKey]=res
