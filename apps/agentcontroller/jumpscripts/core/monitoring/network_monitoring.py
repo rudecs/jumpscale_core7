@@ -24,9 +24,9 @@ def action():
     pipe = stats.pipeline()
     counters=psutil.network_io_counters(True)
     pattern = None
-    if j.application.config.exists('nic.pattern'):
-        pattern = j.application.config.getStr('nic.pattern')
-    
+    if j.application.config.exists('gridmonitoring.nic.pattern'):
+        pattern = j.application.config.getStr('gridmonitoring.nic.pattern')
+
     for nic, stat in counters.iteritems():
         if pattern and j.codetools.regex.match(pattern,nic) == False:
             continue
