@@ -9,7 +9,7 @@ class UCISection(collections.OrderedDict):
     def __init__(self, type, name=None, *args, **kwargs):
         super(UCISection, self).__init__(*args, **kwargs)
         self.type = self._validate(type)
-        self.name = self._validate(name)
+        self.name = self._validate(name, True)
 
     def __str__(self):
         name = '\'%s\'' % self.name if self.name else ''
@@ -18,7 +18,12 @@ class UCISection(collections.OrderedDict):
             name=name
         ).strip()
 
-    def _validate(self, name):
+    def _validate(self, name, canbenone=False):
+        if name is None and canbenone:
+            return name
+        elif name is None:
+            raise ValueError('Not expecting a None value')
+
         for c in '- ':
             if c in name:
                 raise ValueError(

@@ -1,3 +1,4 @@
+import os
 from StringIO import StringIO
 
 from fabric.api import settings
@@ -7,6 +8,10 @@ from .dns import DNS
 from .dhcp import DHCP
 from .pureftp import PureFTP
 from .network import Network
+from .firewall import Firewall
+
+
+WRITE_CHUNK_SIZE = 512
 
 
 class UCIError(Exception):
@@ -30,6 +35,7 @@ class OpenWRTManager(object):
         self._dhcp = DHCP(self)
         self._ftp = PureFTP(self)
         self._network = Network(self)
+        self._firewall = Firewall(self)
 
     @property
     def connection(self):
@@ -60,6 +66,10 @@ class OpenWRTManager(object):
     def network(self):
         return self._network
 
+    @property
+    def firewall(self):
+        return self._firewall
+
     def get(self, name):
         """
         Loads UCI package from openwrt, or new package if name doesn't exit
@@ -88,8 +98,37 @@ class OpenWRTManager(object):
         uci.dump(buffer)
 
         buffer.write('\nUCI\n')
-
-        command = buffer.getvalue()
+        # command = buffer.getvalue()
 
         with settings(shell=self.WRT_SHELL, abort_exception=UCIError):
-            self._con.run(command)
+            buffer.seek(0)
+            chunk = buffer.read(WRITE_CHUNK_SIZE)
+            if len(chunk) < WRITE_CHUNK_SIZE:
+                self._con.run(chunk)
+                return
+
+            # Write chunks into file
+            tmp = os.tempnam()
+            try:
+                self._con.run(
+                    'echo -n > {tmp} "{chunk}"'.format(
+                        tmp=tmp,
+                        chunk=chunk
+                    )
+                )
+
+                while True:
+                    chunk = buffer.read(WRITE_CHUNK_SIZE)
+                    if not chunk:
+                        break
+                    self._con.run(
+                        'echo -n >> {tmp} "{chunk}"'.format(
+                            tmp=tmp,
+                            chunk=chunk
+                        )
+                    )
+
+                self._con.run('chmod +x %s' % tmp)
+                self._con.run(tmp)
+            finally:
+                self._con.run('rm -f %s')
