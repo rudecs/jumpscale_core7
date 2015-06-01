@@ -28,7 +28,7 @@ jservice commands:
     - if build instructions are given the build repo's will be downloaded & build started
     - build happens to production dir
     mdupdate
-    - update all git repo's which have jservice metadata
+    - update all git repo's which have services metadata
     update
     - go over all related repo's & do an update
     - copy the files again
@@ -284,6 +284,9 @@ elif args.action == 'uninstall':
 elif args.action == 'push':
     # TODO
     pass
+
+elif args.action == 'mdupdate':
+    j.atyourservice.updateTemplatesRepo()
 
 elif args.action == 'list':
     def printServices(services, installed=False):

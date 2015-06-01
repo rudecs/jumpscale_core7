@@ -68,6 +68,24 @@ class AtYourServiceFactory():
 
             self_init=True
 
+    def updateTemplatesRepo(self, repos=[]):
+        """
+        update the git repo that contains the service templates
+        args:
+            repos : list of dict of repos to update, if empty, all repos are updated
+                    {
+                        'url' : 'http://github.com/account/repo',
+                        'branch' : 'master'
+                    }
+        """
+        if len(repos) == 0:
+            metadata = j.application.config.getDictFromPrefix('atyourservice.metadata')
+            repos = metadata.values()
+
+        for repo in repos:
+            branch = repo['branch'] if 'branch' in repo else 'master'
+            j.do.pullGitRepo(url=repo['url'], branch=branch)
+
     def getActionsBaseClass(self):
         return ActionsBase
 
