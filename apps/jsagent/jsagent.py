@@ -188,6 +188,8 @@ class ProcessManager():
 
             jsagentService.hrd.set("grid.id",res["node"]["gid"])
             jsagentService.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
+            j.application.loadConfig()
+            j.application.initWhoAmI(True)
             
             self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
