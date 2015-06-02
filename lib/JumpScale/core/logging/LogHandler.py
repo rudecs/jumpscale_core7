@@ -282,7 +282,7 @@ class LogHandler(object):
         if self.nolog:
             return
 
-        if level < self.maxlevel+1:
+        if level < self.maxlevel+1 and (log.jid or log.category):
             #SEND TO REDIS
             return self._send2Redis(log)
 
