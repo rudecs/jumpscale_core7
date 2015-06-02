@@ -86,26 +86,26 @@ class Dirs(object):
         else:
             self.binDir = j.application.config.get("system.paths.bin")
 
-    # def replaceTxtDirVars(self,txt,additionalArgs={}):
-    #     """
-    #     replace $base,$vardir,$cfgDir,$bindir,$codedir,$tmpdir,$logdir,$appdir with props of this class
-    #     """
-    #     txt=txt.replace("$base",self.baseDir)
-    #     txt=txt.replace("$appdir",self.appDir)
-    #     txt=txt.replace("$codedir",self.codeDir)
-    #     txt=txt.replace("$vardir",self.varDir)
-    #     txt=txt.replace("$cfgDir",self.cfgDir)
-    #     txt=txt.replace("$hrdDir",self._hrdDir)
-    #     txt=txt.replace("$bindir",self.binDir)
-    #     txt=txt.replace("$logdir",self.logDir)
-    #     txt=txt.replace("$tmpdir",self.tmpDir)
-    #     txt=txt.replace("$libdir",self.libDir)
-    #     txt=txt.replace("$jslibextdir",self.libExtDir)
-    #     txt=txt.replace("$jsbindir",self.binDir)
-    #     txt=txt.replace("$nodeid",str(j.application.whoAmI.nid))
-    #     for key,value in additionalArgs.items():
-    #         txt=txt.replace("$%s"%key,str(value))
-    #     return txt
+    def replaceTxtDirVars(self,txt,additionalArgs={}):
+        """
+        replace $base,$vardir,$cfgDir,$bindir,$codedir,$tmpdir,$logdir,$appdir with props of this class
+        """
+        txt=txt.replace("$base",self.baseDir)
+        txt=txt.replace("$appdir",self.appDir)
+        txt=txt.replace("$codedir",self.codeDir)
+        txt=txt.replace("$vardir",self.varDir)
+        txt=txt.replace("$cfgDir",self.cfgDir)
+        txt=txt.replace("$hrdDir",self._hrdDir)
+        txt=txt.replace("$bindir",self.binDir)
+        txt=txt.replace("$logdir",self.logDir)
+        txt=txt.replace("$tmpdir",self.tmpDir)
+        txt=txt.replace("$libdir",self.libDir)
+        txt=txt.replace("$jslibextdir",self.libExtDir)
+        txt=txt.replace("$jsbindir",self.binDir)
+        txt=txt.replace("$nodeid",str(j.application.whoAmI.nid))
+        for key,value in additionalArgs.items():
+            txt=txt.replace("$%s"%key,str(value))
+        return txt
 
     # def replaceFilesDirVars(self,path,recursive=True, filter=None,additionalArgs={}):
     #     if j.system.fs.isFile(path):
