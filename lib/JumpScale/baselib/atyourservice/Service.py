@@ -55,7 +55,7 @@ def deps(F): # F is func or method without instance
     def wrapper(service, *args,**kwargs): # class instance in args[0] for method
         result=None
 
-        deps = kwargs.get('deps', False)
+        deps = kwargs.pop('deps', False)
         reverse = kwargs.get('reverse', False)
         if deps:
             j.atyourservice._justinstalled=[]
@@ -66,10 +66,10 @@ def deps(F): # F is func or method without instance
             for dep in packagechain:
                 if dep.name not in j.atyourservice._justinstalled:
                     dep.args = service.args
-                    result=processresult(result,F(dep, *args, **kwargs))
+                    result=processresult(result,F(dep, *args, deps=False, **kwargs))
                     j.atyourservice._justinstalled.append(dep.name)
         else:
-            result=processresult(result,F(service, *args,**kwargs))
+            result=processresult(result,F(service, *args, deps=False, **kwargs))
         return result
     return wrapper
 
@@ -381,7 +381,6 @@ class Service(object):
             else:
                 print "dependecy %s_%s_%s not found, creation ..."%(domain,name,instance)
                 service = j.atyourservice.new(domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
-                j.atyourservice._justinstalled.append(service.name)
                 if self.noremote is False and len(self.producers):
                     for cat, prod in self.producers.iteritems():
                         service.init()
@@ -537,7 +536,7 @@ class Service(object):
             log("Latest %s already installed" % self)
             return
         self.stop(deps=False)
-        self.prepare(deps=True, reverse=True)
+        self.prepare(deps=deps, reverse=True)
         self.log("install instance")
         self._install(start=start, deps=deps, reinstall=reinstall)
 
