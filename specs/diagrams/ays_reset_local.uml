@@ -1,0 +1,19 @@
+@startuml
+title Reset service locally
+repeat
+    start
+    :serch instance of service;
+    if (service exists) then (no)
+        :raise error;
+        stop
+    else (yes)
+    endif
+
+repeat while (all dependencies reset? ) is (no)
+if (no other service depend on this service ?) then (yes)
+:remove source/binaries;
+:remove service directory;
+else (no)
+endif
+stop
+@enduml

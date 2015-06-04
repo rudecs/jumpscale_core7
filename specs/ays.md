@@ -69,10 +69,12 @@ Two producer of the same type, can be replace one by another seamlessly.
     - upload binary to binary repo
 - **Installation**:
     Just follow recipe from HRD file to get data and dependencies, then execute code from actions.py file.
+    - [diagram install local](diagrams/ays_install_local.png)
 - **Reset**:
     + reset remove all trace from a service
     + need to remove service directory and installed files.
     + ?? dependencies management ?? go over dependencies, check if other services require this dependency, if yes keep, if not, remove too.
+    + [diagram reset local](diagrams/ays_reset_local.png)
 
 #### Remote deployment
 - **Build** :
@@ -84,8 +86,14 @@ Two producer of the same type, can be replace one by another seamlessly.
         + Fill HRD files for all dependencies, but don't download anything on the local machine.
     - send service and dependencies to remote machine.
     - remote machine loads all services in memory and install them locally.
+    - [diagram install remote](diagrams/ays_install_remote.png)
 - **Reset** :
+    + create list of all file/directory to remove
     + send command to remote to reset the service.
     + if no error, reset the service locally too
+    + [diagram reset remote](diagrams/ays_reset_remote.png)
 - **Start/Stop** :
     + If we try to start/stop a service, means it's installed already, so we just send the start/stop command to the remote node.
+
+## Code Component
+![atyousrervice package](diagrams/ays_package.svg)

@@ -1,0 +1,31 @@
+@startuml
+title Install service locally
+repeat
+    start
+    :install service;
+    :serch instance of service;
+    if (service exists) then (yes)
+        if (reinstall) then (no)
+            :return service;
+            stop
+        else (yes)
+        endif
+    else (no)
+        :search service template;
+        if (template exists) then (no)
+            :error;
+            stop
+        else (yes)
+        endif
+    endif
+
+    :load template;
+    :process HRD;
+repeat while (all dependencies installed? ) is (no)
+    :execute stop();
+    :execute prepare();
+    :download sources/binary
+    :execute configure();
+    :execute start();
+ stop
+@enduml
