@@ -125,8 +125,6 @@ class Dirs(object):
 
     @property
     def hrdDir(self):
-        if self._hrdDir!=None:
-            return self._hrdDir
         if self.amInGitConfigRepo()!=None:
             self._hrdDir="%s/services/"%(self.amInGitConfigRepo())
         else:
