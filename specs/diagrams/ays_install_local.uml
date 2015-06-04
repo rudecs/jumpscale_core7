@@ -2,7 +2,6 @@
 title Install service locally
 repeat
     start
-    :install service;
     :serch instance of service;
     if (service exists) then (yes)
         if (reinstall) then (no)
@@ -23,8 +22,8 @@ repeat
     :process HRD;
 repeat while (all dependencies installed? ) is (no)
     :execute stop();
-    :execute prepare();
-    :download sources/binary
+    :execute prepare()
+     download sources/binary;
     :execute configure();
     :execute start();
  stop

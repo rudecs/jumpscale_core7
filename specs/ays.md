@@ -51,13 +51,32 @@ parent
 - A service is also identified by it's parent, so two services with the same domain/name/instance can exits if they have different parents.
 
 ##### Producer/Consumer
-@ys package can provide a service, it's called a producer.
+if an @ys package can provide a service to another @ys package, it's called a producer.
 To use these producer, one needs a consumer, so @ys package can also be a consumer.
 
 A service can be producer and consumer at the same time. this allows chaining of services that work all together.
 
 Two producer of the same type, can be replace one by another seamlessly.
 (?? need to define an interface for a type of producer ??)
+
+###### Example
+This concepts is used  to enable the remote installation of services.
+Here is an concrete example :
+We want to install a mongodb server on a remote machine.  
+What do we need ? :
+- a mongodb service.
+- a service that describe the remote machine and provide a way to comminucate with it, let's call it a node service
+
+the **mongodb** service will be the **consumer** and   
+the **node** service will be the **producer**
+
+mongodb service by consuming the node service allow tell @ys that during installation, the node service will be use as the target for the installation.
+
+###### More than just remote installation
+The concept of producer/consumer can be applied to lot's of different use case.  
+On can think of a service that produce data, like statsd. statsd need to save its data somewhere. It can use a producer 'database' to save its data.
+And What really nice about this, is that any producer database can be used to save the data. statsd don't need to be aware of it. It just know that it consume a 'database' producer and that's it.
+
 
 ## Implementation
 ### Deployment system :

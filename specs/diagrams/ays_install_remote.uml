@@ -2,8 +2,8 @@
 title Install service remotly
 |local|
 start
-:install service;
-:serch instance of service;
+repeat
+:search instance of service;
 if (service exists) then (yes)
     if (reinstall) then (no)
         :return service;
@@ -21,20 +21,8 @@ endif
 
 :instanciate service;
 :process HRD;
-while (has more dependecies ?) is (yes)
-    :serch instance of service;
-    if (service exists) then (no)
-        :search service template;
-        if (template exists) then (no)
-            :error;
-            stop
-        else (yes)
-            :process HRD;
-        endif
-    else (yes)
-        :continue;
-    endif
-endwhile (no)
+repeat while (has more dependecies ?) is (yes)
+
 :upload services and dependencies to remore;
 
 |#lightblue|remote|
