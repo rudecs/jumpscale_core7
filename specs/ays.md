@@ -96,4 +96,4 @@ Two producer of the same type, can be replace one by another seamlessly.
     + If we try to start/stop a service, means it's installed already, so we just send the start/stop command to the remote node.
 
 ## Code Component
-![atyousrervice package](diagrams/ays_package.svg)
+![atyousrervice package](diagrams/ays_package.png)
