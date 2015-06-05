@@ -1,3 +1,4 @@
+from JumpScale import j
 
 
 class NginxManagerFactory(object):
@@ -6,7 +7,10 @@ class NginxManagerFactory(object):
 
 
 class NginxManager(object):
-    def __init__(self, con, path='/etc/nginx/nginx.conf'):
+    def __init__(self, con=None, path='/etc/nginx/nginx.conf'):
+        if con==None:
+            con=j.ssh.connection
+
         self._path = path
         self._con = con
         self._config = None
