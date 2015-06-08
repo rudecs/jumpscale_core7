@@ -563,3 +563,22 @@ class Docker():
     def pull(self,imagename):
         cmd="docker pull %s"%imagename
         j.system.process.executeWithoutPipe(cmd)
+
+    def uploadFile(self, name, source, dest):
+        """
+        put a file located at source on the host to dest into the container
+        """
+        self.copy(name, source, dest)
+
+    def downloadFile(self, name, source, dest):
+        """
+        get a file located at source in the host to dest on the host
+
+        """
+        conn = self.getSSH(name)
+        if not conn.file_exists(source):
+            j.events.inputerror_critical(msg="%s not found in container" % source)
+        ddir=j.system.fs.getDirName(dest)
+        j.system.fs.createDir(ddir)
+        content = conn.file_read(source)
+        j.system.fs.writeFile(dest, content)
