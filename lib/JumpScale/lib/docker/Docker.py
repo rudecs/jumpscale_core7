@@ -15,9 +15,7 @@ class Docker():
     def __init__(self):
         self._basepath = "/mnt/vmstor/docker"
         self._prefix=""
-        self.client = docker.Client(base_url='unix://var/run/docker.sock',
-                  # version='1.12',
-                  timeout=10)
+        self.client = docker.Client(base_url='unix://var/run/docker.sock')
 
     def _execute(self, command):
         env = os.environ.copy()
