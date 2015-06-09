@@ -5,10 +5,12 @@ from . import disks
 
 
 class DiskManagerFactory(object):
-    def get(self, connection):
+    def get(self, connection=None):
         """
         Return disk manager for that cuisine connection.
         """
+        if connection==None:
+            connection=j.ssh.connection
         return DiskManager(connection)
 
 

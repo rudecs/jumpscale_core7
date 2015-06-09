@@ -1,0 +1,38 @@
+@startuml
+title Reset service remotly
+|local|
+repeat
+    start
+    :serch instance of service;
+    if (service exists) then (no)
+        :raise error;
+        stop
+    else (yes)
+    endif
+
+if (no other service depend on this service ?) then (yes)
+:add path of source/binary and service directory 
+to 'pathToDelete' list;
+else (no)
+endif
+repeat while (all dependencies tested? ) is (no)
+
+
+:send 'pathToDelete' to remote;
+|#lightblue|remote|
+while (remains entry in 'pathToDelete'?) is (yes)
+    :delete path;
+    :remove entry from 'pathToDelete';
+endwhile (no)
+:send ack;
+|local|
+if (ack positif) then (yes)
+    while (remains entry in 'pathToDelete'?) is (yes)
+        :delete path;
+        :remove entry from 'pathToDelete';
+    endwhile (no)
+else (no)
+    :raise error;
+endif
+stop
+@enduml

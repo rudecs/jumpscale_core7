@@ -151,26 +151,15 @@ class LogHandler(object):
         This empties the log targets
         '''
         self.utils = LogUtils()
+        self.reset()     
         self.redislogging=None
         self.redis=None
         self.maxlevel = 5
-        self.nolog = False
         self.consoleloglevel = 2
         self.consolelogCategories=[]
         self.lastmessage = ""
         # self.lastloglevel=0
-        self._enabled = False
-
-
-    @property
-    def enabled(self):
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, value):
-        self._enabled = value
-        if value:
-            self.init()
+        self.enabled = False   
 
     def init(self):
         if self.enabled:
@@ -178,7 +167,7 @@ class LogHandler(object):
 
     def connectRedis(self):
         # if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
-        if self.redis is None:
+        if self.redis!=None:
             #found redis        
             import JumpScale.baselib.redis
             if j.clients.redis.isRunning('system'):

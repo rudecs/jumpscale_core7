@@ -1,0 +1,37 @@
+@startuml
+title Install service remotly
+|local|
+start
+repeat
+:search instance of service;
+if (service exists) then (yes)
+    if (reinstall) then (no)
+        :return service;
+        stop
+    else (yes)
+    endif
+else (no)
+    :search service template;
+    if (template exists) then (no)
+        :error;
+        stop
+    else (yes)
+    endif
+endif
+
+:instanciate service;
+:process HRD;
+repeat while (has more dependecies ?) is (yes)
+
+:upload services and dependencies to remore;
+
+|#lightblue|remote|
+:load services;
+:execute stop();
+:execute prepare();
+:download sources/binary;
+:execute configure();
+:execute start();
+
+ stop
+@enduml

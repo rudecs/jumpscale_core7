@@ -2,6 +2,7 @@ import re
 import collections
 
 from fabric.api import settings
+from JumpScale import j
 
 
 STATUS_LINE = re.compile('^Status:\s*(.+)')
@@ -17,8 +18,10 @@ class UFWError(Exception):
 
 
 class UFWManagerFactory(object):
-    def get(self, con):
-        return UFWManager(con)
+    def get(self, connection=None):
+        if connection==None:
+            connection=j.ssh.connection
+        return UFWManager(connection)
 
 
 class UFWRule(object):

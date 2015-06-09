@@ -10,6 +10,8 @@ from .pureftp import PureFTP
 from .network import Network
 from .firewall import Firewall
 
+from JumpScale import j
+
 
 WRITE_CHUNK_SIZE = 512
 
@@ -19,10 +21,13 @@ class UCIError(Exception):
 
 
 class OpenWRTFactory(object):
-    def get(self, connection):
+    def get(self, connection=None):
         """
         Return disk manager for that cuisine connection.
         """
+        if connection==None:
+            connection=j.ssh.connection
+
         return OpenWRTManager(connection)
 
 

@@ -97,6 +97,8 @@ from .baselib import hrd
 
 j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
 
+j.logger.enable=j.application.config.getBool("system.logging",default=False)
+
 from .core.Dirs import Dirs
 j.dirs=Dirs()
 
@@ -106,4 +108,4 @@ loadSubModules(__file__)
 
 j.application.init()
 
-j.logger.enabled=j.application.config.getBool("system.logging",default=False)
+
