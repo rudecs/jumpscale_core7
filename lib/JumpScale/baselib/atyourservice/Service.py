@@ -2,6 +2,7 @@ from JumpScale import j
 import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
+from collections import OrderedDict
 
 import imp
 import sys
