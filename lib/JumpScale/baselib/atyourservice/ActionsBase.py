@@ -409,7 +409,7 @@ class ActionsBase():
         execute something in the service instance
         """
 
-        node = serviceobj.getproducer('node')
+        node = serviceobj.getProducer('node')
         # TODO should upload to temporary destination firsts
         node.actions.upload(node,serviceobj.path,serviceobj.path)
         # execute the action of the child service througth the parent node
