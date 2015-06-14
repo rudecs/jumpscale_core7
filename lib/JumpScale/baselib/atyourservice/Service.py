@@ -863,14 +863,14 @@ class Service(object):
         create connection between consumer (this service) & producer
         producer category is category of service
         """
+        candidates = j.atyourservice.findServices(instance=instancename)
+        items = [x for x in candidates if producercategory in x.categories]
+        for item in items:
+            self.hrd.set("producer.%s" % producercategory, item.instance)
 
-        for item in j.atyourservice.findServices(instance=instancename):
-            if producercategory in item.categories:
-                self.hrd.set("producer.%s" % producercategory, item.instance)
-                return
-
-        raise RuntimeError(
-            "Could not find producer:%s for instance:%s" % (producercategory, instancename))
+        if not items:
+            raise RuntimeError(
+                "Could not find producer:%s for instance:%s" % (producercategory, instancename))
 
     def getProducer(self, producercategory):
         if producercategory not in self.producers:
