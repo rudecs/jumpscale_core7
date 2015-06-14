@@ -27,4 +27,4 @@ class MongoDBClient:
         if replicaset == "":
             return MongoClient(host=ipaddr, port=port, ssl=ssl)
         else:
-            return MongoReplicaSetClient(host=ipaddr, port=port, ssl=ssl, replicaSet=replicaset)
+            return MongoReplicaSetClient(ipaddr, port=port, ssl=ssl, replicaSet=replicaset)
