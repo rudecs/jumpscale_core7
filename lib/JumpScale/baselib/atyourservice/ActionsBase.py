@@ -403,7 +403,7 @@ class ActionsBase():
         pull configuration from service instance
         """
 
-    def executeaction(self,serviceobj,actionname):
+    def executeaction(self, serviceobj, actionname):
         """
         on central side only
         execute something in the service instance
@@ -411,13 +411,17 @@ class ActionsBase():
 
         node = serviceobj.getProducer('node')
         # TODO should upload to temporary destination firsts
-        node.actions.upload(node,serviceobj.path,serviceobj.path)
+        node.actions.upload(node, serviceobj.path, serviceobj.path)
         # execute the action of the child service througth the parent node
         cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --noremote"\
-                            %(actionname,serviceobj.name,serviceobj.instance)
+              % (actionname, serviceobj.name, serviceobj.instance)
         path = j.dirs.amInGitConfigRepo()
         if path:
             cmd += " --path %s" % path
         if actionname == "execute" and serviceobj.cmd:
-            cmd += " --cmd '%s'"%serviceobj.cmd
-        node.actions.execute(node,cmd)
+            cmd += " --cmd '%s'" % serviceobj.cmd
+        node.actions.execute(node, cmd)
+
+        # install can insert new info into HRD, get update files from remote
+        if actionname == 'install':
+            node.actions.download(node, serviceobj.path, serviceobj.path)
