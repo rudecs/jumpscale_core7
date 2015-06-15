@@ -35,6 +35,7 @@ config.ITEM_LOOKUP_FIELD = ID_FIELD
 BASE_SETTINGS = {
         'DEBUG': True,
         'ID_FIELD': ID_FIELD,
+        'ITEM_URL': 'regex("[a-f0-9\-]+")',
         'ITEM_LOOKUP_FIELD': ITEM_LOOKUP_FIELD,
         'RESOURCE_METHODS': ['GET', 'POST'],
         'ITEM_METHODS': ['GET', 'PATCH', 'PUT', 'DELETE'],

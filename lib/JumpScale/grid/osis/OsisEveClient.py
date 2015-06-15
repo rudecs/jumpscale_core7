@@ -14,6 +14,9 @@ class ModelObject(object):
             result[slot] = getattr(self, slot)
         return result
 
+    def __repr__(self):
+        return json.dumps(self._dump())
+
 def Struct(*args, **kwargs):
     def init(self, *iargs, **ikwargs):
         for k,v in kwargs.items():
@@ -37,7 +40,7 @@ class NameSpaceClient(object):
         specurl = os.path.join(self._baseurl, 'docs', 'spec.json')
         api = requests.get(specurl).json()
         for domainname, domain in api['domains'].iteritems():
-            params = ['_id', '_etag']
+            params = ['_etag']
             domainparams = domain['/%s' % domainname]['POST']['params']
             for param in domainparams:
                 params.append(param['name'])
@@ -81,7 +84,7 @@ class ObjectClient(object):
     def partialupdate(self, obj):
         if not isinstance(obj, dict):
             raise ValueError("Invalid object")
-        url = os.path.join(self._baseurl, obj['_id'])
+        url = os.path.join(self._baseurl, obj['guid'])
         clean(obj)
         return requests.patch(url, json=obj).json()
 
@@ -92,21 +95,21 @@ class ObjectClient(object):
             raise ValueError("Invalid object")
         if not isinstance(obj, dict):
             raise ValueError("Invalid object")
-        url = os.path.join(self._baseurl, str(obj['_id']))
+        url = os.path.join(self._baseurl, str(obj['guid']))
         headers = {'If-Match': obj['_etag']}
         clean(obj)
         return requests.put(url, json=obj, headers=headers).json()
 
     def list(self):
-        query = {'projection': '{"_id": 1}'}
+        query = {'projection': '{"guid": 1}'}
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
         results = requests.get(url).json()
-        return [ x['_id'] for x in results['_items'] ]
+        return [ x['guid'] for x in results['_items'] ]
 
     def search(self, query):
         query = {'where': json.dumps(query)}
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
         results = requests.get(url).json()
-        return [ x for x in results['_items'] ]
+        return [ self._objclass(**x) for x in results['_items'] ]
 
 

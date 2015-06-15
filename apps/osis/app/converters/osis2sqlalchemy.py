@@ -35,5 +35,6 @@ def generateDomain(namespace, spec):
         modelclass = getattr(module, modelname)
         registerSchema(modelspec.name)(modelclass)
         domain[modelname] = modelclass._eve_schema[modelspec.name]
+        domain[modelname].update({'item_url': 'regex("[a-f0-9\-]+")'})
     return domain
 
