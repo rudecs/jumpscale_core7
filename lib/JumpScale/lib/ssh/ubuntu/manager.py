@@ -18,14 +18,14 @@ class UbuntuManager(object):
 
         self._con = connection
         self._net = NetworkManager(self)
-        
+
     @property
     def connection(self):
         """
         Connection manager
         """
         return self._con
-    
+
     @property
     def network(self):
         """
@@ -55,4 +55,5 @@ class UbuntuManager(object):
         self.connection.file_write(path,script)
         out=self.executeRemoteTmuxCmd("jspython %s"%path)
         self.connection.file_unlink(path)
-        return out        
+        return out
+

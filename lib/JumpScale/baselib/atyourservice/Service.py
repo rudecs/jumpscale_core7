@@ -2,6 +2,7 @@ from JumpScale import j
 import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
+from collections import OrderedDict
 
 import imp
 import sys
@@ -327,7 +328,16 @@ class Service(object):
         @type build: bool
         """
         res=[]
-        for item in self.hrd.getListFromPrefix("service.dependencies"):
+
+        def sorter(item):
+            parts = item[0].split('.')
+            if parts[-1].isdigit():
+                return int(parts[-1])
+            return item
+
+        deps = OrderedDict(sorted(self.hrd.getDictFromPrefix("service.dependencies").iteritems(), key=sorter))
+
+        for item in deps.values():
 
             if isinstance(item,str):
                 if item.strip()=="":
