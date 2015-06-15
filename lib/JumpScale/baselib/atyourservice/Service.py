@@ -262,7 +262,8 @@ class Service(object):
 
     def _loadActions(self):
         actionsPath = j.system.fs.joinPaths(self.path, "actions.py")
-        if not j.system.fs.exists(actionsPath):
+        # if not j.system.fs.exists(actionsPath):
+        if self.templatepath != "":
             self._apply()
         else:
             self._loadActionModule()
