@@ -290,7 +290,7 @@ class AtYourServiceFactory():
         if not j.system.fs.exists(hrdpath) or not j.system.fs.exists(actionspath):
             raise RuntimeError("path doesn't contain service.hrd and actions.py")
 
-        service = Service()
+        service = Service(path=path)
         service.path = path
         service.parent = parent
         service._hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
