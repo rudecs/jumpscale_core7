@@ -155,7 +155,7 @@ class AtYourServiceFactory():
 
             # create service from templates
             servicetemplates = self.findTemplates(domain=domain, name=name)
-            if len(servicetemplates) >= 0:
+            if len(servicetemplates) > 0:
                 service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
                 return service
             elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
