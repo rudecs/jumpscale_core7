@@ -152,15 +152,18 @@ class AtYourServiceFactory():
             # try to load service from instance file is they exists
             hrdpath = j.system.fs.joinPaths(path, "service.hrd")
             actionspath = j.system.fs.joinPaths(path, "actions.py")
-            if j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
-                service = j.atyourservice.loadService(path, parent)
-            else:
-                # create service from templates
-                servicetemplates = self.findTemplates(domain=domain, name=name)
-                if len(servicetemplates) <= 0:
-                    raise RuntimeError("services template %s__%s not found" % (domain ,name))
+
+            # create service from templates
+            servicetemplates = self.findTemplates(domain=domain, name=name)
+            if len(servicetemplates) >= 0:
                 service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
-            return service
+                return service
+            elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
+                service = j.atyourservice.loadService(path, parent)
+                return service
+
+            raise RuntimeError("cant'find service %s__%s__%s not found" % (domain ,name,instance))
+
 
         targetKey = self.getId(domain, name, instance, parent)
         if targetKey in self._instanceCache:
