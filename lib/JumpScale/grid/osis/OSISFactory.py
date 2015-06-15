@@ -3,6 +3,7 @@ from .OSISCMDS import OSISCMDS
 from .OSISClientForCat import OSISClientForCat
 from .OSISBaseObject import OSISBaseObject
 from .OSISBaseObjectComplexType import OSISBaseObjectComplexType
+from .OsisEveClient import Client as OsisEveClient
 import JumpScale.baselib.codegentools
 import JumpScale.baselib.codetools
 
@@ -107,6 +108,9 @@ class OSISClientFactory(object):
             return self.get(ipaddr=ipaddr, port=port, user=user, passwd=passwd, ssl=ssl, gevent=gevent)
         if die:
             j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)
+
+    def getEveClient(self, url):
+        return OsisEveClient(url)
 
     def getNamespace(self, namespace, client=None):
         if client==None:

@@ -19,6 +19,7 @@ from werkzeug.wsgi import DispatcherMiddleware
 from werkzeug.serving import run_simple
 
 from . import modelloader
+from . import api
 from .converters import osis2mongo
 from .converters import osis2sqlalchemy
 from .sqlalchemy import common
@@ -75,7 +76,10 @@ def prepare_mongoapp(namespace, models):
 
 def prepare_sqlapp(namespace, models):
     my_settings = BASE_SETTINGS.copy()
-    my_settings['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///bleh.sql'
+    dbdir = j.system.fs.joinPaths(j.dirs.varDir, 'osis', )
+    j.system.fs.createDir(dbdir)
+    db = j.system.fs.joinPaths(dbdir, '%s.sqlite' % namespace)
+    my_settings['SQLALCHEMY_DATABASE_URI'] = "sqlite:///%s" %db
     my_settings['SQLALCHEMY_ECHO'] = True
     my_settings['SQLALCHEMY_RECORD_QUERIES'] = True
     my_settings['DOMAIN'] = osis2sqlalchemy.generateDomain(namespace, models)
@@ -89,14 +93,21 @@ def prepare_sqlapp(namespace, models):
 
 def start(basedir, port):
     apps = dict()
-    specs = modelloader.find_models(basedir)
-    for namespace, models in specs.iteritems():
-        app = prepare_sqlapp(namespace, models)
-        apps['/%s' % namespace] = app
+    fullspecs = modelloader.find_models(basedir)
+    namespaces = []
+    for type_, specs in fullspecs.iteritems():
+        for namespace, models in specs.iteritems():
+            if type_ == 'sql':
+                app = prepare_sqlapp(namespace, models)
+            else:
+                app = prepare_mongoapp(namespace, models)
+            apps['/models/%s' % namespace] = app
+            namespaces.append(namespace)
 
     if apps:
-        firstapp = apps.values()[0]
-        application = DispatcherMiddleware(firstapp, apps)
+        apiapp = api.register_api(namespaces)
+        apps['/api'] = apiapp
+        application = DispatcherMiddleware(apiapp, apps)
         # let's roll
         run_simple('0.0.0.0', port, application, use_reloader=True, use_debugger=True)
 

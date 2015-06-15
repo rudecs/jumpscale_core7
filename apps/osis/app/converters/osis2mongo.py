@@ -19,8 +19,8 @@ def generateDomain(spec):
 
 def generateModel(modelspec):
     schema = dict()
-    model = {'item_url': 'regex("[a-f0-9]+")',
-            'item_lookup_field': '_id',
+    model = {'item_url': 'regex("[\w\_]+")',
+            'item_lookup_field': 'guid',
             'item_methods': ['GET', 'PATCH', 'PUT', 'DELETE'], 
             'resource_methods': ['GET', 'POST', 'DELETE'], 
             'url': modelspec.name,

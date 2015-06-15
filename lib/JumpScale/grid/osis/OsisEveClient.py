@@ -15,7 +15,7 @@ class ModelObject(object):
         return result
 
     def __repr__(self):
-        return json.dumps(self._dump())
+        return "<%s id %s>" % (self.__class__.__name__, self._pk)
 
 def Struct(*args, **kwargs):
     def init(self, *iargs, **ikwargs):
@@ -25,11 +25,24 @@ def Struct(*args, **kwargs):
             setattr(self, args[i], iargs[i])
         for k,v in ikwargs.items():
             setattr(self, k, v)
+        if '_links' in ikwargs:
+            link = ikwargs['_links']['self']['href']
+            self._pk = link.split('/')[-1]
 
     name = kwargs.pop("_name", "MyStruct")
     kwargs.update(dict((k, None) for k in args))
     return type(name, (ModelObject,), {'__init__': init, '__slots__': kwargs.keys()})
 
+class Client(object):
+    def __init__(self, baseurl):
+        self._baseurl = baseurl
+        for namespace in self._list_namespaces():
+            url = os.path.join(self._baseurl, 'models', namespace.lstrip('/'))
+            setattr(self, namespace, NameSpaceClient(url))
+
+    def _list_namespaces(self):
+        listurl = os.path.join(self._baseurl, 'api', 'namespace')
+        return requests.get(listurl).json()
 
 class NameSpaceClient(object):
     def __init__(self, baseurl):
@@ -40,7 +53,7 @@ class NameSpaceClient(object):
         specurl = os.path.join(self._baseurl, 'docs', 'spec.json')
         api = requests.get(specurl).json()
         for domainname, domain in api['domains'].iteritems():
-            params = ['_etag']
+            params = ['_etag', '_pk']
             domainparams = domain['/%s' % domainname]['POST']['params']
             for param in domainparams:
                 params.append(param['name'])
@@ -84,7 +97,7 @@ class ObjectClient(object):
     def partialupdate(self, obj):
         if not isinstance(obj, dict):
             raise ValueError("Invalid object")
-        url = os.path.join(self._baseurl, obj['guid'])
+        url = os.path.join(self._baseurl, obj['_pk'])
         clean(obj)
         return requests.patch(url, json=obj).json()
 
@@ -95,7 +108,7 @@ class ObjectClient(object):
             raise ValueError("Invalid object")
         if not isinstance(obj, dict):
             raise ValueError("Invalid object")
-        url = os.path.join(self._baseurl, str(obj['guid']))
+        url = os.path.join(self._baseurl, str(obj['_pk']))
         headers = {'If-Match': obj['_etag']}
         clean(obj)
         return requests.put(url, json=obj, headers=headers).json()
