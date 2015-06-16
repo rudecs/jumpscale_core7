@@ -3,9 +3,17 @@ import urllib
 import os
 import json
 
+class RemoteError(Exception):
+    def __init__(self, msg, statuscode=None):
+        super(RemoteError, self).__init__(self, msg)
+        self.statuscode = statuscode
 
-class NotFound(Exception):
+class NotFound(RemoteError):
     pass
+
+def extract_pk(data):
+    link = data['self']['href']
+    return link.split('/')[-1]
 
 class ModelObject(object):
     def _dump(self):
@@ -13,6 +21,15 @@ class ModelObject(object):
         for slot in self.__slots__:
             result[slot] = getattr(self, slot)
         return result
+
+    def _update_pk(self, data):
+        self._pk = extract_pk(data)
+
+    def __setitem__(self, name, value):
+        setattr(self, name, value)
+
+    def __getitem__(self, name):
+        return getattr(self, name)
 
     def __repr__(self):
         return "<%s id %s>" % (self.__class__.__name__, self._pk)
@@ -26,8 +43,7 @@ def Struct(*args, **kwargs):
         for k,v in ikwargs.items():
             setattr(self, k, v)
         if '_links' in ikwargs:
-            link = ikwargs['_links']['self']['href']
-            self._pk = link.split('/')[-1]
+            self._update_pk(ikwargs['_links'])
 
     name = kwargs.pop("_name", "MyStruct")
     kwargs.update(dict((k, None) for k in args))
@@ -76,18 +92,21 @@ class ObjectClient(object):
 
     def set(self, obj):
         if isinstance(obj, self._objclass):
-            obj = obj._dump()
-        if not isinstance(obj, dict):
+            data = obj._dump()
+        elif isinstance(obj, dict):
+            data = obj.copy()
+        else:
             raise ValueError("Invalid object")
-        clean(obj)
-        return requests.post(self._baseurl, json=obj).json()
+        clean(data)
+        result = self._parse_response(requests.post(self._baseurl, json=data))
+        obj['_pk'] = extract_pk(result['_links'])
+        obj['_etag'] = result.get('_etag', None)
+        return result
 
     def get(self, id):
         url = os.path.join(self._baseurl, str(id))
         result = requests.get(url)
-        if result.status_code == 404:
-            raise NotFound(result.json()['_error']['message'])
-        obj = result.json()
+        obj = self._parse_response(result)
         return self._objclass(**obj)
 
     def delete(self, id):
@@ -99,7 +118,31 @@ class ObjectClient(object):
             raise ValueError("Invalid object")
         url = os.path.join(self._baseurl, obj['_pk'])
         clean(obj)
-        return requests.patch(url, json=obj).json()
+        return self._parse_response(requests.patch(url, json=obj))
+
+    def _parse_response(self, response):
+        if response.status_code >= 300:
+            try:
+                msg = json.loads(response.text)['_error']['message']
+            except:
+                msg = response.text
+            if response.status_code == 404:
+                raise NotFound(msg, statuscode=response.status_code)
+            else:
+                raise RemoteError(msg, statuscode=response.status_code)
+        if response.text:
+            return response.json()
+        else:
+            return None
+
+    def exists(self, id):
+        url = os.path.join(self._baseurl, str(id))
+        result = requests.head(url)
+        try:
+            self._parse_response(result)
+            return True
+        except NotFound:
+            return False
 
     def update(self, obj):
         if isinstance(obj, self._objclass):
@@ -111,18 +154,18 @@ class ObjectClient(object):
         url = os.path.join(self._baseurl, str(obj['_pk']))
         headers = {'If-Match': obj['_etag']}
         clean(obj)
-        return requests.put(url, json=obj, headers=headers).json()
+        return self._parse_response(requests.put(url, json=obj, headers=headers))
 
     def list(self):
         query = {'projection': '{"guid": 1}'}
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
-        results = requests.get(url).json()
+        results = self._parse_response(requests.get(url))
         return [ x['guid'] for x in results['_items'] ]
 
     def search(self, query):
         query = {'where': json.dumps(query)}
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
-        results = requests.get(url).json()
+        results = self._parse_response(requests.get(url))
         return [ self._objclass(**x) for x in results['_items'] ]
 
 

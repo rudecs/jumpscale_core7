@@ -81,6 +81,7 @@ def prepare_sqlapp(namespace, models):
     db = j.system.fs.joinPaths(dbdir, '%s.sqlite' % namespace)
     my_settings['SQLALCHEMY_DATABASE_URI'] = "sqlite:///%s" %db
     my_settings['SQLALCHEMY_ECHO'] = True
+    my_settings['IF_MATCH'] = False
     my_settings['SQLALCHEMY_RECORD_QUERIES'] = True
     my_settings['DOMAIN'] = osis2sqlalchemy.generateDomain(namespace, models)
     app = Eve(validator=ValidatorSQL, data=SQL, settings=my_settings)

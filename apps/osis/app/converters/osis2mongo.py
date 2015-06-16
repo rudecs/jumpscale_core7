@@ -19,7 +19,7 @@ def generateDomain(spec):
 
 def generateModel(modelspec):
     schema = dict()
-    model = {'item_url': 'regex("[\w\_]+")',
+    model = {'item_url': 'regex(".*")',
             'item_lookup_field': 'guid',
             'item_methods': ['GET', 'PATCH', 'PUT', 'DELETE'], 
             'resource_methods': ['GET', 'POST', 'DELETE'], 
@@ -29,7 +29,7 @@ def generateModel(modelspec):
     schema['guid'] = prop
     
     for propspec in modelspec.properties:
-        prop = dict()
+        prop = {'nullable': True}
         schema[propspec.name] = prop
         ttype=propspec.type
         default=propspec.default
