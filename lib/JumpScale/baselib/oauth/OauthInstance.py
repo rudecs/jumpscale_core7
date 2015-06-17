@@ -35,12 +35,7 @@ class OauthInstance():
 
     @property
     def url(self):
-        params = {'client_id' : self.id, 'redirect_uri' : self.redirect_url, 'state' : self.state}
+        params = {'client_id' : self.id, 'redirect_uri' : self.redirect_url, 'state' : self.state, 'response_type':'code'}
         if self.scope:
             params.update({'scope' : self.scope})
         return '%s?%s' % (self.addr, urllib.urlencode(params))
-    
-    @property
-    def getaccessTokenUrl(self):
-        params = {'client_id' : self.id, 'redirect_uri' : self.redirect_url, 'secret' : self.secret}
-        return '%s?%s' % (self.accesstokenaddress, urllib.urlencode(params))        
