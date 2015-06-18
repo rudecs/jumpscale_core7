@@ -1525,6 +1525,7 @@ export LD_LIBRARY_PATH=$base/bin
 #!/bin/bash
 # set -x
 $ENV
+echo sandbox:$base
 # echo $base/bin/python "$@"
 $base/bin/python "$@"
 """
