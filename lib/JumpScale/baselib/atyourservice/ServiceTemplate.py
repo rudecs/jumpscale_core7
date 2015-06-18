@@ -6,6 +6,7 @@ import JumpScale.baselib.actions
 import JumpScale.baselib.packInCode
 import JumpScale.baselib.remote.cuisine
 from .Service import *
+from .RemoteService import RemoteService
 
 def log(msg, level=1):
     j.logger.log(msg, level=level, category='JSERVICE')
@@ -22,11 +23,13 @@ class ServiceTemplate():
         # TODO, should take in account the domain too
         services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent)
         if len(services)>0:
-            print "service %s__%s__%s already exists" % (self.domain,self.name,instance)
-            print "no creation, just retreive existing service"
+            print "Service %s__%s__%s already exists" % (self.domain,self.name,instance)
+            print "No creation, just retrieve existing service"
             return services[0]
-
-        service = Service(instance=instance, servicetemplate=self, args=args, parent=parent)
+        if parent and parent.name == "node.ssh":
+            service = RemoteService(instance=instance, servicetemplate=self, args=args, parent=parent)
+        else:
+            service = Service(instance=instance, servicetemplate=self, args=args, parent=parent)
         return service
 
     def getInstance(self, instance=None, parent=None):

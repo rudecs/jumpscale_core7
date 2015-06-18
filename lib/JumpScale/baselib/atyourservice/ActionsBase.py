@@ -408,10 +408,9 @@ class ActionsBase():
         on central side only
         execute something in the service instance
         """
-
         node = serviceobj.getProducer('node')
         # TODO should upload to temporary destination firsts
-        node.actions.upload(node, serviceobj.path, serviceobj.path)
+        node.actions.upload(node,serviceobj.path,j.dirs.getHrdDir())
         # execute the action of the child service througth the parent node
         cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --noremote"\
               % (actionname, serviceobj.name, serviceobj.instance)

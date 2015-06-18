@@ -1,6 +1,7 @@
 from JumpScale import j
 from .ServiceTemplate import ServiceTemplate
 from .Service import Service
+from .RemoteService import RemoteService
 import copy
 from .ActionsBase import ActionsBase
 
@@ -156,7 +157,11 @@ class AtYourServiceFactory():
             # create service from templates
             servicetemplates = self.findTemplates(domain=domain, name=name)
             if len(servicetemplates) > 0:
-                service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                # TODO consider a cleaner way
+                if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
+                    service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                else:
+                    service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
                 return service
             elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
                 service = j.atyourservice.loadService(path, parent)
@@ -290,7 +295,10 @@ class AtYourServiceFactory():
         if not j.system.fs.exists(hrdpath) or not j.system.fs.exists(actionspath):
             raise RuntimeError("path doesn't contain service.hrd and actions.py")
 
-        service = Service(path=path)
+        if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
+            service = RemoteService(path=path)
+        else:    
+            service = Service(path=path)
         service.path = path
         service.parent = parent
         service._hrd = j.core.hrd.get(hrdpath, prefixWithName=False)

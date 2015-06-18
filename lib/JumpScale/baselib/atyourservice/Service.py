@@ -84,25 +84,6 @@ def deps(F):  # F is func or method without instance
         return result
     return wrapper
 
-
-def remote(F):  # F is func or method without instance
-    @wraps(F)
-    # class instance in args[0] for method
-    def wrapper(service, *args, **kwargs):
-        if service.noremote is False:
-            try:
-                producer = service.getProducer('node')
-            except:
-                # can't load producer, execute locally
-                return F(service, **kwargs)
-            if producer:
-                if 'cmd' in kwargs:
-                    service.cmd = kwargs['cmd']
-                return service.actions.executeaction(service, actionname=F.func_name)
-        return F(service, **kwargs)
-    return wrapper
-
-
 class Service(object):
 
     def __init__(self, instance="", servicetemplate=None, path="", args=None, parent=None):
@@ -159,6 +140,7 @@ class Service(object):
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
         if self._hrd:
             return self._hrd
+        self._apply()
         if not j.system.fs.exists(hrdpath):
             self._apply()
         else:
@@ -173,8 +155,8 @@ class Service(object):
 
     @property
     def producers(self):
-        if self._producers is None:
-            self._producers = self.hrd.getDictFromPrefix("producer")
+        # Get each time in case updated
+        self._producers = self.hrd.getDictFromPrefix("producer")
         return self._producers
 
     @property
@@ -475,7 +457,6 @@ class Service(object):
             return False
         return service.name == self.name and self.domain == service.domain and self.instance == service.instance
 
-    @remote
     def stop(self, deps=True):
         self.log("stop instance")
         self.actions.stop(self)
@@ -483,7 +464,6 @@ class Service(object):
             self.actions.halt(self)
 
     # @deps
-    @remote
     def build(self, deps=True, processed={}):
         self.log("build instance")
         for dep in self.getDependencies(build=True):
@@ -503,13 +483,11 @@ class Service(object):
                 recipeitem['url'], recipeitem=recipeitem, dest="/opt/build/%s" % name)
             self.actions.build(self)
 
-    @remote
     @deps
     def start(self, deps=True, processed={}):
         self.log("start instance")
         self.actions.start(self)
 
-    @remote
     @deps
     def restart(self, deps=True, processed={}):
         self.stop()
@@ -542,9 +520,8 @@ class Service(object):
 
         return procs
 
-    @remote
     @deps
-    def prepare(self, deps=False, reverse=True, processed={}):
+    def prepare(self, deps=True, reverse=True, processed={}):
         self.log("prepare install for instance")
         for src in self.hrd.getListFromPrefix("service.ubuntu.apt.source"):
             src = src.replace(";", ":")
@@ -574,7 +551,6 @@ class Service(object):
         self.actions.prepare(self)
 
     @deps
-    @remote
     def install(self, start=True, deps=True, reinstall=False, processed={}):
         """
         Install Service.
@@ -745,14 +721,12 @@ class Service(object):
         self.log("publish instance")
         self.actions.publish(self)
 
-    @remote
     @deps
     def package(self, deps=True, processed={}):
         """
         """
         self.actions.package(self)
 
-    @remote
     @deps
     def update(self, deps=True, processed={}):
         """
@@ -775,7 +749,6 @@ class Service(object):
 
         self.restart()
 
-    @remote
     @deps
     def resetstate(self, deps=True, processed={}):
         """
@@ -802,7 +775,6 @@ class Service(object):
         self.actions.removedata(self)
         j.atyourservice.remove(self)
 
-    @remote
     @deps
     def removedata(self, deps=False, processed={}):
         """
@@ -813,7 +785,6 @@ class Service(object):
         self.log("removedata instance")
         self.actions.removedata(self)
 
-    @remote
     @deps
     def execute(self, cmd=None, deps=False, processed={}):
         """
@@ -821,7 +792,6 @@ class Service(object):
         """
         self.actions.execute(self, cmd=self.cmd)
 
-    @remote
     @deps
     def uninstall(self, deps=True, processed={}):
         self.log("uninstall instance")
@@ -849,7 +819,6 @@ class Service(object):
         self.actions.data_export(url, self)
 
     @deps
-    @remote
     def configure(self, deps=True, restart=True, processed={}):
         self.log("configure instance")
         self.actions.configure(self)
