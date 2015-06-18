@@ -11,8 +11,9 @@ if __name__ == "__main__":
     from app import runner
 
     parser = cmdutils.ArgumentParser()
-    parser.add_argument('--port', '-p', type=int, default=5545)
+    parser.add_argument('--instance', '-i', default='main')
     options = parser.parse_args()
+    hrd = j.application.getAppInstanceHRD('ros', options.instance)
 
-    runner.start(basedir, options.port)
+    runner.start(basedir, hrd)
 

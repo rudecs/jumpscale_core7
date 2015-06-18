@@ -21,11 +21,11 @@ def generateModel(modelspec):
     schema = dict()
     model = {'item_url': 'regex(".*")',
             'item_lookup_field': 'guid',
-            'item_methods': ['GET', 'PATCH', 'PUT', 'DELETE'], 
-            'resource_methods': ['GET', 'POST', 'DELETE'], 
+            'item_methods': ['GET', 'PATCH', 'PUT', 'DELETE'],
+            'resource_methods': ['GET', 'POST', 'DELETE'],
             'url': modelspec.name,
             'schema': schema}
-    prop = {'type': 'string', 'default':'', 'required': True}
+    prop = {'type': 'string', 'default':'', 'required': False, 'nullable': True}
     schema['guid'] = prop
     
     for propspec in modelspec.properties:
