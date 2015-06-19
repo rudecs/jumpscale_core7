@@ -15,7 +15,7 @@ roles = []
 log = True
 
 
-def action(node, parent):
+def action(node, parent, masterAddr):
     print "###########################"
     print "# cpu node installation #"
     print "###########################"
@@ -31,6 +31,18 @@ def action(node, parent):
 
     print "cpunode install : start jumpscale installation"
     node.install(deps=True, reinstall=True)
+
+    data = {
+        'instance.remote.port': reversePort,
+        'instance.remote.address': masterAddr,
+        'instance.remote.login': 'root',
+        'instance.local.port': 22,
+        'instance.local.address': 'localhost'
+    }
+    autossh = j.atyourservice.new(name='autossh', instance=node.instance, parent=node, args=data)
+    autossh.consume('node', node.instance)
+    print "cpunode install: install autossh service"
+    autossh.install(deps=True)
     return True
 
 if __name__ == "__main__":
