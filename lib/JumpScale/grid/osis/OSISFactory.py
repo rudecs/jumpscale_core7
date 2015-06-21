@@ -112,9 +112,6 @@ class OSISClientFactory(object):
         if die:
             j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis,"%instance)
 
-    def getEveClient(self, url):
-        return OsisEveClient(url)
-
     def getNamespace(self, namespace, client=None):
         if client==None:
             client = self.getByInstance('main')
