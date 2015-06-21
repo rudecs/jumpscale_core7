@@ -52,11 +52,9 @@ class AysTest(unittest.TestCase):
         with the contents "test"
         """
         p = subprocess.Popen('ays install -n test5', shell=True,  stdout=subprocess.PIPE)
-        # Just read the output -- don't print it as it it's not needed
-        p.stdout.readlines()
+        p.communicate()
         p2 = subprocess.Popen('ays start -n test5', shell=True,  stdout=subprocess.PIPE)
-        # Just read the output -- don't print it as it it's not needed
-        p2.stdout.readlines()
+        p2.communicate()
         
         self.assertTrue(os.path.exists('/tmp/test'), 'test5 package failed to start')
         self.assertEquals(open('/tmp/test').read(), 'test\n')
@@ -68,11 +66,8 @@ class AysTest(unittest.TestCase):
         this should be available after installation
         """
         p = subprocess.Popen('ays install -n test6', shell=True,  stdout=subprocess.PIPE)
-        # Just read the output -- don't print it as it it's not needed
-        p.stdout.readlines()
-        
+        p.communicate()
         entry = open('/opt/jumpscale7/hrd/apps/jumpscale__test6__main/service.hrd').readlines()[0]
-        # remove white s[paces
         entry = entry.replace(' ', '')
         self.assertEquals(entry, "instance.param.test='test'\n")
 
@@ -82,11 +77,9 @@ class AysTest(unittest.TestCase):
         with the contents "stop"
         """
         p = subprocess.Popen('ays install -n test7', shell=True,  stdout=subprocess.PIPE)
-        # Just read the output -- don't print it as it it's not needed
-        p.stdout.readlines()
+        p.communicate()
         p2 = subprocess.Popen('ays stop -n test7', shell=True,  stdout=subprocess.PIPE)
-        # Just read the output -- don't print it as it it's not needed
-        p2.stdout.readlines()
+        p2.communicate()
         self.assertTrue(os.path.exists('/tmp/test_stop'), 'test7 package failed to stop')
         self.assertEquals(open('/tmp/test_stop').read(), 'stop\n')
         
@@ -97,10 +90,7 @@ class AysTest(unittest.TestCase):
         and that binaries are doenloaded properly.
         """
         p = subprocess.Popen('ays install -n test_simple_webserver', shell=True,  stdout=subprocess.PIPE)
-        # Just read the output -- don't print it as it it's not needed
-        p.stdout.readlines()
-        
-        time.sleep(0.5)
+        p.communicate()
         
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex(('127.0.0.1',9345))
@@ -116,10 +106,8 @@ class AysTest(unittest.TestCase):
         
         # Stopping package
         p = subprocess.Popen('ays stop -n test_simple_webserver', shell=True,  stdout=subprocess.PIPE)
-        # Just read the output -- don't print it as it it's not needed
-        p.stdout.readlines()
+        p.communicate()
         
-        time.sleep(0.5)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex(('127.0.0.1',9345))
         #Test port closed
