@@ -24,7 +24,7 @@ def action(node, parent, masterAddr):
     reversePort = node.hrd.get('instance.ssh.port')
 
     print "cpunode install : wait for ssh connection"
-    if not j.system.net.waitConnectionTest("localhost", reversePort, 60):
+    if not j.system.net.waitConnectionTest("localhost", reversePort, 10):
         # timeout of the connection
         j.atyourservice.remove(node.domain, node.name, node.instance, node.parent)
         j.events.opserror_critical('connection to the node timeout, abord installation')
