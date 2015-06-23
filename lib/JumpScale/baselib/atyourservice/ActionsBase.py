@@ -421,6 +421,6 @@ class ActionsBase():
             cmd += " --cmd '%s'" % serviceobj.cmd
         node.actions.execute(node, cmd)
 
-        # install can insert new info into HRD, get update files from remote
-        if actionname == 'install':
-            node.actions.download(node, serviceobj.path, serviceobj.path)
+        # # install can insert new info into HRD, get update files from remote
+        # if actionname == 'install':
+        #     node.actions.download(node, serviceobj.path, serviceobj.path)
