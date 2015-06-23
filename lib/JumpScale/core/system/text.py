@@ -378,7 +378,8 @@ class Text:
         """
         candidates=Text.getMacroCandidates(code)
         for itemfull in candidates:
-            item=itemfull.strip("{{").strip("}}")
+            if "{{" and "}}" in item:
+                item=itemfull.strip("{{").strip("}}")
             try:
                 result=eval(item)
             except Exception as e:
