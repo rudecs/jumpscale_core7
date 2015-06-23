@@ -370,22 +370,22 @@ class Text:
         except Exception as e:
             j.events.inputerror_critical("Could not convert '%s' to basetype, error was %s"%(string,e),"text.str2var")
 
-            
     @staticmethod
     def eval(code):
         """
         look for {{}} in code and evaluate as python result is converted back to str
         """
-        candidates=Text.getMacroCandidates(code)
-        for itemfull in candidates:
-            item=itemfull.strip("{{").strip("}}")
+        candidates = Text.getMacroCandidates(code)
+        for item in candidates:
+            if "{{" and "}}" in item:
+                item = item.strip("{{").strip("}}")
             try:
-                result=eval(item)
+                result = eval(item)
             except Exception as e:
-                raise RuntimeError("Could not execute code in j.tools.text,%s\n%s,Error was:%s"%(item,code,e))
-            result=Text.pythonObjToStr(result,multiline=False).strip()
-            code=code.replace(itemfull,result)
-        return code        
+                raise RuntimeError("Could not execute code in j.tools.text,%s\n%s. Error was:%s" % (item, code, e))
+            result = Text.pythonObjToStr(result, multiline=False).strip()
+            code = code.replace(item, result)
+        return code
 
 
     @staticmethod

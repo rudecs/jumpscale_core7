@@ -333,7 +333,7 @@ class Service(object):
         @param build: Include build dependencies
         @type build: bool
         """
-        res=[]
+        res = []
 
         def sorter(item):
             parts = item[0].split('.')

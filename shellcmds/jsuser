@@ -129,7 +129,7 @@ if opts.action =='add' or opts.action =='set':
             groups=[item["id"] for item in groupclient.simpleSearch({"gid":gid})]
             groups=j.console.askChoiceMultiple(groups,"select groups",True)        
 
-        emails=j.console.askString("comma separated list of emails")
+        emails=j.console.askString("comma separated list of emails").split(',')
 
 
     if opts.action =='add' and userclient.exists("%s_%s"%(j.application.whoAmI.gid,name)):
