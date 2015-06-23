@@ -1,6 +1,7 @@
 from JumpScale import j
 from .ServiceTemplate import ServiceTemplate
 from .Service import Service
+from .RemoteService import RemoteService
 import copy
 from .ActionsBase import ActionsBase
 
@@ -152,15 +153,22 @@ class AtYourServiceFactory():
             # try to load service from instance file is they exists
             hrdpath = j.system.fs.joinPaths(path, "service.hrd")
             actionspath = j.system.fs.joinPaths(path, "actions.py")
-            if j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
+
+            # create service from templates
+            servicetemplates = self.findTemplates(domain=domain, name=name)
+            if len(servicetemplates) > 0:
+                # TODO consider a cleaner way
+                if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
+                    service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                else:
+                    service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                return service
+            elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
                 service = j.atyourservice.loadService(path, parent)
-            else:
-                # create service from templates
-                servicetemplates = self.findTemplates(domain=domain, name=name)
-                if len(servicetemplates) <= 0:
-                    raise RuntimeError("services template %s__%s not found" % (domain ,name))
-                service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
-            return service
+                return service
+
+            raise RuntimeError("cant'find service %s__%s__%s not found" % (domain ,name,instance))
+
 
         targetKey = self.getId(domain, name, instance, parent)
         if targetKey in self._instanceCache:
@@ -287,7 +295,10 @@ class AtYourServiceFactory():
         if not j.system.fs.exists(hrdpath) or not j.system.fs.exists(actionspath):
             raise RuntimeError("path doesn't contain service.hrd and actions.py")
 
-        service = Service()
+        if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
+            service = RemoteService(path=path)
+        else:    
+            service = Service(path=path)
         service.path = path
         service.parent = parent
         service._hrd = j.core.hrd.get(hrdpath, prefixWithName=False)

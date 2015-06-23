@@ -5,10 +5,7 @@ import time
 import JumpScale.grid.osis
 import unittest
 import new
-try:
-    from io import StringIO
-except ImportError:
-    from io import StringIO
+from io import BytesIO
 
 class Tee(object):
     def __init__(self, *fobjs):
@@ -37,8 +34,7 @@ class TestResult(unittest.result.TestResult):
         self._original_stderr = sys.stderr
 
     def startTest(self, test):
-        self.printStatus(test)
-        buffer = StringIO()
+        buffer = BytesIO()
         self.tests[test] = buffer
         if self._debug:
             sys.stdout = Tee(self._original_stdout, buffer)
@@ -79,7 +75,7 @@ class TestResult(unittest.result.TestResult):
 
     def addSuccess(self, test):
         self._restore()
-        self.printStatus(test, "\\u2713")
+        self.printStatus(test, u"\u2713")
 
     def stopTest(self, test):
         self._restore()
@@ -213,11 +209,12 @@ class TestEngine():
             testdb = FakeTestObj() 
         else:
             testdb=self.osis.new()
+
         name=j.system.fs.getBaseName(filepath).replace("__test.py","").lower()
         testmod = imp.load_source(name, filepath)
         self._patchTest(testmod)
 
-        if not testmod.enable:
+        if not hasattr(testmod, 'enable') or not testmod.enable:
             return
 
         test=Test(testdb,testmod)
