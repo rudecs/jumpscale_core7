@@ -336,8 +336,7 @@ class HRD(HRDBase):
         for hrdtemplate in templates:
 
             for key in list(hrdtemplate.items.keys()):
-
-                key2=prefix+key
+                key2 = (prefix+key).lower()
                 if key2 in self.args:
                     #means key does already exist in HRD arguments, will use that value
                     hrdtemplateitem=hrdtemplate.items[key]
