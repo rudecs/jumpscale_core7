@@ -34,6 +34,18 @@ STATUS_AUTH_REQ = set([HTTP_AUTH_REQUIRED, HTTP_FORBIDDEN])
 
 AUTHORIZATION_HEADER = 'Authorization'
 
+class HTTPError(Exception):
+    def __init__(self, httperror, url):
+        msg = 'Could not open http connection to url %s' % url
+        data = ''
+        self.status_code = None
+        if isinstance(httperror, urllib2.HTTPError):
+            msg = data = httperror.read()
+            self.status_code = httperror.code
+        self.msg = msg
+        self.data = data
+        self.httperror = httperror
+
 class Connection(object):
     
     def __init__(self):
@@ -154,11 +166,7 @@ class Connection(object):
             resp = urllib2.urlopen(request)
         except Exception as e:
             print(e)
-            if isinstance(e, urllib2.HTTPError):
-                msg = "%s" % e.read()
-            else:
-                msg = ""
-            raise Exception('Could not open http connection to url %s\nError:%s, %s'% (url,e, msg))
+            raise HTTPError(e, url)
         
         #if resp.code in STATUS_AUTH_REQ: raise AuthorizationError('Not logged in or token expired')
         if resp.code not in (STATUS_OK):
