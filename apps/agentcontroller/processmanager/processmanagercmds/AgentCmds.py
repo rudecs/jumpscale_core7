@@ -2,14 +2,15 @@ from JumpScale import j
 import JumpScale.grid.agentcontroller
 import JumpScale.baselib.redisworker
 import gevent
+from gevent import Timeout
 from JumpScale.grid.serverbase import returnCodes
-import time
 
 class AgentCmds():
     ORDER = 20
 
     def __init__(self,daemon=None):
         self._name="agent"
+        self._timeout = Timeout(65)
 
         if daemon==None:
             return
@@ -56,21 +57,24 @@ class AgentCmds():
             try:
                 try:
                     self.log("check if work")
-                    job=client.getWork()
-                    if job<>None:
-                        self.log("WORK FOUND: jobid:%s"%job["id"])
+                    self._timeout.start()
+                    job = client.getWork()
+                    if job is not None:
+                        self.log("WORK FOUND: jobid:%s" % job["id"])
                     else:
                         continue
-                except Exception,e:
+                except Exception, e:
                     j.errorconditionhandler.processPythonExceptionObject(e)
                     client = self.reconnect(acip, config)
                     continue
+                finally:
+                    self._timeout.cancel()
 
                 job['achost'] = client.ipaddr
                 job['nid'] = j.application.whoAmI.nid
                 if job["queue"]=="internal":
                     #cmd needs to be executed internally (is for proxy functionality)
-                   
+
                     if self.daemon.cmdsInterfaces.has_key(job["category"]):
                         job["resultcode"],returnformat,job["result"]=self.daemon.processRPC(job["cmd"], data=job["args"], returnformat="m", session=None, category=job["category"])
                         if job["resultcode"]==returnCodes.OK:
@@ -150,7 +154,3 @@ class AgentCmds():
         if j.basetype.float.fromString(size) < maxsize:
             return True
         return False
-
-
-
-
