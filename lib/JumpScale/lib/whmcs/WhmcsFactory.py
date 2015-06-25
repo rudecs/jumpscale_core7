@@ -9,13 +9,15 @@ from JumpScale import j
 from JumpScale.core.baseclasses import BaseEnumeration
 from .WhmcsInstance import WhmcsInstance
 
-class DummyWhmcs(object):
-    class Dummy(object):
-        def __getattribute__(self, attr, *args, **kwargs):
+class Dummy(object):
+    def __getattribute__(self, attr, *args, **kwargs):
+        def dummyFunction(*args, **kwargs):
             pass
-        def __setattribute__(self, attr, val):
-            pass
+        return dummyFunction
+    def __setattribute__(self, attr, val):
+        pass
 
+class DummyWhmcs(object):
     def __init__(self):
         self.tickets = Dummy()
         self.orders = Dummy()
