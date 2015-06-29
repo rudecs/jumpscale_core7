@@ -1,19 +1,27 @@
 from JumpScale import j
 import requests, base64, phpserialize
-from .settings import authenticationparams, WHMCS_API_ENDPOINT, OPERATIONS_USER_ID, MOTHERSHIP1_OPERATIONS_DEPARTMENT_ID
 import json
 import xml.etree.cElementTree as et
 
+SSL_VERIFY = False
 
 class whmcstickets():
-    def __init__(self):
-        pass
+    def __init__(self,
+                 authenticationparams,
+                 url,
+                 operations_user_id,
+                 operations_department_id):
+        
+        self._authenticationparams = authenticationparams
+        self._url = url
+        self._operations_user_id = operations_user_id
+        self._operations_department_id = operations_department_id
 
     def _call_whmcs_api(self, requestparams):
         actualrequestparams = dict()
         actualrequestparams.update(requestparams)
-        actualrequestparams.update(authenticationparams)
-        response = requests.post(WHMCS_API_ENDPOINT, data=actualrequestparams)
+        actualrequestparams.update(self._authenticationparams)
+        response = requests.post(self._url, data=actualrequestparams, verify=SSL_VERIFY)
         return response
 
     def list_deps(self):        
@@ -22,7 +30,10 @@ class whmcstickets():
         result = dict((attr.tag, attr.text) for attr in et.fromstring(response.content))
         return result
 
-    def create_ticket(self, subject, message, priority, clientid=OPERATIONS_USER_ID, deptid=MOTHERSHIP1_OPERATIONS_DEPARTMENT_ID):
+    def create_ticket(self, subject, message, priority, clientid='', deptid=''):
+        clientid = clientid or self._operations_user_id
+        deptid = deptid or self._operations_department_id
+        
         print(('Creating %s' % subject))
         create_ticket_request_params = dict(
 
@@ -45,7 +56,10 @@ class whmcstickets():
         return ticketid
 
 
-    def update_ticket(self, ticketid, subject=None, priority=None, status=None, email=None, cc=None, flag=None, userid=OPERATIONS_USER_ID, deptid=MOTHERSHIP1_OPERATIONS_DEPARTMENT_ID):
+    def update_ticket(self, ticketid, subject=None, priority=None, status=None, email=None, cc=None, flag=None, userid='', deptid=''):
+        clientid = clientid or self._operations_user_id
+        deptid = deptid or self._operations_department_id
+
         print(('Updating %s' % ticketid))
         ticket_request_params = dict()
 

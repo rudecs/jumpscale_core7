@@ -1,18 +1,9 @@
 from JumpScale import j
 
-def whmcsorders():
-    from .whmcsorders import whmcsorders
-    return whmcstickets()
+def cb():
+    from .WhmcsFactory import WhmcsFactory
+    return WhmcsFactory()
 
-def whmcsusers():
-    from .whmcsusers import whmcsusers
-    return whmcsusers()
+j.base.loader.makeAvailable(j, 'clients')
+j.clients._register('whmcs', cb)
 
-def whmcstickets():
-    from .whmcstickets import whmcstickets
-    return whmcstickets()
-
-j.base.loader.makeAvailable(j, 'tools.whmcs')
-j.tools.whmcs._register('orders', whmcsorders)
-j.tools.whmcs._register('tickets', whmcstickets)
-j.tools.whmcs._register('users', whmcsusers)
