@@ -79,6 +79,7 @@ class NFS(object):
                     continue
 
                 line = ' '.join(lineparts)
+                lineparts = []
 
                 match = EXPORT_OPT_REGEXT.match(line)
                 if not match:
