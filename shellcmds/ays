@@ -247,7 +247,10 @@ elif args.action == 'restart':
         filterRemote = True
     services = getServices(args)
     for service in services:
-        service.restart(deps=args.deps)
+        try:
+            service.restart(deps=args.deps)
+        except:
+            continue
 
 elif args.action == 'start':
     filterRemote = False
@@ -255,7 +258,10 @@ elif args.action == 'start':
         filterRemote = True
     services = getServices(args,filterRemote=filterRemote)
     for service in sorted(services, cmp=sorter):
-        service.start(deps=args.deps)
+        try:
+            service.start(deps=args.deps)
+        except:
+            continue
 
 elif args.action == 'stop':
     filterRemote = False
@@ -263,7 +269,10 @@ elif args.action == 'stop':
         filterRemote = True
     services = getServices(args)
     for service in sorted(services, cmp=sorter):
-        service.stop(deps=args.deps)
+        try:
+            service.stop(deps=args.deps)
+        except:
+            continue
 
 elif args.action == 'execute':
     services = getServices(args)

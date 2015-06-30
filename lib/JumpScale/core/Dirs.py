@@ -103,6 +103,7 @@ class Dirs(object):
         txt=txt.replace("$jslibextdir",self.libExtDir)
         txt=txt.replace("$jsbindir",self.binDir)
         txt=txt.replace("$nodeid",str(j.application.whoAmI.nid))
+        txt=txt.replace("$jumpscriptsdir", j.core.jumpscripts.basedir)
         for key,value in additionalArgs.items():
             txt=txt.replace("$%s"%key,str(value))
         return txt
@@ -125,8 +126,6 @@ class Dirs(object):
 
     @property
     def hrdDir(self):
-        if self._hrdDir!=None:
-            return self._hrdDir
         if self.amInGitConfigRepo()!=None:
             self._hrdDir="%s/services/"%(self.amInGitConfigRepo())
         else:

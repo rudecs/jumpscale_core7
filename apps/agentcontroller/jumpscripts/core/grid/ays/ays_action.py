@@ -17,14 +17,14 @@ def action(domain, sname, instance, action):
     if services:
         service = services[0]
     else:
-        return "%s on %s failed" % (action, sname)
+        return "%s of %s failed" % (action, sname)
 
-    message = "%s on %s successful" % (action, sname)
+    message = "%s of %s successful" % (action, sname)
 
     if action == 'update':
         service.install()
     elif hasattr(service, action):
         getattr(service, action)()
     else:
-        message = "%s on %s failed" % (action, sname)
+        message = "%s of %s failed" % (action, sname)
     return message

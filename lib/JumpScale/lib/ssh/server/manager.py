@@ -12,7 +12,9 @@ class SSHError(Exception):
 
 
 class SSHFactory(object):
-    def get(self, con):
+    def get(self, con=None):
+        if con==None:
+            con=j.ssh.connection
         return SSH(con)
 
 

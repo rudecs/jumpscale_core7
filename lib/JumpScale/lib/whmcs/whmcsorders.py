@@ -1,17 +1,18 @@
 import requests
 import hashlib, base64, phpserialize
 
-from .settings import authenticationparams, WHMCS_API_ENDPOINT
+SSL_VERIFY = False
 
 class whmcsorders():
-    def __init__(self):
-        pass
+    def __init__(self, authenticationparams, url):
+        self._authenticationparams = authenticationparams
+        self._url = url
 
     def _call_whmcs_api(self, requestparams):
         actualrequestparams = dict()
         actualrequestparams.update(requestparams)
-        actualrequestparams.update(authenticationparams)
-        response = requests.post(WHMCS_API_ENDPOINT, data=actualrequestparams)
+        actualrequestparams.update(self._authenticationparams)
+        response = requests.post(self._url, data=actualrequestparams, verify=SSL_VERIFY)
         return response
 
     def add_order(self, userId, productId, name, cloudbrokerId, status='Active'):

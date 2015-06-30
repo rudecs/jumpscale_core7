@@ -36,7 +36,14 @@ def nfs():
     from .nfs import manager
     return manager.NFSFactory()
 
+
+def connect(addr="localhost",port=22,passwd=None):
+    j.ssh.connection=j.remote.cuisine.connect(addr,port=22,passwd=passwd)
+    return j.ssh.connection
+
 j.base.loader.makeAvailable(j, 'ssh')
+
+j.ssh.connect=connect
 
 j.ssh._register('disklayout', disklayout)
 j.ssh._register('openwrt', openwrt)

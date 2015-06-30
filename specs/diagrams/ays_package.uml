@@ -1,0 +1,16 @@
+@startuml
+title atyourservice package
+package "atyourservice" #DDDDDD{
+    Object <|-- AtYourServiceFactory
+    Object <|-- Service
+    Object <|-- ServiceTemplate
+    Object <|-- ActionBase
+    
+    AtYourServiceFactory : + Service[] findServices(domain, name, instance. parent)
+    AtYourServiceFactory : + ServiceTemplates[] findTemplates(domain, name)
+    AtYourServiceFactory : + Service new(domain, name. instance, parent, hrddata)
+    AtYourServiceFactory : + Service load(path)
+    
+    Service : + __init__(template, instance, hrddata, path, parent)
+}
+@enduml
