@@ -2,7 +2,7 @@ from JumpScale import j
 from .ServiceTemplate import ServiceTemplate
 from .Service import Service
 from .RemoteService import RemoteService
-import copy
+import re
 from .ActionsBase import ActionsBase
 
 class AtYourServiceFactory():
@@ -96,13 +96,13 @@ class AtYourServiceFactory():
     def getId(self, domain, name, instance, parent=None):
         str_parent = "none"
         if parent is not None:
-            if not isinstance(parent, Service):
-                j.events.opserror_critical("parent should be of type JumpScale.baselib.atyourservice.Service.Service\nit's %s" % type(parent))
+            # if not isinstance(parent, Service):
+            #     j.events.opserror_critical("parent should be of type JumpScale.baselib.atyourservice.Service.Service\nit's %s" % type(parent))
             str_parent = str(parent).replace('  ', '')
 
         return "%s__%s__%s__%s" % (domain, name, instance, str_parent)
 
-    def findTemplates(self, domain="", name=""):
+    def findTemplates(self, domain="", name="", parent=None):
         key = "%s__%s" % (domain, name)
         if key in self._templateCache:
             return self._templateCache[key]
@@ -123,7 +123,7 @@ class AtYourServiceFactory():
 
         res = []
         for domainfound in sorted(self.domains.keys(), cmp=sorter):
-            for path in j.system.fs.listDirsInDir(path=self.domains[domainfound], recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
+            for path in j.system.fs.walk(self.domains[domainfound], recurse=1, return_folders=1, return_files=0, followSoftlinks=True):
                 namefound = j.system.fs.getBaseName(path)
 
                 if path.find("/.git") != -1:
@@ -135,17 +135,17 @@ class AtYourServiceFactory():
                     continue
                 if name != '' and name != namefound:
                     continue
-		if namefound not in res:
+                if namefound not in res:
                     res.append((domainfound, namefound, path))
 
         finalRes = []
         for domain, name, path in res:
-            finalRes.append(ServiceTemplate(domain, name, path))
+            finalRes.append(ServiceTemplate(domain, name, path, parent))
 
         self._templateCache[key] = finalRes
         return finalRes
 
-    def findServices(self, domain="", name="", instance="", parent=None):
+    def findServices(self, domain="", name="", instance="", parent=None, precise=False):
         """
         FindServices looks for actual services that are created
         """
@@ -167,9 +167,27 @@ class AtYourServiceFactory():
                 service = j.atyourservice.loadService(path, parent)
                 return service
 
-            raise RuntimeError("cant'find service %s__%s__%s not found" % (domain ,name,instance))
+            raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
 
 
+        # if parent and isinstance(parent, basestring):
+        #     parent = parent.split('__')
+        #     parents = [parent[x:x+3] for x in range(0, len(parent), 3)] #[(ss[0], ss[1], ss[2])]
+        #     import ipdb;ipdb.set_trace()
+        #     pdomain, pname, pinstance = parents[-1]
+        #     parent = self.findServices(pdomain, pname, pinstance, parent='')
+        #     parent = parent[0] if parent else None
+        
+        parentregex = ''
+        if parent and isinstance(parent, Service):
+            parentregex = '%s__%s__%s' % (parent.domain, parent.name, parent.instance)
+        elif parent and isinstance(parent, basestring):
+            parentregex = parent
+            # get only last parent
+            pdomain, pname, pinstance = parent.rsplit('__', 3)[-3:]
+            parent = self.findServices(pdomain, pname, pinstance, parent='', precise=precise)
+            parent = parent[0] if parent else None
+        
         targetKey = self.getId(domain, name, instance, parent)
         if targetKey in self._instanceCache:
             return [self._instanceCache[targetKey]]
@@ -177,37 +195,19 @@ class AtYourServiceFactory():
         self._doinit()
 
         res = []
-        for path in j.system.fs.listDirsInDir(j.dirs.hrdDir, recursive=True, dirNameOnly=False, findDirectorySymlinks=True):
-            namefound = j.system.fs.getBaseName(path)
-            parentDir = j.system.fs.getBaseName(j.system.fs.getParent(path))
+        candidates = j.system.fs.walk(j.dirs.hrdDir, recurse=1, pattern='*__*__*', return_folders=1, return_files=0, followSoftlinks=True)
+        serviceregex = "%s__%s__%s" % (domain, name, instance)
+        serviceregex = serviceregex.replace('____', '__')
+        preciseregex = '.*' if not precise else '.'
 
-            # if the directory name has not the good format, skip it
-            if namefound.find("__") == -1:
-                continue
-            domainfoud, namefound, instancefound = namefound.split("__", 2)
-
-            if parentDir.find("__") == -1:
-                parentDomain = ""
-                parentName = ""
-                parentInstance = ""
-            else:
-                parentDomain, parentName, parentInstance = parentDir.split("__", 2)
-
-            service = None
-            if instance != "" and instancefound != instance:
-                continue
-            if name != "" and namefound != name:
-                continue
-            if parent is not None and parentInstance != parent.instance:
-                continue
-
+        servicekey = '.*%s%s%s$' % (parentregex, preciseregex, serviceregex)
+        regex = re.compile(servicekey)
+        matched = [m.string for path in candidates for m in [regex.search(path)] if m]
+        for path in matched:
+            domainfoud, namefound, instancefound = j.system.fs.getBaseName(path).split('__')
             service = createService(domainfoud, namefound, instancefound, path, parent)
-            if service is not None:
-                res.append(service)
-
-        if name != "" and instance != "":
-            for service in res:
-                self._instanceCache[service.id] = service
+            res.append(service)
+            self._instanceCache[service.id] = service
 
         return res
 
@@ -259,7 +259,7 @@ class AtYourServiceFactory():
             if id in self._instanceCache:
                 del(self._instanceCache[id])
 
-    def get(self, domain="", name="", instance="", parent=None):
+    def get(self, domain="", name="", instance="", parent=None, precise=False):
         """
         Return service indentifier by domain,name and instance
         throw error if service is not found or if more than one service is found
@@ -272,10 +272,9 @@ class AtYourServiceFactory():
                 return services
             else:
                 services = None
-
         if services is None:
             self._doinit()
-            services = self.findServices(domain=domain, name=name, instance=instance, parent=parent)
+            services = self.findServices(domain=domain, name=name, instance=instance, parent=parent, precise=precise)
 
         if len(services) == 0:
             raise RuntimeError("cannot find service %s__%s__%s" % (domain, name, instance))
