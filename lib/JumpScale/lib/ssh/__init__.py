@@ -1,9 +1,11 @@
 
 from JumpScale import j
 
+
 def ubuntu():
     from .ubuntu import manager
     return manager.UbuntuManagerFactory()
+
 
 def disklayout():
     from .disklayout import manager
@@ -29,6 +31,12 @@ def server():
     from .server import manager
     return manager.SSHFactory()
 
+
+def nfs():
+    from .nfs import manager
+    return manager.NFSFactory()
+
+
 def connect(addr="localhost",port=22,passwd=None):
     j.ssh.connection=j.remote.cuisine.connect(addr,port=22,passwd=passwd)
     return j.ssh.connection
@@ -43,3 +51,4 @@ j.ssh._register('nginx', nginx)
 j.ssh._register('ufw', ufw)
 j.ssh._register('ubuntu', ubuntu)
 j.ssh._register('server', server)
+j.ssh._register('nfs', nfs)
