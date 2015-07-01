@@ -13,15 +13,16 @@ def log(msg, level=1):
 
 class ServiceTemplate():
 
-    def __init__(self,domain,name,path):
-        self.name=name
-        self.domain=domain
-        self.hrd=None
-        self.metapath=path
+    def __init__(self, domain, name, path, parent):
+        self.name = name
+        self.domain = domain
+        self.hrd = None
+        self.parent = parent
+        self.metapath = path
 
-    def newInstance(self,instance="main", args={}, hrddata={}, parent=None):
+    def newInstance(self,instance="main", args={}, hrddata={}, parent=None, precise=False):
         # TODO, should take in account the domain too
-        services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent)
+        services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent, precise=precise)
         if len(services)>0:
             print "Service %s__%s__%s already exists" % (self.domain,self.name,instance)
             print "No creation, just retrieve existing service"
@@ -79,7 +80,7 @@ class ServiceTemplate():
         parent    -- optional service which is mother e.g. install an app in a node.
         """
 
-        service = self.newInstance(instance=instance, args=args, parent=parent)
+        service = self.newInstance(instance=instance, args=args, parent=parent, precise=True)
         service.noremote = noremote
         service.install(start=start, deps=deps, reinstall=reinstall)
 
