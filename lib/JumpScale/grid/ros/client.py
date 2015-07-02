@@ -68,14 +68,14 @@ class NameSpaceClient(object):
     def _load_namespace(self):
         specurl = os.path.join(self._baseurl, 'docs', 'spec.json')
         api = requests.get(specurl).json()
-        for domainname, domain in api['domains'].iteritems():
+        
+        for domainname in [tag['name'] for tag in api['tags']]:
             params = ['_etag', '_pk']
-            domainparams = domain['/%s' % domainname]['POST']['params']
+            domainparams = api['paths']['/%s' % domainname]['post']['parameters']
             for param in domainparams:
                 params.append(param['name'])
             objecturl = os.path.join(self._baseurl, domainname)
             setattr(self, domainname, ObjectClient(objecturl, Struct(*params, _name=str(domainname))))
-        pass
 
 def clean(obj):
     for prop in obj.keys():

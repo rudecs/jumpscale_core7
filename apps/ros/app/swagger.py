@@ -41,7 +41,7 @@ def expose_docs(app, static_path):
                                   'object': { "type": "object", "additionalProperties": {"type": "string"}}}
         cfg = copy.deepcopy(get_cfg())
         for modelname, model in cfg['domains'].iteritems():
-            catalog['tags'].append({'name': model, 'description': modelname})
+            catalog['tags'].append({'name': modelname, 'description': modelname})
             for path, pathmethods in model.iteritems():
                 newpathmethods = {}
                 for k, v in pathmethods.iteritems():
