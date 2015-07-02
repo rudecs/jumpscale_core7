@@ -64,20 +64,15 @@ def deps(F):  # F is func or method without instance
         reverse = kwargs.get('reverse', False)
         processed = kwargs.get('processed', {})
         if deps:
-            # j.atyourservice._justinstalled=[]
             packagechain = service.getDependencyChain()
             packagechain.append(service)
-            # packagechain.reverse()
             processed[F.func_name] = packagechain
             if reverse:
                 packagechain.reverse()
             for dep in packagechain:
-                # j.atyourservice._justinstalled:
                 if dep in processed.get(F.func_name):
                     dep.args = service.args
-                    result = processresult(
-                        result, F(dep, *args, deps=False, **kwargs))
-                    # processed[F.func_name].remove(dep)
+                    result = processresult(result, F(dep, *args, deps=False, **kwargs))
         else:
             result = processresult(
                 result, F(service, *args, deps=False, **kwargs))
@@ -388,15 +383,12 @@ class Service(object):
                 instance = item["instance"].strip()
             if instance == "":
                 instance = "main"
-
-            services = j.atyourservice.findServices(
-                name=name, instance=instance, parent=self.parent)
+            services = j.atyourservice.findServices(name=name, instance=instance, parent=self.parent, precise=True)
             if len(services) > 0:
                 service = services[0]
             else:
                 print "Dependecy %s_%s_%s not found, creating ..." % (domain, name, instance)
-                service = j.atyourservice.new(
-                    domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
+                service = j.atyourservice.new(domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
                 if self.noremote is False and len(self.producers):
                     for cat, prod in self.producers.iteritems():
                         service.init()

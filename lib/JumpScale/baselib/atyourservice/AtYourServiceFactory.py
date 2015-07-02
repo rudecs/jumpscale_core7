@@ -168,15 +168,6 @@ class AtYourServiceFactory():
                 return service
 
             raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
-
-
-        # if parent and isinstance(parent, basestring):
-        #     parent = parent.split('__')
-        #     parents = [parent[x:x+3] for x in range(0, len(parent), 3)] #[(ss[0], ss[1], ss[2])]
-        #     import ipdb;ipdb.set_trace()
-        #     pdomain, pname, pinstance = parents[-1]
-        #     parent = self.findServices(pdomain, pname, pinstance, parent='')
-        #     parent = parent[0] if parent else None
         
         parentregex = ''
         if parent and isinstance(parent, Service):
@@ -196,13 +187,15 @@ class AtYourServiceFactory():
 
         res = []
         candidates = j.system.fs.walk(j.dirs.hrdDir, recurse=1, pattern='*__*__*', return_folders=1, return_files=0, followSoftlinks=True)
-        serviceregex = "%s__%s__%s" % (domain, name, instance)
-        serviceregex = serviceregex.replace('____', '__')
+        serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9]*',
+                                        name if name.strip() else '[a-zA-Z0-9]*',
+                                        instance if instance.strip() else '[a-zA-Z0-9]*')
         preciseregex = '.*' if not precise else '.'
 
         servicekey = '.*%s%s%s$' % (parentregex, preciseregex, serviceregex)
         regex = re.compile(servicekey)
         matched = [m.string for path in candidates for m in [regex.search(path)] if m]
+
         for path in matched:
             domainfoud, namefound, instancefound = j.system.fs.getBaseName(path).split('__')
             service = createService(domainfoud, namefound, instancefound, path, parent)
@@ -248,7 +241,7 @@ class AtYourServiceFactory():
 
         if len(serviceTmpls) == 0:
             raise RuntimeError("cannot find service template %s__%s" % (domain, name))
-        obj = serviceTmpls[0].newInstance(instance, parent=parent, args=args)
+        obj = serviceTmpls[0].newInstance(instance, parent=parent, args=args, precise=True)
         return obj
 
     def remove(self, domain="", name="", instance="", parent=None):
