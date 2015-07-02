@@ -109,10 +109,9 @@ def prepare_sqlapp(namespace, models, sqluri):
 def start(basedir, hrd):
     port = hrd.getInt('instance.param.port')
     mongdb_instance = hrd.get('instance.param.mongodb.connection', '')
-    autoreload = True if hrd.get('instance.param.autoreload', '').lower() == "yes" else False
     sqluri = hrd.get('instance.param.sqlalchemy.uri', '')
-    use_reloader = True if hrd.get('instance.param.eve.use_reloader', '').lower() == 'yes' else False
-    use_debugger = True if hrd.get('instance.param.eve.use_debugger', '').lower() == 'yes' else False
+    use_reloader = hrd.getBool('instance.param.use_reloader')
+    use_debugger = hrd.getBool('instance.param.use_debugger')
 
     if mongdb_instance:
         mongohrd = j.application.getAppInstanceHRD('mongodb_client', mongdb_instance) 
