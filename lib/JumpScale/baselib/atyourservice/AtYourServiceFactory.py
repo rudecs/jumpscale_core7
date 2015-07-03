@@ -187,9 +187,9 @@ class AtYourServiceFactory():
 
         res = []
         candidates = j.system.fs.walk(j.dirs.hrdDir, recurse=1, pattern='*__*__*', return_folders=1, return_files=0, followSoftlinks=True)
-        serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9]*',
-                                        name if name.strip() else '[a-zA-Z0-9]*',
-                                        instance if instance.strip() else '[a-zA-Z0-9]*')
+        serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9_\.]*',
+                                        name if name.strip() else '[a-zA-Z0-9_\.]*',
+                                        instance if instance.strip() else '[a-zA-Z0-9_\.]*')
         preciseregex = '.*' if not precise else '.'
 
         servicekey = '.*%s%s%s$' % (parentregex, preciseregex, serviceregex)
