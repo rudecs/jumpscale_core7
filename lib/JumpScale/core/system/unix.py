@@ -342,7 +342,7 @@ class UnixSystem:
         @param shell: Optional param to specify the shell of the user
         @type username: string
         '''
-        
+
         if not j.system.unix.unixUserExists(username):
             j.logger.log(
                 "User [%s] does not exist, creating an entry" % username, 5)
@@ -375,21 +375,35 @@ class UnixSystem:
 
     def addSystemGroup(self, groupname):
         ''' Add a group to the system
-        
+
         Note: you should be root to run this python command.
-        
+
         @param groupname: Name of the group to add
         @type groupname : string
         '''
         if not j.system.unix.unixGroupExists(groupname):
             j.logger.log("Group [%s] does not exist, creating an entry" %groupname, 5)
             exitCode, stdout, stderr = j.system.process.run("groupadd %s" %groupname, stopOnError=False)
-            
+
             if exitCode:
                 output = '\n'.join(('Stdout:', stdout, 'Stderr:', stderr, ))
                 raise RuntimeError('Failed to add group %s, error: %s' %(groupname,output))
         else:
             j.logger.log("Group %s already exists" % groupname, 4)
+
+    def addUserToGroup(self, username, groupname):
+        assert j.system.unix.unixUserExists(username), \
+            '"%s" user does not exist' % username
+
+        assert j.system.unix.unixGroupExists(groupname), \
+            '"%s" group does not exist"' % groupname
+
+        j.system.process.execute(
+            'gpasswd -a {username} {groupname}'.format(
+                username=username,
+                groupname=groupname
+            )
+        )
 
     def unixUserExists(self, username):
         """Checks if a given user already exists in the system
@@ -399,7 +413,7 @@ class UnixSystem:
 
         @returns: Whether the user exists
         @rtype: bool
-        """ 
+        """
         try:
             pwd.getpwnam(username)
         except KeyError:
@@ -420,7 +434,7 @@ class UnixSystem:
         except KeyError:
             return False
         return True
-    
+
     def disableUnixUser(self,username):
         """Disables a given unix user
 
@@ -456,7 +470,7 @@ class UnixSystem:
                 output = '\n'.join(('Stdout:', stdout, 'Stderr:', stderr, ))
                 raise RuntimeError('Failed to enable user %s, error: %s' %(username,output))
             return True
-        
+
     def removeUnixUser(self, username, removehome=False,die=True):
         """Remove a given unix user
 
@@ -478,15 +492,15 @@ class UnixSystem:
                 output = '\n'.join(('Stdout:', stdout, 'Stderr:', stderr, ))
                 raise RuntimeError('Failed to remove user %s, error: %s' %(username,output))
             return True
-        
+
     def setUnixUserPassword(self,username, password):
         """Set a password on unix user
 
         @param username: Name of the user to enable
         @type username: string
-        
+
         @param password: Password to set on the user
-        @type username: string        
+        @type username: string
 
         """
         if not j.system.unix.unixUserExists(username):
@@ -498,7 +512,7 @@ class UnixSystem:
             if exitCode:
                 output = '\n'.join(('Stdout:', stdout, 'Stderr:', stderr, ))
                 raise RuntimeError('Failed to set password on user %s, error: %s' %(username,output))
-            return True   
+            return True
 
     @staticmethod
     def unixUserIsInGroup(username, groupname):
