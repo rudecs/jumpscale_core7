@@ -8,8 +8,8 @@ class NginxManagerFactory(object):
 
 class NginxManager(object):
     def __init__(self, con=None, path='/etc/nginx/nginx.conf'):
-        if con==None:
-            con=j.ssh.connection
+        if con is None:
+            con = j.ssh.connection
 
         self._path = path
         self._con = con
@@ -30,8 +30,12 @@ class NginxManager(object):
     @property
     def config(self):
         if self._config is None:
-            content = self._con.file_read(self._path)
-            self._config = NginxConfig(content)
+            try:
+                content = self._con.file_read(self._path)
+            except AssertionError:
+                # file does not exit
+                content = ''
+            self._config = NginxConfig(content.strip())
         return self._config
 
     def commit(self):
@@ -60,7 +64,10 @@ class NginxConfig(NginxBaseConfig):
         self.http = None
         self.events = None
         import nginxparser
-        config = nginxparser.loads(content)
+        if content:
+            config = nginxparser.loads(content)
+        else:
+            config = []
         super(NginxConfig, self).__init__(config)
         if self.http is None:
             self.http = NginxHTTP([])
