@@ -19,11 +19,11 @@ class HRDItem():
         self.comments=comments 
         self.temp=False   
 
-    def get(self):
+    def get(self, ask=True):
         if self.ttype=="binary":
             return self.data
         if self.value==None:
-            self._process()
+            self._process(ask=ask)
         return self.value.strip("'") if isinstance(self.value, basestring) else self.value
 
     def getAsString(self):
@@ -100,7 +100,7 @@ class HRDItem():
         if persistent:
             self.hrd.save()
 
-    def _process(self):
+    def _process(self, ask=True):
         data=copy.copy(self.data)
         #check if link to other value $(...)
         if data.find("$(")!=-1:
@@ -123,11 +123,11 @@ class HRDItem():
 
         data=j.tools.text.dealWithList(data)
 
-        if data.find("@ASK")!=-1:
+        if data.find("@ASK")!=-1 and ask:
             # print ("%s CHANGED"%self)
             self.hrd.changed=True
 
-        ttype, data=j.tools.text.ask(data,self.name,args=self.hrd.args)
+        ttype, data=j.tools.text.ask(data,self.name,args=self.hrd.args, ask=ask)
         self.data = data
         if self.ttype == "base" and ttype:
             self.ttype = ttype
@@ -220,13 +220,13 @@ class HRD(HRDBase):
         else:
             self.items[key].set(value,persistent=persistent,comments=comments,temp=temp)
 
-    def get(self,key,default=None,):
+    def get(self, key, default=None, ask=True):
         if key not in self.items:
             if default==None:
                 j.events.inputerror_critical("Cannot find value with key %s in tree %s."%(key,self.path),"hrd.get.notexist")
             else:
                 return default
-        val= self.items[key].get()
+        val= self.items[key].get(ask=ask)
         val = val.strip().strip("'") if isinstance(val, basestring) else val
         j.core.hrd.log("hrd get '%s':'%s'"%(key,val))
         return val

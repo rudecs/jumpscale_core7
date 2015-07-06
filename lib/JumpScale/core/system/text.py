@@ -114,7 +114,7 @@ class Text:
         return re_nondigit.search(txt)==None
 
     @staticmethod
-    def ask(content,name=None,args={}):
+    def ask(content,name=None,args={}, ask=True):
         """
         look for @ASK statements in text, where found replace with input from user
 
@@ -145,7 +145,7 @@ class Text:
 
             # print ("ask:%s"%line)
 
-            if line.find("@ASK")==-1:
+            if line.find("@ASK")==-1 or not ask:
                 out+="%s\n"%line
                 continue
 
