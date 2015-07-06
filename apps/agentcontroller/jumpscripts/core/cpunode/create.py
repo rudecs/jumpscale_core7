@@ -44,7 +44,15 @@ def action(node, parent, masterAddr):
         autossh = j.atyourservice.new(name='autossh', instance=node.instance, parent=node, args=data)
         autossh.consume('node', node.instance)
         print "cpunode install: install autossh service"
-        autossh.install(deps=True)
+        count = 0
+        while count < 3:
+            try:
+                print "############# Try install autossh ##############"
+                autossh.install(deps=True)
+                break
+            except:
+                count += 1
+
     except:
         j.atyourservice.remove(node.domain, node.name, node.instance, node.parent)
         j.events.opserror_critical('Unexpected error, abord installation')
