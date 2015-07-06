@@ -1,0 +1,7 @@
+js:
+    image: codescalers/jumpscale:7
+    command: /sbin/my_init
+    volumes:
+        - /home/azmy/.ssh:/root/.ssh
+        - /home/azmy/work/jumpscale_core7:/opt/code/github/jumpscale/jumpscale_core7
+        - /home/azmy/work/ays_jumpscale7:/opt/code/github/jumpscale/ays_jumpscale7
