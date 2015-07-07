@@ -5,7 +5,7 @@ import JumpScale.baselib.atyourservice
 from JumpScale import j
 import sys
 import copy
-j.application.start('jservice')
+j.application.start('ays')
 
 parser = cmdutils.ArgumentParser()
 j.logger.enabled = True
@@ -15,14 +15,14 @@ commands = ['install','list','stop','start','restart','build','prepare',"mdupdat
     "removedata","monitor","configure","cleanup","export","import","uninstall","push","execute", "status","nodes"]
 
 help="""
-jservice commands:
+ays commands:
 
     install:
     - download all related git repo's (if not downloaded yet, otherwise update)
     - prepare & copyfiles & configure
     - start the app
     list:
-    - list the jservices
+    - list the ayss
     stop-start-restart
     build
     - if build instructions are given the build repo's will be downloaded & build started
@@ -40,7 +40,7 @@ jservice commands:
     resetstate
     - remove state of the app (same as resetstate) in jumpscale (the configuration info)
     removedata
-    - remove data of app (e.g. database, e.g. vmachine when node jservice)
+    - remove data of app (e.g. database, e.g. vmachine when node ays)
     execute
     - execute cmd on service e.g. ssh cmd on node jp or sql statement on database ...
     - use --cmd with to specify command to be execute
@@ -53,11 +53,11 @@ jservice commands:
     export/import
     - use --url to specify where to import from or export to
     create
-    - interactively create a jservice
+    - interactively create a ays
     status
-    - display status of installed jservices (domain, name, priority, version, port)
+    - display status of installed ayss (domain, name, priority, version, port)
     nodes
-    - display all remote nodes available for jservice remote execution
+    - display all remote nodes available for ays remote execution
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
@@ -66,20 +66,21 @@ parser.add_argument("--noremote", required=False, action='store_true', help='byp
 
 group = parser.add_argument_group(title="Package Selection")
 group.add_argument('-q','--quiet', required=False, action='store_true', help='Put in quiet mode')
-group.add_argument('-n','--name',required=False, help='Name of jservice to be installed',default="")
-group.add_argument('-d','--domain',required=False, help='Name of jservice domain to be installed',default="")
-group.add_argument('-i','--instance',required=False, help='Instance of jservice (default main)',default="")
+group.add_argument('-n','--name',required=False, help='Name of ays to be installed',default="")
+group.add_argument('-d','--domain',required=False, help='Name of ays domain to be installed',default="")
+group.add_argument('-i','--instance',required=False, help='Instance of ays (default main)',default="")
 group.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
 group.add_argument('--nodeps',required=False, action='store_true',help='Don\'t perfomr action on dependencies, default False',default=False)
 group.add_argument('--verbose', required=False, action='store_true',default=False, help='Verbose output.')
-# group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
+group.add_argument('--node',required=False,default=None,help='node on which to execute the action')
 # group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
 
 #install
 group = parser.add_argument_group(title="Install/Update/Expand/Configure")
-group.add_argument('--data', required=False, help='use this to pass hrd information to jservice e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
+group.add_argument('--data', required=False, help='use this to pass hrd information to ays e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
 group.add_argument('--cmd', required=False, help='use this to pass cmd to services e.g. \'ls -l\'')
-group.add_argument('--parent', required=False, help='parent services (domain.name.instance)')
+group.add_argument('--parent', required=False, help='parent services (domain__name__instance). Can also define ancestors through \'grandparentdomain__grandparentname__grandparentinstance__ parentdomain__parentname__parentinstance\'')
+group.add_argument('--immediate', required=False, action='store_true', default=False, help='use this to get the first level match of services')
 group.add_argument('-r', '--reinstall', required=False, action='store_true', help='Reinstall found service')
 group.add_argument('-s', '--single', required=False, action='store_true', help='Do not install dependencies')
 
@@ -89,7 +90,7 @@ group.add_argument('--url', required=False, help='uncpath to export to or import
 
 #list
 group = parser.add_argument_group(title="List")
-group.add_argument('--installed', required=False, action='store_true',default=None, help='List installed jservices')
+group.add_argument('--installed', required=False, action='store_true',default=None, help='List installed ayss')
 
 
 def sorter(jp1, jp2):
@@ -121,7 +122,11 @@ def getParent(args, precise=False):
     ss = args.parent.split("__")
     if len(ss) % 3 != 0:
         j.events.opserror_critical(msg="Bad format for --parent. Should be domain__name__instance")
-    return j.atyourservice.get(domain=ss[0],name=ss[1],instance=ss[2], precise=precise)
+    parent = '__'.join(ss[:-3]) if ss[:-3] else None
+    return j.atyourservice.get(domain=ss[-3],name=ss[-2],instance=ss[-1], parent=parent, precise=precise)
+
+def getNode(args, name=''):
+    return j.atyourservice.get('jumpscale', name='node.ssh', instance=name, parent=getParent(args))
 
 def getServices(args, filterRemote=False, parent=None, precise=False):
     res = []
@@ -171,13 +176,13 @@ if args.quiet:
     sys.stdout = NullDevice();
 
 if args.action == 'configure':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in services:
         service.configure(deps=args.deps)
         service.start()
 
 if args.action == 'prepare':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in services:
         service.prepare(deps=args.deps)
 
@@ -204,11 +209,17 @@ elif args.action == 'install':
                 raise RuntimeError("multiple templates found for %s__%s be more precise please"%(args.domain.args.name))
             if len(tmpls) <= 0:
                 raise RuntimeError("no templates found for %s__%s be more precise please"%(args.domain, args.name))
+            if args.node:
+                node = getNode(args, name=args.node)
+                rs = tmpls[0].newInstance(instance=args.instance, args=getHRDData(args), parent=node, precise=True)
+                rs.consume('node', args.node)
+                tmpls[0].install(instance=args.instance,start=True,deps=(not args.single), reinstall=args.reinstall, args=getHRDData(args), parent=node)
+            else:
+                tmpls[0].install(instance=args.instance,start=True,deps=(not args.single), reinstall=args.reinstall, args=getHRDData(args), parent=getParent(args, precise=True),noremote=args.noremote)
 
-            tmpls[0].install(instance=args.instance,start=True,deps=(not args.single), reinstall=args.reinstall, args=getHRDData(args), parent=getParent(args),noremote=args.noremote)
 
 elif args.action == 'update':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in services:
         service.update(deps=args.deps, reinstall=args.reinstall)
 
@@ -221,17 +232,17 @@ elif args.action == 'publish':
     pass
 
 elif args.action == 'reset':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in services:
         service.reset(deps=args.deps)
 
 elif args.action == 'removedata':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in services:
         service.removedata(deps=args.deps)
 
 elif args.action == 'resetstate':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in services:
         service.resetstate(deps=args.deps)
 
@@ -247,7 +258,7 @@ elif args.action == 'restart':
     filterRemote = False
     if args.instance == "":
         filterRemote = True
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in services:
         try:
             service.restart(deps=args.deps)
@@ -258,7 +269,7 @@ elif args.action == 'start':
     filterRemote = False
     if args.instance == "":
         filterRemote = True
-    services = getServices(args,filterRemote=filterRemote, parent=args.parent)
+    services = getServices(args,filterRemote=filterRemote, parent=args.parent, precise=args.immediate)
     for service in sorted(services, cmp=sorter):
         try:
             service.start(deps=args.deps)
@@ -269,7 +280,7 @@ elif args.action == 'stop':
     filterRemote = False
     if args.instance == "":
         filterRemote = True
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in sorted(services, cmp=sorter):
         try:
             service.stop(deps=args.deps)
@@ -277,18 +288,18 @@ elif args.action == 'stop':
             continue
 
 elif args.action == 'execute':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in sorted(services, cmp=sorter):
         service.args['cmd'] = args.cmd
         service.execute(deps=args.deps)
 
 elif args.action == 'build':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in sorted(services, cmp=sorter):
         service.build(deps=args.deps)
 
 elif args.action == 'uninstall':
-    services = getServices(args, parent=args.parent)
+    services = getServices(args, parent=args.parent, precise=args.immediate)
     for service in sorted(services, cmp=sorter):
         service.uninstall(deps=args.deps)
 
