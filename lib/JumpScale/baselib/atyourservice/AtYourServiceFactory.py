@@ -178,6 +178,10 @@ class AtYourServiceFactory():
             pdomain, pname, pinstance = parent.rsplit('__', 3)[-3:]
             parent = self.findServices(pdomain, pname, pinstance, parent='', precise=precise)
             parent = parent[0] if parent else None
+        elif parent == '':
+            parentregex = j.dirs.getHrdDir()
+            # always make prcies True when we dont want a parent
+            precise = True
         
         targetKey = self.getId(domain, name, instance, parent)
         if targetKey in self._instanceCache:
@@ -186,7 +190,7 @@ class AtYourServiceFactory():
         self._doinit()
 
         res = []
-        candidates = j.system.fs.walk(j.dirs.hrdDir, recurse=1, pattern='*__*__*', return_folders=1, return_files=0, followSoftlinks=True)
+        candidates = j.system.fs.walk(j.dirs.getHrdDir(), recurse=1, pattern='*__*__*', return_folders=1, return_files=0, followSoftlinks=True)
         serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9_\.]*',
                                         name if name.strip() else '[a-zA-Z0-9_\.]*',
                                         instance if instance.strip() else '[a-zA-Z0-9_\.]*')
@@ -260,9 +264,9 @@ class AtYourServiceFactory():
         services = None
         key = self.getId(domain, name, instance, parent)
         if key in self._instanceCache:
-            services = self._instanceCache[key]
-            if parent is None or (len(services) == 1 and services[0].parent == parent):
-                return services
+            service = self._instanceCache[key]
+            if parent is None or (service.parent == parent):
+                return service
             else:
                 services = None
         if services is None:

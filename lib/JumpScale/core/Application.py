@@ -225,11 +225,11 @@ class Application:
             return False
         return True
 
-    def getAppInstanceHRD(self,name,instance,domain="jumpscale",parent=None):
+    def getAppInstanceHRD(self,name,instance,domain="jumpscale",parent=''):
         """
         returns hrd for specific domain,name and & instance name
         """
-        service = j.atyourservice.get(domain=domain,name=name,instance=instance)
+        service = j.atyourservice.get(domain=domain,name=name,instance=instance, parent=parent)
         return service.hrd
         # if parent:
         #     path = j.system.fs.joinPaths(parent.path,"%s__%s"%(name,instance),"service.hrd")
