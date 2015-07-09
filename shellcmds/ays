@@ -196,8 +196,12 @@ elif args.action == 'install':
         if args.noremote:
             service.noremote = args.noremote
         service.install(start=True,deps=True,reinstall=args.reinstall)
-    else:
-        services = getServices(args, parent=args.parent, precise=True)
+    else:	
+	parent = args.parent
+	if  args.node and args.parent == None:
+ 	    node = getNode(args, name=args.node)
+	    parent = '%s__%s__%s' % (node.domain, node.name, node.instance)
+        services = getServices(args, parent=parent, precise=True)
         if len(services) > 0:
             for s in services:
                 if args.noremote:
