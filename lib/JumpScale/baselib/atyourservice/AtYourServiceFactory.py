@@ -173,10 +173,11 @@ class AtYourServiceFactory():
         if parent and isinstance(parent, Service):
             parentregex = '%s__%s__%s' % (parent.domain, parent.name, parent.instance)
         elif parent and isinstance(parent, basestring):
-            parentregex = parent
+            parentregex = parent.replace(':', '.')
             # get only last parent
-            pdomain, pname, pinstance = parent.rsplit('__', 3)[-3:]
-            parent = self.findServices(pdomain, pname, pinstance, parent='', precise=precise)
+            parentdata = parent.replace(':', '__').split('__')
+            pdomain, pname, pinstance = parentdata[-3:]
+            parent = self.findServices(pdomain, pname, pinstance, parent='__'.join(parentdata[:-3]), precise=precise)
             parent = parent[0] if parent else None
         
         targetKey = self.getId(domain, name, instance, parent)
@@ -186,13 +187,17 @@ class AtYourServiceFactory():
         self._doinit()
 
         res = []
-        candidates = j.system.fs.walk(j.dirs.hrdDir, recurse=1, pattern='*__*__*', return_folders=1, return_files=0, followSoftlinks=True)
+        candidates = j.system.fs.walk(j.dirs.getHrdDir(), recurse=1, pattern='*__*__*', return_folders=1, return_files=0, followSoftlinks=True)
         serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9_\.]*',
                                         name if name.strip() else '[a-zA-Z0-9_\.]*',
                                         instance if instance.strip() else '[a-zA-Z0-9_\.]*')
         preciseregex = '.*' if not precise else '.'
 
-        servicekey = '.*%s%s%s$' % (parentregex, preciseregex, serviceregex)
+        startregex = '.*'
+        if precise and not parent:
+            startregex = j.dirs.getHrdDir().rstrip('/').replace('/', '.')
+
+        servicekey = '%s%s%s%s$' % (startregex, parentregex, preciseregex, serviceregex)
         regex = re.compile(servicekey)
         matched = [m.string for path in candidates for m in [regex.search(path)] if m]
 
