@@ -52,3 +52,6 @@ target/
 
 #OSX
 .DS_Store
+
+#libext is for external extensions
+lib/JumpScale/libext/
