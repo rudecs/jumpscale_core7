@@ -52,3 +52,12 @@ class IDGenerator:
         """        
         import uuid
         return str(uuid.uuid4())
+
+    def generateXCharID(self,x):
+        r="1234567890abcdefghijklmnopqrstuvwxyz"
+        l=len(r)
+        out=""
+        for i in range(0,x):
+            p=self.generateRandomInt(0,l-1)
+            out+=r[p]
+        return out

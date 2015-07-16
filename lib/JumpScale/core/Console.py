@@ -6,6 +6,12 @@ from JumpScale import j
 import textwrap
 import string
 import collections
+import sys
+import os
+if sys.platform.startswith("win"):
+    import msvcrt
+    clear = lambda: os.system('cls')    
+
 
 IPREGEX = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
@@ -24,26 +30,35 @@ class Console:
         """
         when typing, char per char will be returned
         """
-        j.system.platform.ubuntu.check()
-        import termios
-        fd = sys.stdin.fileno()
+        if not sys.platform.startswith("win"):
+            j.system.platform.ubuntu.check()
+            import termios
+            fd = sys.stdin.fileno()
 
-        oldterm = termios.tcgetattr(fd)
-        newattr = termios.tcgetattr(fd)
-        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(fd, termios.TCSANOW, newattr)
-    
-        cont=True
-        try:
+            oldterm = termios.tcgetattr(fd)
+            newattr = termios.tcgetattr(fd)
+            newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+            termios.tcsetattr(fd, termios.TCSANOW, newattr)
+        
+            cont=True
+            try:
+                while cont:
+                    try:
+                        c = sys.stdin.read(1)
+                        cont, result, params = callback(c, params)
+                    except IOError:
+                        j.logger.exception("Failed to read one character from stdin", 5)
+            finally:
+                termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
+
+        else:
+
+            cont=True
+
             while cont:
-                try:
-                    c = sys.stdin.read(1)
-                    cont, result, params = callback(c, params)
-                except IOError:
-                    j.logger.exception("Failed to read one character from stdin", 5)
-        finally:
-            termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
-
+                c = msvcrt.getch()
+                cont, result, params = callback(c, params)
+        
         return cont,result,params
 
     
@@ -178,6 +193,12 @@ class Console:
                 self.formatMessage(str(dictionary[key]),key,withStar,indent)
             except:
                 j.events.inputerror_critical("Could not convert item of dictionary %s to string" % key,"console.transformDictToMessage")            
+
+    def cls(self):
+        """
+        clear screen
+        """
+        clear()
 
     def askString(self, question, defaultparam='', regex=None, retry=-1, validate=None):
         """Get a string response on a question
@@ -373,13 +394,15 @@ class Console:
             parts = clean(f())
         return parts
 
-    def askChoice(self,choicearray, descr=None, sort=True):
+    def askChoice(self,choicearray, descr="", sort=True,maxchoice=25,height=30,autocomplete=True):
         """
         @param choicearray is list or dict, when dict key needs to be the object to return, 
                the value of the dics is what needs to be returned, the key is the str representation
         """
-        maxchoice=25
-
+        if height>0:
+            self.cls()
+        choicearray.sort()
+        
         #check items are strings or not, if not need to create dictionary
         if isinstance(choicearray, (tuple, list)):
             isstr=True
@@ -391,82 +414,135 @@ class Console:
                 for item in choicearray:
                     choicearrayNew[str(item)]=item
                 choicearray=choicearrayNew
-        
-        if len(choicearray)>maxchoice and j.system.platformtype.isLinux():
-            descr2 = "%s\nMake a selection please, start typing, we will try to do auto completion.\n     ? prints the list." % descr
+
+        def pprint4autocomplete(chars=""):
+            self.cls()
+            print 
+            counter=0
+            if len(choicearray)>(height-3):
+                
+                if len(choicearray)<200:
+                    shortchoice=[]
+                    for item in choicearray:
+                        short=item[0:4]
+                        if short not in shortchoice:
+                            shortchoice.append(short)
+                        if len(shortchoice)>height-3:
+                            break
+                    shortchoice.sort()
+                    for item in shortchoice:
+                        print "- %s ..."%item
+                        counter+=1
+
+            else:
+                for item in choicearray:
+                    print "- %s"%item
+                    counter+=1
+            while counter<(height-3):
+                print 
+                counter+=1
+            descr2 = "%s\nMake a selection please, start typing, we will try to do auto completion.\n" % descr
+
             self.echo(descr2)
-            print()
-            print("        ")
-            wildcard=True
+            print "        :%s"%chars,
+
+        if len(choicearray)> maxchoice or autocomplete:
+            wildcard=False
             chars=""
-            params=[wildcard,chars]
-            def process(char, params):
-                """
-                char per char will be returned from console
-                """
-                wildcard, chars = params
-                #print (char,"","")
-                sys.stdout.write(char)
-                chars="%s%s" %(chars,char)
-                result=[]
-                if isinstance(choicearray, dict):
-                    choicearray3=list(choicearray.values())
-                else:
-                    choicearray3=choicearray
 
-                for rawChoice in choicearray3:
-                    # We need to keep the 'raw' choices, so the end result is
-                    # not a str()'d, lower()'d version of the original
-                    # choicearray element.
-                    choice=str(rawChoice)
-                    choice=choice.lower()
-                    if wildcard and choice.find(chars.lower())!=-1:
-                        result.append(rawChoice)
-                        
-                    #print "%s %s %s %s" % (wildcard,choice,chars,choice.find(chars))
-                    if not wildcard and choice.find(chars)==0:
-                        result.append(rawChoice)
-                    if char=="?":
-                        return False,["99999"],params
-                params=[wildcard,chars] 
-                #print str(len(result)) + " " + chars + " " + str(wildcard)
-                if not result:
-                    # No matches
-                    return False, result, params
-                elif len(result) < maxchoice:
-                    #more than 1 result but not too many to show and ask choice with nr's
-                    return False,result,params
-                else:
-                    # Still too many results
-                    return True, result, params
+            while True:
+                pprint4autocomplete(chars)
 
-            choicearray2=[]
-            while len(choicearray2)==0:
-                cont,choicearray2,params = self.rawInputPerChar(process,params)
-                if len(choicearray2)==0:
-                    wildcard, chars = params 
-                    if wildcard:
-                        self.echo("\nNo results contain '%s', start over please"
-                                % chars)
+                params=[wildcard,chars]
+
+                def process(char, params):
+                    """
+                    char per char will be returned from console
+                    """
+                    debug=False
+                    wildcard, chars = params
+                    #print (char,"","")
+                    sys.stdout.write(char)
+                    chars="%s%s" %(chars,char)
+                    result=[]
+                    if isinstance(choicearray, dict):
+                        choicearray3=list(choicearray.values())
                     else:
-                        self.echo("\nNo results start with '%s', start over please" %
-                                chars)
-                    print("        ")
-                    wildcard=True
-                    chars=""
-                    params=[wildcard,chars]
+                        choicearray3=choicearray
+
+                    for rawChoice in choicearray3:
+                        # We need to keep the 'raw' choices, so the end result is
+                        # not a str()'d, lower()'d version of the original
+                        # choicearray element.
+                        choice=str(rawChoice).lower()
+
+                        if wildcard and choice.find(chars.lower())!=-1:
+                            result.append(rawChoice)
+                            
+                        #print "%s %s %s %s" % (wildcard,choice,chars,choice.find(chars))
+                        if not wildcard and choice.find(chars)==0:
+                            # print "subset:%s"%rawChoice
+                            result.append(rawChoice)
+                        if char=="?":
+                            return False,["99999"],params
+                    params=[wildcard,chars] 
+                    #print str(len(result)) + " " + chars + " " + str(wildcard)
+                    if not result:
+                        # No matches
+                        if debug:
+                            print "nomatch"
+                        params=[wildcard,chars[:-1]]
+                        return False, result, params
+                    elif len(result) < maxchoice:
+                        #more than 1 result but not too many to show and ask choice with nr's
+                        if debug:
+                            print "<max amount, show items"
+
+                        #try to find comonality beween remaining results
+                        go=len(result)>0
+                        x=1
+                        chars2=chars
+                        while go:
+                            chars2+=result[0][x]
+                            test=[item for item in result if item.find(chars2)==0]
+                            if len(test)!=len(result):
+                                #no match
+                                chars2=chars2[:-1]
+                                break
+                            x+=1
+
+                        params=[wildcard,chars2]
+
+                        return False,result,params
+                    else:
+                        # Still too many results
+                        if debug:
+                            print "not small enough, keep typing"                    
+                        return True, result, params
+
+                cont,choicearray2,params = self.rawInputPerChar(process,params)
+                wildcard, chars = params 
+
+                if len(choicearray2)==0:   
+                    wildcard=False                 
+                    continue
             
-            if len(choicearray2)==1 and not choicearray2==["99999"]:
-                wildcard, chars = params
-                sys.stdout.write(str(choicearray2[0])[len(chars):])
+                if len(choicearray2)==1 and not choicearray2==["99999"]:
+                    #value was found
+                    # wildcard, chars = params
+                    # sys.stdout.write(str(choicearray2[0])[len(chars):])            
+                    return choicearray2[0]
                     
-            if choicearray2==["99999"]:
-                self.echo("\n")
-                for choice in choicearray:
-                    choice=str(choice)                    
-                    self.echoListItem(choice)                    
-                self.echo("\n")
-                return self.askChoice(choicearray, descr, sort)            
+                if choicearray2==["99999"]:
+                    self.echo("\n")
+                    for choice in choicearray:
+                        choice=str(choice)                    
+                        self.echoListItem(choice)                    
+                    self.echo("\n")
+
+                choicearray=choicearray2
+
+          
             else:
                 return self._askChoice(choicearray2, descr, sort)            
         else:

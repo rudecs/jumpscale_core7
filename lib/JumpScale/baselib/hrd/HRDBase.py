@@ -64,8 +64,14 @@ class HRDBase():
     def exists(self,key):
         return key in self.items
 
-    def getList(self,key):
-        lst=self.get(key,"")
+    def getList(self,key,default=None):
+        if default==None:
+            lst=self.get(key)
+        else:
+            lst=self.get(key,default="")
+            if lst=="":
+                return default
+
         if j.basetype.list.check(lst):
             return lst
         lst=str(lst)

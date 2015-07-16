@@ -17,8 +17,26 @@ class Text:
         return bytes(value)
 
     @staticmethod
+    def toSafePath(txt,maxlen=0):
+        """
+        process string so it can be used in a path on windows or linux
+        """
+        txt=Text.toAscii(txt)
+        txt=txt.lower().strip().strip(" .-_'")
+        txt=txt.replace("/","").replace(","," ").replace("*","").replace("(","").replace(")","").replace("\"","").replace("?","").replace("'","").replace(":"," ")
+        while txt.find("  ")!=-1:
+            txt=txt.replace("  "," ")
+        if maxlen>0 and len(txt)>maxlen:
+            txt=txt[0:maxlen]
+        return txt.strip()
+
+    @staticmethod
     def toAscii(value,maxlen=0):
-        value=value.encode('ascii','ignore')
+        out=value.encode('ascii','ignore')
+        out=out.replace('\x0b',"")
+        out=out.replace('\x0c',"")
+        out=out.replace("\r","")
+        out=out.replace("\t","    ") 
         # out=""
         # for item in value:
         #     if ord(item)>255:
@@ -26,7 +44,7 @@ class Text:
         #     out+=item
         if maxlen>0 and len(out)>maxlen:
             out=out[0:maxlen]
-        out=out.replace("\r","")        
+               
         return out
 
     @staticmethod
