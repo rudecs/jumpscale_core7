@@ -182,7 +182,7 @@ class ProcessManager():
             res=self.acclient.registerNode(hostname=socket.gethostname(), machineguid=j.application.getUniqueMachineId())
 
             nid=res["node"]["id"]
-            jsagentService = j.atyourservice.get('jumpscale', 'jsagent')
+            jsagentService = j.atyourservice.get('jumpscale', 'jsagent', parent='')
             jsagentService.hrd.set("grid.node.id",nid)
             j.application.config.set('grid.node.id',nid)
 

@@ -45,7 +45,7 @@ class Node(OsisBaseObject):
 
         # self.sguid=struct.pack("<HH",self.gid,self.id)
         self.guid = "%s_%s" % (self.gid, self.id)
-        self.lastcheck=j.base.time.getTimeEpoch() 
+        self.lastcheck=j.base.time.getTimeEpoch()
 
         return self.guid
 
@@ -57,8 +57,8 @@ class Node(OsisBaseObject):
         self.machineguid = j.application.getUniqueMachineId().replace(":", "")
         self.roles= j.application.config.get("grid.node.roles").split(",")
 
-        self.ipaddr=[item for item in j.system.net.getIpAddresses() if item !="127.0.0.1"]        
-        
+        self.ipaddr=[item for item in j.system.net.getIpAddresses() if item !="127.0.0.1"]
+
         self.netaddr=j.system.net.getNetworkInfo()
         self.name = j.system.net.getHostname()
 
@@ -67,4 +67,3 @@ class Node(OsisBaseObject):
             self.id=j.application.config.getInt("grid.node.id")
         if self.gid==0:
             raise RuntimeError("grid id cannot be 0")
-
