@@ -1512,24 +1512,44 @@ metadata.jumpscale =
             self.writeFile(hpath,C)
 
         C="""
+deactivate () {
+    export PATH=$_OLD_PATH
+    unset _OLD_PATH
+    export PYTHONPATH=$_OLD_PYTHONPATH
+    unset _OLD_PYTHONPATH
+    export LD_LIBRARY_PATH=$_OLD_LD_LIBRARY_PATH
+    unset _OLD_LD_LIBRARY_PATH
+    export PS1=$_OLD_PS1
+    unset _OLD_PS1
+    if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
+            hash -r 2>/dev/null
+    fi
+}
+export _OLD_PATH=$PATH
+export _OLD_PYTHONPATH=$PYTHONPATH
+export _OLD_LDLIBRARY_PATH=$LD_LIBRARY_PATH
+export _OLD_PS1=$PS1
 export PATH=$base/bin:$PATH
 export JSBASE=$base
 export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
-#export PYTHONHOME=$base
 export LD_LIBRARY_PATH=$base/bin
+export PS1="(JumpScale) $PS1"
+if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
+        hash -r 2>/dev/null
+fi
 """
         C=C.replace("$base",basedir)
-        self.writeFile("%s/env.sh"%basedir,C)
+        envfile = "%s/env.sh"%basedir
+        self.writeFile(envfile,C)
 
-        C2="""
-#!/bin/bash
+        C2="""#!/bin/bash
 # set -x
-$ENV
-echo sandbox:$base
+source {env}
+echo sandbox:{base}
 # echo $base/bin/python "$@"
 $base/bin/python "$@"
 """
-        C2=C2.replace("$ENV",C)
+        C2=C2.format(base=basedir, env=envfile)
         C2=C2.replace("$base",basedir)
         dest="%s/bin/jspython"%basedir
         self.delete(dest)
