@@ -9,7 +9,7 @@ fi
 dist=`grep DISTRIB_ID /etc/*-release | awk -F '=' '{print $2}'`
 if [ "$dist" == "Ubuntu" ]; then
   echo "found ubuntu"
-  apt-get install curl git ssh python2.7 -y
+  apt-get install curl git ssh python2.7 python -y
 fi
 
 set -ex
