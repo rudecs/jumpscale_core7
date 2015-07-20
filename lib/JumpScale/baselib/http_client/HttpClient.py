@@ -46,6 +46,9 @@ class HTTPError(Exception):
         self.data = data
         self.httperror = httperror
 
+    def __str__(self):
+        return "%s:\n %s" % (self.status_code, self.msg)
+
 class Connection(object):
     
     def __init__(self):

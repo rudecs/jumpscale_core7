@@ -5,6 +5,7 @@ import re
 percentrec = re.compile("^\s+\((?P<per>\d+\.\d+)/100%\).*$")
 inforec = re.compile("^(?P<key>\w+(\s+\w+)?):\s+(?P<value>.*)$", re.MULTILINE)
 sizerec = re.compile("^(?P<size>[\d\.]+)(?P<unit>[A-Z])")
+virtualsizerec = re.compile("\((?P<size>[\d\.]+)\sbytes\)")
 
 class QemuImg(object):
 
@@ -150,7 +151,7 @@ class QemuImg(object):
         if not exitCode == 0:
             raise RuntimeError('Command %s exited with code %s, output %s' % (command, exitCode, output))
 
-    def info(self, fileName, diskImageFormat=None, chain=False):
+    def info(self, fileName, diskImageFormat=None, chain=False, unit='K'):
         """
         Give information about the disk image <fileName>. Use it in particular to know the size reserved on
         disk which can be different from the displayed size. If VM snapshots are stored in the disk image,
@@ -182,9 +183,14 @@ class QemuImg(object):
             result = dict()
             for match in inforec.finditer(output):
                 value = match.group('value')
-                sizematch = sizerec.match(value)
-                if sizematch:
-                    value = j.tools.units.bytes.toSize(float(sizematch.group('size')), sizematch.group('unit'), 'K')
+                key = match.group('key')
+                if key == 'virtual size':
+                    value = virtualsizerec.search(value).group('size')
+                    value = j.tools.units.bytes.toSize(int(value), '', unit)
+                else:
+                    sizematch = sizerec.match(value)
+                    if sizematch:
+                        value = j.tools.units.bytes.toSize(float(sizematch.group('size')), sizematch.group('unit'), unit)
                 result[match.group('key')] = value
             return result
 
