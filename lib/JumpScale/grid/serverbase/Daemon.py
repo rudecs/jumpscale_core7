@@ -232,12 +232,11 @@ class Daemon(object):
             else:
                 result = ffunction(data, session=session)
         except Exception as e:
-            # if str(e)=="STOP APPLICATION 112299":  #needs to be cryptic otherwise smart developers can fake this
-            #     j.application.stop()
             if isinstance(e, BaseException):
                 return returnCodes.ERROR, returnformat, e.eco
             eco = j.errorconditionhandler.parsePythonErrorObject(e)
             eco.level = 2
+            eco.data = data
             # print eco
             # eco.errormessage += "\nfunction arguments were:%s\n" % str(inspect.getargspec(ffunction).args)
             data.pop('session', None)
