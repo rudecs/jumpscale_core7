@@ -25,23 +25,57 @@ import re
 
 # from JumpScale import j
 
+
+
 class InstallTools():
     def __init__(self,debug=False):
+
         if platform.system().lower()=="windows":
             self.TYPE="WIN"
             self.BASE="%s/"%os.environ["JSBASE"].replace("\\","/")
-            while self.BASE[-1]=="/":
-                self.BASE=self.BASE[:-1]
-            self.BASE+="/"
+
             self.TMP=tempfile.gettempdir().replace("\\","/")
+        elif sys.platform.startswith("darwin"):
+            self.TYPE="OSX"
+            self.BASE="/Users/Shared/jumpscale"
+        elif sys.platform.startswith("linux"):
+            self.BASE="/opt"
+            self.TYPE=platform.linux_distribution(full_distribution_name=0)[0].upper()
+            if self.TYPE!="UBUNTU":
+                raise RuntimeError("Jumpscale only supports windows 7+, macosx, ubuntu 12+")    
         else:
-            self.TYPE="LINUX"
-            if "JSBASE" in os.environ:
-                self.BASE=os.environ["JSBASE"]
-            self.TMP="/tmp"
-        self.debug=False
-        self.createDir("%s/jumpscaleinstall"%(self.TMP))
+            raise RuntimeError("Jumpscale only supports windows 7+, macosx, ubuntu 12+")
+
+        self.TYPE+=platform.architecture()[0][:2]
+
+        if "JSBASE" in os.environ:
+            self.BASE=os.environ["JSBASE"]
+
+        if "CODEDIR" in os.environ:
+            self.CODEDIR=os.environ["CODEDIR"]
+        else:
+            if self.TYPE.startswith("WIN"):
+                raise RuntimeError("todo")
+                self.CODEDIR="/opt/code"
+            elif self.TYPE.startswith("OSX"):
+                self.CODEDIR="/Users/Shared/code"
+            else:
+                self.CODEDIR="/opt/code"
+
+        while self.BASE[-1]=="/":
+            self.BASE=self.BASE[:-1]
+        self.BASE+="/"
+
+        if os.environ.has_key("TMPDIR"):
+            self.TMP=os.environ["TMPDIR"].replace("\\","/")
+        else:
+            self.TMP=tempfile.gettempdir().replace("\\","/")
+
+        #why was this needed ? (despiegk)
+        # self.debug=False
+        # self.createDir("%s/jumpscaleinstall"%(self.TMP))
         self.debug=debug
+
         self._extratools=False
 
         if str(sys.excepthook).find("apport_excepthook")!=-1:
@@ -79,7 +113,24 @@ class InstallTools():
             data = fp.read()
         return data
 
-    def writeFile(self,path,content):
+    def writeFile(self,path,content,strip=True):
+
+        if strip:
+            #remove all spaces at beginning & end of line when relevant
+
+            #find generic prepend for full file
+            minchars=9999
+            for line in content.split("\n"):
+                if line.strip()=="" or line[0]=="#":
+                    continue
+                prechars=len(line)-len(line.lstrip())
+                if prechars<minchars:
+                    minchars=prechars
+
+            if prechars>0:
+                #remove the prechars
+                content="\n".join([line[minchars:] for line in content.split("\n")])
+
         fo = open(path, "w")
         fo.write( content )
         fo.close()
@@ -107,13 +158,6 @@ class InstallTools():
 
     def joinPaths(self,*args):
         return os.path.join(*args)
-
-    # def copyTree(self,source,dest,deletefirst=False):
-    #     if deletefirst:
-    #         self.delete(dest)
-    #     if self.debug:
-    #         print("copy %s %s" % (source,dest))
-    #     shutil.copytree(source,dest)
 
     def copyTree(self, source, dest, keepsymlinks = False, deletefirst = False, overwriteFiles=True,ignoredir=[".egg-info",".dist-info"],ignorefiles=[".egg-info"],rsync=True,sshkey=None):
         if self.debug:
@@ -208,7 +252,6 @@ class InstallTools():
         else:
             raise RuntimeError('Source path %s in system.fs.copyTree is not a directory'% src)
 
-
     def copyFile(self,source,dest,deletefirst=False):
         if deletefirst:
             self.delete(dest)
@@ -254,15 +297,6 @@ class InstallTools():
 
     def isExecutable(self,path):
          stat.S_IXUSR & statobj.st_mode
-
-
-    # def readLink(self,path):
-    #     """Works only for unix
-    #     Return a string representing the path to which the symbolic link points.
-    #     """
-    #     while path[-1]=="/" or path[-1]=="\\":
-    #         path=path[:-1]
-    #     return os.readLink(path)
 
     def isFile(self, path, followSoftlink = False):
         """Check if the specified file exists for the given path
@@ -571,7 +605,6 @@ class InstallTools():
         filesreturn,depth=self._listAllInDir(path, recursive, filter, minmtime, maxmtime,depth,type=type,followSymlinks=followSymlinks,listSymlinks=listSymlinks)
         return filesreturn
 
-
     def _listAllInDir(self, path, recursive, filter=None, minmtime=None, maxmtime=None,depth=None,type="df", case_sensitivity='os',exclude=[],followSymlinks=True,listSymlinks=True):
         """
         # There are 3 possible options for case-sensitivity for file names
@@ -638,7 +671,6 @@ class InstallTools():
                 filesreturn.append(fullpath)
 
         return filesreturn,depth
-
 
     def getParent(self, path):
         """
@@ -707,6 +739,8 @@ class InstallTools():
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
 
+    def chdir(seld,ddir):
+        os.chdir(ddir)
 
     #########NON FS
 
@@ -722,44 +756,13 @@ class InstallTools():
         handle.close()
         out.close()
 
-    def chdir(seld,ddir):
-        os.chdir(ddir)
-
-    # def execute(self,command, timeout=60,tostdout=True):
-
-    #     try:
-    #         proc = subprocess.Popen(command, bufsize=0, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True)
-    #     except Exception,e:
-    #         raise RuntimeError("Cannot execute cmd:%s, could not launch process, error was %s"%(command,e))
-
-    #     poll_seconds = .250
-    #     deadline = time.time()+timeout
-    #     while time.time() < deadline and proc.poll() == None:
-    #         time.sleep(poll_seconds)
-
-    #     if proc.poll() == None:
-    #         if float(sys.version[:3]) >= 2.6:
-    #             proc.terminate()
-    #         raise RuntimeError("Cannot execute cmd:%s, timeout"%(command))
-
-    #     stdout, stderr = proc.communicate()
-
-    #     if stdout.strip()=="":
-    #         stdout=stderr
-
-    #     if proc.returncode != 0:
-    #         raise RuntimeError("Cannot execute cmd:%s, error was %s"%(command,stderr))
-
-    #     return stdout
-
     def isUnix(self):
         if sys.platform.lower().find("linux")!=-1:
             return True
         return False
 
-
     def isWindows(self):
-        if sys.platform.lower().find("linux")==1:
+        if sys.platform.startswith("win")==1:
             return True
         return False
 
@@ -770,13 +773,13 @@ class InstallTools():
         for cmd in cmdstr.split("\n"):
             if cmd.strip()=="" or cmd[0]=="#":
                 continue
+            cmd=cmd.strip()
             rc,out,err=self.execute(cmd, outputStdout, outputStderr,useShell ,log,cwd,timeout,errors,ok,captureout,dieOnNonZeroExitCode)
             rc_+=str(rc)
             out_+=out
             err_+=err
 
         return rc_,out_,err_
-
 
     def sendmail(self,ffrom,to,subject,msg,smtpuser,smtppasswd,smtpserver="smtp.mandrillapp.com",port=587,html=""):
         from email.mime.multipart import MIMEMultipart
@@ -934,145 +937,6 @@ class InstallTools():
 
         return rc,out,err
 
-
-
-    # def execute(self, command , dieOnNonZeroExitCode=True, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None):
-    #     """Executes a command, returns the exitcode and the output
-    #     @param command: command to execute
-    #     @param dieOnNonZeroExitCode: boolean to die if got non zero exitcode
-    #     @param outputToStdout: boolean to show/hide output to stdout
-    #     @param ignoreErrorOutput standard stderror is added to stdout in out result, if you want to make sure this does not happen put on True
-    #     @rtype: integer represents the exitcode plus the output of the executed command
-    #     if exitcode is not zero then the executed command returned with errors
-    #     """
-    #     # Since python has no non-blocking readline() call, we implement it ourselves
-    #     # using the following private methods.
-    #     #
-    #     # We choose for line buffering, i.e. whenever we receive a full line of output (terminated by \n)
-    #     # on stdout or stdin of the child process, we log it
-    #     #
-    #     # When the process terminates, we log the final lines (and add a \n to them)
-    #     if log:
-    #         self.log("exec:%s" % command)
-    #     def _logentry(entry):
-    #         if outputToStdout:
-    #             self.log(entry)
-
-    #     def _splitdata(data):
-    #         """ Split data in pieces separated by \n """
-    #         lines = data.split("\n")
-    #         return lines[:-1], lines[-1]
-
-    #     def _logoutput(data, OUT_LINE, ERR_LINE):
-    #         [lines, partialline] = _splitdata(data)
-    #         if lines:
-    #             lines[0] = OUT_LINE + lines[0]
-    #         else:
-    #             partialline = OUT_LINE + partialline
-    #         OUT_LINE = ""
-    #         if partialline:
-    #             OUT_LINE = partialline
-    #         for x in lines:
-    #             _logentry(x,3)
-    #         return OUT_LINE, ERR_LINE
-
-    #     def _logerror(data, OUT_LINE, ERR_LINE):
-    #         [lines, partialline] = _splitdata(data)
-    #         if lines:
-    #             lines[0] = ERR_LINE + lines[0]
-    #         else:
-    #             partialline = ERR_LINE + partialline
-    #         ERR_LINE = ""
-    #         if partialline:
-    #             ERR_LINE = partialline
-    #         for x in lines:
-    #             _logentry(x,4)
-    #         return OUT_LINE, ERR_LINE
-
-    #     def _flushlogs(OUT_LINE, ERR_LINE):
-    #         """ Called when the child process closes. We need to get the last
-    #             non-\n terminated pieces of the stdout and stderr streams
-    #         """
-    #         if OUT_LINE:
-    #             _logentry(OUT_LINE,3)
-    #         if ERR_LINE:
-    #             _logentry(ERR_LINE,4)
-
-    #     if command is None:
-    #         raise ValueError('Error, cannot execute command not specified')
-
-    #     try:
-    #         import errno
-    #         if self.isUnix():
-    #             import subprocess
-    #             # import signal
-    #             # try:
-    #             #     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-    #             # except Exception as ex:
-    #             #     print('failed to set child signal, error %s'%ex, 2)
-
-    #             childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=False, \
-    #                 shell=useShell, env=os.environ,universal_newlines=True,cwd=cwd,bufsize=0)
-    #             (output,error) = childprocess.communicate()
-    #             exitcode = childprocess.returncode
-    #             poll=childprocess.poll()
-    #             print "EXEC DONE1"
-    #             print "exitcode:%s"%exitcode
-    #             print "output:'%s'"%output
-
-    #             from IPython import embed
-    #             print "DEBUG NOW ooo"
-    #             embed()
-    #             p
-
-
-    #         elif self.isWindows():
-    #             import subprocess, win32pipe, msvcrt, pywintypes
-
-    #             # For some awkward reason you need to include the stdin pipe, or you get an error deep inside
-    #             # the subprocess module if you use QRedirectStdOut in the calling script
-    #             # We do not use the stdin.
-    #             childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=False, shell=useShell, env=os.environ)
-    #             output = ""; OUT_LINE = ""; ERR_LINE = ""
-    #             childRunning = True
-
-    #             while childRunning:
-    #                 stdoutData = childprocess.stdout.readline() # The readline method will block until data is received on stdout, or the stdout pipe has been destroyed. (Will return empty string)
-    #                                                             # Only call processes that release their stdout pipe when exiting, otherwise the method will not return when the process completed.
-    #                                                             # When the called process starts another process and marks its handle of the stdout pipe as inheritable, the pipe will not be destroyed before both processes end.
-    #                 if stdoutData != '':
-    #                     output = output + stdoutData
-    #                     (OUT_LINE, ERR_LINE) = _logoutput(stdoutData, OUT_LINE, ERR_LINE)
-    #                 else: # Did not read any data on channel
-    #                     if childprocess.poll() != None: # Will return a number if the process has ended, or None if it's running.
-    #                         childRunning = False
-
-    #             exitcode = childprocess.returncode
-    #             error = "Error output redirected to stdout."
-
-    #         else:
-    #             raise RuntimeError("Non supported OS for self.execute()")
-
-    #     except Exception as e:
-    #         print e
-    #         raise RuntimeError("ERROR IN EXECUTION, SHOULD NOT GET HERE.")
-
-    #     output=output.decode('utf8')#'ascii')
-    #     print "EXEC DONE2"
-    #     print "exitcode:%s"%exitcode
-    #     print "output:'%s'"%output
-    #     error=error.decode('utf8')#'ascii')
-
-    #     if (int(exitcode)!=0 or str(error)!=""):
-    #         errmsg="**ERROR**: execute cmd '%s' exitcode(%s)\nOutput:%s\nError:%s\n" % (command,exitcode, output, error)
-    #         if dieOnNonZeroExitCode:
-    #             print (errmsg)
-    #             raise RuntimeError(errmsg)
-    #         if not ignoreErrorOutput:
-    #             print (errmsg)
-
-    #     return output
-
     def executeInteractive(self,command):
         exitcode = os.system(command)
         return exitcode
@@ -1209,17 +1073,25 @@ class InstallTools():
         if not url:
             raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
 
+        if login=="" and url.find("github.com/")!=-1:
+            #can see if there if login & passwd in OS env
+            #if yes fill it in
+            if os.environ.has_key("GITHUBUSER"):
+                login=os.environ["GITHUBUSER"]
+            if os.environ.has_key("GITHUBPASSWD"):
+                passwd=os.environ["GITHUBPASSWD"]
+
         protocol, repository_host, repository_account, repository_name, repository_url = self.rewriteGitRepoUrl(url=url,login=login,passwd=passwd)
 
         repository_type = repository_host.split('.')[0] if '.' in repository_host else repository_host
 
         if not dest:
-            dest = '/opt/code/%(type)s/%(account)s/%(repo_name)s' % {
-                'type': repository_type,
-                'account': repository_account,
-                'repo_name': repository_name[:-4],  # Remove the trailling '.git'
+            dest = '%(codedir)s/%(type)s/%(account)s/%(repo_name)s' % {
+                'codedir': self.CODEDIR,
+                'type': repository_type.lower(),
+                'account': repository_account.lower(),
+                'repo_name': repository_name[:-4].lower(),  # Remove the trailling '.git'
             }
-            dest = dest.lower()
 
         if reset:
             self.delete(dest)
@@ -1298,7 +1170,6 @@ class InstallTools():
             raise RuntimeError("Cannot find git repo '%s':'%s':'%s'"%(provider,account,name))
         return repos
 
-
     def pushGitRepos(self,message,name="",update=True,provider="",account=""):
         """
         if name specified then will look under code dir if repo with path can be found
@@ -1346,255 +1217,23 @@ class InstallTools():
                 print(("changed login/passwd on %s"%configpath))
                 self.writeFile(configpath,text2)
 
-
-############# package installation
-
-    def installJS(self,base="/opt/jumpscale7",clean=False,insystem=True,pythonversion=2,web=False,copybinary=True):
+    def _initExtra(self):
         """
-        @param pythonversion is 2 or 3
-        if 3 and base not specified then base becomes /opt/jumpscale73
+        will get extra install tools lib
         """
-        print(("Install Jumpscale in %s"%base))
-        if clean:
-            self.cleanSystem()
+        if not self._extratools:
+            if not self.exists("ExtraTools.py"):
+                url="https://raw.githubusercontent.com/Jumpscale/jumpscale_core/master/install/ExtraTools.py"
+                self.download(url,"/tmp/ExtraTools.py")
+                if "/tmp" not in sys.path:
+                    sys.path.append("/tmp")
+            from ExtraTools import extra
+            self.extra=extra
+        self._extratools=True
 
-        if sys.platform.startswith('win'):
-            base=os.environ['JSBASE']
-        else:
-            if pythonversion==3 and base=="/opt/jumpscale7":
-                base="/opt/jumpscale73"
-
-        self.debug=True
-
-        if pythonversion==2:
-            gitbase="base_python"
-        else:
-            gitbase="base_python3"
-
-        print ("pull binaries")
-        self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
-
-        print ("copy binaries")
-        # self.createDir(base)
-        if copybinary:
-            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
-
-        print ("pull core")
-        self.pullGitRepo("https://github.com/Jumpscale/jumpscale_core7", depth=1)
-        src="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale"
-        self.debug=False
-        if pythonversion==2:
-            dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
-        else:
-            dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
-        if insystem or not self.exists(dest):
-            self.symlink(src, dest)
-
-        self.createDir("%s/lib"%base)
-        self.createDir("%s/bin"%base)
-        self.createDir("%s/hrd/system"%base)
-        self.createDir("%s/hrd/apps"%base)
-
-        dest="%s/lib/JumpScale"%base
-        self.createDir(dest)
-        self.symlinkFilesInDir(src, dest, includeDirs=True)
-
-        src="/opt/code/github/jumpscale/jumpscale_core7/shellcmds"
-        desttest="/usr/local/bin/js"
-        if insystem or not self.exists(desttest):
-            dest="/usr/local/bin"
-            self.symlinkFilesInDir(src, dest)
-
-        dest="%s/bin"%base
-        self.symlinkFilesInDir(src, dest)
-
-        for item in ["InstallTools","ExtraTools"]:
-            src="/opt/code/github/jumpscale/jumpscale_core7/install/%s.py"%item
-            dest="%s/lib/%s.py"%(base,item)
-            self.symlink(src, dest)
-            if insystem:
-                dest="/usr/local/lib/python2.7/dist-packages/%s.py"%(item)
-                self.symlink(src, dest)
-
-        if web:
-            if pythonversion==2:
-                gitbase="web_python"
-            else:
-                gitbase="web_python3"
-            self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
-            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
-
-
-        if pythonversion==2:
-            basedir="/opt/jumpscale7"
-        else:
-            basedir="/opt/jumpscale73"
-
-        self._writeenv(basedir=basedir,insystem=insystem)
-
-        if not insystem:
-            sys.path=[]
-        sys.path.insert(0,"%s/lib"%basedir)
-
-        from JumpScale import j
-
-        #make sure all configured paths are created
-        for item in j.application.config.getListFromPrefix("system.paths"):
-            self.createDir(item)
-
-        # not needed with @ys
-        # self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
-
-        print("Get atYourService metadata.")
-        self.pullGitRepo("https://github.com/Jumpscale/ays_jumpscale7",depth=1)
-
-        print ("install was successfull")
-        if pythonversion==2:
-            print ("to use do 'source %s/env.sh;ipython'"%base)
-        else:
-            print ("to use do 'source %s/env.sh;ipython3'"%base)
-
-
-    def _writeenv(self,basedir,insystem=True):
-
-        self.createDir("%s/hrd/system/"%basedir)
-        self.createDir("%s/hrd/apps/"%basedir)
-
-        C="""
-paths.base=$base
-paths.bin=$(paths.base)/bin
-paths.tmp=/tmp/jumpscale
-paths.code=/opt/code
-paths.lib=$(paths.base)/lib
-
-paths.python.lib.js=$(paths.lib)/JumpScale
-paths.python.lib.ext=$(paths.base)/libext
-paths.app=$(paths.base)/apps
-paths.var=$(paths.base)/var
-paths.log=$(paths.var)/log
-paths.pid=$(paths.var)/pid
-
-paths.cfg=$(paths.base)/cfg
-paths.hrd=$(paths.base)/hrd
-
-system.logging = 1
-
-"""
-        C=C.replace("$base",basedir.rstrip("/"))
-        self.writeFile("%s/hrd/system/system.hrd"%basedir,C)
-
-#         C="""
-# email                   = @ASK descr:'email as used for github'
-# fullname                = @ASK descr:'full name as used for github'
-# git.login               = @ASK descr:'login for github'
-# git.passwd              = @ASK descr:'passwd for github'
-# """
-
-        C="""
-email                   =
-fullname                =
-git.login               =
-git.passwd              =
-"""
-
-        hpath="%s/hrd/system/whoami.hrd"%basedir
-        if not self.exists(path=hpath):
-            self.writeFile(hpath,C)
-
-        C="""
-#here domain=jumpscale, change name for more domains
-metadata.jumpscale =
-    url:'https://github.com/Jumpscale/ays_jumpscale7',
-
-"""
-        hpath="%s/hrd/system/atyourservice.hrd"%basedir
-        if not self.exists(path=hpath):
-            self.writeFile(hpath,C)
-
-        C="""
-deactivate () {
-    export PATH=$_OLD_PATH
-    unset _OLD_PATH
-    export PYTHONPATH=$_OLD_PYTHONPATH
-    unset _OLD_PYTHONPATH
-    export LD_LIBRARY_PATH=$_OLD_LD_LIBRARY_PATH
-    unset _OLD_LD_LIBRARY_PATH
-    export PS1=$_OLD_PS1
-    unset _OLD_PS1
-    if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
-            hash -r 2>/dev/null
-    fi
-}
-if [[ "$JSBASE" == "$base" ]]; then
-    return 0
-fi
-export _OLD_PATH=$PATH
-export _OLD_PYTHONPATH=$PYTHONPATH
-export _OLD_LDLIBRARY_PATH=$LD_LIBRARY_PATH
-export _OLD_PS1=$PS1
-export PATH=$base/bin:$PATH
-export JSBASE=$base
-export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
-export LD_LIBRARY_PATH=$base/bin
-export PS1="(JumpScale) $PS1"
-if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
-        hash -r 2>/dev/null
-fi
-"""
-        C=C.replace("$base",basedir)
-        envfile = "%s/env.sh"%basedir
-        self.writeFile(envfile,C)
-
-        C2="""#!/bin/bash
-# set -x
-source {env}
-echo sandbox:{base}
-# echo $base/bin/python "$@"
-$base/bin/python "$@"
-"""
-        C2=C2.format(base=basedir, env=envfile)
-        C2=C2.replace("$base",basedir)
-        dest="%s/bin/jspython"%basedir
-        self.delete(dest)
-        self.writeFile(dest,C2)
-        self.chmod(dest, 0o770)
-
-        if insystem:
-#             C2="""
-# #!/bin/bash
-# set -ex
-# #export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu:$PYTHONPATH
-# /usr/bin/python "$@"
-# """
-            # C2=C2.replace("$base",basedir)
-            dest="/usr/local/bin/jspython"
-            self.delete(dest)#to remove link
-
-            self.writeFile(dest,C2)
-            self.chmod(dest, 0o770)
-
-            dest="/usr/bin/jspython"
-            self.delete(dest)
-
-        #change site.py file
-        def changesite(path):
-            if self.exists(path=path):
-                C=self.readFile(path)
-                out=""
-                for line in C.split("\n"):
-                    if line.find("ENABLE_USER_SITE")==0:
-                        line="ENABLE_USER_SITE = False"
-                    if line.find("USER_SITE")==0:
-                        line="USER_SITE = False"
-                    if line.find("USER_BASE")==0:
-                        line="USER_BASE = False"
-
-                    out+="%s\n"%line
-                self.writeFile(path,out)
-        changesite("%s/lib/site.py"%basedir)
-        # if insystem:
-        #     changesite("/usr/local/lib/python2.7/dist-packages/site.py"%basedir)
-
+    def getWalker(self):
+        self._initExtra()
+        return self.extra.getWalker(self)
 
     def loadScript(self,path):
         print(("load jumpscript: %s"%path))
@@ -1622,52 +1261,417 @@ $base/bin/python "$@"
             self.actions[name]=eval("self.module.%s"%name)
 
     def installPackage(self,path):
-        pass
+        pass        
 
-############# custom install items
+do=InstallTools()
+
+class Installer():
+
+    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7.git",AYSBRANCH="master",SANDBOX=0):
+        """
+        @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
+        if 3 and base not specified then base becomes /opt/jumpscale73
+
+        @param insystem means use system packaging system to deploy dependencies like python & python packages
+        @param codedir is the location where the code will be installed, code which get's checked out from github
+        @param base is location of root of JumpScale
+        @copybinary means copy the binary files (in sandboxed mode) to the location, don't link
+
+        JSGIT & AYSGIT allow us to chose other install sources for jumpscale as well as AtYourService repo
+
+        IMPORTANT: if env var's are set they get priority
+
+        """
+
+        if os.environ.has_key("TMPDIR"):
+            tmpdir=os.environ["TMPDIR"]
+        else:
+            tmpdir="/tmp"
+
+        if os.environ.has_key("JSBRANCH"):
+            JSBRANCH=os.environ["JSBRANCH"]
+
+        if base!="":
+            os.environ["JSBASE"]=base
+
+        if not os.environ.has_key("JSBASE"):
+
+            if sys.platform.startswith('win'):
+                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")
+            elif sys.platform.startswith('darwin'):
+                os.environ["JSBASE"]="/Users/Shared/jumpscale/"
+            else:
+                #for all linux versions
+                os.environ["JSBASE"]="/opt/jumpscale7"
+        
+        # if pythonversion==3:
+        #     os.environ["JSBASE"]+="3"            #add nr 3 to path when python 3
+
+        base=os.environ["JSBASE"]   
+
+        print(("Install Jumpscale in %s"%base))
+
+        #this means if env var's are set they get priority
+        args=["GITHUBUSER","GITHUBPASSWD","JSGIT","JSBRANCH","AYSGIT","AYSBRANCH","CODEDIR","SANDBOX"]
+        #walk over all var's & set defaults or get them from env
+        for var in args:
+            if os.environ.has_key(var):
+                exec("%s = os.environ[\"%s\"]"%(var,var))
+
+        os.environ["GITHUBUSER"]=GITHUBUSER
+        os.environ["GITHUBPASSWD"]=GITHUBPASSWD
+        os.environ["JSGIT"]=JSGIT
+        os.environ["JSBRANCH"]=JSBRANCH
+        os.environ["AYSGIT"]=AYSGIT
+        os.environ["AYSBRANCH"]=AYSBRANCH
+        os.environ["CODEDIR"]=CODEDIR
+
+        if clean:
+            self.cleanSystem()
+
+        self.debug=True
+
+        self.prepare(SANDBOX=SANDBOX)
+
+        print ("pull core")
+        do.pullGitRepo(JSGIT,branch=JSBRANCH, depth=1)
+        src="%s/github/jumpscale/jumpscale_core7/lib/JumpScale"%do.CODEDIR
+        self.debug=False
+
+        if do.TYPE.startswith("OSX"):
+            destjs="/usr/local/lib/python2.7/site-packages/JumpScale"
+        elif do.TYPE.startswith("WIN"):
+            raise RuntimeError("do")
+        else:
+            destjs="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        
+        # if pythonversion==2:
+        #     dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
+        # else:
+        #     dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
+            
+        if insystem or not self.exists(dest):
+            do.symlink(src, destjs)
+        else:
+            do.copyTree(src,destjs)
+
+        do.createDir("%s/lib"%base)
+        do.createDir("%s/bin"%base)
+        do.createDir("%s/hrd/system"%base)
+        do.createDir("%s/hrd/apps"%base)
+
+        dest="%s/lib/JumpScale"%base
+        do.createDir(dest)
+        do.symlinkFilesInDir(src, dest, includeDirs=True)
+
+        src="%s/github/jumpscale/jumpscale_core7/shellcmds"%do.CODEDIR
+        desttest="/usr/local/bin/js"
+        if insystem or not self.exists(desttest):
+            dest="/usr/local/bin"
+            do.symlinkFilesInDir(src, dest)
+
+        dest="%s/bin"%base
+        do.symlinkFilesInDir(src, dest)
+
+        for item in ["InstallTools","ExtraTools"]:
+            src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
+            dest="%s/lib/%s.py"%(base,item)
+            do.symlink(src, dest)
+            if insystem:
+                dest="%s/%s.py"%(destjs,item)
+                do.symlink(src, dest)
+
+        # if web:
+        #     if pythonversion==2:
+        #         gitbase="web_python"
+        #     else:
+        #         gitbase="web_python3"
+        #     do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
+        #     do.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
+
+
+        
+        self._writeenv(basedir=base,insystem=insystem)
+
+        if not insystem:
+            sys.path=[]
+        sys.path.insert(0,"%s/lib"%base)
+
+        from JumpScale import j
+
+        #make sure all configured paths are created
+        for item in j.application.config.getListFromPrefix("system.paths"):
+            do.createDir(item)
+
+        # not needed with @ys
+        # self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
+
+        print("Get atYourService metadata.")
+        do.pullGitRepo("https://github.com/Jumpscale/ays_jumpscale7",depth=1)
+
+        print ("install was successfull")
+        # if pythonversion==2:
+        print ("to use do 'source %s/env.sh;ipython'"%base)
+        # else:
+        #     print ("to use do 'source %s/env.sh;ipython3'"%base)
+
+    def _writeenv(self,basedir,insystem=True):
+
+        do.createDir("%s/hrd/system/"%basedir)
+        do.createDir("%s/hrd/apps/"%basedir)
+
+        C="""
+        paths.base=$base
+        paths.bin=$(paths.base)/bin
+        paths.tmp=/tmp/jumpscale
+        paths.code=/opt/code
+        paths.lib=$(paths.base)/lib
+
+        paths.python.lib.js=$(paths.lib)/JumpScale
+        paths.python.lib.ext=$(paths.base)/libext
+        paths.app=$(paths.base)/apps
+        paths.var=$(paths.base)/var
+        paths.log=$(paths.var)/log
+        paths.pid=$(paths.var)/pid
+
+        paths.cfg=$(paths.base)/cfg
+        paths.hrd=$(paths.base)/hrd
+
+        system.logging = 1
+
+        """
+        C=C.replace("$base",basedir.rstrip("/"))
+        do.writeFile("%s/hrd/system/system.hrd"%basedir,C)
+
+        #         C="""
+        # email                   = @ASK descr:'email as used for github'
+        # fullname                = @ASK descr:'full name as used for github'
+        # git.login               = @ASK descr:'login for github'
+        # git.passwd              = @ASK descr:'passwd for github'
+        # """
+
+        C="""
+        email                   = {EMAIL}
+        fullname                = {FULLNAME}
+        git.login               = {GITHUBUSER}
+        git.passwd              = {GITHUBPASSWD}     
+        """
+
+        for item in ["EMAIL","FULLNAME","GITHUBUSER","GITHUBPASSWD","EMAIL","FULLNAME","AYSGIT","AYSBRANCH"]:
+            if item not in os.environ:
+                os.environ[item]=""
+
+        C=C.format(**os.environ)
+
+        hpath="%s/hrd/system/whoami.hrd"%basedir
+        if not do.exists(path=hpath):
+            do.writeFile(hpath,C)
+
+        C="""
+        #here domain=jumpscale, change name for more domains
+        metadata.jumpscale = url:'{AYSGIT}'
+        metadata.jumpscale.branch = url:'{AYSBRANCH}'
+
+        """
+        C=C.format(**os.environ)
+
+        hpath="%s/hrd/system/atyourservice.hrd"%basedir
+        if not do.exists(path=hpath):
+            do.writeFile(hpath,C)
+
+        C="""
+        deactivate () {
+            export PATH=$_OLD_PATH
+            unset _OLD_PATH
+            export PYTHONPATH=$_OLD_PYTHONPATH
+            unset _OLD_PYTHONPATH
+            export LD_LIBRARY_PATH=$_OLD_LD_LIBRARY_PATH
+            unset _OLD_LD_LIBRARY_PATH
+            export PS1=$_OLD_PS1
+            unset _OLD_PS1
+            if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
+                    hash -r 2>/dev/null
+            fi
+        }
+        
+        if [[ "$JSBASE" == "$base" ]]; then
+            return 0
+        fi
+
+        export _OLD_PATH=$PATH
+        export _OLD_PYTHONPATH=$PYTHONPATH
+        export _OLD_LDLIBRARY_PATH=$LD_LIBRARY_PATH
+        export _OLD_PS1=$PS1
+        export PATH=$base/bin:$PATH
+        export JSBASE=$base
+        export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
+        export LD_LIBRARY_PATH=$base/bin
+        export PS1="(JumpScale) $PS1"
+        if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
+                hash -r 2>/dev/null
+        fi
+        """
+        C=C.replace("$base",basedir)
+        envfile = "%s/env.sh"%basedir
+        do.writeFile(envfile,C)
+
+        if not insystem:
+            C2="""#!/bin/bash
+            # set -x
+            source {env}
+            echo sandbox:{base}
+            # echo $base/bin/python "$@"
+            $base/bin/python "$@"
+            """
+        else:
+            C2="""#!/bin/bash
+            # set -x
+            source {env}
+            echo sandbox:{base}
+            # echo $base/bin/python "$@"
+            python "$@"
+            """            
+
+        C2=C2.format(base=basedir, env=envfile)
+        C2=C2.replace("$base",basedir)
+        dest="%s/bin/jspython"%basedir
+        do.delete(dest)
+        do.writeFile(dest,C2)
+        do.chmod(dest, 0o770)
+
+        if insystem:
+            #             C2="""
+            # #!/bin/bash
+            # set -ex
+            # #export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu:$PYTHONPATH
+            # /usr/bin/python "$@"
+            # """
+            # C2=C2.replace("$base",basedir)
+            dest="/usr/local/bin/jspython"
+            do.delete(dest)#to remove link
+
+            do.writeFile(dest,C2)
+            do.chmod(dest, 0o770)
+
+            dest="/usr/bin/jspython"
+            do.delete(dest)
+
+
+        #change site.py file
+        def changesite(path):
+            if do.exists(path=path):
+                C=self.readFile(path)
+                out=""
+                for line in C.split("\n"):
+                    if line.find("ENABLE_USER_SITE")==0:
+                        line="ENABLE_USER_SITE = False"
+                    if line.find("USER_SITE")==0:
+                        line="USER_SITE = False"
+                    if line.find("USER_BASE")==0:
+                        line="USER_BASE = False"
+
+                    out+="%s\n"%line
+                do.writeFile(path,out)
+        changesite("%s/lib/site.py"%basedir)
+        # if insystem:
+        #     changesite("/usr/local/lib/python2.7/dist-packages/site.py"%basedir)
+
+
+
+
+        ############# custom install items
 
     def cleanSystem(self):
-        print("clean platform")
-        CMDS="""
-pip uninstall JumpScale-core
-# killall tmux  #dangerous
-killall redis-server
-rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale*
-rm -rf /usr/local/lib/python2.7/site-packages/jumpscale*
-rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale*
-rm -rf /usr/local/lib/python2.7/site-packages/JumpScale*
-rm -rf /usr/local/lib/python2.7/site-packages/JumpScale/
-rm -rf /usr/local/lib/python2.7/site-packages/jumpscale/
-rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale/
-rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale/
-rm /usr/local/bin/js*
-rm /usr/local/bin/jpack*
-rm /usr/local/bin/osis*
-rm -rf /opt/jumpscale7/lib/JumpScale
-rm -rf /opt/sentry/
-sudo stop redisac
-sudo stop redisp
-sudo stop redism
-sudo stop redisc
-killall redis-server
-rm -rf /opt/redis/
-"""
-        self.executeCmds(CMDS,outputStdout=False, outputStderr=False,useShell = True,log=False,cwd=None,timeout=60,errors=[],ok=[],captureout=False,dieOnNonZeroExitCode=False)
+        if self.TYPE.startswith("UBUNTU"):
+            print("clean platform")
+            CMDS="""
+            pip uninstall JumpScale-core
+            # killall tmux  #dangerous
+            killall redis-server
+            rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale*
+            rm -rf /usr/local/lib/python2.7/site-packages/jumpscale*
+            rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale*
+            rm -rf /usr/local/lib/python2.7/site-packages/JumpScale*
+            rm -rf /usr/local/lib/python2.7/site-packages/JumpScale/
+            rm -rf /usr/local/lib/python2.7/site-packages/jumpscale/
+            rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale/
+            rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale/
+            rm /usr/local/bin/js*
+            rm /usr/local/bin/jpack*
+            rm /usr/local/bin/osis*
+            rm -rf /opt/jumpscale7/lib/JumpScale
+            rm -rf /opt/sentry/
+            sudo stop redisac
+            sudo stop redisp
+            sudo stop redism
+            sudo stop redisc
+            killall redis-server
+            rm -rf /opt/redis/
+            """
+            self.executeCmds(CMDS,outputStdout=False, outputStderr=False,useShell = True,log=False,cwd=None,timeout=60,errors=[],ok=[],captureout=False,dieOnNonZeroExitCode=False)
+
+    def updateOS(self):
+
+        if self.TYPE.startswith("UBUNTU"):
+            CMDS="""
+            apt-get update
+            apt-get autoremove
+            apt-get -f install -y
+            apt-get upgrade -y
+            """
+            do.executeCmds(CMDS)
+
+        elif self.TYPE.startswith("OSX"):
+            CMDS="""
+            brew update
+            brew upgrade
+            """
+            do.executeCmds(CMDS)            
+
+    def installpip(self):
+        if not do.exists(do.joinPaths(do.TMP,"get-pip.py")):
+            cmd="cd %s;curl -k https://bootstrap.pypa.io/get-pip.py > get-pip.py;python get-pip.py"%do.TMP
+            do.execute(cmd)
+
+    def prepare(self,SANDBOX=0):
+        # if pythonversion==2:
+        #     gitbase="base_python"
+        # else:
+        #     gitbase="base_python3"
+
+        if SANDBOX==1:
+            if self.TYPE!=("UBUNTU64"):
+                raise RuntimeError("Sandbox mode only supported on ubuntu 64 bit.")
+
+            print ("pull binaries")
+            self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
+
+            print ("copy binaries")
+            # self.createDir(base)
+            if copybinary:
+                self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)        
+
+        else:
+            self.installpip()
+            cmds="""            
+            pip install ipython
+            """
+            do.executeCmds(cmds)
 
     def prepareUbuntu14Development(self,js=True):
         self.cleanSystem()
         print("prepare ubuntu for development")
 
         CMDS="""
-apt-get update
-apt-get autoremove
-apt-get -f install -y
-apt-get upgrade -y
-apt-get install mc python-git git ssh python2.7 python-requests python-apt openssl ca-certificates ipython -y
-cd /tmp;wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py
-cd /tmp;python get-pip.py
-apt-get install byobu tmux libmhash2 libpython-all-dev python-redis python-hiredis -y
-        """
+        apt-get update
+        apt-get autoremove
+        apt-get -f install -y
+        apt-get upgrade -y
+        apt-get install mc python-git git ssh python2.7 python-requests python-apt openssl ca-certificates ipython -y
+        cd /tmp;wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+        cd /tmp;python get-pip.py
+        apt-get install byobu tmux libmhash2 libpython-all-dev python-redis python-hiredis -y
+                """
         self.executeCmds(CMDS)
 
         if js:
@@ -1679,11 +1683,11 @@ apt-get install byobu tmux libmhash2 libpython-all-dev python-redis python-hired
         print("prepare ubuntu for development")
 
         CMDS="""
-apt-get update
-apt-get autoremove
-apt-get -f install -y
-apt-get upgrade -y
-apt-get install mc git ssh python2.7 python-requests  -y
+        apt-get update
+        apt-get autoremove
+        apt-get -f install -y
+        apt-get upgrade -y
+        apt-get install mc git ssh python2.7 python-requests  -y
         """
         self.executeCmds(CMDS)
 
@@ -1719,22 +1723,6 @@ apt-get install mc git ssh python2.7 python-requests  -y
             os.path.walk("/usr", do,"")
             os.path.walk("/etc", do,"")
 
-    def _initExtra(self):
-        """
-        will get extra install tools lib
-        """
-        if not self._extratools:
-            if not self.exists("ExtraTools.py"):
-                url="https://raw.githubusercontent.com/Jumpscale/jumpscale_core/master/install/ExtraTools.py"
-                self.download(url,"/tmp/ExtraTools.py")
-                if "/tmp" not in sys.path:
-                    sys.path.append("/tmp")
-            from ExtraTools import extra
-            self.extra=extra
-        self._extratools=True
 
-    def getWalker(self):
-        self._initExtra()
-        return self.extra.getWalker(self)
+do.installer=Installer()
 
-do=InstallTools()
