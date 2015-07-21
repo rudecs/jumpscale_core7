@@ -1525,6 +1525,9 @@ deactivate () {
             hash -r 2>/dev/null
     fi
 }
+if [[ "$JSBASE" == "$base" ]]; then
+    return 0
+fi
 export _OLD_PATH=$PATH
 export _OLD_PYTHONPATH=$PYTHONPATH
 export _OLD_LDLIBRARY_PATH=$LD_LIBRARY_PATH
