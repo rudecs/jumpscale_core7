@@ -1073,18 +1073,13 @@ class InstallTools():
         if not url:
             raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
 
-        if login=="" and url.find("github.com/")!=-1:
+        if login==None and (url.find("github.com/")!=-1 or url.find("git.aydo.com")!=-1):
             #can see if there if login & passwd in OS env
             #if yes fill it in
             if os.environ.has_key("GITHUBUSER"):
                 login=os.environ["GITHUBUSER"]
             if os.environ.has_key("GITHUBPASSWD"):
                 passwd=os.environ["GITHUBPASSWD"]
-
-        from IPython import embed
-        print "DEBUG NOW kkk"
-        embed()
-        
 
         protocol, repository_host, repository_account, repository_name, repository_url = self.rewriteGitRepoUrl(url=url,login=login,passwd=passwd)
 
