@@ -1,10 +1,3 @@
-if [ -f "/etc/slitaz-release" ]
-then
-  echo "found slitaz"
-  tazpkg get-install curl 
-  tazpkg get-install git
-  tazpkg get-install python 
-fi
 
 #known env variables
 
@@ -39,6 +32,11 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     if [ "$dist" == "Ubuntu" ]; then
         echo "found ubuntu"
         apt-get install curl git ssh python2.7 python -y
+    elif [ -f "/etc/slitaz-release" ]; then
+      echo "found slitaz"
+      tazpkg get-install curl 
+      tazpkg get-install git
+      tazpkg get-install python 
     fi
     export TMPDIR='/tmp'
     export JSBASE='/opt/jumpscale7'
