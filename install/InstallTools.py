@@ -121,7 +121,7 @@ class InstallTools():
             #find generic prepend for full file
             minchars=9999
             for line in content.split("\n"):
-                if line.strip()=="" or line[0]=="#":
+                if line.strip()=="" or (line.startswith('#') and not line.startswith("#!")):
                     continue
                 prechars=len(line)-len(line.lstrip())
                 if prechars<minchars:
@@ -1268,7 +1268,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7.git",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
+    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1355,7 +1355,7 @@ class Installer():
         # else:
         #     dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
             
-        if insystem or not self.exists(dest):
+        if insystem or not self.exists(destjs):
             do.symlink(src, destjs)
         else:
             do.copyTree(src,destjs)
@@ -1386,16 +1386,6 @@ class Installer():
                 dest="%s/%s.py"%(destjs,item)
                 do.symlink(src, dest)
 
-        # if web:
-        #     if pythonversion==2:
-        #         gitbase="web_python"
-        #     else:
-        #         gitbase="web_python3"
-        #     do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
-        #     do.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
-
-
-        
         self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX)
 
         if not insystem:
@@ -1412,13 +1402,11 @@ class Installer():
         # self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
 
         print("Get atYourService metadata.")
-        do.pullGitRepo("https://github.com/Jumpscale/ays_jumpscale7",depth=1)
+        do.pullGitRepo(AYSGIT, branch=AYSBRANCH, depth=1)
 
         print ("install was successfull")
         # if pythonversion==2:
-        print ("to use do 'source %s/env.sh;ipython'"%base)
-        # else:
-        #     print ("to use do 'source %s/env.sh;ipython3'"%base)
+        print ("to use do 'js'")
 
     def _writeenv(self,basedir,insystem=True,SANDBOX=1):
 
@@ -1476,8 +1464,9 @@ class Installer():
 
         C="""
         #here domain=jumpscale, change name for more domains
-        metadata.jumpscale = url:'{AYSGIT}'
-        metadata.jumpscale.branch = url:'{AYSBRANCH}'
+        metadata.jumpscale =
+            url:'{AYSGIT}',
+            branch:'{AYSBRANCH}',
 
         """
         C=C.format(**os.environ)

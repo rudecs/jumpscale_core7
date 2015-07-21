@@ -14,7 +14,7 @@
 # export JSBASE='/opt/jumpscale7'
 # export JSGIT='https://github.com/Jumpscale/jumpscale_core7.git'
 # export JSBRANCH='master'
-# export AYSGIT='https://github.com/Jumpscale/ays_jumpscale7.git'
+# export AYSGIT='https://github.com/Jumpscale/ays_jumpscale7'
 # export AYSBRANCH='master'
 
 if [ "$(uname)" == "Darwin" ]; then
