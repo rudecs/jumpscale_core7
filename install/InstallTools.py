@@ -1392,7 +1392,7 @@ class Installer():
 
 
         
-        self._writeenv(basedir=base,insystem=insystem,sandbox=SANDBOX)
+        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX)
 
         if not insystem:
             sys.path=[]
