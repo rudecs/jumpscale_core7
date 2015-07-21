@@ -1563,7 +1563,7 @@ class Installer():
         #change site.py file
         def changesite(path):
             if do.exists(path=path):
-                C=self.readFile(path)
+                C=do.readFile(path)
                 out=""
                 for line in C.split("\n"):
                     if line.find("ENABLE_USER_SITE")==0:
