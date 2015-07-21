@@ -1382,9 +1382,6 @@ class Installer():
             src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
             dest="%s/lib/%s.py"%(base,item)
             do.symlink(src, dest)
-            if insystem:
-                dest="%s/%s.py"%(destjs,item)
-                do.symlink(src, dest)
 
         self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX)
 
