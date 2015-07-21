@@ -1716,8 +1716,8 @@ class Installer():
             name=email
         if email=="":
             raise RuntimeError("email cannot be empty")
-        self.execute("git config --global user.email \"%s\""%email)
-        self.execute("git config --global user.name \"%s\""%name)
+        do.execute("git config --global user.email \"%s\""%email)
+        do.execute("git config --global user.name \"%s\""%name)
 
     def replacesitecustomize(self):
         if not self.TYPE=="WIN":
