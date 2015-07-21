@@ -1325,6 +1325,7 @@ class Installer():
         os.environ["AYSGIT"]=AYSGIT
         os.environ["AYSBRANCH"]=AYSBRANCH
         os.environ["CODEDIR"]=CODEDIR
+        os.environ["SANDBOX"]=SANDBOX
 
         if clean:
             self.cleanSystem()
@@ -1647,9 +1648,7 @@ class Installer():
             self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
             print ("copy binaries")
-            # self.createDir(base)
-            if copybinary:
-                self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)        
+            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)        
 
         else:
             self.installpip()

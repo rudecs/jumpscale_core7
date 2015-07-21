@@ -24,7 +24,6 @@ fi
 # export AYSGIT='https://github.com/Jumpscale/ays_jumpscale7.git'
 # export AYSBRANCH='master'
 
-set -ex
 if [ "$(uname)" == "Darwin" ]; then
     # Do something under Mac OS X platform   
     echo 'install brew'     
