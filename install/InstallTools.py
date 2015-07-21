@@ -1443,7 +1443,7 @@ class Installer():
 
         """
         C=C.replace("$base",basedir.rstrip("/"))
-        C=C.replace("$sandbox",SANDBOX)
+        C=C.replace("$sandbox",str(SANDBOX))
         do.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
         #         C="""

@@ -25,7 +25,7 @@ overwrite=True #set on False for development or debugging
 
 if overwrite and os.path.exists(path):
     os.remove(path)
-    os.remove(path+"c")
+    # os.remove(path+"c")
 
 import random
 
