@@ -21,7 +21,7 @@ print "bootstrap installtools in dir %s and use branch:'%s'"%(tmpdir,branch)
 
 path="%s/InstallTools.py"%tmpdir
 
-overwrite=False #set on False for development or debugging
+overwrite=True #set on False for development or debugging
 
 if overwrite and os.path.exists(path):
     os.remove(path)
