@@ -20,7 +20,7 @@ class ServiceTemplate():
         self.parent = parent
         self.metapath = path
 
-    def newInstance(self,instance="main", args={}, hrddata={}, parent=None, precise=False):
+    def newInstance(self,instance="main", args={}, hrddata={}, path='', parent=None, precise=False):
         # TODO, should take in account the domain too
         services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent, precise=precise)
         if len(services)>0:
@@ -28,9 +28,9 @@ class ServiceTemplate():
             print "No creation, just retrieve existing service"
             return services[0]
         if parent and parent.name == "node.ssh":
-            service = RemoteService(instance=instance, servicetemplate=self, args=args, parent=parent)
+            service = RemoteService(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
         else:
-            service = Service(instance=instance, servicetemplate=self, args=args, parent=parent)
+            service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
         return service
 
     def getInstance(self, instance=None, parent=None):

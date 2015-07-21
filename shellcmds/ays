@@ -134,7 +134,7 @@ def getHRDData(args):
 
 def getRemote(args):
     parent = getParent(args)
-    path = args.path if args.path else parent.path
+    path = args.path if args.path else parent.path if parent else ''
     remote = [remote for remote in REMOTES if remote in path]
     if not remote:
         return None, None
@@ -383,7 +383,6 @@ else:
                 ports = ', '.join(str(x) for x in service.getTCPPorts())
                 print form % {'name': service.name, 'domain': service.domain, 'instance': service.instance, 'prio': service.getPriority(), 'status': status, 'ports': ports}
 
-        services = j.atyourservice.findServices()
         printServices(services)
 
         # elif args.action == 'nodes':
