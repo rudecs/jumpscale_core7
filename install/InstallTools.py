@@ -1332,7 +1332,7 @@ class Installer():
 
         self.debug=True
 
-        self.prepare(SANDBOX=SANDBOX)
+        self.prepare(SANDBOX=SANDBOX,base=base)
 
         print ("pull core")
         do.pullGitRepo(JSGIT,branch=JSBRANCH, depth=1)
@@ -1392,7 +1392,7 @@ class Installer():
 
 
         
-        self._writeenv(basedir=base,insystem=insystem)
+        self._writeenv(basedir=base,insystem=insystem,sandbox=SANDBOX)
 
         if not insystem:
             sys.path=[]
@@ -1416,7 +1416,7 @@ class Installer():
         # else:
         #     print ("to use do 'source %s/env.sh;ipython3'"%base)
 
-    def _writeenv(self,basedir,insystem=True):
+    def _writeenv(self,basedir,insystem=True,SANDBOX=1):
 
         do.createDir("%s/hrd/system/"%basedir)
         do.createDir("%s/hrd/apps/"%basedir)
@@ -1439,9 +1439,11 @@ class Installer():
         paths.hrd=$(paths.base)/hrd
 
         system.logging = 1
+        system.sandbox = $sandbox
 
         """
         C=C.replace("$base",basedir.rstrip("/"))
+        C=C.replace("$sandbox",SANDBOX)
         do.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
         #         C="""
@@ -1634,7 +1636,7 @@ class Installer():
             cmd="cd %s;curl -k https://bootstrap.pypa.io/get-pip.py > get-pip.py;python get-pip.py"%do.TMP
             do.execute(cmd)
 
-    def prepare(self,SANDBOX=1):
+    def prepare(self,SANDBOX=1,base="/opt/jumpscale7"):
         # if pythonversion==2:
         #     gitbase="base_python"
         # else:
