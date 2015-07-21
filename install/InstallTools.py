@@ -1325,7 +1325,7 @@ class Installer():
         os.environ["AYSGIT"]=AYSGIT
         os.environ["AYSBRANCH"]=AYSBRANCH
         os.environ["CODEDIR"]=CODEDIR
-        os.environ["SANDBOX"]=SANDBOX
+        os.environ["SANDBOX"]=str(SANDBOX)
 
         if clean:
             self.cleanSystem()
