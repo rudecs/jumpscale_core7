@@ -1081,6 +1081,11 @@ class InstallTools():
             if os.environ.has_key("GITHUBPASSWD"):
                 passwd=os.environ["GITHUBPASSWD"]
 
+        from IPython import embed
+        print "DEBUG NOW kkk"
+        embed()
+        
+
         protocol, repository_host, repository_account, repository_name, repository_url = self.rewriteGitRepoUrl(url=url,login=login,passwd=passwd)
 
         repository_type = repository_host.split('.')[0] if '.' in repository_host else repository_host
@@ -1106,6 +1111,7 @@ class InstallTools():
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
         will ignore changes !!!!!!!!!!!
         """
+
         base,provider,account,repo,dest,url=self.getGitRepoArgs(url,dest,login,passwd,reset=reset)
 
         if dest==None and branch==None:
