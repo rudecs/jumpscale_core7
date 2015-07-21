@@ -17,7 +17,7 @@ fi
 #how to set the env vars: below you can find the defaults
 # export GITHUBUSER=''
 # export GITHUBPASSWD=''
-# export SANDBOX=1
+export SANDBOX=0
 # export JSBASE='/opt/jumpscale7'
 # export JSGIT='https://github.com/Jumpscale/jumpscale_core7.git'
 # export JSBRANCH='master'

@@ -1267,7 +1267,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7.git",AYSBRANCH="master",SANDBOX=0):
+    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7.git",AYSBRANCH="master",SANDBOX=1):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1634,15 +1634,16 @@ class Installer():
             cmd="cd %s;curl -k https://bootstrap.pypa.io/get-pip.py > get-pip.py;python get-pip.py"%do.TMP
             do.execute(cmd)
 
-    def prepare(self,SANDBOX=0):
+    def prepare(self,SANDBOX=1):
         # if pythonversion==2:
         #     gitbase="base_python"
         # else:
         #     gitbase="base_python3"
 
+        if self.TYPE!=("UBUNTU64"):
+            SANDBOX=0
+
         if SANDBOX==1:
-            if self.TYPE!=("UBUNTU64"):
-                raise RuntimeError("Sandbox mode only supported on ubuntu 64 bit.")
 
             print ("pull binaries")
             self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
