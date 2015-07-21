@@ -1312,7 +1312,7 @@ class Installer():
         print(("Install Jumpscale in %s"%base))
 
         #this means if env var's are set they get priority
-        args=["GITHUBUSER","GITHUBPASSWD","JSGIT","JSBRANCH","AYSGIT","AYSBRANCH","CODEDIR","SANDBOX"]
+        args=["GITHUBUSER","GITHUBPASSWD","JSGIT","JSBRANCH","AYSGIT","AYSBRANCH","CODEDIR","SANDBOX","EMAIL","FULLNAME"]
         #walk over all var's & set defaults or get them from env
         for var in args:
             if os.environ.has_key(var):
@@ -1326,6 +1326,9 @@ class Installer():
         os.environ["AYSBRANCH"]=AYSBRANCH
         os.environ["CODEDIR"]=CODEDIR
         os.environ["SANDBOX"]=str(SANDBOX)
+
+        if EMAIL!="":
+            self.gitConfig(FULLNAME,EMAIL)
 
         if clean:
             self.cleanSystem()
@@ -1709,6 +1712,10 @@ class Installer():
             do.execute("apt-get install lxc-docker -y",dieOnNonZeroExitCode=False)
 
     def gitConfig(self,name,email):
+        if name=="":
+            name=email
+        if email=="":
+            raise RuntimeError("email cannot be empty")
         self.execute("git config --global user.email \"%s\""%email)
         self.execute("git config --global user.name \"%s\""%name)
 
