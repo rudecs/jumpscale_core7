@@ -1646,6 +1646,7 @@ class Installer():
         if SANDBOX==1:
 
             print ("pull binaries")
+            gitbase="base_python"
             do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
             print ("copy binaries")
