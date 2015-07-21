@@ -24,7 +24,7 @@ fi
 # export AYSGIT='https://github.com/Jumpscale/ays_jumpscale7.git'
 # export AYSBRANCH='master'
 
-
+set -ex
 if [ "$(uname)" == "Darwin" ]; then
     # Do something under Mac OS X platform   
     echo 'install brew'     
@@ -34,7 +34,6 @@ if [ "$(uname)" == "Darwin" ]; then
     brew install git
     TMPDIR = $(~/tmp)
     export JSBASE = '/Users/Shared/jumpscale'
-    #pip install cheetah
 elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     dist=''
     dist=`grep DISTRIB_ID /etc/*-release | awk -F '=' '{print $2}'`
@@ -42,8 +41,8 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
         echo "found ubuntu"
         apt-get install curl git ssh python2.7 python -y
     fi
-    TMPDIR = '/tmp'
-
+    export TMPDIR='/tmp'
+    export JSBASE='/opt/jumpscale7'
 elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
     # Do something under Windows NT platform
     echo 'windows'
