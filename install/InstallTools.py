@@ -1073,7 +1073,7 @@ class InstallTools():
         if not url:
             raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
 
-        if login=="" and url.find("github.com/")!=-1:
+        if login==None and (url.find("github.com/")!=-1 or url.find("git.aydo.com")!=-1):
             #can see if there if login & passwd in OS env
             #if yes fill it in
             if os.environ.has_key("GITHUBUSER"):
@@ -1106,6 +1106,7 @@ class InstallTools():
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
         will ignore changes !!!!!!!!!!!
         """
+
         base,provider,account,repo,dest,url=self.getGitRepoArgs(url,dest,login,passwd,reset=reset)
 
         if dest==None and branch==None:
@@ -1267,7 +1268,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7.git",AYSBRANCH="master",SANDBOX=1):
+    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7.git",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1312,7 +1313,7 @@ class Installer():
         print(("Install Jumpscale in %s"%base))
 
         #this means if env var's are set they get priority
-        args=["GITHUBUSER","GITHUBPASSWD","JSGIT","JSBRANCH","AYSGIT","AYSBRANCH","CODEDIR","SANDBOX"]
+        args=["GITHUBUSER","GITHUBPASSWD","JSGIT","JSBRANCH","AYSGIT","AYSBRANCH","CODEDIR","SANDBOX","EMAIL","FULLNAME"]
         #walk over all var's & set defaults or get them from env
         for var in args:
             if os.environ.has_key(var):
@@ -1326,6 +1327,9 @@ class Installer():
         os.environ["AYSBRANCH"]=AYSBRANCH
         os.environ["CODEDIR"]=CODEDIR
         os.environ["SANDBOX"]=str(SANDBOX)
+
+        if EMAIL!="":
+            self.gitConfig(FULLNAME,EMAIL)
 
         if clean:
             self.cleanSystem()
@@ -1392,7 +1396,7 @@ class Installer():
 
 
         
-        self._writeenv(basedir=base,insystem=insystem,sandbox=SANDBOX)
+        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX)
 
         if not insystem:
             sys.path=[]
@@ -1443,7 +1447,7 @@ class Installer():
 
         """
         C=C.replace("$base",basedir.rstrip("/"))
-        C=C.replace("$sandbox",SANDBOX)
+        C=C.replace("$sandbox",str(SANDBOX))
         do.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
         #         C="""
@@ -1563,7 +1567,7 @@ class Installer():
         #change site.py file
         def changesite(path):
             if do.exists(path=path):
-                C=self.readFile(path)
+                C=do.readFile(path)
                 out=""
                 for line in C.split("\n"):
                     if line.find("ENABLE_USER_SITE")==0:
@@ -1709,8 +1713,12 @@ class Installer():
             do.execute("apt-get install lxc-docker -y",dieOnNonZeroExitCode=False)
 
     def gitConfig(self,name,email):
-        self.execute("git config --global user.email \"%s\""%email)
-        self.execute("git config --global user.name \"%s\""%name)
+        if name=="":
+            name=email
+        if email=="":
+            raise RuntimeError("email cannot be empty")
+        do.execute("git config --global user.email \"%s\""%email)
+        do.execute("git config --global user.name \"%s\""%name)
 
     def replacesitecustomize(self):
         if not self.TYPE=="WIN":
