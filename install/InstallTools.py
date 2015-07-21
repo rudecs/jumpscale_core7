@@ -1640,16 +1640,16 @@ class Installer():
         # else:
         #     gitbase="base_python3"
 
-        if self.TYPE!=("UBUNTU64"):
+        if do.TYPE!=("UBUNTU64"):
             SANDBOX=0
 
         if SANDBOX==1:
 
             print ("pull binaries")
-            self.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
+            do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
             print ("copy binaries")
-            self.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)        
+            do.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)        
 
         else:
             self.installpip()
