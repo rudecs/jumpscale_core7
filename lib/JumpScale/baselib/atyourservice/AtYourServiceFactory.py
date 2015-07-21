@@ -163,8 +163,8 @@ class AtYourServiceFactory():
                 # create service from templates
                 servicetemplates = self.findTemplates(domain=domain, name=name)
                 if len(servicetemplates) > 0:
-                    # TODO consider a cleaner way
-                    if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
+                    remote = any(['node' in parent.categories for parent in self.findParents(path=path)])
+                    if remote:
                         service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
                     else:
                         service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
@@ -296,8 +296,8 @@ class AtYourServiceFactory():
             raise RuntimeError("path doesn't contain service.hrd and actions.py")
 
         hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
-
-        if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
+        remote = any(['node' in parent.categories for parent in self.findParents(path=path)])
+        if remote:
             service = RemoteService(domain=hrd.get('service.domain'), name=hrd.get('service.name'), instance=hrd.get('service.instance'), hrd=hrd, path=path, parent=parent)
         else:
             service = Service(domain=hrd.get('service.domain'), name=hrd.get('service.name'), instance=hrd.get('service.instance'), hrd=hrd, path=path, parent=parent)

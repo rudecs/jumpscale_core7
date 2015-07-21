@@ -27,7 +27,9 @@ class ServiceTemplate():
             print "Service %s__%s__%s already exists" % (self.domain,self.name,instance)
             print "No creation, just retrieve existing service"
             return services[0]
-        if parent and parent.name == "node.ssh":
+        fullpath = path or ('%s/domain__name__instance' % parent.path if parent else '')
+        remote = any(['node' in parent.categories for parent in j.atyourservice.findParents(path=fullpath)])
+        if remote:
             service = RemoteService(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
         else:
             service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
