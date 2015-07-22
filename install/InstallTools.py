@@ -125,6 +125,7 @@ class InstallTools():
 
             #find generic prepend for full file
             minchars=9999
+            prechars = 0
             for line in content.split("\n"):
                 if line.strip()=="" or (line.startswith('#') and not line.startswith("#!")):
                     continue
@@ -136,9 +137,8 @@ class InstallTools():
                 #remove the prechars
                 content="\n".join([line[minchars:] for line in content.split("\n")])
 
-        fo = open(path, "w")
-        fo.write( content )
-        fo.close()
+        with open(path, "w") as fo:
+            fo.write(content)
 
     def delete(self,path,force=False):
 
