@@ -1388,7 +1388,7 @@ class Installer():
             dest="%s/lib/%s.py"%(base,item)
             do.symlink(src, dest)
 
-        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX)
+        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX,CODEDIR=CODEDIR,tmpdir=tmpdir)
 
         if not insystem:
             sys.path=[]
@@ -1410,7 +1410,7 @@ class Installer():
         # if pythonversion==2:
         print ("to use do 'js'")
 
-    def _writeenv(self,basedir,insystem=True,SANDBOX=1):
+    def _writeenv(self,basedir,insystem=True,SANDBOX=1,CODEDIR="/opt/code",tmpdir="/tmp"):
 
         do.createDir("%s/hrd/system/"%basedir)
         do.createDir("%s/hrd/apps/"%basedir)
@@ -1418,8 +1418,8 @@ class Installer():
         C="""
         paths.base=$base
         paths.bin=$(paths.base)/bin
-        paths.tmp=/tmp/jumpscale
-        paths.code=/opt/code
+        paths.tmp=$tmpdir
+        paths.code=$CODEDIR
         paths.lib=$(paths.base)/lib
 
         paths.python.lib.js=$(paths.lib)/JumpScale
@@ -1438,6 +1438,9 @@ class Installer():
         """
         C=C.replace("$base",basedir.rstrip("/"))
         C=C.replace("$sandbox",str(SANDBOX))
+        C=C.replace("$CODEDIR",CODEDIR)
+        C=C.replace("$tmpdir",tmpdir)
+
         do.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
         #         C="""
