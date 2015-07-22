@@ -38,7 +38,6 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
       tazpkg get-install git
       tazpkg get-install python 
     fi
-    export TMPDIR='/tmp'
     export JSBASE='/opt/jumpscale7'
 elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
     # Do something under Windows NT platform

@@ -1,5 +1,6 @@
 
 import sys, os, inspect
+import tempfile
 
 from JumpScale import j
 
@@ -36,7 +37,6 @@ class Dirs(object):
             self.baseDir=base
             self.appDir = j.system.fs.joinPaths(base,"apps")
             self.varDir = j.system.fs.joinPaths(os.environ["APPDATA"],"jumpscale")
-            self.tmpDir = j.system.fs.joinPaths(os.environ['TMP']  ,"jumpscale")
             self.cfgDir = j.system.fs.joinPaths(base,"cfg")
             self.libDir = j.system.fs.joinPaths(base,"Lib")
             self.jsLibDir = j.system.fs.joinPaths(base,"Lib","site-packages","JumpScale")
@@ -51,7 +51,6 @@ class Dirs(object):
             self.baseDir=j.application.config.get("system.paths.base")
             self.appDir = j.application.config.get("system.paths.app")
             self.varDir = j.application.config.get("system.paths.var")
-            self.tmpDir = j.application.config.get("system.paths.tmp")
             self.cfgDir = j.application.config.get("system.paths.cfg")
             self.libDir = j.application.config.get("system.paths.lib")
             self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
@@ -59,6 +58,8 @@ class Dirs(object):
             self.pidDir = j.application.config.get("system.paths.pid")
             self.codeDir = j.application.config.get("system.paths.code")
             self.libExtDir = j.application.config.get("system.paths.python.lib.ext")
+
+        self.tmpDir = tempfile.gettempdir()
 
         self.gitConfigDir="unknown"
 

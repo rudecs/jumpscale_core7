@@ -34,7 +34,6 @@ class InstallTools():
             self.TYPE="WIN"
             self.BASE="%s/"%os.environ["JSBASE"].replace("\\","/")
 
-            self.TMP=tempfile.gettempdir().replace("\\","/")
         elif sys.platform.startswith("darwin"):
             self.TYPE="OSX"
             self.BASE="/Users/Shared/jumpscale"
@@ -47,6 +46,8 @@ class InstallTools():
             raise RuntimeError("Jumpscale only supports windows 7+, macosx, ubuntu 12+")
 
         self.TYPE+=platform.architecture()[0][:2]
+
+        self.TMP=tempfile.gettempdir().replace("\\","/")
 
         if "JSBASE" in os.environ:
             self.BASE=os.environ["JSBASE"]
@@ -65,11 +66,6 @@ class InstallTools():
         while self.BASE[-1]=="/":
             self.BASE=self.BASE[:-1]
         self.BASE+="/"
-
-        if os.environ.has_key("TMPDIR"):
-            self.TMP=os.environ["TMPDIR"].replace("\\","/")
-        else:
-            self.TMP=tempfile.gettempdir().replace("\\","/")
 
         #why was this needed ? (despiegk)
         # self.debug=False
@@ -1269,7 +1265,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
+    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1285,10 +1281,7 @@ class Installer():
 
         """
 
-        if os.environ.has_key("TMPDIR"):
-            tmpdir=os.environ["TMPDIR"]
-        else:
-            tmpdir="/tmp"
+        tmpdir=self.TMP
 
         if os.environ.has_key("JSBRANCH"):
             JSBRANCH=os.environ["JSBRANCH"]
@@ -1310,6 +1303,15 @@ class Installer():
         #     os.environ["JSBASE"]+="3"            #add nr 3 to path when python 3
 
         base=os.environ["JSBASE"]   
+
+        if CODEDIR=="":
+            if sys.platform.startswith('win'):
+                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")            
+            elif sys.platform.startswith('darwin'):
+                CODEDIR="/Users/Shared/code"
+            else:
+                #for all linux versions
+                CODEDIR="/opt/code"            
 
         print(("Install Jumpscale in %s"%base))
 
@@ -1384,7 +1386,7 @@ class Installer():
             dest="%s/lib/%s.py"%(base,item)
             do.symlink(src, dest)
 
-        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX,CODEDIR=CODEDIR,tmpdir=tmpdir)
+        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX,CODEDIR=CODEDIR)
 
         if not insystem:
             sys.path=[]
@@ -1406,7 +1408,7 @@ class Installer():
         # if pythonversion==2:
         print ("to use do 'js'")
 
-    def _writeenv(self,basedir,insystem=True,SANDBOX=1,CODEDIR="/opt/code",tmpdir="/tmp"):
+    def _writeenv(self,basedir,insystem=True,SANDBOX=1,CODEDIR="/opt/code"):
 
         do.createDir("%s/hrd/system/"%basedir)
         do.createDir("%s/hrd/apps/"%basedir)
@@ -1414,7 +1416,6 @@ class Installer():
         C="""
         paths.base=$base
         paths.bin=$(paths.base)/bin
-        paths.tmp=$tmpdir
         paths.code=$CODEDIR
         paths.lib=$(paths.base)/lib
 
@@ -1435,7 +1436,6 @@ class Installer():
         C=C.replace("$base",basedir.rstrip("/"))
         C=C.replace("$sandbox",str(SANDBOX))
         C=C.replace("$CODEDIR",CODEDIR)
-        C=C.replace("$tmpdir",tmpdir)
 
         do.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
