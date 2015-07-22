@@ -83,10 +83,6 @@ class InstallTools():
             # print ("OUR OWN EXCEPTHOOK")
             sys.excepthook = self.excepthook
 
-        from IPython import embed
-        print "DEBUG NOW sdsdsd"
-        embed()
-        
 
     def excepthook(self, ttype, pythonExceptionObject, tb):
 
