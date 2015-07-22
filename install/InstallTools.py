@@ -30,6 +30,8 @@ import re
 class InstallTools():
     def __init__(self,debug=False):
 
+        self.TMP=tempfile.gettempdir().replace("\\","/")
+
         if platform.system().lower()=="windows":
             self.TYPE="WIN"
             self.BASE="%s/"%os.environ["JSBASE"].replace("\\","/")
@@ -46,8 +48,6 @@ class InstallTools():
             raise RuntimeError("Jumpscale only supports windows 7+, macosx, ubuntu 12+")
 
         self.TYPE+=platform.architecture()[0][:2]
-
-        self.TMP=tempfile.gettempdir().replace("\\","/")
 
         if "JSBASE" in os.environ:
             self.BASE=os.environ["JSBASE"]
@@ -1281,7 +1281,7 @@ class Installer():
 
         """
 
-        tmpdir=self.TMP
+        tmpdir=do.TMP
 
         if os.environ.has_key("JSBRANCH"):
             JSBRANCH=os.environ["JSBRANCH"]
