@@ -81,15 +81,15 @@ def deps(F):  # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self, instance="", servicetemplate=None, path="", args=None, parent=None):
+    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None):
         self.processed = dict()
-        self.domain = ""
+        self.domain = domain
         self.instance = instance
-        self.name = ""
+        self.name = name
         self.servicetemplate = servicetemplate
         self.templatepath = ""
-        self.path = path
-        self._hrd = None
+        self.path = path or ''
+        self._hrd = hrd
         self._actions = None
         self.parent = None
         self._reposDone = {}
@@ -105,7 +105,7 @@ class Service(object):
             self.servicetemplate = servicetemplate
             self.templatepath = servicetemplate.metapath
 
-        if path == "":
+        if self.path == "":
             if parent is None:
                 self.path = j.system.fs.joinPaths(
                     j.dirs.getHrdDir(), "%s__%s__%s" % (self.domain, self.name, self.instance))
@@ -113,9 +113,9 @@ class Service(object):
                 self.path = j.system.fs.joinPaths(
                     parent.path, "%s__%s__%s" % (self.domain, self.name, self.instance))
 
-            self.hrddata["service.name"] = self.name
-            self.hrddata["service.domain"] = self.domain
-            self.hrddata["service.instance"] = self.instance
+        self.hrddata["service.name"] = self.name
+        self.hrddata["service.domain"] = self.domain
+        self.hrddata["service.instance"] = self.instance
         self._init = False
         self.parent = parent
         # if self.parent is not None:
@@ -388,7 +388,7 @@ class Service(object):
                 service = services[0]
             else:
                 print "Dependecy %s_%s_%s not found, creating ..." % (domain, name, instance)
-                service = j.atyourservice.new(domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
+                service = j.atyourservice.new(domain=domain, name=name, instance=instance, path='', args=hrddata, parent=self.parent)
                 if self.noremote is False and len(self.producers):
                     for cat, prod in self.producers.iteritems():
                         service.init()
@@ -746,8 +746,7 @@ class Service(object):
         """
         remove state of a service.
         """
-        path = j.system.fs.joinPaths(self.path, "state.json")
-        j.do.delete(path)
+        j.do.delete(self.path)
 
     @deps
     def reset(self, deps=True, processed={}):

@@ -410,8 +410,13 @@ class ActionsBase():
         execute something in the service instance
         """
         node = serviceobj.getProducer('node')
+
+        if not node:
+            j.events.inputerror_critical('There seems to be no producer of type node for this service.\nConsider running ays consume --category {category} --producer {your producer instance}',
+                                         category='service.execute.missing.producer')
+
         # TODO should upload to temporary destination firsts
-        node.actions.upload(node,serviceobj.path,j.dirs.getHrdDir())
+        node.actions.upload(node,serviceobj.path, j.dirs.getHrdDir())
         # execute the action of the child service througth the parent node
         cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --noremote"\
               % (actionname, serviceobj.name, serviceobj.instance)
