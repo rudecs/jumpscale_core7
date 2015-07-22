@@ -156,7 +156,7 @@ class Service(object):
 
     @property
     def categories(self):
-        return self.hrd.getList("service.category")
+        return self.hrd.getList("service.category", [])
 
     @property
     def id(self):

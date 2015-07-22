@@ -153,8 +153,8 @@ class AtYourServiceFactory():
             # try to load service from instance file is they exists
             hrdpath = j.system.fs.joinPaths(path, "service.hrd")
             actionspath = j.system.fs.joinPaths(path, "actions.py")
-            parent = self.findParents(path=path) if (not parent and path) else parent
-            parent = parent[0] if isinstance(parent, list) and parent else (parent if parent else None)
+            parents = self.findParents(path=path) if (not parent and path) else parent
+            parent = parents[0] if isinstance(parents, list) and parents else (parent if parent else None)
 
             if j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
                 service = j.atyourservice.loadService(path, parent)
@@ -163,7 +163,7 @@ class AtYourServiceFactory():
                 # create service from templates
                 servicetemplates = self.findTemplates(domain=domain, name=name)
                 if len(servicetemplates) > 0:
-                    remote = any(['node' in parent.categories for parent in self.findParents(path=path)])
+                    remote = any(['node' in p.categories for p in parents])
                     if remote:
                         service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
                     else:
@@ -296,11 +296,18 @@ class AtYourServiceFactory():
             raise RuntimeError("path doesn't contain service.hrd and actions.py")
 
         hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
-        remote = any(['node' in parent.categories for parent in self.findParents(path=path)])
+        fullpath = path or ('%s/domain__name__instance' % parent.path if parent else '')
+        remote = any(['node' in p.categories for p in j.atyourservice.findParents(path=path)])
         if remote:
-            service = RemoteService(domain=hrd.get('service.domain'), name=hrd.get('service.name'), instance=hrd.get('service.instance'), hrd=hrd, path=path, parent=parent)
+            service = RemoteService(domain=hrd.get('service.domain', hrd.get('domain', '')),
+                                    name=hrd.get('service.name', hrd.get('name', '')),
+                                    instance=hrd.get('service.instance', hrd.get('instance', '')),
+                                    hrd=hrd, path=path, parent=parent)
         else:
-            service = Service(domain=hrd.get('service.domain'), name=hrd.get('service.name'), instance=hrd.get('service.instance'), hrd=hrd, path=path, parent=parent)
+            service = Service(domain=hrd.get('service.domain', hrd.get('domain', '')),
+                              name=hrd.get('service.name', hrd.get('name', '')),
+                              instance=hrd.get('service.instance', hrd.get('instance', '')),
+                              hrd=hrd, path=path, parent=parent)
 
         service.init()
         return service
