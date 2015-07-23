@@ -587,7 +587,10 @@ class Service(object):
 
         for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
             if recipeitem.has_key("platform"):
-                if not j.do.TYPE.lower() in recipeitem["platform"].lower():
+                ttype=j.do.TYPE.lower()
+                ttype=ttype.replace("32","")
+                ttype=ttype.replace("64","")
+                if not ttype in recipeitem["platform"].lower():
                     continue
 
             # print recipeitem
