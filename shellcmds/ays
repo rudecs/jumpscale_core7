@@ -245,7 +245,8 @@ else:
             else:
                 tmpls = j.atyourservice.findTemplates(domain=args.domain, name=args.name)
                 if len(tmpls) > 1:
-                    raise RuntimeError("multiple templates found for %s__%s. Be more precise please" % (args.domain.args.name))
+                    print tmpls
+                    raise RuntimeError("multiple templates found for %s__%s. Be more precise please" % (args.domain,args.name))
                 if len(tmpls) <= 0:
                     raise RuntimeError("no templates found for %s__%s. Be more precise please" % (args.domain, args.name))
                 category, targetname = getRemote(args)
