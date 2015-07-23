@@ -157,21 +157,22 @@ class AtYourServiceFactory():
             parents = self.findParents(path=path) if (not parent and path) else parent
             parent = parents[0] if isinstance(parents, list) and parents else (parent if parent else None)
 
-            if j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
+            # create service from templates
+            servicetemplates = self.findTemplates(domain=domain, name=name)
+            if len(servicetemplates) > 0:
+                remote = any(['node' in p.categories for p in parents])
+                if remote:
+                    service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                else:
+                    service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                return service
+            # create service from action.py and service.hrd
+            elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
                 service = j.atyourservice.loadService(path, parent)
                 return service
             else:
-                # create service from templates
-                servicetemplates = self.findTemplates(domain=domain, name=name)
-                if len(servicetemplates) > 0:
-                    remote = any(['node' in p.categories for p in parents])
-                    if remote:
-                        service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
-                    else:
-                        service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
-                    return service
                 raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
-        
+
         parentregex = ''
         if parent and isinstance(parent, (Service, RemoteService)):
             parentregex = '%s__%s__%s' % (parent.domain, parent.name, parent.instance)
