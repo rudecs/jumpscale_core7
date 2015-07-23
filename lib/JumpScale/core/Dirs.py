@@ -265,16 +265,16 @@ class Dirs(object):
                 return True
         return False
 
-    def _gitConfigRepo(self,path):
-        if self.gitConfigDir!=None and self.gitConfigDir!="unknown":
+    def _gitConfigRepo(self, path):
+        if self.gitConfigDir is not None and self.gitConfigDir != "unknown":
             return self.gitConfigDir
-        while path.strip("/")!="":
-            if ".git" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False) and\
-            "servicetemplates"  in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
-                self.gitConfigDir=path
+        while path.strip("/") != "":
+            if "services" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False) and\
+               "servicetemplates" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
+                self.gitConfigDir = path
                 return path
-            path=j.system.fs.getParent(path)
-        self.gitConfigDir=None
+            path = j.system.fs.getParent(path)
+        self.gitConfigDir = None
         return None
 
     def isGitConfigRepo(self,path):
