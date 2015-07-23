@@ -69,6 +69,7 @@ class AtYourServiceFactory():
 
             self_init=True
 
+
     def updateTemplatesRepo(self, repos=[]):
         """
         update the git repo that contains the service templates

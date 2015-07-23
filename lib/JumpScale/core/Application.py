@@ -67,7 +67,7 @@ class Application:
                 if j.clients.redis.isRunning('system'):
                     self.redis = j.clients.redis.getByInstance('system')
                     return        
-            print "WARNING: no system redis found."
+            print "WARNING: no system redis found (port 9999, needs to be installed as instance 'system')."
             j.logger.enabled=False
 
     def initWhoAmI(self, reload=False):

@@ -31,33 +31,17 @@ class Dirs(object):
 
         self._hrdDir=None
         self._serviceTemplateDir=None
-
-        if sys.platform.startswith('win') or sys.platform.startswith('darwin'):
-            base=os.environ['JSBASE']   
-            self.baseDir=base
-            self.appDir = j.system.fs.joinPaths(base,"apps")
-            self.varDir = j.system.fs.joinPaths(os.environ["APPDATA"],"jumpscale")
-            self.cfgDir = j.system.fs.joinPaths(base,"cfg")
-            self.libDir = j.system.fs.joinPaths(base,"Lib")
-            self.jsLibDir = j.system.fs.joinPaths(base,"Lib","site-packages","JumpScale")
-            self.logDir = j.system.fs.joinPaths(self.varDir,"log")
-            self.pidDir = j.system.fs.joinPaths(self.varDir,"pid")
-            if sys.platform.startswith('darwin'):
-                self.codeDir = j.system.fs.joinPaths("opt","code")
-            else:
-                self.codeDir = j.system.fs.joinPaths(self.varDir,"code")
-            self.libExtDir = j.system.fs.joinPaths(self.jsLibDir,"lib")             
-        else:        
-            self.baseDir=j.application.config.get("system.paths.base")
-            self.appDir = j.application.config.get("system.paths.app")
-            self.varDir = j.application.config.get("system.paths.var")
-            self.cfgDir = j.application.config.get("system.paths.cfg")
-            self.libDir = j.application.config.get("system.paths.lib")
-            self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
-            self.logDir = j.application.config.get("system.paths.log")
-            self.pidDir = j.application.config.get("system.paths.pid")
-            self.codeDir = j.application.config.get("system.paths.code")
-            self.libExtDir = j.application.config.get("system.paths.python.lib.ext")
+       
+        self.baseDir=j.application.config.get("system.paths.base")
+        self.appDir = j.application.config.get("system.paths.app")
+        self.varDir = j.application.config.get("system.paths.var")
+        self.cfgDir = j.application.config.get("system.paths.cfg")
+        self.libDir = j.application.config.get("system.paths.lib")
+        self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
+        self.logDir = j.application.config.get("system.paths.log")
+        self.pidDir = j.application.config.get("system.paths.pid")
+        self.codeDir = j.application.config.get("system.paths.code")
+        self.libExtDir = j.application.config.get("system.paths.python.lib.ext")
 
         self.tmpDir = tempfile.gettempdir()
 

@@ -1508,7 +1508,6 @@ class SystemProcess:
             raise RuntimeError("Error %s.\ncode submitted was \n%s" % (e,code))
         return result
         
-
     def isPidAlive(self, pid):
         """Checks whether this pid is alive.
            For unix, a signal is sent to check that the process is alive.
@@ -1616,7 +1615,6 @@ class SystemProcess:
         else:
              raise NotImplementedError("getProcessPid is only implemented for unix")
 
-
     def getMyProcessObject(self):
         return self.getProcessObject(os.getpid())
 
@@ -1635,7 +1633,6 @@ class SystemProcess:
                 result.append(process.pid)            
         return result
 
-
     def killUserProcesses(self,user):
         for pid in self.getProcessPidsFromUser(user):
             j.system.process.kill(pid)
@@ -1651,7 +1648,6 @@ class SystemProcess:
             except psutil.NoSuchProcess:
                 pass
         return result
-
 
     def checkProcessRunning(self, process, min=1):
         """
@@ -1736,7 +1732,6 @@ class SystemProcess:
         for pid in self.getPidsByPort(port):
             kill(pid)
 
-
     def getProcessByPort(self, port):
         """
         Returns the full name of the process that is listening on the given port
@@ -1748,7 +1743,7 @@ class SystemProcess:
         """
         if port==0:
             return None
-        if j.system.platformtype.isLinux() or j.system.platformtype.isESX():
+        if j.system.platformtype.isLinux():
             command = "netstat -ntulp | grep ':%s '" % port
             (exitcode, output) = j.system.process.execute(command, dieOnNonZeroExitCode=False,outputToStdout=False)
 
@@ -1791,7 +1786,22 @@ class SystemProcess:
                     return gd['cmd'].strip()
             return None
         else:
-            raise RuntimeError("This platform is not supported in j.system.process.getProcessByPort()")
+            #@todo needs to be validated on mac & windows
+            import psutil
+            for process in psutil.process_iter():
+                try:
+                    cc= [x for x in process.connections() if x.status == psutil.CONN_LISTEN]
+                except Exception,e:
+                    if str(e).find("psutil.AccessDenied")==-1:
+                        raise RuntimeError(str(e))
+                    continue                    
+                if cc!=[]:
+                    for conn in cc:
+                        portfound=conn.laddr[1]
+                        if port == portfound:
+                            return process
+            return None
+            # raise RuntimeError("This platform is not supported in j.system.process.getProcessByPort()")
 
     run = staticmethod(run)
     runScript = staticmethod(runScript)

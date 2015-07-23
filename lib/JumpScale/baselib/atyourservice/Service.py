@@ -123,6 +123,7 @@ class Service(object):
         #     if len(chain) > 0:
         #         self.hrddata["service.parents"]= chain
 
+
     def _parentChain(self, parent):
         chain = []
         while parent is not None:
@@ -420,14 +421,6 @@ class Service(object):
             childs[name].append(instance)
         return childs
 
-    # def getDependencyChain(self, chain=None):
-    #     chain = chain if chain is not None else []
-    #     for dep in self.getDependencies():
-    #         dep.getDependencyChain(chain)
-    #         if dep not in chain:
-    #             chain.append(dep)
-    #     return chain
-
     def getDependencyChain(self, chain=None):
         chain = chain if chain is not None else []
         dependencies = self.getDependencies()
@@ -515,30 +508,32 @@ class Service(object):
     @deps
     def prepare(self, deps=True, reverse=True, processed={}):
         self.log("prepare install for instance")
-        for src in self.hrd.getListFromPrefix("service.ubuntu.apt.source"):
-            src = src.replace(";", ":")
-            if src.strip() != "":
-                j.system.platform.ubuntu.addSourceUri(src)
+        if j.do.TYPE.startswith("UBUNTU"):
+        
+            for src in self.hrd.getListFromPrefix("service.ubuntu.apt.source"):
+                src = src.replace(";", ":")
+                if src.strip() != "":
+                    j.system.platform.ubuntu.addSourceUri(src)
 
-        for src in self.hrd.getListFromPrefix("service.ubuntu.apt.key.pub"):
-            src = src.replace(";", ":")
-            if src.strip() != "":
-                cmd = "wget -O - %s | apt-key add -" % src
-                j.do.execute(cmd, dieOnNonZeroExitCode=False)
+            for src in self.hrd.getListFromPrefix("service.ubuntu.apt.key.pub"):
+                src = src.replace(";", ":")
+                if src.strip() != "":
+                    cmd = "wget -O - %s | apt-key add -" % src
+                    j.do.execute(cmd, dieOnNonZeroExitCode=False)
 
-        if self.hrd.getBool("service.ubuntu.apt.update", default=False):
-            log("apt update")
-            j.do.execute("apt-get update -y", dieOnNonZeroExitCode=False)
+            if self.hrd.getBool("service.ubuntu.apt.update", default=False):
+                log("apt update")
+                j.do.execute("apt-get update -y", dieOnNonZeroExitCode=False)
 
-        if self.hrd.getBool("service.ubuntu.apt.upgrade", default=False):
-            j.do.execute("apt-get upgrade -y", dieOnNonZeroExitCode=False)
+            if self.hrd.getBool("service.ubuntu.apt.upgrade", default=False):
+                j.do.execute("apt-get upgrade -y", dieOnNonZeroExitCode=False)
 
-        if self.hrd.exists("service.ubuntu.packages"):
-            packages = self.hrd.getList("service.ubuntu.packages")
-            packages = [pkg.strip() for pkg in packages if pkg.strip() != ""]
-            if packages:
-                j.do.execute("apt-get install -y -f %s" %
-                             " ".join(packages), dieOnNonZeroExitCode=True)
+            if self.hrd.exists("service.ubuntu.packages"):
+                packages = self.hrd.getList("service.ubuntu.packages")
+                packages = [pkg.strip() for pkg in packages if pkg.strip() != ""]
+                if packages:
+                    j.do.execute("apt-get install -y -f %s" %
+                                 " ".join(packages), dieOnNonZeroExitCode=True)
 
         self.actions.prepare(self)
 
@@ -590,6 +585,10 @@ class Service(object):
             j.system.net.download(fullurl, dest)
 
         for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
+            if recipeitem.has_key("platform"):
+                if not j.do.TYPE.lower() in recipeitem["platform"].lower():
+                    continue
+
             # print recipeitem
             # pull the required repo
             dest0 = self._getRepo(recipeitem['url'], recipeitem=recipeitem)

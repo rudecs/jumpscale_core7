@@ -11,7 +11,12 @@ class Tmux:
         @param name is name of session
         @screens is list with nr of screens required in session and their names (is [$screenname,...])
         """
-        j.system.platform.ubuntu.checkInstall("tmux","tmux")
+        if j.do.TYPE.startswith("UBUNTU"):
+            j.system.platform.ubuntu.checkInstall("tmux","tmux")
+        else:
+            if not j.do.checkInstalled("tmux"):
+                raise RuntimeError("Cannnot use tmux, please install tmux")
+
         self.killSession(sessionname)
         if len(screens)<1:
             raise RuntimeError("Cannot create screens, need at least 1 screen specified")

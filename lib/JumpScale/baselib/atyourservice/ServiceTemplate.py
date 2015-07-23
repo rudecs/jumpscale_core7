@@ -35,6 +35,11 @@ class ServiceTemplate():
             service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
         return service
 
+    def getHRD(self):
+        if self.hrd ==None:
+            self.hrd=j.core.hrd.get(j.system.fs.joinPaths(self.metapath,"service.hrd"))
+        return self.hrd
+
     def getInstance(self, instance=None, parent=None):
         """
         get first installed or main
@@ -67,7 +72,6 @@ class ServiceTemplate():
         services = j.atyourservice.findServices(domain=self.domain,name=self.name)
         return [service.instance for service in services]
 
-
     def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False):
         """
         Install Service.
@@ -81,6 +85,20 @@ class ServiceTemplate():
         args      -- arguments to be used when installing
         parent    -- optional service which is mother e.g. install an app in a node.
         """
+
+        #check if this platform is supported
+        hrd=self.getHRD()
+        support=False
+        myplatforms=j.system.platformtype.getMyRelevantPlatforms()
+        supported=hrd.getList("platform.supported",default=[])
+        if supported==[]:
+            support=True
+        for supportcheck in supported:
+            if supportcheck in myplatforms:
+                support=True
+
+        if support==False:
+            j.events.opserror_critical("Cannot install %s__%s because unsupported platform." % (self.domain, self.name))
 
         service = self.newInstance(instance=instance, args=args, parent=parent, precise=True)
         service.noremote = noremote

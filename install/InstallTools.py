@@ -134,10 +134,10 @@ class InstallTools():
 
     def delete(self,path,force=False):
 
-        if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin","/opt/code"]:
+        if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin",self.CODEDIR]:
             raise RuntimeError('cannot delete protected dirs')
 
-        if not force and path.find("/opt/code")!=-1:
+        if not force and path.find(self.CODEDIR)!=-1:
             raise RuntimeError('cannot delete protected dirs')
 
         if self.debug:
@@ -1149,19 +1149,29 @@ class InstallTools():
 
         return dest
 
+    def checkInstalled(self,cmdname):
+        """
+        @param cmdname is cmd to check e.g. curl
+        """
+        res = self.execute("which %s" % cmdname, False)
+        if res[0] == 0:
+            return True
+        else:
+            return False
+
     def getGitReposListLocal(self,provider="",account="",name="",errorIfNone=True):
         repos={}
-        for top in self.listDirsInDir("/opt/code/", recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+        for top in self.listDirsInDir(self.CODEDIR, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
             if provider!="" and provider!=top:
                 continue
-            for accountfound in self.listDirsInDir("/opt/code/%s"%top, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+            for accountfound in self.listDirsInDir("%s/%s"%(self.CODEDIR,top), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                 if account!="" and account!=accountfound:
                     continue
-                accountfounddir="/opt/code/%s/%s"%(top,accountfound)
-                for reponame in self.listDirsInDir("/opt/code/%s/%s"%(top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+                accountfounddir="/%s/%s/%s"%(self.CODEDIR,top,accountfound)
+                for reponame in self.listDirsInDir("%s/%s/%s"%(self.CODEDIR,top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                     if name!="" and name!=reponame:
                         continue
-                    repodir="/opt/code/%s/%s/%s"%(top,accountfound,reponame)
+                    repodir="%s/%s/%s/%s"%(self.CODEDIR,top,accountfound,reponame)
                     if self.exists(path="%s/.git"%repodir):
                         repos[reponame]=repodir
         if len(list(repos.keys()))==0:
@@ -1322,6 +1332,9 @@ class Installer():
             if os.environ.has_key(var):
                 exec("%s = os.environ[\"%s\"]"%(var,var))
 
+        if do.TYPE!=("UBUNTU64"):
+            SANDBOX=0
+
         os.environ["GITHUBUSER"]=GITHUBUSER
         os.environ["GITHUBPASSWD"]=GITHUBPASSWD
         os.environ["JSGIT"]=JSGIT
@@ -1408,7 +1421,10 @@ class Installer():
         # if pythonversion==2:
         print ("to use do 'js'")
 
-    def _writeenv(self,basedir,insystem=True,SANDBOX=1,CODEDIR="/opt/code"):
+    def _writeenv(self,basedir,insystem=True,SANDBOX=1,CODEDIR=""):
+
+        if CODEDIR=="":
+            CODEDIR=self.CODEDIR
 
         do.createDir("%s/hrd/system/"%basedir)
         do.createDir("%s/hrd/apps/"%basedir)
@@ -1646,7 +1662,7 @@ class Installer():
             do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
             print ("copy binaries")
-            do.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)        
+            do.copyTree("%s/git/binary/%s/root/"%(self.CODEDIR,gitbase),base)        
 
         else:
             self.installpip()
@@ -1654,6 +1670,17 @@ class Installer():
             pip install ipython
             """
             do.executeCmds(cmds)
+
+            if sys.platform.startswith('win'):
+                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")            
+            elif sys.platform.startswith('darwin'):
+                cmds="""            
+                brew install tmux
+                brew install psutil
+                pip install redis
+                """
+                do.executeCmds(cmds)
+      
 
     def prepareUbuntu14Development(self,js=True):
         self.cleanSystem()
