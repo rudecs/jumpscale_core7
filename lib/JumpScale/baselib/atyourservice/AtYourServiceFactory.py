@@ -154,7 +154,7 @@ class AtYourServiceFactory():
             # try to load service from instance file is they exists
             hrdpath = j.system.fs.joinPaths(path, "service.hrd")
             actionspath = j.system.fs.joinPaths(path, "actions.py")
-            parents = self.findParents(path=path) if (not parent and path) else parent
+            parents = self.findParents(path=path) if (not parent and path) else [parent]
             parent = parents[0] if isinstance(parents, list) and parents else (parent if parent else None)
 
             # create service from templates
