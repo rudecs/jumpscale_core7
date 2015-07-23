@@ -142,7 +142,7 @@ class BitbucketConnection(object):
         self.url=url
         self.login=login
         self.passwd=passwd
-        self.accountPathLocal = j.system.fs.joinPaths("/opt/code",accountName)
+        self.accountPathLocal = j.system.fs.joinPaths(j.dirs.codeDir,accountName)
         j.system.fs.createDir(self.accountPathLocal)
         self.mercurialclients={}
 

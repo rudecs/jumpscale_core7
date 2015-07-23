@@ -258,7 +258,7 @@ class Admin():
         else:
             path="/mnt/%s_%s_code"%(node.gridname,node.name)
             j.system.fs.createDir(path)
-            cmd="sshfs %s:/opt/code /mnt/%s_%s_code"%(node.ip,node.gridname,node.name)
+            cmd="sshfs %s:%s /mnt/%s_%s_code"%(node.ip,j.dirs.codeDir,node.gridname,node.name)
             print(cmd)
             j.system.process.executeWithoutPipe(cmd)
             path="/mnt/%s_%s_jumpscale"%(node.gridname,node.name)

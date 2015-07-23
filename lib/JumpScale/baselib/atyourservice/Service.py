@@ -81,15 +81,15 @@ def deps(F):  # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self, instance="", servicetemplate=None, path="", args=None, parent=None):
+    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None):
         self.processed = dict()
-        self.domain = ""
+        self.domain = domain
         self.instance = instance
-        self.name = ""
+        self.name = name
         self.servicetemplate = servicetemplate
         self.templatepath = ""
-        self.path = path
-        self._hrd = None
+        self.path = path or ''
+        self._hrd = hrd
         self._actions = None
         self.parent = None
         self._reposDone = {}
@@ -105,7 +105,7 @@ class Service(object):
             self.servicetemplate = servicetemplate
             self.templatepath = servicetemplate.metapath
 
-        if path == "":
+        if self.path == "":
             if parent is None:
                 self.path = j.system.fs.joinPaths(
                     j.dirs.getHrdDir(), "%s__%s__%s" % (self.domain, self.name, self.instance))
@@ -113,15 +113,16 @@ class Service(object):
                 self.path = j.system.fs.joinPaths(
                     parent.path, "%s__%s__%s" % (self.domain, self.name, self.instance))
 
-            self.hrddata["service.name"] = self.name
-            self.hrddata["service.domain"] = self.domain
-            self.hrddata["service.instance"] = self.instance
+        self.hrddata["service.name"] = self.name
+        self.hrddata["service.domain"] = self.domain
+        self.hrddata["service.instance"] = self.instance
         self._init = False
         self.parent = parent
         # if self.parent is not None:
         #     chain = self._parentChain(self.parent)
         #     if len(chain) > 0:
         #         self.hrddata["service.parents"]= chain
+
 
     def _parentChain(self, parent):
         chain = []
@@ -156,7 +157,7 @@ class Service(object):
 
     @property
     def categories(self):
-        return self.hrd.getList("service.category")
+        return self.hrd.getList("service.category", [])
 
     @property
     def id(self):
@@ -239,7 +240,10 @@ class Service(object):
 
     def _loadActions(self):
         actionsPath = j.system.fs.joinPaths(self.path, "actions.py")
-        # if not j.system.fs.exists(actionsPath):
+        from IPython import embed
+        print "DEBUG NOW _loadActions"
+        embed()
+        p
         if self.templatepath != "":
             self._apply()
         else:
@@ -250,8 +254,6 @@ class Service(object):
             self.domain, self.name, self.instance)
         mod = loadmodule(modulename, "%s/actions.py" % self.path)
         self._actions = mod.Actions()
-        # self._actions.serviceobject=self  serviceobj is now an argument of
-        # each Action() method
 
     def _apply(self):
         j.do.createDir(self.path)
@@ -388,7 +390,7 @@ class Service(object):
                 service = services[0]
             else:
                 print "Dependecy %s_%s_%s not found, creating ..." % (domain, name, instance)
-                service = j.atyourservice.new(domain=domain, name=name, instance=instance, args=hrddata, parent=self.parent)
+                service = j.atyourservice.new(domain=domain, name=name, instance=instance, path='', args=hrddata, parent=self.parent)
                 if self.noremote is False and len(self.producers):
                     for cat, prod in self.producers.iteritems():
                         service.init()
@@ -419,14 +421,6 @@ class Service(object):
                 childs[name] = []
             childs[name].append(instance)
         return childs
-
-    # def getDependencyChain(self, chain=None):
-    #     chain = chain if chain is not None else []
-    #     for dep in self.getDependencies():
-    #         dep.getDependencyChain(chain)
-    #         if dep not in chain:
-    #             chain.append(dep)
-    #     return chain
 
     def getDependencyChain(self, chain=None):
         chain = chain if chain is not None else []
@@ -515,30 +509,32 @@ class Service(object):
     @deps
     def prepare(self, deps=True, reverse=True, processed={}):
         self.log("prepare install for instance")
-        for src in self.hrd.getListFromPrefix("service.ubuntu.apt.source"):
-            src = src.replace(";", ":")
-            if src.strip() != "":
-                j.system.platform.ubuntu.addSourceUri(src)
+        if j.do.TYPE.startswith("UBUNTU"):
+        
+            for src in self.hrd.getListFromPrefix("service.ubuntu.apt.source"):
+                src = src.replace(";", ":")
+                if src.strip() != "":
+                    j.system.platform.ubuntu.addSourceUri(src)
 
-        for src in self.hrd.getListFromPrefix("service.ubuntu.apt.key.pub"):
-            src = src.replace(";", ":")
-            if src.strip() != "":
-                cmd = "wget -O - %s | apt-key add -" % src
-                j.do.execute(cmd, dieOnNonZeroExitCode=False)
+            for src in self.hrd.getListFromPrefix("service.ubuntu.apt.key.pub"):
+                src = src.replace(";", ":")
+                if src.strip() != "":
+                    cmd = "wget -O - %s | apt-key add -" % src
+                    j.do.execute(cmd, dieOnNonZeroExitCode=False)
 
-        if self.hrd.getBool("service.ubuntu.apt.update", default=False):
-            log("apt update")
-            j.do.execute("apt-get update -y", dieOnNonZeroExitCode=False)
+            if self.hrd.getBool("service.ubuntu.apt.update", default=False):
+                log("apt update")
+                j.do.execute("apt-get update -y", dieOnNonZeroExitCode=False)
 
-        if self.hrd.getBool("service.ubuntu.apt.upgrade", default=False):
-            j.do.execute("apt-get upgrade -y", dieOnNonZeroExitCode=False)
+            if self.hrd.getBool("service.ubuntu.apt.upgrade", default=False):
+                j.do.execute("apt-get upgrade -y", dieOnNonZeroExitCode=False)
 
-        if self.hrd.exists("service.ubuntu.packages"):
-            packages = self.hrd.getList("service.ubuntu.packages")
-            packages = [pkg.strip() for pkg in packages if pkg.strip() != ""]
-            if packages:
-                j.do.execute("apt-get install -y -f %s" %
-                             " ".join(packages), dieOnNonZeroExitCode=True)
+            if self.hrd.exists("service.ubuntu.packages"):
+                packages = self.hrd.getList("service.ubuntu.packages")
+                packages = [pkg.strip() for pkg in packages if pkg.strip() != ""]
+                if packages:
+                    j.do.execute("apt-get install -y -f %s" %
+                                 " ".join(packages), dieOnNonZeroExitCode=True)
 
         self.actions.prepare(self)
 
@@ -590,6 +586,10 @@ class Service(object):
             j.system.net.download(fullurl, dest)
 
         for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
+            if recipeitem.has_key("platform"):
+                if not j.do.TYPE.lower() in recipeitem["platform"].lower():
+                    continue
+
             # print recipeitem
             # pull the required repo
             dest0 = self._getRepo(recipeitem['url'], recipeitem=recipeitem)
@@ -746,8 +746,7 @@ class Service(object):
         """
         remove state of a service.
         """
-        path = j.system.fs.joinPaths(self.path, "state.json")
-        j.do.delete(path)
+        j.do.delete(self.path)
 
     @deps
     def reset(self, deps=True, processed={}):
@@ -782,7 +781,9 @@ class Service(object):
         """
         execute cmd on service
         """
-        self.actions.execute(self, cmd=self.cmd)
+        if cmd is None:
+            cmd = self.cmd
+        self.actions.execute(self, cmd=cmd)
 
     @deps
     def uninstall(self, deps=True, processed={}):

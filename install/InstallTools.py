@@ -30,11 +30,12 @@ import re
 class InstallTools():
     def __init__(self,debug=False):
 
+        self.TMP=tempfile.gettempdir().replace("\\","/")
+
         if platform.system().lower()=="windows":
             self.TYPE="WIN"
             self.BASE="%s/"%os.environ["JSBASE"].replace("\\","/")
 
-            self.TMP=tempfile.gettempdir().replace("\\","/")
         elif sys.platform.startswith("darwin"):
             self.TYPE="OSX"
             self.BASE="/Users/Shared/jumpscale"
@@ -66,11 +67,6 @@ class InstallTools():
             self.BASE=self.BASE[:-1]
         self.BASE+="/"
 
-        if os.environ.has_key("TMPDIR"):
-            self.TMP=os.environ["TMPDIR"].replace("\\","/")
-        else:
-            self.TMP=tempfile.gettempdir().replace("\\","/")
-
         #why was this needed ? (despiegk)
         # self.debug=False
         # self.createDir("%s/jumpscaleinstall"%(self.TMP))
@@ -82,6 +78,7 @@ class InstallTools():
             #if we get here it means is std python excepthook (I hope)
             # print ("OUR OWN EXCEPTHOOK")
             sys.excepthook = self.excepthook
+
 
     def excepthook(self, ttype, pythonExceptionObject, tb):
 
@@ -120,8 +117,9 @@ class InstallTools():
 
             #find generic prepend for full file
             minchars=9999
+            prechars = 0
             for line in content.split("\n"):
-                if line.strip()=="" or line[0]=="#":
+                if line.strip()=="" or (line.startswith('#') and not line.startswith("#!")):
                     continue
                 prechars=len(line)-len(line.lstrip())
                 if prechars<minchars:
@@ -131,16 +129,15 @@ class InstallTools():
                 #remove the prechars
                 content="\n".join([line[minchars:] for line in content.split("\n")])
 
-        fo = open(path, "w")
-        fo.write( content )
-        fo.close()
+        with open(path, "w") as fo:
+            fo.write(content)
 
     def delete(self,path,force=False):
 
-        if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin","/opt/code"]:
+        if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin",self.CODEDIR]:
             raise RuntimeError('cannot delete protected dirs')
 
-        if not force and path.find("/opt/code")!=-1:
+        if not force and path.find(self.CODEDIR)!=-1:
             raise RuntimeError('cannot delete protected dirs')
 
         if self.debug:
@@ -1152,19 +1149,29 @@ class InstallTools():
 
         return dest
 
+    def checkInstalled(self,cmdname):
+        """
+        @param cmdname is cmd to check e.g. curl
+        """
+        res = self.execute("which %s" % cmdname, False)
+        if res[0] == 0:
+            return True
+        else:
+            return False
+
     def getGitReposListLocal(self,provider="",account="",name="",errorIfNone=True):
         repos={}
-        for top in self.listDirsInDir("/opt/code/", recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+        for top in self.listDirsInDir(self.CODEDIR, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
             if provider!="" and provider!=top:
                 continue
-            for accountfound in self.listDirsInDir("/opt/code/%s"%top, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+            for accountfound in self.listDirsInDir("%s/%s"%(self.CODEDIR,top), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                 if account!="" and account!=accountfound:
                     continue
-                accountfounddir="/opt/code/%s/%s"%(top,accountfound)
-                for reponame in self.listDirsInDir("/opt/code/%s/%s"%(top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+                accountfounddir="/%s/%s/%s"%(self.CODEDIR,top,accountfound)
+                for reponame in self.listDirsInDir("%s/%s/%s"%(self.CODEDIR,top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
                     if name!="" and name!=reponame:
                         continue
-                    repodir="/opt/code/%s/%s/%s"%(top,accountfound,reponame)
+                    repodir="%s/%s/%s/%s"%(self.CODEDIR,top,accountfound,reponame)
                     if self.exists(path="%s/.git"%repodir):
                         repos[reponame]=repodir
         if len(list(repos.keys()))==0:
@@ -1268,7 +1275,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="\opt\code",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7.git",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
+    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1284,10 +1291,7 @@ class Installer():
 
         """
 
-        if os.environ.has_key("TMPDIR"):
-            tmpdir=os.environ["TMPDIR"]
-        else:
-            tmpdir="/tmp"
+        tmpdir=do.TMP
 
         if os.environ.has_key("JSBRANCH"):
             JSBRANCH=os.environ["JSBRANCH"]
@@ -1310,6 +1314,15 @@ class Installer():
 
         base=os.environ["JSBASE"]   
 
+        if CODEDIR=="":
+            if sys.platform.startswith('win'):
+                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")            
+            elif sys.platform.startswith('darwin'):
+                CODEDIR="/Users/Shared/code"
+            else:
+                #for all linux versions
+                CODEDIR="/opt/code"            
+
         print(("Install Jumpscale in %s"%base))
 
         #this means if env var's are set they get priority
@@ -1318,6 +1331,9 @@ class Installer():
         for var in args:
             if os.environ.has_key(var):
                 exec("%s = os.environ[\"%s\"]"%(var,var))
+
+        if do.TYPE!=("UBUNTU64"):
+            SANDBOX=0
 
         os.environ["GITHUBUSER"]=GITHUBUSER
         os.environ["GITHUBPASSWD"]=GITHUBPASSWD
@@ -1355,7 +1371,7 @@ class Installer():
         # else:
         #     dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
             
-        if insystem or not self.exists(dest):
+        if insystem or not self.exists(destjs):
             do.symlink(src, destjs)
         else:
             do.copyTree(src,destjs)
@@ -1382,21 +1398,8 @@ class Installer():
             src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
             dest="%s/lib/%s.py"%(base,item)
             do.symlink(src, dest)
-            if insystem:
-                dest="%s/%s.py"%(destjs,item)
-                do.symlink(src, dest)
 
-        # if web:
-        #     if pythonversion==2:
-        #         gitbase="web_python"
-        #     else:
-        #         gitbase="web_python3"
-        #     do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
-        #     do.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)
-
-
-        
-        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX)
+        self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX,CODEDIR=CODEDIR)
 
         if not insystem:
             sys.path=[]
@@ -1412,15 +1415,16 @@ class Installer():
         # self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
 
         print("Get atYourService metadata.")
-        do.pullGitRepo("https://github.com/Jumpscale/ays_jumpscale7",depth=1)
+        do.pullGitRepo(AYSGIT, branch=AYSBRANCH, depth=1)
 
         print ("install was successfull")
         # if pythonversion==2:
-        print ("to use do 'source %s/env.sh;ipython'"%base)
-        # else:
-        #     print ("to use do 'source %s/env.sh;ipython3'"%base)
+        print ("to use do 'js'")
 
-    def _writeenv(self,basedir,insystem=True,SANDBOX=1):
+    def _writeenv(self,basedir,insystem=True,SANDBOX=1,CODEDIR=""):
+
+        if CODEDIR=="":
+            CODEDIR=self.CODEDIR
 
         do.createDir("%s/hrd/system/"%basedir)
         do.createDir("%s/hrd/apps/"%basedir)
@@ -1428,8 +1432,7 @@ class Installer():
         C="""
         paths.base=$base
         paths.bin=$(paths.base)/bin
-        paths.tmp=/tmp/jumpscale
-        paths.code=/opt/code
+        paths.code=$CODEDIR
         paths.lib=$(paths.base)/lib
 
         paths.python.lib.js=$(paths.lib)/JumpScale
@@ -1448,6 +1451,8 @@ class Installer():
         """
         C=C.replace("$base",basedir.rstrip("/"))
         C=C.replace("$sandbox",str(SANDBOX))
+        C=C.replace("$CODEDIR",CODEDIR)
+
         do.writeFile("%s/hrd/system/system.hrd"%basedir,C)
 
         #         C="""
@@ -1476,8 +1481,9 @@ class Installer():
 
         C="""
         #here domain=jumpscale, change name for more domains
-        metadata.jumpscale = url:'{AYSGIT}'
-        metadata.jumpscale.branch = url:'{AYSBRANCH}'
+        metadata.jumpscale =
+            url:'{AYSGIT}',
+            branch:'{AYSBRANCH}',
 
         """
         C=C.format(**os.environ)
@@ -1656,7 +1662,7 @@ class Installer():
             do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
             print ("copy binaries")
-            do.copyTree("/opt/code/git/binary/%s/root/"%gitbase,base)        
+            do.copyTree("%s/git/binary/%s/root/"%(self.CODEDIR,gitbase),base)        
 
         else:
             self.installpip()
@@ -1664,6 +1670,17 @@ class Installer():
             pip install ipython
             """
             do.executeCmds(cmds)
+
+            if sys.platform.startswith('win'):
+                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")            
+            elif sys.platform.startswith('darwin'):
+                cmds="""            
+                brew install tmux
+                brew install psutil
+                pip install redis
+                """
+                do.executeCmds(cmds)
+      
 
     def prepareUbuntu14Development(self,js=True):
         self.cleanSystem()

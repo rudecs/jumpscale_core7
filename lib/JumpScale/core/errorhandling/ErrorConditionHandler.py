@@ -58,7 +58,7 @@ class ErrorConditionHandler():
             res=self.escalateToRedis(keys=["queues:eco","eco:incr","eco:occurrences","eco:objects","eco:last"],args=[key,data])
             # print "redisreturn: '%s'"%res
             # j.application.stop()
-            res= json.decode(res)            
+            res= json.loads(res)            
             return res
         else:
             return None

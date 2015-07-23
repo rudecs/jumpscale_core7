@@ -50,14 +50,14 @@ def getRepos(account=None,name=None):
     accounttofind=account
     
     repos=[]
-    for top in j.system.fs.listDirsInDir("/opt/code/", recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-        for account in j.system.fs.listDirsInDir("/opt/code/%s"%top, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-            accountdir="/opt/code/%s/%s"%(top,account)
+    for top in j.system.fs.listDirsInDir(j.dirs.codeDir, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+        for account in j.system.fs.listDirsInDir("%s/%s"%(j.dirs.codeDir,top), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+            accountdir="%s/%s/%s"%(j.dirs.codeDir,top,account)
             if j.system.fs.exists(path="%s/.git"%accountdir):
                 raise RuntimeError("there should be no .git at %s level"%accountdir)
             else:
-                for reponame in j.system.fs.listDirsInDir("/opt/code/%s/%s"%(top,account), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                    repodir="/opt/code/%s/%s/%s"%(top,account,reponame)
+                for reponame in j.system.fs.listDirsInDir("%s/%s/%s"%(j.dirs.codeDir,top,account), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+                    repodir="%s/%s/%s/%s"%(j.dirs.codeDir,top,account,reponame)
                     if j.system.fs.exists(path="%s/.git"%repodir):
                         if name.find("*")!=-1:
                             if name=="*" or reponame.startswith(name.replace("*","")):

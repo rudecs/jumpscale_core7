@@ -114,7 +114,7 @@ class ObjectInspector():
         j.system.fs.createDir(j.system.fs.joinPaths(j.dirs.cfgDir, "codecompletionapi"))
         self.classDocs={}
 
-    def importAllLibs(self,ignore=[],base="/opt/code/github/jumpscale/jumpscale_core/lib/JumpScale/"):
+    def importAllLibs(self,ignore=[],base="%s/github/jumpscale/jumpscale_core/lib/JumpScale/"%j.dirs.codeDir):
         towalk=[]
         towalk.append("baselib")
         towalk.append("lib")

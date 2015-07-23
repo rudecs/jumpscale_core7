@@ -1,10 +1,3 @@
-if [ -f "/etc/slitaz-release" ]
-then
-  echo "found slitaz"
-  tazpkg get-install curl 
-  tazpkg get-install git
-  tazpkg get-install python 
-fi
 
 #known env variables
 
@@ -21,7 +14,7 @@ fi
 # export JSBASE='/opt/jumpscale7'
 # export JSGIT='https://github.com/Jumpscale/jumpscale_core7.git'
 # export JSBRANCH='master'
-# export AYSGIT='https://github.com/Jumpscale/ays_jumpscale7.git'
+# export AYSGIT='https://github.com/Jumpscale/ays_jumpscale7'
 # export AYSBRANCH='master'
 
 if [ "$(uname)" == "Darwin" ]; then
@@ -39,9 +32,14 @@ elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
     if [ "$dist" == "Ubuntu" ]; then
         echo "found ubuntu"
         apt-get install curl git ssh python2.7 python -y
+    elif [ -f "/etc/slitaz-release" ]; then
+      echo "found slitaz"
+      tazpkg get-install curl 
+      tazpkg get-install git
+      tazpkg get-install python 
     fi
-    export TMPDIR='/tmp'
     export JSBASE='/opt/jumpscale7'
+    export TMPDIR=/tmp
 elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
     # Do something under Windows NT platform
     echo 'windows'
