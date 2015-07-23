@@ -14,8 +14,6 @@ commands = ['install', 'list', 'stop', 'start', 'restart', 'build', 'prepare', "
             "removedata", "monitor", "configure", "cleanup", "export", "import", "uninstall", "push", "execute",
             "status", "nodes", "consume", "console"]
 
-REMOTES = ['node.docker', 'node.kvm', 'node.ms1', 'node.ssh']
-
 help = """
 ays commands:
 
@@ -134,14 +132,12 @@ def getHRDData(args):
 
 def getRemote(args):
     parent = getParent(args)
-    path = args.path if args.path else parent.path if parent else ''
-    remote = [remote for remote in REMOTES if remote in path]
+    path = args.path if args.path else ('%s/domain__name__instance' % parent.path if parent else '')
+    remote = [parent for parent in j.atyourservice.findParents(path=path) if 'node' in parent.categories]
     if not remote:
         return None, None
-    remote = remote[0]
-    remotename = path.rsplit('%s__' % remote, 1)[1]
-    target = j.atyourservice.get('jumpscale', name=remote, instance=remotename)
-    return target.categories[0], remotename
+    remote = remote[-1]
+    return remote.categories[0], remote.instance
 
 def getParent(args, precise=False):
     if args.parent is None:

@@ -157,7 +157,7 @@ class Service(object):
 
     @property
     def categories(self):
-        return self.hrd.getList("service.category")
+        return self.hrd.getList("service.category", [])
 
     @property
     def id(self):
@@ -780,7 +780,9 @@ class Service(object):
         """
         execute cmd on service
         """
-        self.actions.execute(self, cmd=self.cmd)
+        if cmd is None:
+            cmd = self.cmd
+        self.actions.execute(self, cmd=cmd)
 
     @deps
     def uninstall(self, deps=True, processed={}):
