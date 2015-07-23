@@ -46,7 +46,7 @@ from InstallTools import *
 
 
 print "install jumpscale7"
-do.installer.installJS()
+do.installJS()
 
 from JumpScale import j
 
