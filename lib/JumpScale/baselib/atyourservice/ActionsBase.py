@@ -415,14 +415,21 @@ class ActionsBase():
             j.events.inputerror_critical('There seems to be no producer of type node for this service.\nConsider running ays consume --category {category} --producer {your producer instance}',
                                          category='service.execute.missing.producer')
 
-        # TODO should upload to temporary destination firsts
-        node.actions.upload(node,serviceobj.path, j.dirs.getHrdDir())
+        # first look on the remote node for the default hrd path
+        result = node.actions.execute(node, 'ays hrdpath')
+        # by default we use the local hrd path
+        destDir = j.system.fs.joinPaths(j.application.config.getStr('system.paths.hrd'), "apps")
+        for l in result.splitlines():
+            if l.startswith('/'):
+                destDir = j.system.fs.joinPaths(l, "apps")
+
+        node.actions.upload(node, serviceobj.path, destDir)
         # execute the action of the child service througth the parent node
         cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --noremote"\
               % (actionname, serviceobj.name, serviceobj.instance)
-        path = j.dirs.amInGitConfigRepo()
-        if path:
-            cmd += " --path %s" % path
+        # path = j.dirs.amInGitConfigRepo()
+        # if path:
+        #     cmd += " --path %s" % path
         if actionname == "execute" and serviceobj.cmd:
             cmd += " --cmd '%s'" % serviceobj.cmd
         node.actions.execute(node, cmd)
