@@ -52,6 +52,19 @@ class PlatformTypes():
     def getMyRelevantPlatforms(self):
         return self.platformParents[str(self.myplatform).lower()]
 
+    def checkMatch(self,match):
+        """
+        match is in form of linux64,darwin
+        if any of the items e.g. darwin is in getMyRelevantPlatforms then return True
+        """
+        tocheck=self.getMyRelevantPlatforms()
+        matches = [item.strip().lower() for item in match.split(",") if item.strip()!=""]
+        for match in matches:
+            if match in tocheck:
+                return True
+        return False
+
+
     def getPlatforms(self):
         return list(self.platformParents.keys())
 

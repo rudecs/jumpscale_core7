@@ -149,14 +149,9 @@ class ActionsBase():
         if isrunning:
             return
         for process in serviceobj.getProcessDicts():
-
-            process["platform"]
             
             if process.has_key("platform"):
-                ttype=j.do.TYPE.lower()
-                ttype=ttype.replace("32","")
-                ttype=ttype.replace("64","")
-                if not ttype in process["platform"].lower():
+                if j.system.platformtype.checkMatch(process["platform"]):
                     continue
 
             start2(process)
