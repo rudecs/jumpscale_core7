@@ -1663,7 +1663,7 @@ class Installer():
             do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
             print ("copy binaries")
-            do.copyTree("%s/git/binary/%s/root/"%(self.CODEDIR,gitbase),base)        
+            do.copyTree("%s/git/binary/%s/root/"%(do.CODEDIR,gitbase),base)        
 
         else:
             self.installpip()
