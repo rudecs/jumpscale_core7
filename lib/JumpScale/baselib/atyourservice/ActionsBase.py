@@ -151,7 +151,7 @@ class ActionsBase():
         for process in serviceobj.getProcessDicts():
             
             if process.has_key("platform"):
-                if j.system.platformtype.checkMatch(process["platform"]):
+                if not j.system.platformtype.checkMatch(process["platform"]):
                     continue
 
             start2(process)
