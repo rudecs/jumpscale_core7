@@ -12,7 +12,7 @@ j.logger.consolelogCategories.append('atyourserviceAction')
 
 commands = ['install', 'list', 'stop', 'start', 'restart', 'build', 'prepare', "mdupdate", "update", "reset", "resetstate",
             "removedata", "monitor", "configure", "cleanup", "export", "import", "uninstall", "push", "execute",
-            "status", "nodes", "consume", "console"]
+            "status", "nodes", "consume", "console", "hrdpath"]
 
 help = """
 ays commands:
@@ -62,10 +62,11 @@ ays commands:
     - consume specified producer category and instance
     console
     - connect thourgh ssh to remote node
+    hrdpath
+    - return the path to the hrd directory
 """
 
 parser.add_argument("action", choices=commands, help='Command to perform\n')
-parser.add_argument("--path", required=False, help='path to git config repo to be use\n', default=None)
 parser.add_argument("--noremote", required=False, action='store_true', help='bypass the @remote wrapper\n', default=False)
 
 group = parser.add_argument_group(title="Package Selection")
@@ -132,7 +133,7 @@ def getHRDData(args):
 
 def getRemote(args):
     parent = getParent(args)
-    path = args.path if args.path else ('%s/domain__name__instance' % parent.path if parent else '')
+    path = '%s/domain__name__instance' % parent.path if parent else ''
     remote = [parent for parent in j.atyourservice.findParents(path=path) if 'node' in parent.categories]
     if not remote:
         return None, None
@@ -180,11 +181,6 @@ if '--help' in sys.argv or '-h' in sys.argv:
 args = parser.parse_args()
 args.deps = not args.nodeps
 
-if args.path is not None:
-    j.dirs.createGitConfigRepo(args.path)
-    j.dirs.gitConfigDir = args.path
-
-
 # jpargs = {}
 # if args.node!=None:
 #     jpargs["node2execute"]=args.node
@@ -212,6 +208,9 @@ if args.action == 'console':
     target.cmd = 'bash'
     target.execute(deps=False)
 
+elif args.action == 'hrdpath':
+    print j.application.config.getStr('system.paths.hrd')
+
 else:
     if args.targettype or args.targetname:
         args.parent = getTarget(args)
@@ -227,12 +226,12 @@ else:
             service.prepare(deps=args.deps)
 
     elif args.action == 'install':
-        # if path is present, it means the is triggerd by remote, so service.hrd
-        # and actions.py is already present on system.
         if args.instance == "":
             args.instance = 'main'
 
-        if args.path is not None:
+        # if noremote is true, it means the is triggerd by remote, so service.hrd
+        # and actions.py is already present on system.
+        if args.noremote:
             service = j.atyourservice.get(domain=args.domain, name=args.name, instance=args.instance)
             if args.noremote:
                 service.noremote = args.noremote
