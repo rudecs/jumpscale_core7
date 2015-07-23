@@ -749,7 +749,8 @@ class Service(object):
         """
         remove state of a service.
         """
-        j.do.delete(self.path)
+        statePath = j.system.fs.joinPaths(self.path, 'state.json')
+        j.do.delete(statePath)
 
     @deps
     def reset(self, deps=True, processed={}):
