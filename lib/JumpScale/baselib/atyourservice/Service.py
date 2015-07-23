@@ -240,7 +240,10 @@ class Service(object):
 
     def _loadActions(self):
         actionsPath = j.system.fs.joinPaths(self.path, "actions.py")
-        # if not j.system.fs.exists(actionsPath):
+        from IPython import embed
+        print "DEBUG NOW _loadActions"
+        embed()
+        p
         if self.templatepath != "":
             self._apply()
         else:
@@ -251,8 +254,6 @@ class Service(object):
             self.domain, self.name, self.instance)
         mod = loadmodule(modulename, "%s/actions.py" % self.path)
         self._actions = mod.Actions()
-        # self._actions.serviceobject=self  serviceobj is now an argument of
-        # each Action() method
 
     def _apply(self):
         j.do.createDir(self.path)
