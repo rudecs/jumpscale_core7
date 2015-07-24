@@ -1495,7 +1495,7 @@ class Installer():
 
         #it was not logical that the behaviour in the /usr/local was different than the one in the sandbox
         if insystem or not self.exists(destjs):
-            do.removeDirTree(destjs)
+            do.delete(destjs)
             do.unlink(destjs)
             dest="%s/lib/JumpScale/"%(base)
             do.copyTree(src,destjs)
