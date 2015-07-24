@@ -6,6 +6,10 @@ def ubuntu():
     from .ubuntu import manager
     return manager.UbuntuManagerFactory()
 
+def unix():
+    from .unix import manager
+    return manager.UnixManagerFactory()
+
 
 def disklayout():
     from .disklayout import manager
@@ -42,9 +46,19 @@ def aoe():
     return manager.AOEFactory()
 
 
-def connect(addr='localhost', port=22, passwd=None):
-    j.ssh.connection = j.remote.cuisine.connect(addr, port=22, passwd=passwd)
-    return j.ssh.connection
+def connect(addr='localhost', port=22, passwd=None,verbose=False,key=""):
+    c=j.remote.cuisine.connect(addr, port=22, passwd=passwd)
+    c.fabric.api.env['connection_attempts'] = 5
+    if key!="":
+        c.fabric.key_filename=key
+    if not j.do.exists(key):
+        j.events.opsError("cannot find key:%s"%key)
+
+    if verbose:
+        c.fabric.state.output["running"]=False
+        c.fabric.state.output["stdout"]=False
+    j.ssh.connection = c
+    return c
 
 j.base.loader.makeAvailable(j, 'ssh')
 
@@ -58,3 +72,4 @@ j.ssh._register('ubuntu', ubuntu)
 j.ssh._register('server', server)
 j.ssh._register('nfs', nfs)
 j.ssh._register('aoe', aoe)
+j.ssh._register('unix', unix)

@@ -761,7 +761,7 @@ class InstallTools():
 
     #########NON FS
 
-    def download(self,url,to="",overwrite=True,retry=3,timeout=0,login="",passwd="",minspeed=0,multithread=False):
+    def download(self,url,to="",overwrite=True,retry=3,timeout=0,login="",passwd="",minspeed=0,multithread=False,curl=False):
         """
         @return path of downloaded file
         @param minspeed is kbytes per sec e.g. 50, if less than 50 kbytes during 10 min it will restart the download (curl only)
@@ -780,12 +780,19 @@ class InstallTools():
                             data = handle.read(1024)
                             if len(data) == 0: break
                             out.write(data)
-                        handle.close()
-                        out.close()
-                except Exception,e:
-                    print "DOWNLOAD ERROR:%s\n%s"%(url,e)
                     handle.close()
                     out.close()
+                    return
+                except Exception,e:
+                    print "DOWNLOAD ERROR:%s\n%s"%(url,e)
+                    try:
+                        handle.close()
+                    except:
+                        pass
+                    try:
+                        out.close()
+                    except:
+                        pass
                     handle = urlopen(url)
                     nr+=1
 
@@ -804,8 +811,9 @@ class InstallTools():
                 print "NO NEED TO DOWNLOAD WAS DONE ALREADY"
                 return to
 
-        
-        if self.checkInstalled("curl"):
+        self.createDir(self.getDirName(to))
+
+        if curl and self.checkInstalled("curl"):
             minspeed=0
             if minspeed!=0:
                 minsp="-y %s -Y 600"%(minspeed*1024)
@@ -1457,11 +1465,7 @@ class Installer():
         #     dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
         # else:
         #     dest="/usr/local/lib/python3.4/dist-packages/JumpScale"
-            
-        if insystem or not self.exists(destjs):
-            do.symlink(src, destjs)
-        else:
-            do.copyTree(src,destjs)
+
 
         do.createDir("%s/lib"%base)
         do.createDir("%s/bin"%base)
@@ -1485,6 +1489,13 @@ class Installer():
             src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
             dest="%s/lib/JumpScale/%s.py"%(base,item)
             do.symlink(src, dest)
+
+        #it was not logical that the behaviour in the /usr/local was different than the one in the sandbox
+        if insystem or not self.exists(destjs):
+            do.removeDirTree(destjs)
+            do.unlink(destjs)
+            dest="%s/lib/JumpScale/"%(base)
+            do.copyTree(src,destjs)
 
         self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX,CODEDIR=CODEDIR)
 

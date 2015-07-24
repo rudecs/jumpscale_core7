@@ -185,7 +185,7 @@ class Ubuntu:
         will then install
         """
         j.do.chdir() #will go to tmp
-        path=j.do.download(url,"",overwrite=False,minspeed=minspeed)
+        path=j.do.download(url,"",overwrite=False,minspeed=minspeed,curl=True)
         self.installDebFile(path)
         if removeDownloaded:
             j.do.delete(path)
