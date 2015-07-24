@@ -401,11 +401,11 @@ class InstallTools():
             print(("symlink: src:%s dest(islink):%s" % (src,dest)))
 
         if self.isLink(dest):
-            self.removesymlink(dest)
+            self.removeSymlink(dest)
 
         if delete:
             if self.TYPE=="WIN":
-                self.removesymlink(dest)
+                self.removeSymlink(dest)
                 self.delete(dest)
             else:
                 self.delete(dest)
@@ -433,7 +433,7 @@ class InstallTools():
             print(("link %s:%s"%(item,dest2)))
             self.symlink(item,dest2,delete=delete)
 
-    def removesymlink(self,path):
+    def removeSymlink(self,path):
         if self.TYPE=="WIN":
             try:
                 cmd="junction -d %s 2>&1 > null" % (path)
