@@ -1461,9 +1461,11 @@ class Installer():
             destjs="/usr/local/lib/python2.7/site-packages/JumpScale"
         elif do.TYPE.startswith("WIN"):
             raise RuntimeError("do")
-        else:
+        else:            
             destjs="/usr/local/lib/python2.7/dist-packages/JumpScale"
-        
+            do.delete(destjs)
+            do.createDir(destjs)
+
         # if pythonversion==2:
         #     dest="/usr/local/lib/python2.7/dist-packages/JumpScale"
         # else:
@@ -1478,6 +1480,14 @@ class Installer():
         dest="%s/lib/JumpScale"%base
         do.createDir(dest)
         do.symlinkFilesInDir(src, dest, includeDirs=True)
+        do.symlinkFilesInDir(src, destjs, includeDirs=True)
+
+        for item in ["InstallTools","ExtraTools"]:
+            src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
+            dest2="%s/%s.py"%(dest,item)
+            do.symlink(src, dest2)
+            dest2="%s/%s.py"%(destjs,item)
+            do.symlink(src, dest2)
 
         src="%s/github/jumpscale/jumpscale_core7/shellcmds"%do.CODEDIR
         desttest="/usr/local/bin/js"
@@ -1488,16 +1498,13 @@ class Installer():
         dest="%s/bin"%base
         do.symlinkFilesInDir(src, dest)
 
-        for item in ["InstallTools","ExtraTools"]:
-            src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
-            dest="%s/lib/JumpScale/%s.py"%(base,item)
-            do.symlink(src, dest)
+
 
         #it was not logical that the behaviour in the /usr/local was different than the one in the sandbox
-        if insystem or not self.exists(destjs):
-            do.delete(destjs)
-            dest="%s/lib/JumpScale/"%(base)
-            do.copyTree(src,destjs)
+        # if insystem or not self.exists(destjs):
+            
+        #     dest="%s/lib/JumpScale/"%(base)
+        #     do.copyTree(src,destjs)
 
         self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX,CODEDIR=CODEDIR)
 
