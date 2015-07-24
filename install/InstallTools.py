@@ -8,7 +8,7 @@ import os
 import tarfile
 import sys
 import shutil
-import tempfile
+import tempfilede
 import platform
 import subprocess
 import time
@@ -138,6 +138,8 @@ class InstallTools():
             fo.write(content)
 
     def delete(self,path,force=False):
+
+        self.removeSymlink(path)
 
         if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin",self.CODEDIR]:
             raise RuntimeError('cannot delete protected dirs')
@@ -440,7 +442,8 @@ class InstallTools():
             except Exception as e:
                 pass
         else:
-            os.unlink(path.rstrip("/"))
+            if isLink(path):
+                os.unlink(path.rstrip("/"))
 
     def getBaseName(self, path):
         """Return the base name of pathname path."""
