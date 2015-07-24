@@ -146,19 +146,6 @@ class Ubuntu:
         cmd='unset JSBASE;unset PYTHONPATH;apt-get install %s --force-yes -y'%packagename
         j.system.process.executeWithoutPipe(cmd)
 
-        # self.check()
-        # if self._cache==None:
-        #     self.initApt()
-
-        # if isinstance(packagename, basestring):
-        #     packagename = [packagename]
-        # for package in packagename:
-        #     pkg = self._cache[package]
-        #     if not pkg.is_installed:
-        #         print "install %s" % packagename
-        #         pkg.mark_install()
-        # self._cache.commit()
-        # self._cache.clear()
 
     def installVersion(self, packageName, version):
         '''
@@ -191,6 +178,30 @@ class Ubuntu:
         import apt.debfile
         deb = apt.debfile.DebPackage(path, cache=self._cache)
         deb.install()
+
+    def downloadInstallDebPkg(self,url,removeDownloaded=False):
+        """
+        will download to tmp if not there yet
+        will then install
+        """
+        j.do.chdir() #will go to tmp
+        path=j.do.download(url,"",overwrite=False)
+        self.installDebFile(path)
+        if removeDownloaded:
+            j.do.delete(path)
+
+    def listFilesPkg(self,pkgname,regex=""):
+        """
+        list files of dpkg 
+        if regex used only output the ones who are matching regex
+        """
+        rc,out=j.system.process.execute("dpkg -L %s"%pkgname)
+        if regex!="":
+            return j.codetools.regex.findAll(regex,out)
+        else:
+            return out.split("\n")
+
+
 
     def remove(self, packagename):
         j.logger.log("ubuntu remove package:%s"%packagename,category="ubuntu.remove")

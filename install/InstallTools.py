@@ -737,14 +737,27 @@ class InstallTools():
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
 
-    def chdir(seld,ddir):
+    def chdir(self,ddir=""):
+        """
+        if ddir=="" then will go to tmpdir
+        """
+        if ddir=="":
+            ddir=self.TMP
         os.chdir(ddir)
 
     #########NON FS
 
-    def download(self,url,to):
-        os.chdir(self.TMP)
+    def download(self,url,to="",overwrite=True):
+        """
+        @return path of downloaded file
+        """
+        # os.chdir(self.TMP)
         print(('Downloading %s ' % (url)))
+        if to=="":
+            to=self.TMP+"/"+url.replace("\\","/").split("/")[-1]
+        if overwrite:
+            if self.exists(to):
+                self.delete(to)
         handle = urlopen(url)
         with open(to, 'wb') as out:
             while True:
@@ -753,6 +766,7 @@ class InstallTools():
                 out.write(data)
         handle.close()
         out.close()
+        return to
 
     def isUnix(self):
         if sys.platform.lower().find("linux")!=-1:
@@ -1276,7 +1290,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,copybinary=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
+    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1291,6 +1305,9 @@ class Installer():
         IMPORTANT: if env var's are set they get priority
 
         """
+
+        #everything else is dangerous now
+        copybinary=True
 
         tmpdir=do.TMP
 
@@ -1397,7 +1414,7 @@ class Installer():
 
         for item in ["InstallTools","ExtraTools"]:
             src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
-            dest="%s/lib/%s.py"%(base,item)
+            dest="%s/lib/JumpScale/%s.py"%(base,item)
             do.symlink(src, dest)
 
         self._writeenv(basedir=base,insystem=insystem,SANDBOX=SANDBOX,CODEDIR=CODEDIR)
