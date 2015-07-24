@@ -8,7 +8,7 @@ import os
 import tarfile
 import sys
 import shutil
-import tempfilede
+import tempfile
 import platform
 import subprocess
 import time
