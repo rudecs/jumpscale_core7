@@ -442,7 +442,7 @@ class InstallTools():
             except Exception as e:
                 pass
         else:
-            if isLink(path):
+            if self.isLink(path):
                 os.unlink(path.rstrip("/"))
 
     def getBaseName(self, path):
