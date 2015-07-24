@@ -179,13 +179,13 @@ class Ubuntu:
         deb = apt.debfile.DebPackage(path, cache=self._cache)
         deb.install()
 
-    def downloadInstallDebPkg(self,url,removeDownloaded=False):
+    def downloadInstallDebPkg(self,url,removeDownloaded=False,minspeed=20):
         """
         will download to tmp if not there yet
         will then install
         """
         j.do.chdir() #will go to tmp
-        path=j.do.download(url,"",overwrite=False)
+        path=j.do.download(url,"",overwrite=False,minspeed=minspeed)
         self.installDebFile(path)
         if removeDownloaded:
             j.do.delete(path)

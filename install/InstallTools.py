@@ -2,7 +2,7 @@ try:
 # from urllib3.request import urlopen
     from urllib.request import urlopen
 except ImportError:
-    from urllib import urlopen
+    from urllib2 import urlopen
 
 import os
 import tarfile
@@ -110,7 +110,12 @@ class InstallTools():
             data = fp.read()
         return data
 
+    def touch(self,path):
+        self.writeFile(path,"")
+
     def writeFile(self,path,content,strip=True):
+
+        self.createDir(self.getDirName(path))
 
         if strip:
             #remove all spaces at beginning & end of line when relevant
@@ -249,7 +254,16 @@ class InstallTools():
         else:
             raise RuntimeError('Source path %s in system.fs.copyTree is not a directory'% src)
 
-    def copyFile(self,source,dest,deletefirst=False):
+    def copyFile(self,source,dest,deletefirst=False,skipIfExists=False):
+        """
+        """
+        if self.isDir(dest):
+            dest=self.joinPaths(dest,self.getBaseName(source))
+
+        if skipIfExists:
+            if self.exists(dest):
+                return
+
         if deletefirst:
             self.delete(dest)
         if self.debug:
@@ -747,25 +761,80 @@ class InstallTools():
 
     #########NON FS
 
-    def download(self,url,to="",overwrite=True):
+    def download(self,url,to="",overwrite=True,retry=3,timeout=0,login="",passwd="",minspeed=0,multithread=False):
         """
         @return path of downloaded file
+        @param minspeed is kbytes per sec e.g. 50, if less than 50 kbytes during 10 min it will restart the download (curl only)
+        @param when multithread True then will use aria2 download tool to get multiple threads
         """
+        def download(url,to,retry=3):
+            if timeout==0:
+                handle = urlopen(url)
+            else:
+                handle = urlopen(url,timeout=timeout)
+            nr=0
+            while nr < retry+1:
+                try:
+                    with open(to, 'wb') as out:
+                        while True:
+                            data = handle.read(1024)
+                            if len(data) == 0: break
+                            out.write(data)
+                        handle.close()
+                        out.close()
+                except Exception,e:
+                    print "DOWNLOAD ERROR:%s\n%s"%(url,e)
+                    handle.close()
+                    out.close()
+                    handle = urlopen(url)
+                    nr+=1
+
+
         # os.chdir(self.TMP)
         print(('Downloading %s ' % (url)))
         if to=="":
             to=self.TMP+"/"+url.replace("\\","/").split("/")[-1]
+        
         if overwrite:
             if self.exists(to):
                 self.delete(to)
-        handle = urlopen(url)
-        with open(to, 'wb') as out:
-            while True:
-                data = handle.read(1024)
-                if len(data) == 0: break
-                out.write(data)
-        handle.close()
-        out.close()
+                self.delete("%s.downloadok"%to)
+        else:
+            if self.exists(to) and self.exists("%s.downloadok"%to):
+                print "NO NEED TO DOWNLOAD WAS DONE ALREADY"
+                return to
+
+        
+        if self.checkInstalled("curl"):
+            minspeed=0
+            if minspeed!=0:
+                minsp="-y %s -Y 600"%(minspeed*1024)
+            else:
+                minsp=""
+            if login:
+                user="--user %s:%s "%(login,passwd)
+            else:
+                user=""
+
+            cmd="curl '%s' -o '%s' %s %s --connect-timeout 5 --retry %s --retry-max-time %s -C -"%(url,to,user,minsp,retry,timeout)
+            # print cmd
+            self.delete("%s.downloadok"%to)
+            nr=0
+            if retry==0:
+                retry=1
+            while nr<retry:
+                rc,out,err=self.execute(cmd)
+                nr+=1
+                if rc>0:
+                    print "Could not download:%s.\nError:\n"%url
+                    print err
+                else:
+                    self.touch("%s.downloadok"%to)
+        elif multithread:
+            raise RuntimeError("not implemented yet")
+        else:
+            download(url,to,retry)
+
         return to
 
     def isUnix(self):
