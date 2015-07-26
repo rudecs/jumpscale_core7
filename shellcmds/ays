@@ -206,6 +206,7 @@ if args.action == 'console':
     if not target:
         raise RuntimeError('No target with targettype "%s" and targetname "%s" was found' % (args.targettype, args.targetname))
     target.cmd = 'bash'
+    j.remote.cuisine.fabric.env['output_prefix'] = False
     target.execute(deps=False)
 
 elif args.action == 'hrdpath':
