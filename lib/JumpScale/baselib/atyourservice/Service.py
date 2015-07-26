@@ -239,11 +239,6 @@ class Service(object):
         return 199
 
     def _loadActions(self):
-        actionsPath = j.system.fs.joinPaths(self.path, "actions.py")
-        from IPython import embed
-        print "DEBUG NOW _loadActions"
-        embed()
-        p
         if self.templatepath != "":
             self._apply()
         else:
@@ -510,7 +505,7 @@ class Service(object):
     def prepare(self, deps=True, reverse=True, processed={}):
         self.log("prepare install for instance")
         if j.do.TYPE.startswith("UBUNTU"):
-        
+
             for src in self.hrd.getListFromPrefix("service.ubuntu.apt.source"):
                 src = src.replace(";", ":")
                 if src.strip() != "":
