@@ -811,7 +811,7 @@ class InstallTools():
                 self.delete("%s.downloadok"%to)
         else:
             if self.exists(to) and self.exists("%s.downloadok"%to):
-                print "NO NEED TO DOWNLOAD WAS DONE ALREADY"
+                # print "NO NEED TO DOWNLOAD WAS DONE ALREADY"
                 return to
 
         self.createDir(self.getDirName(to))
@@ -845,6 +845,7 @@ class InstallTools():
             raise RuntimeError("not implemented yet")
         else:
             download(url,to,retry)
+            self.touch("%s.downloadok"%to)
 
         return to
 

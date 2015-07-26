@@ -2,6 +2,8 @@ from .network import UnixNetworkManager
 from JumpScale import j
 import os
 
+import paramiko
+
 class UnixManagerFactory(object):
     def get(self, connection=None):
         """
@@ -19,7 +21,6 @@ class UnixManager(object):
 
         self._con = connection
         
-
     @property
     def connection(self):
         """
@@ -53,14 +54,16 @@ class UnixManager(object):
         """
         execute a jumpscript (script as content) in a remote tmux command, the stdout will be returned
         """
+        script=j.tools.text.lstrip(script)
         path="/tmp/jumpscript_temp_%s.py"%j.base.idgenerator.generateRandomInt(1,10000)
         self.connection.file_write(path,script)
         out=self.executeRemoteTmuxCmd("jspython %s"%path)
         self.connection.file_unlink(path)
         return out
 
-    def changePasswd(self,passwd,login="root"):
-        print passwd
+    def changePasswd(self,passwd,login="recovery"):
+        if len(passwd)<6:
+            j.events.opserror_critical("Choose longer passwd in changePasswd")        
         self.connection.run('echo "{username}:{password}" | chpasswd'.format(
             username=login,
             password=passwd)
@@ -71,56 +74,105 @@ class UnixManager(object):
         users=[j.do.getBaseName(item) for item in users if (item.strip()!="" and item.strip("/")!="home")]
         return users        
 
-    def secureSSH(self,sshkey="",recoverypasswd=""):
+    def secureSSH(self,sshkeypath,recoverypasswd=""):
         """
-        #will set recovery passwd for root
-        will disable all other users to use ssh
-        will authorize secure ssh key (is the rsa pub key as text)
+        * actions
+            * will set recovery passwd for user recovery
+            * will create a recovery user account
+            * will disable all other users to use ssh (so only user 'recovery' can login & do sudo -s)
+            * will authorize key identified with sshkeypath
+            * will do some tricks to secure sshdaemon e.g. no pam, no root access.
+        * locked down server where only the specified key can access and through the recovery created user
+
         """
-        print "change passwd"
+
+        if not j.system.fs.exists(sshkeypath):
+            j.events.opserror_critical("Cannot find key on %s"%sshkeypath)
+
         if recoverypasswd=="" and os.environ.has_key("recoverypasswd"): 
             recoverypasswd=os.environ["recoverypasswd"]
-        self.changePasswd(recoverypasswd)
-        if len(recoverypasswd)<8:
-            j.events.opserror_critical("Choose longer passwd")
-        print "ok"
-
-        def check():
-            self.connection.fabric.api.env.password = recoverypasswd
-            old=self.connection.fabric.key_filename
-            print "test ssh connection over recovery"
-            if not self.connection.dir_exists("/etc")==True:
-                j.events.opserror_critical("could not login with recovery passwd, cannot secure ssh session.")
-            self.connection.fabric.key_filename=old
-            print "ok"
         
-        check()
+        if len(recoverypasswd)<6:
+            j.events.opserror_critical("Choose longer passwd, do this by doing 'export recoverypasswd=something' before running this script.")            
 
+        sshkeypub=j.system.fs.fileGetContents(sshkeypath+".pub")
+
+        def checkkeyavailable(sshkeypub):
+            errormsg="Could not find SSH agent, please start by 'eval \"$(ssh-agent -s)\"' before running this cmd,\nand make sure appropriate keys are added with ssh-add ..."
+            sshkeypubcontent=" ".join(sshkeypub.split(" ")[1:]).strip().split("==")[0]+"=="
+            #check if current priv key is in ssh-agent
+            agent=paramiko.agent.Agent()
+            try:
+                keys=agent.get_keys()
+            except Exception,e:
+                j.events.opserror_critical( errormsg)
+            
+            if keys==():
+                j.events.opserror_critical( errormsg)                
+
+            for key in keys:
+                if key.get_base64()==sshkeypubcontent:
+                    return True
+            return False
+
+        if not checkkeyavailable(sshkeypub):
+            #add the new key
+            j.do.executeInteractive("ssh-add %s"%sshkeypath)
+
+        #make sure recovery user exists
+        self.connection.user_remove("recovery")        
+        self.connection.dir_remove("/home/recovery/")
+        
+        self.connection.user_ensure("recovery",recoverypasswd)
+
+        print "change passwd"
+        self.changePasswd(recoverypasswd)
+        print "ok"
+                    
+        print "test ssh connection only using the recovery user: login/passwd combination"
+        ssh = paramiko.SSHClient()
+        hostname=self.connection.host().split(":")[0]
+        port=int(self.connection.host().split(":")[1])
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname, port=port, username="recovery", password=recoverypasswd, pkey=None, key_filename=None, timeout=None, allow_agent=False, look_for_keys=False)
+        ssh.close()
+        print "ssh recovery user ok"
+        
         self.connection.dir_remove("/root/.ssh")
         self.connection.dir_ensure("/root/.ssh")
-        check()
-
-        if sshkey=="":
-            #try to load from connection
-            from IPython import embed
-            print "DEBUG NOW ououoiuoi"
-            embed()
             
-        self.connection.ssh_authorize("root",sshkey)
-
-        self.connection.fabric.api.env.password=""
-        print "test ssh with secure key"
-        if not self.connection.dir_exists("/etc")==True:
-            j.events.opserror_critical("could not login with secure key from current system, has right sshpub key been used in relation to local private key?")
-        print "ok"
+        self.connection.ssh_authorize("root",sshkeypub)
 
 
-        from IPython import embed
-        print "DEBUG NOW secureSSH"
-        embed()
-        
-        
+        print "test ssh connection with pkey"
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        CMDS="""
+        #make sure user is in sudo group
+        usermod -a -G sudo recovery
+
+        #sed -i -e '/texttofind/ s/texttoreplace/newvalue/' /path/to/file
+        sed -i -e '/.*PermitRootLogin.*/ s/.*/PermitRootLogin without-password/' /etc/ssh/sshd_config
+        sed -i -e '/.*UsePAM.*/ s/.*/UsePAM no/' /etc/ssh/sshd_config
+        sed -i -e '/.*Protocol.*/ s/.*/Protocol 2/' /etc/ssh/sshd_config
+
+        #only allow root & recovery user (make sure it exists)
+        sed -i -e '/.*AllowUsers.*/d' /etc/ssh/sshd_config
+        echo 'AllowUsers root' >> /etc/ssh/sshd_config
+        echo 'AllowUsers recovery' >> /etc/ssh/sshd_config
+
+        /etc/init.d/ssh restart
+        """
+        self.executeBashScript(CMDS)
+
+        #play with paramiko to see if we can connect (ssh-agent will be used)
+        ssh.connect(hostname, port=port, username="root", password=None, pkey=None, key_filename=None, timeout=None, allow_agent=True, look_for_keys=False)
+        ssh.close()
+        print "ssh test with key ok"
+    
     def executeBashScript(self,content):
+        content=j.tools.text.lstrip(content)
         if content[-1]!="\n":
             content+="\n"
         content+="\necho **DONE**\n"
@@ -129,10 +181,7 @@ class UnixManager(object):
         out=self.connection.run("sh %s"%path, shell=True, pty=True, combine_stderr=True)
         self.connection.file_unlink(path)
         lastline=out.split("\n")[-1]
-        if lastline.find("**DONE**")==-1:
-            from IPython import embed
-            print "DEBUG NOW 9999"
-            embed()            
+        if lastline.find("**DONE**")==-1:           
             raise RuntimeError("Could not execute bash script.\n%s\nout:%s\n"%(content,out))
         return "\n".join(out.split("\n")[:-1])
 
@@ -216,6 +265,7 @@ class UnixManager(object):
     def executeRemoteTmuxJumpscript(self,script):
         """
         execute a jumpscript (script as content) in a remote tmux command, the stdout will be returned
+        @param script is the content of the script
         """
         path="/tmp/jumpscript_temp_%s.py"%j.base.idgenerator.generateRandomInt(1,10000)
         self.connection.file_write(path,script)

@@ -131,6 +131,24 @@ class Text:
     def isNumeric(txt):        
         return re_nondigit.search(txt)==None
 
+    @staticmethod   
+    def lstrip(content):
+        """
+        remove all spaces at beginning & end of line when relevant
+        """
+        #find generic prepend for full file
+        minchars=9999
+        prechars = 0
+        for line in content.split("\n"):
+            prechars=len(line)-len(line.lstrip())
+            if prechars<minchars:
+                minchars=prechars
+
+        if prechars>0:
+            #remove the prechars
+            content="\n".join([line[minchars:] for line in content.split("\n")])       
+        return content 
+
     @staticmethod
     def ask(content,name=None,args={}, ask=True):
         """

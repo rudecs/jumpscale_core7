@@ -46,15 +46,21 @@ def aoe():
     return manager.AOEFactory()
 
 
-def connect(addr='localhost', port=22, passwd=None,verbose=False,key=""):
+def connect(addr='localhost', port=22, passwd=None,verbose=False,keypath=None):
+
+    if keypath=="":
+        keypath=None
+
+    if keypath!=None:
+        c.fabric.key_filename=keypath
+        if not j.do.exists(keypath):
+            j.events.opserror_critical("cannot find key:%s"%keypath)
+
     c=j.remote.cuisine.connect(addr, port=22, passwd=passwd)
     c.fabric.api.env['connection_attempts'] = 5
-    if key!="":
-        c.fabric.key_filename=key
-    if not j.do.exists(key):
-        j.events.opsError("cannot find key:%s"%key)
 
-    if verbose:
+
+    if not verbose:
         c.fabric.state.output["running"]=False
         c.fabric.state.output["stdout"]=False
     j.ssh.connection = c
