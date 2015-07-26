@@ -171,12 +171,16 @@ class Ubuntu:
         self._cache.commit()
         self._cache.clear()
 
-    def installDebFile(self, path):
+    def installDebFile(self, path, installDeps=True):
         self.check()
         if self._cache==None:
             self.initApt()
         import apt.debfile
         deb = apt.debfile.DebPackage(path, cache=self._cache)
+        if installDeps:
+            deb.check()
+            for missingpkg in deb.missing_deps:
+                self.install(missingpkg)
         deb.install()
 
     def downloadInstallDebPkg(self,url,removeDownloaded=False,minspeed=20):
