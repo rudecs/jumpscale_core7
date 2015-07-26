@@ -1,65 +1,11 @@
 import requests
-import sys
 from Models import Message
-import json
 import os
-from JumpScale import j
-import codecs
-import mimetypes
 import sys
-import uuid
 try:
     import io
 except ImportError:
-    pass # io is requiered in python3 but not available in python2
-
-class MultipartFormdataEncoder(object):
-    def __init__(self):
-        self.boundary = uuid.uuid4().hex
-        self.content_type = 'multipart/form-data; boundary={}'.format(self.boundary)
-
-    @classmethod
-    def u(cls, s):
-        if sys.hexversion < 0x03000000 and isinstance(s, str):
-            s = s.decode('utf-8')
-        if sys.hexversion >= 0x03000000 and isinstance(s, bytes):
-            s = s.decode('utf-8')
-        return s
-
-    def iter(self, fields, files):
-        """
-        fields is a sequence of (name, value) elements for regular form fields.
-        files is a sequence of (name, filename, file-type) elements for data to be uploaded as files
-        Yield body's chunk as bytes
-        """
-        encoder = codecs.getencoder('utf-8')
-        for (key, value) in fields:
-            key = self.u(key)
-            yield encoder('--{}\r\n'.format(self.boundary))
-            yield encoder(self.u('Content-Disposition: form-data; name="{}"\r\n').format(key))
-            yield encoder('\r\n')
-            if isinstance(value, int) or isinstance(value, float):
-                value = str(value)
-            yield encoder(self.u(value))
-            yield encoder('\r\n')
-        for (key, filename, fd) in files:
-            key = self.u(key)
-            filename = self.u(filename)
-            yield encoder('--{}\r\n'.format(self.boundary))
-            yield encoder(self.u('Content-Disposition: form-data; name="{}"; filename="{}"\r\n').format(key, filename))
-            yield encoder('Content-Type: {}\r\n'.format(mimetypes.guess_type(filename)[0] or 'application/octet-stream'))
-            yield encoder('\r\n')
-            with fd:
-                buff = fd.read()
-                yield (buff, len(buff))
-            yield encoder('\r\n')
-        yield encoder('--{}--\r\n'.format(self.boundary))
-
-    def encode(self, fields, files):
-        body = io.BytesIO()
-        for chunk, chunk_len in self.iter(fields, files):
-            body.write(chunk)
-        return self.content_type, body.getvalue()
+    pass  # io is requiered in python3 but not available in python2
 
 class Telegram:
     """This class wraps the (almost) whole Telegram API and offers a
@@ -99,7 +45,7 @@ class Telegram:
         Returns the processed data in JSON or a JSON object containing the
         error message."""
         url = "{}{}/{}".format(self.api_url, self.access_token, action)
-        r = requests.get(url, params=params, files=files)        
+        r = requests.post(url, params=params, files=files)
         # print url
         # print params
         try:
@@ -111,24 +57,6 @@ class Telegram:
                     "why": "Parsing Error",
                     "message": r.text}
 
-    def _encode_multipart(self,paths):
-        # fields = [('bar', b'23'), ('foo', 'sss')]
-        # files = [('myfile', 'image.jpg', open('image.jpg', 'rb'))]
-        files=[]
-        for path in paths:
-            fname=j.system.fs.getBaseName(path)
-            name=fname[:-(1+len(j.system.fs.getFileExtension(fname)))]
-            files.append((name,fname,open(path,'rb')))
-
-        fields=[]
-
-        # iterate and write chunk in a socket
-        content_type, body = MultipartFormdataEncoder().encode(fields, files)
-
-
-        return content_type, body
-
-
     def send_file(self, chat_id, command, method, filepath,
                   reply_to_message_id="",
                   reply_markup=""):
@@ -136,16 +64,16 @@ class Telegram:
         Wraps the file sending process.
 
         """
-        file_data=self._encode_multipart([filepath])
         args = {"chat_id": chat_id,
                 "reply_to_message_id": reply_to_message_id,
                 "reply_markup": reply_markup}
         files = {}
         # Checking if it's a resend id.
-        if isinstance(file_data, str):
-            args[method] = file_data
+        if os.path.exists(filepath):
+            filename = os.path.basename(filepath)
+            files[method] = (filename, open(filepath))
         else:
-            files[method] = file_data
+            args[method] = filepath
         return self.send_request(command, args, files)
 
     def get_updates(self, offset=0, limit=100, timeout=0):

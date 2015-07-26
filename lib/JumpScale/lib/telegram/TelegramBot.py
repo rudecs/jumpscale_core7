@@ -1,6 +1,6 @@
 from JumpScale import j
 
-from Telegram import *
+from Telegram import Telegram
 
 from handlers.loggerHandler import LoggerHandler
 from handlers.DemoHandler import DemoHandler
