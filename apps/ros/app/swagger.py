@@ -16,8 +16,8 @@ INPUTMAP = {'bool': {'type': 'boolean'},
            'string': {'type': 'string'},
            'int': {'type': 'integer'},
            'float': {'type': 'number'},
-           'list': {'type': 'string'},
-           'dict': {'type': 'string'},
+           'list': {'type': 'list'},
+           'dict': {'type': 'dict'},
            }
 
 RETURNMAP = {'bool': {'type': 'boolean'},
