@@ -553,6 +553,7 @@ class SpecParserFactory():
 
     def __init__(self):
         self.specs={}
+        self.childspecs={}
         self.appnames=[]
         self.actornames=[]
         self.app_actornames={}
@@ -597,9 +598,8 @@ class SpecParserFactory():
     def getChildModelSpec(self,app,actorname,name,die=True):
         key="childmodel_%s_%s_%s"%(app,actorname,name)
         key = key.lower()
-        if key in self.specs:
-            return self.specs[key]
-        
+        if key in self.childspecs:
+            return self.childspecs[key]
         else:
             if die:
                 emsg="Cannot find model with name %s for app %s" % (name,app)
@@ -614,8 +614,13 @@ class SpecParserFactory():
         else:
             return []
 
-    def addSpec(self,spec):
-        if spec.type in ["rootmodel", 'model']:
+    def addSpec(self,spec):        
+        if spec.name==spec.actorname:
+            specname=""
+        else:
+            specname=spec.name
+
+        if spec.type == "rootmodel":
             if spec.type == "rootmodel":
                 spec.type="model"
                 key="%s_%s"%(spec.appname,spec.actorname)
@@ -623,15 +628,9 @@ class SpecParserFactory():
                     self.modelnames[key]=[]
                 if spec.name not in self.modelnames[key]:
                     self.modelnames[key].append(spec.name)
-            else:
-                spec.type = 'childmodel'
-
-            
-
-        if spec.name==spec.actorname:
-            specname=""
-        else:
-            specname=spec.name
+        elif spec.type == "model":
+            k ="%s_%s_%s_%s"%("childmodel",spec.appname,spec.actorname,specname)
+            self.childspecs[k]=spec
 
         if spec.type=="actor" and specname!="":
             from JumpScale.core.Shell import ipshell
@@ -655,6 +654,7 @@ class SpecParserFactory():
             raise RuntimeError(emsg+"\n{category:specs.input}")
         if "%s_%s"%(spec.appname,spec.actorname) not in self.actornames:
             self.actornames.append("%s_%s"%(spec.appname,spec.actorname))
+        
         self.specs[key]=spec
 
     def findSpec(self,query="",appname="",actorname="",specname="",type="",findFromSpec=None,findOnlyOne=True):
