@@ -3,6 +3,7 @@ from JumpScale import j
 import os
 import importlib
 import jinja2
+import inspect
 
 from sqlalchemy.ext.hybrid import hybrid_property
 from eve_sqlalchemy.decorators import registerSchema
@@ -13,7 +14,7 @@ jinjaEnv = jinja2.Environment(
             loader=jinja2.FileSystemLoader(tmplDir),
         )
 
-def generateDomain(namespace, spec):
+def generateDomainFromSpecFile(namespace, spec):
     domain = dict()
     template = jinjaEnv.get_template('sqlalchemy.py')
     for modelname, modelspec in spec.iteritems():
@@ -38,3 +39,13 @@ def generateDomain(namespace, spec):
         domain[modelname].update({'item_url': 'regex(".*")'})
     return domain
 
+def generateDomainFromModelFiles(namespace, modelfiles):
+    domain = dict()
+    for filename in modelfiles:
+        module = importlib.import_module("models.osis.sql.%s.%s" % (namespace, filename))
+        for modelname, obj in inspect.getmembers(module):
+            if inspect.isclass(obj) and hasattr(obj, '__table__'):
+                registerSchema(modelname)(obj)
+                domain[modelname] = obj._eve_schema[modelname]
+                domain[modelname].update({'item_url': 'regex(".*")'})
+    return domain

@@ -592,6 +592,20 @@ class SpecParserFactory():
                 raise RuntimeError(emsg+" {category:specs.model.notfound}")
             else:
                 return False
+            
+            
+    def getChildModelSpec(self,app,actorname,name,die=True):
+        key="childmodel_%s_%s_%s"%(app,actorname,name)
+        key = key.lower()
+        if key in self.specs:
+            return self.specs[key]
+        
+        else:
+            if die:
+                emsg="Cannot find model with name %s for app %s" % (name,app)
+                raise RuntimeError(emsg+" {category:specs.model.notfound}")
+            else:
+                return False
 
     def getModelNames(self,appname,actorname):
         key="%s_%s"%(appname,actorname)
@@ -601,13 +615,18 @@ class SpecParserFactory():
             return []
 
     def addSpec(self,spec):
-        if spec.type=="rootmodel":
-            spec.type="model"
-            key="%s_%s"%(spec.appname,spec.actorname)
-            if key not in self.modelnames:
-                self.modelnames[key]=[]
-            if spec.name not in self.modelnames[key]:
-                self.modelnames[key].append(spec.name)
+        if spec.type in ["rootmodel", 'model']:
+            if spec.type == "rootmodel":
+                spec.type="model"
+                key="%s_%s"%(spec.appname,spec.actorname)
+                if key not in self.modelnames:
+                    self.modelnames[key]=[]
+                if spec.name not in self.modelnames[key]:
+                    self.modelnames[key].append(spec.name)
+            else:
+                spec.type = 'childmodel'
+
+            
 
         if spec.name==spec.actorname:
             specname=""
