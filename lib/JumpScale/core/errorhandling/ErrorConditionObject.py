@@ -22,7 +22,7 @@ class ErrorConditionObject():
     @param type #BUG,INPUT,MONITORING,OPERATIONS,PERFORMANCE,UNKNOWN  
     @param level #1:critical, 2:warning, 3:info see j.enumerators.ErrorConditionLevel
     """
-    def __init__(self,ddict={},msg="",msgpub="",category="",level=1,type="UNKNOWN",tb=None):
+    def __init__(self,ddict={},msg="",msgpub="",category="",level=1,type="UNKNOWN",tb=None, data=None):
         if ddict!={}:
             self.__dict__=ddict
         else:
@@ -39,6 +39,7 @@ class ErrorConditionObject():
             self.errormessage=msg
             self.errormessagePub=msgpub
             self.level=int(level) #1:critical, 2:warning, 3:info see j.enumerators.ErrorConditionLevel.
+            self.data = data
             
             
 

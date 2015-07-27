@@ -8,8 +8,8 @@ def log(msg, level=1):
 
 class RemoteService(Service):
 
-    def __init__(self, instance="", servicetemplate=None, path="", args=None, parent=None):
-        super(RemoteService, self).__init__(instance, servicetemplate, path, args, parent)
+    def __init__(self, domain='', name='', instance='', hrd=None, servicetemplate=None, path="", args=None, parent=None):
+        super(RemoteService, self).__init__(domain=domain, name=name, instance=instance, hrd=hrd, servicetemplate=servicetemplate, path=path, args=args, parent=parent)
         self.getDependencies()
 
     @property

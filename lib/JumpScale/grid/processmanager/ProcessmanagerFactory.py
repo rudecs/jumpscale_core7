@@ -71,7 +71,9 @@ class ProcessmanagerFactory:
                 
         self.daemon.start()
 
-    def _checkIsNFSMounted(self,check="/opt/code"):
+    def _checkIsNFSMounted(self,check=""):
+        if check=="":
+            check=j.dirs.codeDir
         rc,out=j.system.process.execute("mount")
         found=False
         for line in out.split("\n"):

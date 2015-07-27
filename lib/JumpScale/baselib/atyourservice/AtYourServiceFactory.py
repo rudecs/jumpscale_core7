@@ -69,6 +69,7 @@ class AtYourServiceFactory():
 
             self_init=True
 
+
     def updateTemplatesRepo(self, repos=[]):
         """
         update the git repo that contains the service templates
@@ -153,36 +154,36 @@ class AtYourServiceFactory():
             # try to load service from instance file is they exists
             hrdpath = j.system.fs.joinPaths(path, "service.hrd")
             actionspath = j.system.fs.joinPaths(path, "actions.py")
+            parents = self.findParents(path=path) if (not parent and path) else [parent]
+            parent = parents[0] if isinstance(parents, list) and parents else (parent if parent else None)
 
             # create service from templates
             servicetemplates = self.findTemplates(domain=domain, name=name)
             if len(servicetemplates) > 0:
-                # TODO consider a cleaner way
-                if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
+                remote = any(['node' in p.categories for p in parents])
+                if remote:
                     service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
                 else:
                     service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
                 return service
+            # create service from action.py and service.hrd
             elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
                 service = j.atyourservice.loadService(path, parent)
                 return service
+            else:
+                raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
 
-            raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
-        
         parentregex = ''
-        if parent and isinstance(parent, Service):
+        if parent and isinstance(parent, (Service, RemoteService)):
             parentregex = '%s__%s__%s' % (parent.domain, parent.name, parent.instance)
         elif parent and isinstance(parent, basestring):
-            parentregex = parent
+            parentregex = parent.replace(':', '.')
             # get only last parent
-            pdomain, pname, pinstance = parent.rsplit('__', 3)[-3:]
-            parent = self.findServices(pdomain, pname, pinstance, parent='', precise=precise)
+            parentdata = parent.replace(':', '__').split('__')
+            pdomain, pname, pinstance = parentdata[-3:]
+            parent = self.findServices(pdomain, pname, pinstance, parent='__'.join(parentdata[:-3]), precise=precise)
             parent = parent[0] if parent else None
-        elif parent == '':
-            parentregex = j.dirs.getHrdDir()
-            # always make prcies True when we dont want a parent
-            precise = True
-        
+
         targetKey = self.getId(domain, name, instance, parent)
         if targetKey in self._instanceCache:
             return [self._instanceCache[targetKey]]
@@ -196,7 +197,11 @@ class AtYourServiceFactory():
                                         instance if instance.strip() else '[a-zA-Z0-9_\.]*')
         preciseregex = '.*' if not precise else '.'
 
-        servicekey = '.*%s%s%s$' % (parentregex, preciseregex, serviceregex)
+        startregex = '.*'
+        if precise and not parent:
+            startregex = j.dirs.getHrdDir().rstrip('/').replace('/', '.')
+
+        servicekey = '%s%s%s%s$' % (startregex, parentregex, preciseregex, serviceregex)
         regex = re.compile(servicekey)
         matched = [m.string for path in candidates for m in [regex.search(path)] if m]
 
@@ -208,9 +213,10 @@ class AtYourServiceFactory():
 
         return res
 
-    def findParents(self, service, name="", limit=None):
-
-        path = service.path
+    def findParents(self, service=None, name='', path='', limit=None):
+        path = service.path if service else path
+        if not path:
+            return []
         basename = j.system.fs.getBaseName(path)
         res = []
         while True:
@@ -236,7 +242,7 @@ class AtYourServiceFactory():
             if producercategory in item.categories:
                 return item
 
-    def new(self, domain="", name="", instance="main", parent=None, args={}):
+    def new(self, domain="", name="", instance="main", path=None, parent=None, args={}):
         """
         will create a new service
         """
@@ -245,7 +251,7 @@ class AtYourServiceFactory():
 
         if len(serviceTmpls) == 0:
             raise RuntimeError("cannot find service template %s__%s" % (domain, name))
-        obj = serviceTmpls[0].newInstance(instance, parent=parent, args=args, precise=True)
+        obj = serviceTmpls[0].newInstance(instance, path=path, parent=parent, args=args, precise=True)
         return obj
 
     def remove(self, domain="", name="", instance="", parent=None):
@@ -264,9 +270,9 @@ class AtYourServiceFactory():
         services = None
         key = self.getId(domain, name, instance, parent)
         if key in self._instanceCache:
-            service = self._instanceCache[key]
-            if parent is None or (service.parent == parent):
-                return service
+            services = self._instanceCache[key]
+            if parent is None or (len(services) == 1 and services[0].parent == parent):
+                return services
             else:
                 services = None
         if services is None:
@@ -291,16 +297,19 @@ class AtYourServiceFactory():
         if not j.system.fs.exists(hrdpath) or not j.system.fs.exists(actionspath):
             raise RuntimeError("path doesn't contain service.hrd and actions.py")
 
-        if (parent and parent.name == "node.ssh") or ("node.ssh" in j.system.fs.getParent(path)):
-            service = RemoteService(path=path)
-        else:    
-            service = Service(path=path)
-        service.path = path
-        service.parent = parent
-        service._hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
-        service.domain = service.hrd.get("service.domain")
-        service.instance = service.hrd.get("service.instance")
-        service.name = service.hrd.get("service.name")
+        hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
+        fullpath = path or ('%s/domain__name__instance' % parent.path if parent else '')
+        remote = any(['node' in p.categories for p in j.atyourservice.findParents(path=path)])
+        if remote:
+            service = RemoteService(domain=hrd.get('service.domain', hrd.get('domain', '')),
+                                    name=hrd.get('service.name', hrd.get('name', '')),
+                                    instance=hrd.get('service.instance', hrd.get('instance', '')),
+                                    hrd=hrd, path=path, parent=parent)
+        else:
+            service = Service(domain=hrd.get('service.domain', hrd.get('domain', '')),
+                              name=hrd.get('service.name', hrd.get('name', '')),
+                              instance=hrd.get('service.instance', hrd.get('instance', '')),
+                              hrd=hrd, path=path, parent=parent)
 
         service.init()
         return service

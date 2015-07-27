@@ -6,15 +6,23 @@ from JumpScale import j
 import textwrap
 import string
 import collections
+import sys
+import os
+if sys.platform.startswith("win"):
+    import msvcrt
+    clear = lambda: os.system('cls')
+else:
+    clear = lambda: os.system('clear')
+
 
 IPREGEX = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
 class Console:
     """
-    class which groups functionality to print to a console 
+    class which groups functionality to print to a console
     self.width=120
     self.indent=0 #current indentation of messages send to console
-    self.reformat=False #if True will make sure message fits nicely on screen    
+    self.reformat=False #if True will make sure message fits nicely on screen
     """
     def __init__(self):
         self.width=230
@@ -24,29 +32,38 @@ class Console:
         """
         when typing, char per char will be returned
         """
-        j.system.platform.ubuntu.check()
-        import termios
-        fd = sys.stdin.fileno()
+        if not sys.platform.startswith("win"):
+            j.system.platform.ubuntu.check()
+            import termios
+            fd = sys.stdin.fileno()
 
-        oldterm = termios.tcgetattr(fd)
-        newattr = termios.tcgetattr(fd)
-        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-        termios.tcsetattr(fd, termios.TCSANOW, newattr)
-    
-        cont=True
-        try:
+            oldterm = termios.tcgetattr(fd)
+            newattr = termios.tcgetattr(fd)
+            newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+            termios.tcsetattr(fd, termios.TCSANOW, newattr)
+
+            cont=True
+            try:
+                while cont:
+                    try:
+                        c = sys.stdin.read(1)
+                        cont, result, params = callback(c, params)
+                    except IOError:
+                        j.logger.exception("Failed to read one character from stdin", 5)
+            finally:
+                termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
+
+        else:
+
+            cont=True
+
             while cont:
-                try:
-                    c = sys.stdin.read(1)
-                    cont, result, params = callback(c, params)
-                except IOError:
-                    j.logger.exception("Failed to read one character from stdin", 5)
-        finally:
-            termios.tcsetattr(fd, termios.TCSAFLUSH, oldterm)
+                c = msvcrt.getch()
+                cont, result, params = callback(c, params)
 
         return cont,result,params
 
-    
+
     def _cleanline(self,line):
         """
         make sure is string
@@ -64,15 +81,15 @@ class Console:
         @returns: Length of last line and message to display
         @rtype: tuple<number, string>
         '''
-        
+
         if indent==0 or indent==None:
             indent=self.indent
-            
+
         #if j.transaction.hasRunningTransactions():
         #    maxLengthStatusType= 8 #nr chars
         #else:
         #    maxLengthStatusType=0
-            
+
         if prefix!="":
             prefix="%s: "%(prefix)
 
@@ -80,13 +97,13 @@ class Console:
             prefix = '%s* %s' % (' ' * indent,prefix)
         else:
             prefix = ' %s%s' % (' ' * indent,prefix)
-            
+
         if width==0:
             width=self.width
         maxMessageLength = width  -len(prefix) #- maxLengthStatusType
         if maxMessageLength<5:
             j.events.inputerror_critical("Cannot format message for screen, not enough width\nwidht:%s prefixwidth:%s maxlengthstatustype:%s" % (width,len(prefix),maxMessageLength),"console")
-        
+
         out=[]
         for line in message.split("\n"):
             if removeemptylines and line=="":
@@ -94,7 +111,7 @@ class Console:
             linelength=maxMessageLength
             linelength2=maxMessageLength-4
             prepend=""
-            while len(line)>linelength:                
+            while len(line)>linelength:
                 linenow="%s%s"%(prepend,line[:linelength])
                 out.append(linenow)
                 line=line[linelength:]
@@ -102,9 +119,9 @@ class Console:
                 prepend="    "
             linenow="%s%s"%(prepend,line[:linelength])
             out.append(linenow)
-        
+
         return "\n".join(out)
-    
+
     def echo(self, msg,indent=None,withStar=False,prefix="",log=False,lf=True):
         '''
         Display some text to the end-user, use this method instead of print
@@ -151,7 +168,7 @@ class Console:
             messages.sort()
         for msg in messages:
             self.echoListItem(msg)
-            
+
     def echoWithPrefix(self,message,prefix,withStar=False,indent=None):
         """
         print a message which is formatted with a prefix
@@ -164,7 +181,7 @@ class Console:
         """
         for message in messages:
             self.echoWithPrefix(message,prefix,withStar=True)
-        
+
     def echoDict(self,dictionary,withStar=False,indent=None):
         for key in list(dictionary.keys()):
             try:
@@ -177,7 +194,13 @@ class Console:
             try:
                 self.formatMessage(str(dictionary[key]),key,withStar,indent)
             except:
-                j.events.inputerror_critical("Could not convert item of dictionary %s to string" % key,"console.transformDictToMessage")            
+                j.events.inputerror_critical("Could not convert item of dictionary %s to string" % key,"console.transformDictToMessage")
+
+    def cls(self):
+        """
+        clear screen
+        """
+        clear()
 
     def askString(self, question, defaultparam='', regex=None, retry=-1, validate=None):
         """Get a string response on a question
@@ -317,7 +340,7 @@ class Console:
         '''
         if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask a yes/no question in a non interactive mode.","console.askyesno.notinteractive")
-        
+
         while True:
             if sys.version.startswith("2"):
                 result = raw_input(str(message) + " (y/n):").rstrip(chr(13))
@@ -328,8 +351,8 @@ class Console:
             if result.lower() == 'n' or result.lower() == 'no':
                 return False
             self.echo( "Illegal value. Press 'y' or 'n'.")
-            
-        
+
+
     def askIntegers(self, question, invalid_message="invalid input please try again.", min=None, max=None):
         """
         Ask the user for multiple integers
@@ -373,12 +396,15 @@ class Console:
             parts = clean(f())
         return parts
 
-    def askChoice(self,choicearray, descr=None, sort=True):
+    def askChoice(self,choicearray, descr="", sort=True,maxchoice=25,height=30,autocomplete=False):
         """
-        @param choicearray is list or dict, when dict key needs to be the object to return, 
+        @param choicearray is list or dict, when dict key needs to be the object to return,
                the value of the dics is what needs to be returned, the key is the str representation
         """
-        maxchoice=25
+        if height>0:
+            self.cls()
+        if isinstance(choicearray, (tuple, list)):
+            choicearray.sort()
 
         #check items are strings or not, if not need to create dictionary
         if isinstance(choicearray, (tuple, list)):
@@ -391,87 +417,140 @@ class Console:
                 for item in choicearray:
                     choicearrayNew[str(item)]=item
                 choicearray=choicearrayNew
-        
-        if len(choicearray)>maxchoice and j.system.platformtype.isLinux():
-            descr2 = "%s\nMake a selection please, start typing, we will try to do auto completion.\n     ? prints the list." % descr
-            self.echo(descr2)
-            print()
-            print("        ")
-            wildcard=True
-            chars=""
-            params=[wildcard,chars]
-            def process(char, params):
-                """
-                char per char will be returned from console
-                """
-                wildcard, chars = params
-                #print (char,"","")
-                sys.stdout.write(char)
-                chars="%s%s" %(chars,char)
-                result=[]
-                if isinstance(choicearray, dict):
-                    choicearray3=list(choicearray.values())
-                else:
-                    choicearray3=choicearray
 
-                for rawChoice in choicearray3:
-                    # We need to keep the 'raw' choices, so the end result is
-                    # not a str()'d, lower()'d version of the original
-                    # choicearray element.
-                    choice=str(rawChoice)
-                    choice=choice.lower()
-                    if wildcard and choice.find(chars.lower())!=-1:
-                        result.append(rawChoice)
-                        
-                    #print "%s %s %s %s" % (wildcard,choice,chars,choice.find(chars))
-                    if not wildcard and choice.find(chars)==0:
-                        result.append(rawChoice)
-                    if char=="?":
-                        return False,["99999"],params
-                params=[wildcard,chars] 
-                #print str(len(result)) + " " + chars + " " + str(wildcard)
-                if not result:
-                    # No matches
-                    return False, result, params
-                elif len(result) < maxchoice:
-                    #more than 1 result but not too many to show and ask choice with nr's
-                    return False,result,params
-                else:
-                    # Still too many results
-                    return True, result, params
+        def pprint4autocomplete(chars=""):
+            self.cls()
+            print
+            counter=0
+            if len(choicearray)>(height-3):
 
-            choicearray2=[]
-            while len(choicearray2)==0:
-                cont,choicearray2,params = self.rawInputPerChar(process,params)
-                if len(choicearray2)==0:
-                    wildcard, chars = params 
-                    if wildcard:
-                        self.echo("\nNo results contain '%s', start over please"
-                                % chars)
-                    else:
-                        self.echo("\nNo results start with '%s', start over please" %
-                                chars)
-                    print("        ")
-                    wildcard=True
-                    chars=""
-                    params=[wildcard,chars]
-            
-            if len(choicearray2)==1 and not choicearray2==["99999"]:
-                wildcard, chars = params
-                sys.stdout.write(str(choicearray2[0])[len(chars):])
-                    
-            if choicearray2==["99999"]:
-                self.echo("\n")
-                for choice in choicearray:
-                    choice=str(choice)                    
-                    self.echoListItem(choice)                    
-                self.echo("\n")
-                return self.askChoice(choicearray, descr, sort)            
+                if len(choicearray)<200:
+                    shortchoice=[]
+                    for item in choicearray:
+                        short=item[0:4]
+                        if short not in shortchoice:
+                            shortchoice.append(short)
+                        if len(shortchoice)>height-3:
+                            break
+                    shortchoice.sort()
+                    for item in shortchoice:
+                        print "- %s ..."%item
+                        counter+=1
+
             else:
-                return self._askChoice(choicearray2, descr, sort)            
+                for item in choicearray:
+                    print "- %s"%item
+                    counter+=1
+            while counter<(height-3):
+                print
+                counter+=1
+            descr2 = "%s\nMake a selection please, start typing, we will try to do auto completion.\n" % descr
+
+            self.echo(descr2)
+            print "        :%s"%chars,
+
+        if len(choicearray)> maxchoice or autocomplete:
+            wildcard=False
+            chars=""
+
+            while True:
+                pprint4autocomplete(chars)
+
+                params=[wildcard,chars]
+
+                def process(char, params):
+                    """
+                    char per char will be returned from console
+                    """
+                    debug=False
+                    wildcard, chars = params
+                    #print (char,"","")
+                    sys.stdout.write(char)
+                    chars="%s%s" %(chars,char)
+                    result=[]
+                    if isinstance(choicearray, dict):
+                        choicearray3=list(choicearray.values())
+                    else:
+                        choicearray3=choicearray
+
+                    for rawChoice in choicearray3:
+                        # We need to keep the 'raw' choices, so the end result is
+                        # not a str()'d, lower()'d version of the original
+                        # choicearray element.
+                        choice=str(rawChoice).lower()
+
+                        if wildcard and choice.find(chars.lower())!=-1:
+                            result.append(rawChoice)
+
+                        #print "%s %s %s %s" % (wildcard,choice,chars,choice.find(chars))
+                        if not wildcard and choice.find(chars)==0:
+                            # print "subset:%s"%rawChoice
+                            result.append(rawChoice)
+                        if char=="?":
+                            return False,["99999"],params
+                    params=[wildcard,chars]
+                    #print str(len(result)) + " " + chars + " " + str(wildcard)
+                    if not result:
+                        # No matches
+                        if debug:
+                            print "nomatch"
+                        params=[wildcard,chars[:-1]]
+                        return False, result, params
+                    elif len(result) < maxchoice:
+                        #more than 1 result but not too many to show and ask choice with nr's
+                        if debug:
+                            print "<max amount, show items"
+
+                        #try to find comonality beween remaining results
+                        go=len(result)>0
+                        x=1
+                        chars2=chars
+                        while go and len(result[0]) > x:
+                            chars2+=result[0][x]
+                            test=[item for item in result if item.find(chars2)==0]
+                            if len(test)!=len(result):
+                                #no match
+                                chars2=chars2[:-1]
+                                break
+                            x+=1
+
+                        params=[wildcard,chars2]
+
+                        return False,result,params
+                    else:
+                        # Still too many results
+                        if debug:
+                            print "not small enough, keep typing"
+                        return True, result, params
+
+                cont,choicearray2,params = self.rawInputPerChar(process,params)
+                wildcard, chars = params
+
+                if len(choicearray2)==0:
+                    wildcard=False
+                    continue
+
+                if len(choicearray2)==1 and not choicearray2==["99999"]:
+                    #value was found
+                    # wildcard, chars = params
+                    # sys.stdout.write(str(choicearray2[0])[len(chars):])
+                    return choicearray2[0]
+
+                if choicearray2==["99999"]:
+                    self.echo("\n")
+                    for choice in choicearray:
+                        choice=str(choice)
+                        self.echoListItem(choice)
+                    self.echo("\n")
+
+                choicearray=choicearray2
+
+
+            else:
+                return self._askChoice(choicearray2, descr, sort)
         else:
             return self._askChoice(choicearray, descr, sort)
-            
+
 
     def _askChoice(self, choicearray, descr=None, sort=True):
         if not choicearray:
@@ -496,7 +575,7 @@ class Console:
                 valuearray.append(choicearray[key])
                 choicearray2.append(key)
             choicearray=choicearray2
-            
+
         elif isinstance(choicearray[0], (tuple, list)):
             valuearray = [ x[0] for x in choicearray ]
             choicearray = [ x[1] for x in choicearray ]
@@ -507,7 +586,7 @@ class Console:
             self.echo("   %s: %s" % (idx+1, section))
         self.echo("")
         result = self.askInteger("   Select Nr", minValue=1, maxValue=idx+1)
-        
+
         return valuearray[result-1]
 
     def askChoiceMultiple(self, choicearray, descr=None, sort=True):
@@ -561,12 +640,12 @@ class Console:
         lines.append("") # Forces end with newline
         return '\n'.join(lines)
 
-            
+
     def showOutput(self):
         pass#@todo
-        
+
     def hideOutput(self):
-        pass   
+        pass
 
     def printOutput(self):
         pass
@@ -618,10 +697,10 @@ class Console:
                 results.append([item.strip() for item in item.split("|") if item.strip()!=""])
             else:
                 results.append(item.split("|")[returncol+1])
-        
+
         if returncol!=None:
             return [item.strip(" ") for item in results]
         else:
             return results
-        
+
 

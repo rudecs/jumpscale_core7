@@ -2,7 +2,7 @@
 
 class SSHTool:
 
-    def createClient(self,  host, username, password, timeout):
+    def getSSHClient(self,password,  host="localhost", username="root", port=22,timeout=10):
         '''Create a new SSHClient instance.
 
         @param host: Hostname to connect to
@@ -18,10 +18,20 @@ class SSHTool:
         @rtype: SSHClient
         '''
 
-        try:
-            from remote.ssh.SSHClient import SSHClient
-        except:
-            from JumpScale import j
-            j.system.platform.ubuntu.install("python-paramiko")
-        from remote.ssh.SSHClient import SSHClient
-        return SSHClient(host, username, password, timeout)
+        from SSHClient import SSHClient
+        return SSHClient(host=host, port=port, username=username, password=password, timeout=timeout)
+
+    def getSSHClientUsingKey(self,keypath,host="localhost",username="root",port=22,timeout=10):
+        '''Create a new SSHClient instance.
+        @return: SSHClient instance
+        @rtype: SSHClient
+        '''
+        from SSHClient import SSHClient
+        return SSHClient(host=host, port=port,keypath=keypath,username=username, timeout=timeout)
+
+    def getSSHClientUsingSSHAgent(self,host="localhost",username="root",port=22,timeout=10):
+        '''
+        Create a new SSHClient instance using ssh agent.
+        '''
+        from SSHClient import SSHClient
+        return SSHClient(host=host, port=port,username=username, timeout=timeout)        

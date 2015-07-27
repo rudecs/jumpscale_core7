@@ -13,16 +13,30 @@ class ActionsBase():
     implement methods of this class to change behaviour of lifecycle management of service
     """
 
-    # @remote
     def prepare(self,serviceobj):
         """
         this gets executed before the files are downloaded & installed on approprate spots
         """
         return True
 
-    # @remote
+    def prepareLocal(self, serviceobj):
+        """
+        This function is always exectued locally, even in the case of a remote install
+        this gets executed before the files are downloaded & installed on approprate spots
+        """
+        return True
+
     def configure(self,serviceobj):
         """
+        this gets executed when files are installed
+        this step is used to do configuration steps to the platform
+        after this step the system will try to start the service if anything needs to be started
+        """
+        return True
+
+    def configureLocal(self, serviceobj):
+        """
+        This function is always exectued locally, even in the case of a remote install
         this gets executed when files are installed
         this step is used to do configuration steps to the platform
         after this step the system will try to start the service if anything needs to be started
@@ -45,7 +59,6 @@ class ActionsBase():
         """
         return True
 
-    # @remote
     def start(self,serviceobj):
         """
         start happens because of info from main.hrd file but we can overrule this
@@ -136,6 +149,11 @@ class ActionsBase():
         if isrunning:
             return
         for process in serviceobj.getProcessDicts():
+            
+            if process.has_key("platform"):
+                if not j.system.platformtype.checkMatch(process["platform"]):
+                    continue
+
             start2(process)
 
         isrunning=self.check_up_local(serviceobj)
@@ -156,7 +174,6 @@ class ActionsBase():
             else:
                 j.events.opserror_critical("could not start:%s"%serviceobj,"service.start.failed.other")
 
-    # @remote
     def stop(self,serviceobj):
         """
         if you want a gracefull shutdown implement this method
@@ -204,7 +221,6 @@ class ActionsBase():
                 pids.update(j.system.process.getPidsByFilter(process['filterstr']))
         return list(pids)
 
-    # @remote
     def halt(self,serviceobj):
         """
         hard kill the app, std a linux kill is used, you can use this method to do something next to the std behaviour
@@ -217,14 +233,12 @@ class ActionsBase():
             j.events.opserror_critical("could not halt:%s"%self,"service.halt")
         return True
 
-    # @remote
     def build(self,serviceobj):
         """
         build instructions for the service, make sure the builded service ends up in right directory, this means where otherwise binaries would run from
         """
         pass
 
-    # @remote
     def package(self,serviceobj):
         """
         copy the files from the production location on the filesystem to the appropriate binary git repo
@@ -330,7 +344,6 @@ class ActionsBase():
         """
         return True
 
-    # @remote
     def cleanup(self,serviceobj):
         """
         regular cleanup of env e.g. remove logfiles, ...
@@ -338,7 +351,6 @@ class ActionsBase():
         """
         return True
 
-    # @remote
     def data_export(self,serviceobj):
         """
         export data of app to a central location (configured in hrd under whatever chosen params)
@@ -347,7 +359,6 @@ class ActionsBase():
         """
         return False
 
-    # @remote
     def data_import(self,id,serviceobj):
         """
         import data of app to local location
@@ -355,35 +366,30 @@ class ActionsBase():
         """
         return False
 
-    # @remote
     def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
-    # @remote
     def removedata(self,serviceobj):
         """
         remove all data from the app (called when doing a reset)
         """
         pass
 
-    # @remote
     def uninstall(self,serviceobj):
         """
         uninstall the apps, remove relevant files
         """
         pass
 
-    # @remote
     def test(self,serviceobj):
         """
         test the service on appropriate behaviour
         """
         pass
 
-    # @remote
     def execute(self,serviceobj, cmd):
         """
         execute is not relevant for each type of service
@@ -409,14 +415,26 @@ class ActionsBase():
         execute something in the service instance
         """
         node = serviceobj.getProducer('node')
-        # TODO should upload to temporary destination firsts
-        node.actions.upload(node,serviceobj.path,j.dirs.getHrdDir())
+
+        if not node:
+            j.events.inputerror_critical('There seems to be no producer of type node for this service.\nConsider running ays consume --category {category} --producer {your producer instance}',
+                                         category='service.execute.missing.producer')
+
+        # first look on the remote node for the default hrd path
+        result = node.actions.execute(node, 'ays hrdpath')
+        # by default we use the local hrd path
+        destDir = j.system.fs.joinPaths(j.application.config.getStr('system.paths.hrd'), "apps")
+        for l in result.splitlines():
+            if l.startswith('/'):
+                destDir = j.system.fs.joinPaths(l, "apps")
+
+        node.actions.upload(node, serviceobj.path, destDir)
         # execute the action of the child service througth the parent node
         cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --noremote"\
               % (actionname, serviceobj.name, serviceobj.instance)
-        path = j.dirs.amInGitConfigRepo()
-        if path:
-            cmd += " --path %s" % path
+        # path = j.dirs.amInGitConfigRepo()
+        # if path:
+        #     cmd += " --path %s" % path
         if actionname == "execute" and serviceobj.cmd:
             cmd += " --cmd '%s'" % serviceobj.cmd
         node.actions.execute(node, cmd)

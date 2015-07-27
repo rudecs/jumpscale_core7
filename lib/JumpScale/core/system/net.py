@@ -271,12 +271,7 @@ class SystemNet:
         regex = ''
         output = ''
         if j.system.platformtype.isLinux() or j.system.platformtype.isESX():
-            exitcode,output = j.system.process.execute("ip l", outputToStdout=False)
-            if not up:
-                regex = "^\d+:\s(?P<name>[\w\d\-]*):.*$"
-            else:
-                regex = "^\d+:\s(?P<name>[\w\d\-]*):\s<.*UP.*>.*$"
-            return list(set(re.findall(regex,output,re.MULTILINE)))
+            return [nic['name'] for nic in getNetworkInfo()]
         elif j.system.platformtype.isSolaris():
             exitcode,output = j.system.process.execute("ifconfig -a", outputToStdout=False)
             if up:
@@ -795,7 +790,7 @@ class SystemNet:
             raise LookupError("Interface %s not found on the system" % interface)
         if j.system.platformtype.isLinux() or j.system.platformtype.isESX():
             if j.system.fs.exists("/sys/class/net"):
-                return j.system.fs.fileGetContents('/sys/class/net/%s/address' % interface).strip()
+                return j.system.fs.fileGetContents('/sys/class/net/%s/address' % interface.split('@')[0]).strip()
             else:
                 command = "ifconfig %s | grep HWaddr| awk '{print $5}'"% interface
                 (exitcode,output)=j.system.process.execute(command, outputToStdout=False)

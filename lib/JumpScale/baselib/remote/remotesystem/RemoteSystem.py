@@ -2,14 +2,8 @@ from JumpScale import j
 
 # This extension is available at j.remote.system
 import warnings
-warnings.filterwarnings('ignore', r'.*sha.*')
-try:
-    import paramiko
-except:
-    try:
-        j.system.platform.ubuntu.install("python-paramiko")
-    except Exception as e:
-        print("Could not install python-paramiko, this only works on ubuntu, please install it.")
+# warnings.filterwarnings('ignore', r'.*sha.*')
+
 import paramiko
 
 import os
@@ -21,6 +15,7 @@ try:
     import SocketServer as socketserver
 except:
     import socketserver
+
 import select
 import threading
 import re
@@ -56,20 +51,10 @@ class RemoteSystem(object):
         """Creates a connection object to a remote system via ssh.
         
         @param ip: Ipaddress of the remote system
-        @type ip: string
         @param login: Username used for login on remote system
-        @type login: string
         @param password: Password used for login on remote system
-        @type password: string
-        @param timeout: Timeout for the SSH session
-        @type timeout: float
-        
+        @param timeout: Timeout for the SSH session       
         @rtype: RemoteSystemConnection
-        @return: A connection object to the remote system
-        
-        @raise RemoteSystemNotReachableError: An error occurred while connecting to the remote system
-        @raise RemoteSystemAuthenticationError: Could not authenticate to the remote system
-        @raise socket.error: Unhandeld network error
         """
 
         # if not j.basetype.ipaddress.check(ip):
@@ -98,7 +83,7 @@ class RemoteSystem(object):
                 reraise = True
             if reraise:
                 raise
-        self.connections[key]=RemoteSystem
+        self.connections[key]=remoteConnection
         return remoteConnection
 
 

@@ -5,7 +5,7 @@ import JumpScale.baselib.mercurial
 import JumpScale.baselib.jsdeveltools
 
 j.develtools.installer.getCredentialsJumpScaleRepo()
-for item in j.system.fs.listDirsInDir("/opt/code/jumpscale"):
+for item in j.system.fs.listDirsInDir("%s/jumpscale"%j.dirs.codeDir):
     itembase=j.system.fs.getBaseName(item)
     url=j.develtools.installer._getRemoteJSURL(itembase)
     path=j.system.fs.joinPaths(item,".hg","hgrc")

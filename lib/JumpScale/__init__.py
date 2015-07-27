@@ -16,7 +16,8 @@ if sys.platform.startswith("darwin"):
     if not 'TMP' in os.environ:
         os.environ['TMP']=  os.environ['TMPDIR']+"jumpscale/"
 
-
+if 'VIRTUAL_ENV' in os.environ and not 'JSBASE' in os.environ:
+    os.environ['JSBASE'] = os.environ['VIRTUAL_ENV']
 
 if not 'JSBASE' in os.environ:
     if sys.version.startswith("3"):
@@ -72,13 +73,10 @@ def loadSubModules(filepath, prefix='JumpScale'):
 
 j = JumpScale()
 
-#doesn't do anything, don't see where its coming from
-# from . import base
-
 j.core=Core()
 j.events=EventsTemp()
 
-from InstallTools import *
+from InstallTools import InstallTools
 j.do=InstallTools()
 
 from . import core
@@ -97,7 +95,7 @@ from .baselib import hrd
 
 j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
 
-j.logger.enable=j.application.config.getBool("system.logging",default=False)
+j.logger.enabled = j.application.config.getBool("system.logging",default=False)
 
 from .core.Dirs import Dirs
 j.dirs=Dirs()

@@ -20,18 +20,25 @@ class ServiceTemplate():
         self.parent = parent
         self.metapath = path
 
-    def newInstance(self,instance="main", args={}, hrddata={}, parent=None, precise=False):
+    def newInstance(self,instance="main", args={}, hrddata={}, path='', parent=None, precise=False):
         # TODO, should take in account the domain too
         services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent, precise=precise)
         if len(services)>0:
             print "Service %s__%s__%s already exists" % (self.domain,self.name,instance)
             print "No creation, just retrieve existing service"
             return services[0]
-        if parent and parent.name == "node.ssh":
-            service = RemoteService(instance=instance, servicetemplate=self, args=args, parent=parent)
+        fullpath = path or ('%s/domain__name__instance' % parent.path if parent else '')
+        remote = any(['node' in p.categories for p in j.atyourservice.findParents(path=fullpath)])
+        if remote:
+            service = RemoteService(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
         else:
-            service = Service(instance=instance, servicetemplate=self, args=args, parent=parent)
+            service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
         return service
+
+    def getHRD(self):
+        if self.hrd ==None:
+            self.hrd=j.core.hrd.get(j.system.fs.joinPaths(self.metapath,"service.hrd"))
+        return self.hrd
 
     def getInstance(self, instance=None, parent=None):
         """
@@ -65,7 +72,6 @@ class ServiceTemplate():
         services = j.atyourservice.findServices(domain=self.domain,name=self.name)
         return [service.instance for service in services]
 
-
     def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False):
         """
         Install Service.
@@ -79,6 +85,20 @@ class ServiceTemplate():
         args      -- arguments to be used when installing
         parent    -- optional service which is mother e.g. install an app in a node.
         """
+
+        #check if this platform is supported
+        hrd=self.getHRD()
+        support=False
+        myplatforms=j.system.platformtype.getMyRelevantPlatforms()
+        supported=hrd.getList("platform.supported",default=[])
+        if supported==[]:
+            support=True
+        for supportcheck in supported:
+            if supportcheck in myplatforms:
+                support=True
+
+        if support==False:
+            j.events.opserror_critical("Cannot install %s__%s because unsupported platform." % (self.domain, self.name))
 
         service = self.newInstance(instance=instance, args=args, parent=parent, precise=True)
         service.noremote = noremote
