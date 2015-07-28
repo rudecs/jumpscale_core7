@@ -1,0 +1,164 @@
+#!/usr/bin/env jspython
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+
+import sys,time
+
+j.application.start("cmdosistools")
+
+parser = cmdutils.ArgumentParser()
+parser.add_argument("action", choices=['delete','deleteall','emptyredis', 'export', 'import', 'exportall', 'importall'], help='Command to perform')
+parser.add_argument("-m", '--model',help='name of model')
+parser.add_argument("-n", '--namespace', help='OSIS namesdpace')
+parser.add_argument("-c", '--category', help='OSIS category')
+parser.add_argument("-o", '--outputpath', help='Output path for the export')
+parser.add_argument("-p", '--path', help='Path to import category from')
+parser.add_argument('--force',required=False, action='store_true',help='dont ask yes, do immediate')
+
+opts = parser.parse_args()
+
+if opts.action =='emptyredis' or  opts.action =='deleteall':
+    import JumpScale.baselib.redis
+    j.clients.redis.emptyAllInstances()
+
+############DELETEALL
+if opts.action =='deleteall':
+    import JumpScale.baselib.elasticsearch
+    es = j.clients.elasticsearch.get()
+
+    if opts.force==None:
+        if j.console.askString("Are you sure to delete full ros & elasticsearch indexes, type YES") != "YES":
+            print("did not see yes, will not continue")
+            j.application.stop()
+
+    try:
+        es.delete_all_indexes()
+    except:
+        pass
+
+    path=j.system.fs.joinPaths(j.dirs.varDir,"db","ros")
+
+    j.system.fs.removeDirTree(path)
+
+    j.tools.startupmanager.restartProcess("jumpscale","ros")
+    
+############DELETE
+if opts.action =='delete':
+
+    import JumpScale.baselib.elasticsearch
+    es = j.clients.elasticsearch.get()
+    cl = j.core.ros.get()
+
+    if opts.namespace==None:
+        print("Namespace:")
+        namespace=j.console.askChoice(cl.listNamespaces())
+    else:
+        namespace=opts.namespace.strip()
+
+    if opts.model==None:
+        print("Model:")
+        models=j.console.askChoiceMultiple(cl.listNamespaceCategories(namespace))
+    else:
+        models=opts.model.split(",")
+    
+
+    for model in models:
+        try:
+            es.delete_index(index="%s_%s"%(namespace,model))
+        except:
+            pass
+        cl.deleteNamespaceCategory(namespace,model)
+
+############export
+if opts.action =='export':
+    cl = j.core.ros.get()
+
+    if not opts.namespace:
+        print("Namespace: ")
+        namespace = j.console.askChoice(cl.listNamespaces())
+    else:
+        namespace = opts.namespace.strip()
+
+    if not opts.category:
+        print("Category: ")
+        category = j.console.askChoice(cl.listNamespaceCategories(namespace))
+    else:
+        category = opts.category.strip()
+
+    if not opts.outputpath:
+        outputpath = j.console.askString("Output path")
+    else:
+        outputpath = opts.outputpath.strip()
+
+    if not j.system.fs.exists(outputpath):
+        j.system.fs.createDir(outputpath)
+
+    cl.export(namespace, category, outputpath)
+
+############exportall
+if opts.action =='exportall':
+    print('This command might take a few minutes to finish...')
+    cl = j.core.ros.get()
+
+    if not opts.outputpath:
+        outputpath = j.console.askString("Output path")
+    else:
+        outputpath = opts.outputpath.strip()
+
+    if not j.system.fs.exists(outputpath):
+        j.system.fs.createDir(outputpath)
+
+    namespaces = cl.listNamespaces()
+    for namespace in namespaces:
+        categories = cl.listNamespaceCategories(namespace)
+        for category in categories:
+            catpath = j.system.fs.joinPaths(outputpath, namespace, category)
+            j.system.fs.createDir(catpath)
+            try:
+                cl.export(namespace, category, catpath)
+            except:
+                print("Can't export: %s_%s category" % (namespace, category))
+                continue
+
+############importall
+if opts.action =='importall':
+    print('This command might take a few minutes to finish...')
+    cl = j.core.ros.get()
+
+    if not opts.path:
+        path = j.console.askString("Path")
+    else:
+        path = opts.path.strip()
+
+    namespaces = [j.system.fs.getBaseName(_dir) for _dir in j.system.fs.listDirsInDir(path)]
+    for namespace in namespaces:
+        cl.createNamespace(namespace)
+        categories = [j.system.fs.getBaseName(_dir) for _dir in j.system.fs.listDirsInDir(j.system.fs.joinPaths(path, namespace))]
+        for category in categories:
+            cl.createNamespaceCategory(namespace, category)
+            cl.importFromPath(namespace, category, j.system.fs.joinPaths(path, namespace, category))
+
+############import
+if opts.action =='import':
+    cl = j.core.ros.get()
+
+    if not opts.namespace:
+        print("Namespace: ")
+        namespace = j.console.askChoice(cl._list_namespaces())
+    else:
+        namespace = opts.namespace.strip()
+
+    if not opts.category:
+        print("Category: ")
+        category = j.console.askChoice(cl._list_categories_for_namespace(namespace))
+    else:
+        category = opts.category.strip()
+
+    if not opts.path:
+        path = j.console.askString("Path to import from")
+    else:
+        path = opts.path.strip()
+
+    cl.importFromPath(namespace, category, path)
+
+j.application.stop()
