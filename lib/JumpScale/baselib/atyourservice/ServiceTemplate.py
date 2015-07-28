@@ -101,6 +101,7 @@ class ServiceTemplate():
             j.events.opserror_critical("Cannot install %s__%s because unsupported platform." % (self.domain, self.name))
 
         service = self.newInstance(instance=instance, args=args, parent=parent, precise=True)
+        service.args.update(args)
         service.noremote = noremote
         service.install(start=start, deps=deps, reinstall=reinstall)
 
