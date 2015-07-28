@@ -157,7 +157,7 @@ def getTarget(args):
                                parent=getParent(args, precise=args.immediate))
 
 
-def getServices(args, filterRemote=False, parent=None, precise=False):
+def getServices(args, filterRemote=False, parent=None, precise=False, onlyRemote=False):
     res = []
     services = j.atyourservice.findServices(args.domain, args.name, args.instance, parent=parent, precise=precise)
     if args.noremote:
@@ -170,6 +170,10 @@ def getServices(args, filterRemote=False, parent=None, precise=False):
     if filterRemote:
         for s in services:
             if len(s.hrd.getDictFromPrefix('producer.node')) == 0:
+                res.append(s)
+    if onlyRemote:
+        for s in services:
+            if s.hrd.get('service.category', '') == 'node':
                 res.append(s)
     else:
         res = services
@@ -384,19 +388,18 @@ else:
 
         printServices(services)
 
-        # elif args.action == 'nodes':
-        #     def printNodes(allNodes):
+    elif args.action == 'nodes':
+        def printNodes(allNodes):
 
-        #         form = '%(type)-15s %(instance)-10s'
-        #         print form % {'type': 'TYPE', 'instance': 'INSTANCE'}
-        #         print '=' * 25
-        #         for typ,nodes in allNodes.iteritems():
-        #             print ''
-        #             for node in nodes:
-        #                 print form % {'type': typ, 'instance': node}
+            form = '%(type)-15s %(instance)-10s'
+            print form % {'type': 'TYPE', 'instance': 'INSTANCE'}
+            print '=' * 25
+            for node in allNodes:
+                print ''
+                print form % {'type': node.name, 'instance': node.instance}
 
-        #     allNodes = j.services.remote.getAllNodes()
-        #     printNodes(allNodes)
+        allNodes = getServices(args, onlyRemote=True)
+        printNodes(allNodes)
 
 j.application.stop()
 j.logger.enabled = False

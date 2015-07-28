@@ -23,7 +23,7 @@
     prop:user str,,
     prop:result str,,
     prop:call str,,
-    prop:statuscode str,,
+    prop:statuscode int,,
     prop:args str,,
     prop:kwargs str,,
     prop:timestamp str,,
@@ -84,7 +84,7 @@
     prop:nid int,,
 
 [rootmodel:group] @index
-    prop:id int,,    
+    prop:id str,,    
     prop:domain str,,
     prop:gid int,,
     prop:roles list(str),,
@@ -109,11 +109,11 @@
     prop:content str,,
     prop:epoch int,,
 
-[model:job]
+[rootmodel:job]
     """
     """
     prop:id int,,
-    prop:sessionid int,,
+    prop:sessionid str,,
     prop:nid int,,
     prop:gid int,,
     prop:cmd str,,
@@ -189,7 +189,7 @@
     prop:gid int,,
     prop:name str,,
     prop:roles list(str),,
-    prop:netaddr str,,
+    prop:netaddr list(dict),,
     prop:machineguid str,,
     prop:ipaddr list(str),,
     prop:active bool,,
@@ -301,3 +301,14 @@
     prop:backuplocation str,, #where is backup stored (tag based notation)
     prop:devicename str,,
     prop:lastcheck int,, #epoch of last time the info was checked from reality
+
+[rootmodel:sessioncache] @TTL:432000
+    prop:value dict,,
+    prop:createdat datetime,,
+    prop:lastupdatedat datetime,,
+
+[rootmodel:applicationtype] @index
+    prop:value dict,,
+
+[rootmodel:log] @index
+    prop:value dict,,

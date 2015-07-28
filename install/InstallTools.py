@@ -827,20 +827,20 @@ class InstallTools():
             else:
                 user=""
 
-            cmd="curl '%s' -o '%s' %s %s --connect-timeout 5 --retry %s --retry-max-time %s -C -"%(url,to,user,minsp,retry,timeout)
+            cmd = "curl '%s' -o '%s' %s %s --connect-timeout 5 --retry %s --retry-max-time %s"%(url,to,user,minsp,retry,timeout)
+            if self.exists(to):
+                cmd += " -C -"
             # print cmd
             self.delete("%s.downloadok"%to)
-            nr=0
-            if retry==0:
-                retry=1
-            while nr<retry:
-                rc,out,err=self.execute(cmd)
-                nr+=1
-                if rc>0:
-                    print "Could not download:%s.\nError:\n"%url
-                    print err
-                else:
-                    self.touch("%s.downloadok"%to)
+            rc, out, err = self.execute(cmd, dieOnNonZeroExitCode=False)
+            if rc == 33: # resume is not support try again withouth resume
+                self.delete(to)
+                cmd = "curl '%s' -o '%s' %s %s --connect-timeout 5 --retry %s --retry-max-time %s"%(url,to,user,minsp,retry,timeout)
+                rc, out, err = self.execute(cmd, dieOnNonZeroExitCode=False)
+            if rc > 0:
+                raise RuntimeError("Could not download:{}.\nErrorcode: {} Error:\n {}".format(url, rc, err))
+            else:
+                self.touch("%s.downloadok"%to)
         elif multithread:
             raise RuntimeError("not implemented yet")
         else:

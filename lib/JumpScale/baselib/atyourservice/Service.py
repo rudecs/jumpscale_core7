@@ -136,7 +136,6 @@ class Service(object):
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
         if self._hrd:
             return self._hrd
-        self._apply()
         if not j.system.fs.exists(hrdpath):
             self._apply()
         else:
@@ -543,12 +542,18 @@ class Service(object):
         deps      -- install the Service dependencies (default True)
         reinstall -- reinstall if already installed (default False)
         """
+        def hrdChanged():
+            for key, value in self.args.items():
+                if not self.hrd.get(key, '') == value:
+                    self.hrd.set(key, value)
+            return self.hrd.changed
+
         self.init()
         if reinstall:
             self.resetstate()
 
         log("INSTALL:%s" % self)
-        if self.isLatest() and not reinstall:
+        if self.isLatest() and not reinstall and not hrdChanged():
             log("Latest %s already installed" % self)
             return
         self.stop(deps=False)
