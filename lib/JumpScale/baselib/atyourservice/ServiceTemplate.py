@@ -28,9 +28,11 @@ class ServiceTemplate():
             print "No creation, just retrieve existing service"
             return services[0]
         fullpath = path or ('%s/domain__name__instance' % parent.path if parent else '')
-        remote = any(['node' in p.categories for p in j.atyourservice.findParents(path=fullpath)])
+        remote = [p for p in j.atyourservice.findParents(path=fullpath) if 'node' in p.categories]
         if remote:
-            service = RemoteService(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
+            remote = remote[-1]
+            service = RemoteService(instance=instance, servicetemplate=self, args=args, path=path, parent=parent,
+                                    remotecategory='node', remoteinstance=remote.instance)
         else:
             service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
         return service

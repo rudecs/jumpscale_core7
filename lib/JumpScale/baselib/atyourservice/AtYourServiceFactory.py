@@ -160,9 +160,11 @@ class AtYourServiceFactory():
             # create service from templates
             servicetemplates = self.findTemplates(domain=domain, name=name)
             if len(servicetemplates) > 0:
-                remote = any(['node' in p.categories for p in parents])
+                remote = [p for p in parents if 'node' in p.categories]
                 if remote:
-                    service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                    remote = remote[-1]
+                    service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent,
+                                            remotecategory=remote.categories[0], remoteinstance=remote.instance)
                 else:
                     service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
                 return service
@@ -299,12 +301,14 @@ class AtYourServiceFactory():
 
         hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
         fullpath = path or ('%s/domain__name__instance' % parent.path if parent else '')
-        remote = any(['node' in p.categories for p in j.atyourservice.findParents(path=path)])
+        remote = [p for p in j.atyourservice.findParents(path=fullpath) if 'node' in p.categories]
         if remote:
+            remote = remote[-1]
             service = RemoteService(domain=hrd.get('service.domain', hrd.get('domain', '')),
                                     name=hrd.get('service.name', hrd.get('name', '')),
                                     instance=hrd.get('service.instance', hrd.get('instance', '')),
-                                    hrd=hrd, path=path, parent=parent)
+                                    hrd=hrd, path=path, parent=parent,
+                                    remotecategory=remote.categories[0], remoteinstance=remote.instance)
         else:
             service = Service(domain=hrd.get('service.domain', hrd.get('domain', '')),
                               name=hrd.get('service.name', hrd.get('name', '')),

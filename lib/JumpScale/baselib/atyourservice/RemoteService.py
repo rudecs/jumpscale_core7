@@ -8,9 +8,11 @@ def log(msg, level=1):
 
 class RemoteService(Service):
 
-    def __init__(self, domain='', name='', instance='', hrd=None, servicetemplate=None, path="", args=None, parent=None):
+    def __init__(self, domain='', name='', instance='', hrd=None, servicetemplate=None, path="", args=None, parent=None, remotecategory='', remoteinstance=''):
         super(RemoteService, self).__init__(domain=domain, name=name, instance=instance, hrd=hrd, servicetemplate=servicetemplate, path=path, args=args, parent=parent)
-        self.getDependencies()
+        self.hrd.set("producer.%s" % remotecategory, remoteinstance)
+        self.hrd.save()
+        self.deps = self.getDependencies()
 
     @property
     def id(self):
