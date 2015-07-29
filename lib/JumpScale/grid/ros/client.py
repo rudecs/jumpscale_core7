@@ -152,6 +152,8 @@ class ObjectClient(object):
             if response.status_code == 404:
                 raise NotFound(msg, statuscode=response.status_code)
             else:
+                issues = json.loads(response.text)['_issues']
+                msg = "%s : %s" % (msg, issues)
                 raise RemoteError(msg, statuscode=response.status_code)
         if response.text:
             return response.json()

@@ -312,3 +312,11 @@
 
 [rootmodel:log] @index
     prop:value dict,,
+    
+[model:test] @index
+    prop:value int,,
+
+[rootmodel:tests] @index
+	prop:guid str,,
+	prop:id int,,
+    prop:test test,,
