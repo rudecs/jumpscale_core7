@@ -157,23 +157,24 @@ class AtYourServiceFactory():
             parents = self.findParents(path=path) if (not parent and path) else [parent]
             parent = parents[0] if isinstance(parents, list) and parents else (parent if parent else None)
 
-            # create service from templates
-            servicetemplates = self.findTemplates(domain=domain, name=name)
-            if len(servicetemplates) > 0:
-                remote = [p for p in parents if 'node' in p.categories]
-                if remote:
-                    remote = remote[-1]
-                    service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent,
-                                            remotecategory=remote.categories[0], remoteinstance=remote.instance)
-                else:
-                    service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
-                return service
-            # create service from action.py and service.hrd
-            elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
+            if j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
+                 # create service from action.py and service.hrd
                 service = j.atyourservice.loadService(path, parent)
                 return service
             else:
-                raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
+                servicetemplates = self.findTemplates(domain=domain, name=name)
+                if len(servicetemplates) > 0:
+                    # create service from templates
+                    remote = [p for p in parents if 'node' in p.categories]
+                    if remote:
+                        remote = remote[-1]
+                        service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent,
+                                                remotecategory=remote.categories[0], remoteinstance=remote.instance)
+                    else:
+                        service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                    return service
+                else:
+                    raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
 
         parentregex = ''
         if parent and isinstance(parent, (Service, RemoteService)):

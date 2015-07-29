@@ -179,8 +179,8 @@ class Service(object):
         return logpath
 
     def isInstalled(self):
-        hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
-        if j.system.fs.exists(hrdpath) and self.hrd.exists('service.installed.checksum'):
+        checksumpath = j.system.fs.joinPaths(self.path, "installed.version")
+        if j.system.fs.exists(checksumpath) and self.hrd.exists('service.installed.checksum'):
             return True
         return False
 
@@ -188,7 +188,9 @@ class Service(object):
         if not self.isInstalled():
             return False
         checksum = self.hrd.get('service.installed.checksum')
-        if checksum != self._getMetaChecksum():
+        checksumpath = j.system.fs.joinPaths(self.path, "installed.version")
+        installedchecksum = j.system.fs.fileGetContents(checksumpath).strip()
+        if checksum != installedchecksum:
             return False
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
             branch = recipeitem.get('branch', 'master') or 'master'
@@ -260,6 +262,7 @@ class Service(object):
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
         mergeArgsHDRData = self.args.copy()
         mergeArgsHDRData.update(self.hrddata)
+        mergeArgsHDRData['service.installed.checksum'] = self._getMetaChecksum()
         self._hrd = j.core.hrd.get(
             hrdpath, args=mergeArgsHDRData, prefixWithName=False)
         self._hrd.applyTemplates(
@@ -653,7 +656,7 @@ class Service(object):
         self.configure(deps=False)
 
         self.start()
-        self.hrd.set('service.installed.checksum', self._getMetaChecksum())
+        j.system.fs.writeFile(j.system.fs.joinPaths(self.path, "installed.version"), self.hrd.get('service.installed.checksum'))
 
         # else:
         #     #now bootstrap docker

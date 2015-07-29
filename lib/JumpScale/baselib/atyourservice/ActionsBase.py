@@ -428,10 +428,18 @@ class ActionsBase():
             if l.startswith('/'):
                 destDir = j.system.fs.joinPaths(l, "apps")
 
-        node.actions.upload(node, serviceobj.path, destDir)
-        # execute the action of the child service througth the parent node
-        cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --noremote"\
-              % (actionname, serviceobj.name, serviceobj.instance)
+        installationPath = j.system.fs.joinPaths(destDir, '%s__%s__%s' % (serviceobj.domain, serviceobj.name, serviceobj.instance), "installed.version")
+        installed = node.actions.execute(node, 'test -f %s ; echo $?' % installationPath).strip()
+
+        installedchecksum = node.actions.execute(node, 'cat %s' % installationPath).strip() if installed == '0' else 'not installed'
+        
+        if serviceobj.hrd.get('service.installed.checksum', 'none') != installedchecksum:
+            node.actions.upload(node, serviceobj.path, destDir)
+
+        # execute the action of the child service througth the producer node
+        cmd = "source /opt/jumpscale7/env.sh; ays %s -n %s -i %s --noremote --data '%s'"\
+              % (actionname, serviceobj.name, serviceobj.instance,
+                 ' '.join(['%s:%s' % (key, value) for key, value in serviceobj.args.items()]))
         # path = j.dirs.amInGitConfigRepo()
         # if path:
         #     cmd += " --path %s" % path

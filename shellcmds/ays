@@ -232,6 +232,7 @@ else:
             service = j.atyourservice.get(domain=args.domain, name=args.name, instance=args.instance)
             if args.noremote:
                 service.noremote = args.noremote
+            service.args = getHRDData(args)
             service.install(start=True, deps=True, reinstall=args.reinstall)
         else:
             if args.noremote:
