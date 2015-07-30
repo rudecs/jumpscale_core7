@@ -12,7 +12,7 @@ j.logger.consolelogCategories.append('atyourserviceAction')
 
 commands = ['install', 'list', 'stop', 'start', 'restart', 'build', 'prepare', "mdupdate", "update", "reset", "resetstate",
             "removedata", "monitor", "configure", "cleanup", "export", "import", "uninstall", "push", "execute",
-            "status", "nodes", "consume", "console", "hrdpath"]
+            "status", "nodes", "consume", "console", "hrdpath", "makelocal"]
 
 help = """
 ays commands:
@@ -105,6 +105,9 @@ group.add_argument('--installed', required=False, action='store_true', default=N
 group = parser.add_argument_group(title="Consume/Produce")
 group.add_argument('--category', required=False, help='Producer category')
 group.add_argument('--producer', required=False, help='Producer instance')
+
+group = parser.add_argument_group(title="Make Local")
+group.add_argument('--tolocal', required=False, help='Comma-seperated list of services to be localized')
 
 
 def sorter(jp1, jp2):
@@ -206,7 +209,14 @@ if args.action == 'console':
     target.execute(deps=False)
 
 elif args.action == 'hrdpath':
-    print j.application.config.getStr('system.paths.hrd')
+    print j.dirs.getHrdDir()
+
+elif args.action == 'makelocal':
+    if args.tolocal and j.system.fs.exists(args.tolocal):
+        servicefiles = j.system.fs.walk(args.tolocal, recurse=1, pattern='service.hrd', return_folders=0, return_files=1, followSoftlinks=False)
+        for servicefile in servicefiles:
+            remotehrd = j.core.hrd.get(servicefile)
+            remotehrd.delete('producer.node')
 
 else:
     if args.targettype or args.targetname:
