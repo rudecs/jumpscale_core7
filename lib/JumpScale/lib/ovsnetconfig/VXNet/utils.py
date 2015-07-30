@@ -177,7 +177,8 @@ def createVXlan(vxname,vxid,multicast,vxbackend):
     cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s' % (vxname, vxid, multicast, vxbackend)
     r,s,e = doexec(cmd.split())
     disable_ipv6(vxname)
-    ip_link_set(vxname,'mtu 1500 up')
+    setMTU(vxname, 2000)
+    ip_link_set(vxname,'up')
     if r:
         send_to_syslog("Problem with creation of vxlan %s, err was: %s" % (vxname ,e.readlines()))
 
