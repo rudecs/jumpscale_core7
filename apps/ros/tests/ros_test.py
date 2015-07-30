@@ -10,11 +10,9 @@ class RosTest(object):
         self.cl = j.clients.ros.get()
         self.tcl = getattr(self.cl, self.NAME)
         self.bucket = getattr(self.tcl, self.TABLE)
-        
-    def tearDown(self):
         for e in self.bucket.list():
             self.bucket.delete(e)
-  
+            
     def test_new(self):
         self.assertIsNotNone(self.bucket.new())
   
@@ -72,7 +70,7 @@ class RosTest(object):
         self.assertEquals(len(res2), 0)
       
 class RosMongoTest(RosTest, unittest.TestCase):
-    NAME = 'system'
+    NAME = 'testsystem'
      
     def test_mongo_hooks(self):
         u = self.bucket.new()
