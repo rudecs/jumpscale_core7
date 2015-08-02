@@ -217,10 +217,10 @@ class Application:
         """
         returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
         """
-        if j.packages.type!="c":
-            path='%s/%s.%s.%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
+        if j.atyourservice.type!="c":
+            path='%s/%s__%s__%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
         else:
-            path='%s/%s.%s.hrd' % (j.dirs.getHrdDir(),name,instance)
+            path='%s/%s__%s.hrd' % (j.dirs.getHrdDir(),name,instance)
         if not j.system.fs.exists(path=path):
             return False
         return True

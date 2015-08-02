@@ -63,9 +63,6 @@ class Dirs(object):
             sys.path.pop(sys.path.index(self.libExtDir))
         sys.path.insert(2,self.libExtDir)
 
-        # self.packageDir = os.path.join(self.varDir,"jpackages")
-        # self._createDir(self.packageDir)
-
         if 'JSBASE' in os.environ:
             self.binDir = os.path.join(self.baseDir, 'bin')
         else:

@@ -44,9 +44,9 @@ dependencies.1                 =
     name:'mail_client',
     domain:,
     instance:,
-    args:'ajpackage.arg',
+    args:'an.ays.arg',
 
-ajpackage.arg=
+an.ays.arg=
     arg1:1,
     arg2:2
 

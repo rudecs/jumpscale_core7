@@ -27,13 +27,11 @@ class JConfig():
         """
         List all configuration types available.
         """
-        jpackagesPath = j.system.fs.joinPaths(j.dirs.cfgDir, 'jpackages')
-        jsconfigPath = j.dirs.configsDir
+        jsconfigPath = j.dirs.cfgDir
         fullpaths = []
-        for path in (jpackagesPath, jsconfigPath):
-            if j.system.fs.exists(path):
-                fullpaths.extend(j.system.fs.listFilesInDir(path, filter='*.cfg'))
-        return [j.system.fs.getBaseName(path)[:-4] for path in fullpaths]
+        if j.system.fs.exists(jsconfigPath):
+            fullpaths.extend(j.system.fs.listFilesInDir(jsconfigPath, filter='*.cfg'))
+        return [j.system.fs.getBaseName(jsconfigPath)[:-4] for jsconfigPath in fullpaths]
 
     def _buildPath(self, configtype, directory='jsconfig'):
-        return j.system.fs.joinPaths(j.dirs.cfgDir, directory, configtype + ".cfg")
+        return j.system.fs.joinPaths(j.dirs.cfgDir, directory, configtype + ".cfg")cfgDir
