@@ -1519,8 +1519,8 @@ class Installer():
         for item in j.application.config.getListFromPrefix("system.paths"):
             do.createDir(item)
 
-        # not needed with @ys
-        # self.createDir("%s/jpackage_actions"%j.application.config.get("system.paths.base"))
+        if do.TYPE == "UBUNTU64":
+            j.system.platform.ubuntu.serviceEnableStartAtBoot("ays")
 
         print("Get atYourService metadata.")
         do.pullGitRepo(AYSGIT, branch=AYSBRANCH, depth=1)
@@ -1770,7 +1770,12 @@ class Installer():
             do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
 
             print ("copy binaries")
-            do.copyTree("%s/git/binary/%s/root/"%(do.CODEDIR,gitbase),base)        
+            basepath = "%s/git/binary/%s/root" % (do.CODEDIR, gitbase)
+            for path in ('bin', 'lib'):
+                dest = "%s/%s" % (base, path)
+                src = "%s/%s"%(basepath,  path)
+                do.copyTree(src, dest)
+            do.copyFile("%s/ays" % basepath, "/etc/init.d/ays")
 
         else:
             self.installpip()
@@ -1862,3 +1867,5 @@ class Installer():
 
 do.installer=Installer()
 
+if __name__ == '__main__':
+    do.installer.installJS()
