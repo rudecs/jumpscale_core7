@@ -105,6 +105,12 @@ class NetworkManager(object):
         else:
             j.logger.log('Do NOT FORGET TO COMMIT', 2)
 
+    def setHostname(self, hostname):
+        if hostname == '' or hostname is None:
+            raise ValueError("hostname can't be empty or None")
+        self.manager.connection.file_write('/etc/hostname', hostname)
+        self.manager.connection.run('hostname %s' % hostname)
+
     def commit(self, device=None):
         #- make sure loopback exist
         content = 'auto lo\niface lo inet loopback\n'
