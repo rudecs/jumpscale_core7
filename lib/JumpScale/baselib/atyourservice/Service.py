@@ -193,6 +193,8 @@ class Service(object):
         if checksum != installedchecksum:
             return False
         for recipeitem in self.hrd.getListFromPrefix("git.export"):
+            if not recipeitem:
+                continue
             branch = recipeitem.get('branch', 'master') or 'master'
             recipeurl = recipeitem['url']
             if recipeurl in self._reposDone:
