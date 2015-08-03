@@ -340,9 +340,6 @@ class Docker():
                 key,val=item.split(":",1)
                 volsdictro[str(key).strip()]=str(val).strip()
 
-        # volsdict["/var/js/%s/"%name]="/opt/jsbox_data/var/data/"
-        # volsdict["/var/js/all/jpfiles/"]="/opt/jsbox_data/var/jpackages/files/"
-
         print "MAP:"
         for src1,dest1 in volsdict.items():
             print " %-20s %s"%(src1,dest1)

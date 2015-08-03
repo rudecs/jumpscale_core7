@@ -27,7 +27,7 @@ class Grid(OsisBaseObject):
 
         if not j.application.config.exists("grid.node.id"):
             #register the own masternode to the grid
-            jp=j.packages.findNewest("jumpscale","grid_node")
+            jp=j.atyourservice.get("jumpscale", "grid_node")
             jp.configure()
             if j.application.config.getInt("grid.node.id")==0:
                 raise RuntimeError("grid nid cannot be 0")

@@ -14,15 +14,6 @@ passwd=sys.argv[2]
 
 from JumpScale import j
 
-# jp=j.packages.get(name="mongodb")
-# print (jp)
-
-# jp=j.packages.install(name="mongodb",args={"host":"localhost","port":27017})
-# jp=j.packages.install(name="mongodb_client",args={"addr":"localhost","port":27017,"login":"","passwd":""})
-# jp=j.packages.install(name="osis",args={"osis.connection":"mongodb:main","osis.superadmin.passwd":"rooter"})
-# j.packages.install(name="docker")
-# sys.exit()
-
 import JumpScale.lib.sandboxer
 
 # j.tools.sandboxer.copyLibsTo("/opt/code/git/binary/doublecmd/doublecmd","/tmp/2/",recursive=False)

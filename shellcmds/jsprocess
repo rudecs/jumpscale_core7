@@ -74,7 +74,7 @@ if opts.action in ('attach', 'logs'):
     j.application.stop(0)
 
 
-#@todo does not work on all jpackages
+#@todo does not work on all services
 if opts.action == 'restart':
     pds_rev = sorted(pds, key=lambda x: x.priority, reverse=True)
     for pd in pds_rev:

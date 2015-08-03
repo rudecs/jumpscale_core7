@@ -8,35 +8,18 @@ import sys,time
 j.application.start("jstest")
 
 parser = cmdutils.ArgumentParser()
-# parser.add_argument("action", choices=['reinit','reconfigure','testall'], help='Command to perform')
+# parser.add_argument("action", choices=['reconfigure','testall'], help='Command to perform')
 # parser.add_argument("-n", '--nr', help='desktop nr')
 # parser.add_argument("-d", '--desktop', action='store_true', help='opendesktop')
 # parser.add_argument('--passwd', help='password for desktop')
 
 # parser.add_argument('--force',required=False, action='store_true',help='dont ask yes, do immediate')
 parser.add_argument('--debug',required=False, action='store_true', default=False, help='will stop on errors and show all relevant info')
-parser.add_argument('--reinit',required=False, action='store_true',help='reinit env')
 parser.add_argument('-p','--path',required=False, help='path to use e.g. for running tests')
 parser.add_argument('--noOsis',required=False, action='store_true',default=False,help='use this option to not send test results to osis')
 
 
 opts = parser.parse_args()
-
-if opts.reinit:
-    
-    j.system.process.executeWithoutPipe("osis deleteall --force")
-    
-    packages=["grid_master","grid_node","osis","logger","agentcontroller","agent"]
-    for package in packages:
-        jp=j.packages.findNewest(name=package)
-        jp.configure()
-
-    packages=["osis","logger","agentcontroller","agent"]
-    for package in packages:
-        jp=j.packages.findNewest(name=package)        
-        jp.restart()
-
-    j.tools.startupmanager.startAll()
 
 
 import JumpScale.baselib.testengine

@@ -79,13 +79,13 @@ class Node():
         key=j.system.fs.fileGetContents(keyloc)
         self.ssh.ssh_authorize("root",key)
 
-    def jpackageStop(self,name,filterstr,die=True):
-        self.log("jpackagestop","%s (%s)"%(name,filterstr))
+    def aysStop(self,name,filterstr,die=True):
+        self.log("ays stop","%s (%s)"%(name,filterstr))
         try:
-            self.ssh.run("source /opt/jsbox/activate;jpackage stop -n %s"%name)
+            self.ssh.run("source /opt/jsbox/activate;ays stop -n %s"%name)
         except Exception as e:
             if die:
-                self.raiseError("jpackagestop","%s"%name,e)
+                self.raiseError("ays stop","%s"%name,e)
         
         found=self.getPids(filterstr)
         if len(found)>0:
@@ -95,22 +95,22 @@ class Node():
                 except:
                     pass
 
-    def jpackageStart(self,name,filterstr,nrtimes=1,retry=1):
+    def aysStart(self,name,filterstr,nrtimes=1,retry=1):
         found=self.getPids(filterstr)
-        self.log("jpackagestart","%s (%s)"%(name,filterstr))
+        self.log("ays start","%s (%s)"%(name,filterstr))
         for i in range(retry):
             if len(found)==nrtimes:
                 return
             scriptRun=self.getScriptRun()
             try:
-                self.ssh.run("source /opt/jsbox/activate;jpackage start -n %s"%name)  
+                self.ssh.run("source /opt/jsbox/activate;ays start -n %s"%name)  
             except Exception as e:
                 if die:
-                    self.raiseError("jpackagestart","%s"%name,e)                          
+                    self.raiseError("ays start","%s"%name,e)                          
             time.sleep(1)
             found=self.getPids(filterstr)
         if len(found)<nrtimes:
-            self.raiseError("jpackagestart","could not jpackageStart %s"%name)
+            self.raiseError("ays start","could not Start %s"%name)
 
     def serviceStop(self,name,filterstr):
         self.log("servicestop","%s (%s)"%(name,filterstr))

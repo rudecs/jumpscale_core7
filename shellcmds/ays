@@ -69,7 +69,7 @@ ays commands:
 parser.add_argument("action", choices=commands, help='Command to perform\n')
 parser.add_argument("--noremote", required=False, action='store_true', help='bypass the @remote wrapper\n', default=False)
 
-group = parser.add_argument_group(title="Package Selection")
+group = parser.add_argument_group(title="Service Selection")
 group.add_argument('-q', '--quiet', required=False, action='store_true', help='Put in quiet mode')
 group.add_argument('-n', '--name', required=False, help='Name of ays to be installed', default="")
 group.add_argument('-d', '--domain', required=False, help='Name of ays domain to be installed', default="")

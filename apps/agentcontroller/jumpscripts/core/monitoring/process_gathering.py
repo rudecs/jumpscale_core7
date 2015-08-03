@@ -156,9 +156,9 @@ def action():
                 j.core.processmanager.childrenPidsFound[int(childpid)]=True
 
     #walk over startupmanager processes (make sure we don't double count)
-    for package in j.packages.find():
-        for instance in package.listInstances():
-            jpinstance = package.getInstance(instance)
+    for ays in j.atyourservice.findTemplates():
+        for instance in ays.listInstances():
+            jpinstance = ays.getInstance(instance)
             if not jpinstance.isInstalled():
                 continue
 

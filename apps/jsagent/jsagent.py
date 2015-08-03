@@ -118,8 +118,6 @@ class ProcessManager():
         j.system.fs.createDir(self.dir_data)
 
         if j.system.net.tcpPortConnectionTest("localhost",9999)==False:
-            # jps = j.packages.find('jumpscale', "redis")
-            # jp = jps[0].getInstance('system')
             redisService = j.atyourservice.get('jumpscale','redis','system')
             if not redisService.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
                 redisService.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40})
@@ -145,7 +143,6 @@ class ProcessManager():
         acip = acconfig.get("instance.agentcontroller.client.addr",default="")
 
         if "hekad" in self.services:
-            # jp=j.packages.findNewest("jumpscale","hekad")
             hekaServices=j.atyourservice.findservices("jumpscale","hekad")
             # if not jp.isInstalled(instance="0"):
             if len(hekaServices)==0:
