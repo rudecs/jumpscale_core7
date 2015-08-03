@@ -110,6 +110,15 @@ iface eth0 inet manual
             # raise RuntimeError("Could not find resolv.conf path: '%s'"%path)
         j.system.fs.writeFile(path,C)
 
+    def setHostname(self, hostname):
+        """
+        change hostname
+        """
+        hostnameFile = '/etc/hostname'
+        old = j.system.fs.fileGetContents(hostnameFile)
+        j.system.fs.writeFile(hostnameFile, hostname, append=False)
+        cmd = 'hostname %s' % hostname
+        j.system.process.execute(cmd)
 
     def enableInterfaceStatic(self,dev,ipaddr,gw=None,start=False):
         """
