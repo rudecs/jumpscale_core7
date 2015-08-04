@@ -46,6 +46,11 @@ def aoe():
     return manager.AOEFactory()
 
 
+def rsync():
+    from .rsync import manager
+    return manager.RsyncFactory()
+
+
 def connect(addr='localhost', port=22, passwd=None,verbose=False,keypath=None):
 
     if keypath=="":
@@ -79,3 +84,4 @@ j.ssh._register('server', server)
 j.ssh._register('nfs', nfs)
 j.ssh._register('aoe', aoe)
 j.ssh._register('unix', unix)
+j.ssh._register('rsync', rsync)
