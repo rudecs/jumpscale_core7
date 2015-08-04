@@ -20,14 +20,12 @@ roles = []
 
 
 def action():
-    for jp in j.packages.find():
-        instances = jp.listInstances()
+    for ays in j.atyourservice.findTemplates():
+        instances = ays.listInstances()
         for instance in instances:
-            jpinstance = jp.getInstance(instance)
-            if not jpinstance.isInstalled():
-                continue
-            if not jpinstance.actions.check_up_local(wait=False):
-                 message = "Process %s:%s:%s is not running" % (jpinstance.domain, jpinstance.name, instance)
+            aysinstance = ays.getInstance(instance)
+            if not aysinstance.actions.check_up_local(wait=False):
+                 message = "Process %s:%s:%s is not running" % (aysinstance.domain, aysinstance.name, instance)
                  j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
                  
 if __name__ == '__main__':

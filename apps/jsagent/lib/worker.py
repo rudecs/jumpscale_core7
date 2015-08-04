@@ -68,12 +68,12 @@ class Worker(object):
     def processAction(self, action):
         self.redisw.redis.delete("workers:action:%s"%self.queuename)
         if action == "RESTART":
-            print("RESTART ASKED")
+            self.log("RESTART ASKED")
+            j.application.stop(0, True)
             restart_program()
-            j.application.stop()
 
         if action=="RELOAD":
-            print("RELOAD ASKED")
+            self.log("RELOAD ASKED")
             self.actions={}
 
     def run(self):
@@ -81,7 +81,7 @@ class Worker(object):
         while True:
             self.redisw.redis.hset("workers:heartbeat",self.queuename,int(time.time()))
             if self.starttime + RUNTIME < time.time():
-                print("Running for %s seconds restarting" % RUNTIME)
+                self.log("Running for %s seconds restarting" % RUNTIME)
                 restart_program()
 
             try:
@@ -136,7 +136,8 @@ class Worker(object):
                                 msg="could not compile jscriptid:%s on agent:%s.\nError:%s"%(job.jscriptid,agentid,e)
                             eco=j.errorconditionhandler.parsePythonErrorObject(e)
                             eco.errormessage = msg
-                            eco.code=jscript.source
+                            if jscript:
+                                eco.code=jscript.source
                             eco.jid = job.guid
                             eco.category = 'workers.compilescript'
                             eco.process()
@@ -242,7 +243,10 @@ class Worker(object):
         if time is None:
             time = j.base.time.getLocalTimeHR()
         msg = "%s:worker:%s:%s" % (time, self.queuename, message)
-        print(msg)
+        try:
+            print(msg)
+        except IOError:
+            pass
         if self.logFile != None:
             msg = msg+"\n"
             self.logFile.write(msg)

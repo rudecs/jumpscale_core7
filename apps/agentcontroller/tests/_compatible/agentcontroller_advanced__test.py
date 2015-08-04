@@ -42,7 +42,6 @@ class TEST(unittest.TestCase):
 
     def test_queuetest5agents(self):
         #start 5 agents, see that they sort of equally executed the tasks
-        #jp= client.execute('jumpscale', 'jpackage_info', domain="jumpscale", timeout=10)
         pass
 
     def test_killbehaviour(self):

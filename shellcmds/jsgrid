@@ -13,7 +13,7 @@ import sys,time
 j.application.start("jsgrid")
 
 parser = cmdutils.ArgumentParser()
-parser.add_argument("action", choices=['reconfigure', 'healthcheck', 'purgeall', 'purgelogs', 'purgejobs', \
+parser.add_argument("action", choices=['healthcheck', 'purgeall', 'purgelogs', 'purgejobs', \
         'purgeecos', 'restartprocessmgrs', 'reloadjumpscripts','resetlocks', 'restartworkers'],
     help='Command to perform')
 # parser.add_argument("-n", '--nr', help='desktop nr')
@@ -35,73 +35,12 @@ if not j.clients.redis.isRunning('system'):
 
 opts = parser.parse_args()
 
-# if opts.action =='reinit' or opts.action =='reinitsentry':
-#     j.packages.findNewest(name="sentry").stop()
-#     sentrytemplate = "/opt/sentry/data/sentry_template.db"
-#     if j.system.fs.exists(sentrytemplate):
-#         j.system.fs.copyFile(sentrytemplate,"/opt/sentry/data/sentry.db")
-#         j.packages.findNewest(name="sentry").start()
-
-
-############RECONFIGURE
-if opts.action =='reconfigure':
-    packages=["grid_master","grid_node","osis","logger","agentcontroller","workers"]
-    for package in packages:
-        jp=j.packages.findNewest(name=package)
-        jp.configure()
-
-    packages=["osis","logger","agentcontroller","workers"]
-    for package in packages:
-        jp=j.packages.findNewest(name=package)        
-        jp.restart()
-
-    j.tools.startupmanager.startAll()
-
-
 
 ############PS
 
 if opts.action =='resetlocks':
     LOCKPATH = os.path.join(j.dirs.tmpDir, 'locks')
     j.system.fs.removeDirTree(LOCKPATH)
-
-if opts.action =='reinit':
-
-    jp=j.packages.findNewest(name="osis")
-    jp.start()
-    
-    if opts.force != None:
-        j.system.process.executeWithoutPipe("osis deleteall")
-    else:
-        j.system.process.executeWithoutPipe("osis deleteall --force=1")
-
-
-
-    j.packages.findNewest(name="graphite").stop()
-
-    for item in ["%s/graphite/storage/whisper/"%j.dirs.baseDir,"%s/var/log/"%j.dirs.baseDir,"%s/var/tmp/"%j.dirs.baseDir]:
-        j.system.fs.removeDirTree(item)
-        j.system.fs.createDir(item)
-    
-    j.packages.findNewest(name="graphite").start()
-
-    packages=["grid_master","grid_node","osis","agentcontroller","workers"]
-    for package in packages:
-        jp=j.packages.findNewest(name=package)
-        if not jp.isInstalled():
-            jp.install()
-        elif jp.isInstalled():
-            print("RECONFIGURE:%s"%jp)
-            jp.configure()
-
-
-    jp=j.packages.findNewest(name="grid_portal")
-    jp.restart()
-
-# packages=["osis","logger"]
-#     for package in packages:
-#         jp=j.packages.findNewest(name=package)        
-#         jp.restart()
 
     j.tools.startupmanager.startAll()
 

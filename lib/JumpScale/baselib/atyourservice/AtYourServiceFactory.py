@@ -197,13 +197,11 @@ class AtYourServiceFactory():
         serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9_\.]*',
                                         name if name.strip() else '[a-zA-Z0-9_\.]*',
                                         instance if instance.strip() else '[a-zA-Z0-9_\.]*')
-        preciseregex = '.*' if not precise else '.'
+        preciseregex = '.*' if parent is not None else ''
 
-        startregex = '.*'
-        if precise and not parent:
-            startregex = j.dirs.getHrdDir().rstrip('/').replace('/', '.')
+        startregex = j.dirs.getHrdDir().rstrip('/').replace('/', '.')
 
-        servicekey = '%s%s%s%s$' % (startregex, parentregex, preciseregex, serviceregex)
+        servicekey = '%s/%s%s%s$' % (startregex, parentregex, preciseregex, serviceregex)
         regex = re.compile(servicekey)
         matched = [m.string for path in candidates for m in [regex.search(path)] if m]
 
@@ -264,7 +262,7 @@ class AtYourServiceFactory():
             if id in self._instanceCache:
                 del(self._instanceCache[id])
 
-    def get(self, domain="", name="", instance="", parent=None, precise=False):
+    def get(self, domain="", name="", instance="", parent='', precise=False):
         """
         Return service indentifier by domain,name and instance
         throw error if service is not found or if more than one service is found

@@ -983,9 +983,9 @@ class SystemFS:
         apply templateengine to list of found files
         @param templateengine =te  #example below
             te=j.codetools.templateengine.new()
-            te.add("name",self.jpackages.name)
-            te.add("description",self.jpackages.description)
-            te.add("version",self.jpackages.version)
+            te.add("name",self.a.name)
+            te.add("description",self.ayses.description)
+            te.add("version",self.ayses.version)
         """
         paths=self.listFilesInDir(pathToSearchIn, recursive, filter, minmtime, maxmtime)
         for path in paths:
