@@ -78,11 +78,11 @@ def generateModel(namespace, modelspec):
             root@js:~# curl -d '{"value": {"id":3, "value":2}}' -H 'Content-Type: application/json' http://172.17.0.8:5545/models/system/hamdies
             """
             ttype = t
-            schema = generateModel(namespace, schematype)['schema']
+            subschema = generateModel(namespace, schematype)['schema']
             if t == 'dict':
-                prop['schema'] = schema
+                prop['schema'] = subschema
             elif t == 'list':
-                prop['schema'] = {'type': 'dict', 'schema' : schema}
+                prop['schema'] = {'type': 'dict', 'schema' : subschema}
         prop['type'] = typemap[ttype]
 
     return model
