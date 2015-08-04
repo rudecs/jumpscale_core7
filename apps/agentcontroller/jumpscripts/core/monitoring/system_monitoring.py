@@ -30,7 +30,6 @@ def action():
     results={}
     val=psutil.cpu_percent()
     results["cpu.percent"]=val
-    results["cpu.promile"]=val * 10 # we store promile to have more percision
     cput= psutil.cpu_times()
     for key in cput.__dict__.keys():
         val=cput.__dict__[key]
@@ -48,9 +47,9 @@ def action():
     results["network.drop.out"]=dropout
 
     avg1min, avg5min, avg15min = os.getloadavg()
-    results["load.avg1min"] = int(avg1min * 100)
-    results["load.avg5min"] = int(avg5min * 100)
-    results["load.avg15min"] = int(avg15min * 100)
+    results["load.avg1min"] = avg1min
+    results["load.avg5min"] = avg5min
+    results["load.avg15min"] = avg15min
 
     memory=psutil.virtual_memory()
     results["memory.used"]=round((memory.used - memory.cached)/1024.0/1024.0,2)
@@ -75,7 +74,7 @@ def action():
     results["cpu.num_ctx_switches"]=num_ctx_switches
 
     for key, value in results.iteritems():
-        pipe.gauge("%s_%s_%s" % (j.application.whoAmI.gid, j.application.whoAmI.nid, key), int(round(value)))
+        pipe.gauge("%s_%s_%s" % (j.application.whoAmI.gid, j.application.whoAmI.nid, key), value)
 
     pipe.send()
     return results
