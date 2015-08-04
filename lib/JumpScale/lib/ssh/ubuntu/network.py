@@ -108,8 +108,10 @@ class NetworkManager(object):
     def setHostname(self, hostname):
         if hostname == '' or hostname is None:
             raise ValueError("hostname can't be empty or None")
-        self.manager.connection.file_write('/etc/hostname', hostname)
-        self.manager.connection.run('hostname %s' % hostname)
+        current = self.manager.connection.file_read('/etc/hostname')
+        if hostname != current:
+            self.manager.connection.file_write('/etc/hostname', hostname)
+            self.manager.connection.run('hostname %s' % hostname)
 
     def commit(self, device=None):
         #- make sure loopback exist
