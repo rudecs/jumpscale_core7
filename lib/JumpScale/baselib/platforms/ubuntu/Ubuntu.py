@@ -82,10 +82,10 @@ class Ubuntu:
             cmd='adduser --quiet --disabled-password -shell /bin/bash --home /home/%s --gecos "User" %s'%(name,name)
             j.do.execute(cmd)
 
-        cmd='echo "%s:%s" | chpasswd'%(name,passwd)
-
         # set password
-        j.do.execute(cmd)
+        if passwd != '' or passwd is not None:
+            cmd='echo "%s:%s" | chpasswd'%(name,passwd)
+            j.do.execute(cmd)
 
         if creategroup and not self.existsGroup(name):
             self.createGroup(name)
