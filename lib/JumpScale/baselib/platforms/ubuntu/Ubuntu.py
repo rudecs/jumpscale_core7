@@ -114,8 +114,8 @@ class Ubuntu:
         # c=j.remote.cuisine.api
         # c.group_ensure(name)
 
-    def addUser2Group(self,group,user):
-        cmd='useradd -G %s %s'%(group,user)
+    def addUser2Group(self, group, user):
+        cmd = 'usermod -aG %s %s' % (group, user)
         j.do.execute(cmd)
         # import JumpScale.baselib.remote.cuisine
         # c=j.remote.cuisine.api
