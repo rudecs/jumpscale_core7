@@ -66,7 +66,7 @@ class Client(object):
             return NameSpaceClient(url)._list_categories()
         
     def _get_status(self, session=None):
-        return "RUNNING"
+        return {'mongodb':True, 'sqldb':True}
     
     def _import_from_Path(self, namespace, category):
         raise NotImplemented()
@@ -152,7 +152,11 @@ class ObjectClient(object):
             if response.status_code == 404:
                 raise NotFound(msg, statuscode=response.status_code)
             else:
-                issues = json.loads(response.text)['_issues']
+                issues = json.loads(response.text)
+                if '_issues' in issues:
+                    issues = issues['_issues']
+                else:
+                    issues = ''
                 msg = "%s : %s" % (msg, issues)
                 raise RemoteError(msg, statuscode=response.status_code)
         if response.text:
@@ -192,6 +196,12 @@ class ObjectClient(object):
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
         results = self._parse_response(requests.get(url))
         return [ self._objclass(**x) for x in results['_items'] ]
+    
+    def count(self, query):
+        query = {'where': json.dumps(query)}
+        url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
+        response = requests.head(url)
+        return int(response.headers['x-total-count'])
     
     def authenticate(self, username, passwd):
         return True
