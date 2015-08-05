@@ -32,16 +32,17 @@ class Text:
 
     @staticmethod
     def toAscii(value,maxlen=0):
-        out=value.encode('ascii','ignore')
+        out=""
+        for item in value:
+            if ord(item)>127:
+                continue
+            out+=item
+        out=out.encode('ascii','ignore')            
         out=out.replace('\x0b',"")
         out=out.replace('\x0c',"")
         out=out.replace("\r","")
         out=out.replace("\t","    ") 
-        # out=""
-        # for item in value:
-        #     if ord(item)>255:
-        #         continue
-        #     out+=item
+
         if maxlen>0 and len(out)>maxlen:
             out=out[0:maxlen]
                
