@@ -95,6 +95,19 @@ class Rsync(object):
         self._modules = modules
         self._globalParams = globalParams
 
+    def start(self):
+        """start rsync daemon"""
+        self._con.sudo('rsync --daemon --config=%s' % CONFIG_FILE)
+
+    def stop(self):
+        """stop rsync daemon"""
+        self._con.sudo('pkill rsync')
+
+    def restart(self):
+        """restart rsync daemon"""
+        self.stop()
+        self.start()
+
     @property
     def params(self):
         """return the global parameters"""
@@ -140,6 +153,7 @@ class Rsync(object):
         with settings(abort_exception=RsyncError):
             buf.write(str(self))
             self._con.file_write(CONFIG_FILE, buf.getvalue(), mode=644)
+        self.restart()
 
     def erase(self):
         self._globalParams = {}
