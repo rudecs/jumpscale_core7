@@ -146,18 +146,15 @@ class ObjectClient(object):
     def _parse_response(self, response):
         if response.status_code >= 300:
             try:
-                msg = json.loads(response.text)['_error']['message']
+                res = json.loads(response.text)
+                msg = res['_error']['message']
+                if '_issues' in msg:
+                    msg = '%s : %s' % (msg, msg['_issues'])
             except:
                 msg = response.text
             if response.status_code == 404:
                 raise NotFound(msg, statuscode=response.status_code)
             else:
-                issues = json.loads(response.text)
-                if '_issues' in issues:
-                    issues = issues['_issues']
-                else:
-                    issues = ''
-                msg = "%s : %s" % (msg, issues)
                 raise RemoteError(msg, statuscode=response.status_code)
         if response.text:
             return response.json()
@@ -197,11 +194,19 @@ class ObjectClient(object):
         results = self._parse_response(requests.get(url))
         return [ self._objclass(**x) for x in results['_items'] ]
     
-    def count(self, query):
+    def count(self, query={}):
         query = {'where': json.dumps(query)}
+        # Eve >= 0.6
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
         response = requests.head(url)
-        return int(response.headers['x-total-count'])
-    
+        try:
+            return int(response.headers['x-total-count'])
+        except KeyError:
+            # Eve < 0.6 | x-total-count header not supported
+            query.update({'projection': '{"guid": 1}'})
+            url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
+            response = self._parse_response(requests.get(url))
+            return int(response['_meta']['total'])
+
     def authenticate(self, username, passwd):
         return True
