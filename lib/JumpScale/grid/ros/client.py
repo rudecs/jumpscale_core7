@@ -148,8 +148,8 @@ class ObjectClient(object):
             try:
                 res = json.loads(response.text)
                 msg = res['_error']['message']
-                if '_issues' in msg:
-                    msg = '%s : %s' % (msg, msg['_issues'])
+                if '_issues' in res:
+                    msg = '%s : %s' % (msg, res['_issues'])
             except:
                 msg = response.text
             if response.status_code == 404:
@@ -189,12 +189,60 @@ class ObjectClient(object):
         return [ x['guid'] for x in results['_items'] ]
 
     def search(self, query):
+        """
+        
+        MONGO namespaces search
+        ***********************
+        - Same search format found at:
+          http://docs.mongodb.org/manual/reference/method/db.collection.find/
+          
+        - Examples:
+            - Search for records with name=ali:
+                    client.mymongonamespace.user.search({'name':'ali'})
+            - Search for users with age > 20
+                    client.mymongonamespace.user.search({'age':{'$gt':20}})
+        
+        SQL namespace search
+        ********************
+        Same search format found at:
+        http://eve-sqlalchemy.readthedocs.org/en/stable/tutorial.html#sqlalchemy-expressions
+        
+        Examples:
+        ----------
+            - Search for records with name starts with ali
+                    client.mysaqlnamespace.user.search(.search({'name':'like("ali%")'}))
+
+        """
         query = {'where': json.dumps(query)}
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
         results = self._parse_response(requests.get(url))
         return [ self._objclass(**x) for x in results['_items'] ]
     
     def count(self, query={}):
+        """
+        
+        MONGO namespaces filteration
+        ****************************
+        - Same search format found at:
+          http://docs.mongodb.org/manual/reference/method/db.collection.find/
+          
+        - Examples:
+            - Search for records with name=ali:
+                    client.mymongonamespace.user.count({'name':'ali'})
+            - Search for users with age > 20
+                    client.mymongonamespace.user.count({'age':{'$gt':20}})
+        
+        SQL namespace filteration
+        *************************
+        Same search format found at:
+        http://eve-sqlalchemy.readthedocs.org/en/stable/tutorial.html#sqlalchemy-expressions
+        
+        Examples:
+        ----------
+            - Search for records with name starts with ali
+                    client.mysaqlnamespace.user.count(.search({'name':'like("ali%")'}))
+
+        """
         query = {'where': json.dumps(query)}
         # Eve >= 0.6
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
