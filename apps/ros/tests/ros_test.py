@@ -13,6 +13,22 @@ class RosTest(object):
         for e in self.bucket.list():
             self.bucket.delete(e)
             
+    def tearDown(self):
+        for e in self.bucket.list():
+            self.bucket.delete(e)
+
+    def test_count(self):
+        self.assertEqual(self.bucket.count(), 0)
+        self.test_set(name='ali')
+        self.assertEqual(self.bucket.count(), 1)
+        self.assertEqual(self.bucket.count({'id':'noname'}), 0)
+        self.assertEqual(self.bucket.count({'id':'ali'}), 1)
+        for e in self.bucket.list():
+            self.bucket.delete(e)
+        self.assertEqual(self.bucket.count(), 0)
+        self.assertEqual(self.bucket.count({'id':'noname'}), 0)
+        self.assertEqual(self.bucket.count({'id':'ali'}), 0)
+    
     def test_new(self):
         self.assertIsNotNone(self.bucket.new())
   
