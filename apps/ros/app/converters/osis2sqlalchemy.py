@@ -9,7 +9,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from eve_sqlalchemy.decorators import registerSchema
 from sqlalchemy.orm import column_property, relationship
 
-tmplDir = j.system.fs.joinPaths(j.system.fs.getDirName(__file__),'templates')
+tmplDir = j.system.fs.joinPaths(j.system.fs.getDirName(__file__), '..', 'templates')
 jinjaEnv = jinja2.Environment(
             loader=jinja2.FileSystemLoader(tmplDir),
         )
@@ -27,7 +27,7 @@ def generateDomainFromSpecFile(namespace, spec):
             propspec.ttype = ttype
 
     result = template.render(spec=spec)
-    sqlalchemyfolder = j.system.fs.joinPaths(tmplDir, '..',  '..', '..', 'models', 'sqlalchemy')
+    sqlalchemyfolder = j.system.fs.joinPaths(tmplDir, '..', '..', 'models', 'sqlalchemy')
     sqlalchemyfolder = os.path.abspath(sqlalchemyfolder)
     namespacefile = j.system.fs.joinPaths(sqlalchemyfolder, '%s.py' % namespace)
     j.system.fs.writeFile(namespacefile, result)
