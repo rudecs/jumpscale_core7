@@ -90,25 +90,26 @@ class ActionsBase():
 
             j.do.delete(serviceobj.getLogPath())
 
-            if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
-                cmd2="%s %s"%(tcmd,targs)
-                extracmds=""
-                if cmd2.find(";")!=-1:
-                    parts=cmd2.split(";")
-                    extracmds="\n".join(parts[:-1])
-                    cmd2=parts[-1]
+            if startupmethod == 'upstart':
+                # check if we are in our docker image which uses myinit instead of upstart
+                if j.system.fs.exists(path="/etc/my_init.d/"):
+                    cmd2="%s %s"%(tcmd,targs)
+                    extracmds=""
+                    if cmd2.find(";")!=-1:
+                        parts=cmd2.split(";")
+                        extracmds="\n".join(parts[:-1])
+                        cmd2=parts[-1]
 
-                C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\n%s\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,extracmds,cmd2,name)
-                j.do.delete("/var/log/%s.log"%name)
-                j.do.createDir("/etc/service/%s"%name)
-                path2="/etc/service/%s/run"%name
-                j.do.writeFile(path2,C)
-                j.do.chmod(path2,0o770)
-                j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
-
-            elif startupmethod == "upstart" and j.tools.startupmanager.upstart:
-                j.system.platform.ubuntu.serviceInstall(name, tcmd, pwd=cwd, env=env)
-                j.system.platform.ubuntu.startService(name)
+                    C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\n%s\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,extracmds,cmd2,name)
+                    j.do.delete("/var/log/%s.log"%name)
+                    j.do.createDir("/etc/service/%s"%name)
+                    path2="/etc/service/%s/run"%name
+                    j.do.writeFile(path2,C)
+                    j.do.chmod(path2,0o770)
+                    j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
+                else:
+                    j.system.platform.ubuntu.serviceInstall(name, tcmd, pwd=cwd, env=env)
+                    j.system.platform.ubuntu.startService(name)
 
             elif startupmethod=="tmux":
                 j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
