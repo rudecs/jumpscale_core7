@@ -131,10 +131,11 @@ class SQLAlchemy(object):
 
     def _initsql(self):
         if self.engine==None:
-            if not j.system.fs.exists(path=self.sqlitepath):
-                self.engine=self.resetDB()
-            else:
-                self.engine = create_engine(self.connectionstring, echo=False)
+            if self.sqlitepath!="":
+                if not j.system.fs.exists(path=self.sqlitepath):
+                    self.engine=self.resetDB()
+                else:
+                    self.engine = create_engine(self.connectionstring, echo=False)
             self._Session = sessionmaker(bind=self.engine)
             self.session = self._Session()
             listen(Base, 'before_insert', self.data2toml,propagate=True)

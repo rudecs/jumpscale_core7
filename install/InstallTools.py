@@ -144,8 +144,8 @@ class InstallTools():
         if path.strip().rstrip("/") in ["","/","/etc","/root","/usr","/opt","/usr/bin","/usr/sbin",self.CODEDIR]:
             raise RuntimeError('cannot delete protected dirs')
 
-        if not force and path.find(self.CODEDIR)!=-1:
-            raise RuntimeError('cannot delete protected dirs')
+        # if not force and path.find(self.CODEDIR)!=-1:
+        #     raise RuntimeError('cannot delete protected dirs')
 
         if self.debug:
             print(("delete: %s" % path))
