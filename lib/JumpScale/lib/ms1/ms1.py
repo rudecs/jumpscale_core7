@@ -359,8 +359,11 @@ class MS1(object):
     def createUdpPortForwardRule(self, spacesecret, name, machineudpport, pubip="", pubipport=22,**args):
         return self._createPortForwardRule(spacesecret, name, machineudpport, pubip, pubipport, 'udp')
 
-    def deleteTcpPortForwardRule(self, spacesecret, name, machinetcpport, pubip, pubipport,**args):
+    def deleteTcpPortForwardRule(self, spacesecret, name, machinetcpport, pubip='', pubipport=22,**args):
         return self._deletePortForwardRule(spacesecret, name, pubip, pubipport, 'tcp')
+
+    def deleteUdpPortForwardRule(self, spacesecret, name, machinetcpport, pubip='', pubipport=22,**args):
+        return self._deletePortForwardRule(spacesecret, name, pubip, pubipport, 'udp')
 
     def _createPortForwardRule(self, spacesecret, name, machineport, pubip, pubipport, protocol):
         # self.sendUserMessage("Create PFW rule:%s %s %s"%(pubip,pubipport,protocol),args=args)
