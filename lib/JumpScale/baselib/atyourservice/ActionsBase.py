@@ -106,16 +106,9 @@ class ActionsBase():
                 j.do.chmod(path2,0o770)
                 j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
 
-            elif startupmethod=="upstart":
-                raise RuntimeError("not implemented")
-                spath="/etc/init/%s.conf"%name
-                if j.system.fs.exists(path=spath):
-                    j.system.platform.ubuntu.stopService(self.name)
-                    if j.tools.startupmanager.upstart==False:
-                        j.system.fs.remove(spath)
-                cmd2="%s %s"%(tcmd,targs)  #@todo no support for working dir yet
-                j.system.fs.writeFile(self.logfile,"start cmd:\n%s\n"%cmd2,True)#append
-                j.system.process.executeIndependant(cmd2)
+            elif startupmethod == "upstart" and j.tools.startupmanager.upstart:
+                j.system.platform.ubuntu.serviceInstall(name, tcmd, pwd=cwd, env=env)
+                j.system.platform.ubuntu.startService(name)
 
             elif startupmethod=="tmux":
                 j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
@@ -124,7 +117,7 @@ class ActionsBase():
                     j.system.platform.screen.logWindow(domain,name,serviceobj.getLogPath())
 
             else:
-                raise RuntimeError("startup method not known:'%s'"%startupmethod)
+                raise RuntimeError("startup method not known or disabled:'%s'"%startupmethod)
 
 
 
@@ -194,6 +187,8 @@ class ActionsBase():
             domain, name = self._getDomainName(serviceobj, process)
             if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
                 j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
+            elif startupmethod == "upstart":
+                j.system.platform.ubuntu.stopService(name)
             elif startupmethod=="tmux":
                 for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
                     if tmuxname==name:
