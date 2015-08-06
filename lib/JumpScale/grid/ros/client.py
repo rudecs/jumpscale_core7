@@ -32,7 +32,7 @@ class ModelObject(object):
         return getattr(self, name)
 
     def __repr__(self):
-        return "<%s id %s>" % (self.__class__.__name__, self._pk)
+        return str(self._dump())
 
 def Struct(*args, **kwargs):
     def init(self, *iargs, **ikwargs):
@@ -146,18 +146,15 @@ class ObjectClient(object):
     def _parse_response(self, response):
         if response.status_code >= 300:
             try:
-                msg = json.loads(response.text)['_error']['message']
+                res = json.loads(response.text)
+                msg = res['_error']['message']
+                if '_issues' in res:
+                    msg = '%s : %s' % (msg, res['_issues'])
             except:
                 msg = response.text
             if response.status_code == 404:
                 raise NotFound(msg, statuscode=response.status_code)
             else:
-                issues = json.loads(response.text)
-                if '_issues' in issues:
-                    issues = issues['_issues']
-                else:
-                    issues = ''
-                msg = "%s : %s" % (msg, issues)
                 raise RemoteError(msg, statuscode=response.status_code)
         if response.text:
             return response.json()
@@ -192,16 +189,72 @@ class ObjectClient(object):
         return [ x['guid'] for x in results['_items'] ]
 
     def search(self, query):
+        """
+        
+        MONGO namespaces search
+        ***********************
+        - Same search format found at:
+          http://docs.mongodb.org/manual/reference/method/db.collection.find/
+          
+        - Examples:
+            - Search for records with name=ali:
+                    client.mymongonamespace.user.search({'name':'ali'})
+            - Search for users with age > 20
+                    client.mymongonamespace.user.search({'age':{'$gt':20}})
+        
+        SQL namespace search
+        ********************
+        Same search format found at:
+        http://eve-sqlalchemy.readthedocs.org/en/stable/tutorial.html#sqlalchemy-expressions
+        
+        Examples:
+        ----------
+            - Search for records with name starts with ali
+                    client.mysaqlnamespace.user.search(.search({'name':'like("ali%")'}))
+
+        """
         query = {'where': json.dumps(query)}
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
         results = self._parse_response(requests.get(url))
         return [ self._objclass(**x) for x in results['_items'] ]
     
-    def count(self, query):
+    def count(self, query={}):
+        """
+        
+        MONGO namespaces filteration
+        ****************************
+        - Same search format found at:
+          http://docs.mongodb.org/manual/reference/method/db.collection.find/
+          
+        - Examples:
+            - Search for records with name=ali:
+                    client.mymongonamespace.user.count({'name':'ali'})
+            - Search for users with age > 20
+                    client.mymongonamespace.user.count({'age':{'$gt':20}})
+        
+        SQL namespace filteration
+        *************************
+        Same search format found at:
+        http://eve-sqlalchemy.readthedocs.org/en/stable/tutorial.html#sqlalchemy-expressions
+        
+        Examples:
+        ----------
+            - Search for records with name starts with ali
+                    client.mysaqlnamespace.user.count(.search({'name':'like("ali%")'}))
+
+        """
         query = {'where': json.dumps(query)}
+        # Eve >= 0.6
         url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
         response = requests.head(url)
-        return int(response.headers['x-total-count'])
-    
+        try:
+            return int(response.headers['x-total-count'])
+        except KeyError:
+            # Eve < 0.6 | x-total-count header not supported
+            query.update({'projection': '{"guid": 1}'})
+            url = "%s?%s" % (self._baseurl, urllib.urlencode(query))
+            response = self._parse_response(requests.get(url))
+            return int(response['_meta']['total'])
+
     def authenticate(self, username, passwd):
         return True
