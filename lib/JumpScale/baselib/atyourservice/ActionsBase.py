@@ -90,32 +90,26 @@ class ActionsBase():
 
             j.do.delete(serviceobj.getLogPath())
 
-            if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
-                cmd2="%s %s"%(tcmd,targs)
-                extracmds=""
-                if cmd2.find(";")!=-1:
-                    parts=cmd2.split(";")
-                    extracmds="\n".join(parts[:-1])
-                    cmd2=parts[-1]
+            if startupmethod == 'upstart':
+                # check if we are in our docker image which uses myinit instead of upstart
+                if j.system.fs.exists(path="/etc/my_init.d/"):
+                    cmd2="%s %s"%(tcmd,targs)
+                    extracmds=""
+                    if cmd2.find(";")!=-1:
+                        parts=cmd2.split(";")
+                        extracmds="\n".join(parts[:-1])
+                        cmd2=parts[-1]
 
-                C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\n%s\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,extracmds,cmd2,name)
-                j.do.delete("/var/log/%s.log"%name)
-                j.do.createDir("/etc/service/%s"%name)
-                path2="/etc/service/%s/run"%name
-                j.do.writeFile(path2,C)
-                j.do.chmod(path2,0o770)
-                j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
-
-            elif startupmethod=="upstart":
-                raise RuntimeError("not implemented")
-                spath="/etc/init/%s.conf"%name
-                if j.system.fs.exists(path=spath):
-                    j.system.platform.ubuntu.stopService(self.name)
-                    if j.tools.startupmanager.upstart==False:
-                        j.system.fs.remove(spath)
-                cmd2="%s %s"%(tcmd,targs)  #@todo no support for working dir yet
-                j.system.fs.writeFile(self.logfile,"start cmd:\n%s\n"%cmd2,True)#append
-                j.system.process.executeIndependant(cmd2)
+                    C="#!/bin/sh\nset -e\ncd %s\nrm -f /var/log/%s.log\n%s\nexec %s >>/var/log/%s.log 2>&1\n"%(cwd,name,extracmds,cmd2,name)
+                    j.do.delete("/var/log/%s.log"%name)
+                    j.do.createDir("/etc/service/%s"%name)
+                    path2="/etc/service/%s/run"%name
+                    j.do.writeFile(path2,C)
+                    j.do.chmod(path2,0o770)
+                    j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
+                else:
+                    j.system.platform.ubuntu.serviceInstall(name, tcmd, pwd=cwd, env=env)
+                    j.system.platform.ubuntu.startService(name)
 
             elif startupmethod=="tmux":
                 j.system.platform.screen.executeInScreen(domain,name,tcmd+" "+targs,cwd=cwd, env=env,user=tuser)#, newscr=True)
@@ -124,7 +118,7 @@ class ActionsBase():
                     j.system.platform.screen.logWindow(domain,name,serviceobj.getLogPath())
 
             else:
-                raise RuntimeError("startup method not known:'%s'"%startupmethod)
+                raise RuntimeError("startup method not known or disabled:'%s'"%startupmethod)
 
 
 
@@ -194,6 +188,8 @@ class ActionsBase():
             domain, name = self._getDomainName(serviceobj, process)
             if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
                 j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
+            elif startupmethod == "upstart":
+                j.system.platform.ubuntu.stopService(name)
             elif startupmethod=="tmux":
                 for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
                     if tmuxname==name:
@@ -251,41 +247,55 @@ class ActionsBase():
         this happens on system where process is
         """
         def do(process):
-            ports=serviceobj.getTCPPorts()
-            timeout=process["timeout_start"]
-            if timeout==0:
-                timeout=2
-            if not wait:
-                timeout = 0
-            if len(ports)>0:
-
-                for port in ports:
-                    #need to do port checks
-                    if wait:
-                        if j.system.net.waitConnectionTest("localhost", port, timeout)==False:
-                            return False
-                    elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
-                            return False
-            else:
-                #no ports defined
-                filterstr=process["filterstr"].strip()
-
-                if filterstr=="":
-                    raise RuntimeError("Process filterstr cannot be empty.")
-
-                start=j.base.time.getTimeEpoch()
-                now=start
-                while now<=start+timeout:
-                    if j.system.process.checkProcessRunning(filterstr):
+            startupmethod = process["startupmanager"]
+            if startupmethod == 'upstart':
+                domain, name = self._getDomainName(serviceobj, process)
+                # check if we are in our docker image which uses myinit instead of upstart
+                if j.system.fs.exists(path="/etc/my_init.d/"):
+                    _, res, _ = j.do.execute("sv status %s" % name, dieOnNonZeroExitCode=False,
+                                             outputStdout=False, outputStderr=False, captureout=True)
+                    if res.startswith('ok'):
                         return True
-                    now=j.base.time.getTimeEpoch()
-                return False
+                    else:
+                        return False
+                else:
+                    return j.system.platform.ubuntu.statusService(name)
+            else:
+                ports = serviceobj.getTCPPorts()
+                timeout = process["timeout_start"]
+                if timeout == 0:
+                    timeout = 2
+                if not wait:
+                    timeout = 0
+                if len(ports) > 0:
+
+                    for port in ports:
+                        # need to do port checks
+                        if wait:
+                            if j.system.net.waitConnectionTest("localhost", port, timeout)==False:
+                                return False
+                        elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
+                                return False
+                else:
+                    # no ports defined
+                    filterstr=process["filterstr"].strip()
+
+                    if filterstr=="":
+                        raise RuntimeError("Process filterstr cannot be empty.")
+
+                    start = j.base.time.getTimeEpoch()
+                    now = start
+                    while now <= start+timeout:
+                        if j.system.process.checkProcessRunning(filterstr):
+                            return True
+                        now = j.base.time.getTimeEpoch()
+                    return False
 
         for process in serviceobj.getProcessDicts():
-            result=do(process)
-            if result==False:
-                domain, name = self._getDomainName(serviceobj,process)
-                log("Status %s:%s not running" % (domain,name))
+            result = do(process)
+            if result is False:
+                domain, name = self._getDomainName(serviceobj, process)
+                log("Status %s:%s not running" % (domain, name))
                 return False
         log("Status %s is running" % (serviceobj))
         return True

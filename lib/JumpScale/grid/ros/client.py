@@ -32,7 +32,7 @@ class ModelObject(object):
         return getattr(self, name)
 
     def __repr__(self):
-        return "<%s id %s>" % (self.__class__.__name__, self._pk)
+        return str(self._dump())
 
 def Struct(*args, **kwargs):
     def init(self, *iargs, **ikwargs):

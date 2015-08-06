@@ -1,12 +1,20 @@
 from JumpScale import j
 
+
 class Avahi():
 
     # def __init__(self):
     #     raise RuntimeError("should not init auto")
     #     j.system.platform.ubuntu.checkInstall(["avahi-utils"],"avahi-browse")
 
-    def registerService(self,servicename,port):
+    def _servicePath(self, servicename):
+        path = "/etc/avahi/services"
+        if not j.system.fs.exists(path=path):
+            j.system.fs.createDir(path)
+        service = '%s.service' % servicename
+        return j.system.fs.joinPaths(path, service)
+
+    def registerService(self, servicename, port, type='tcp'):
         content = """<?xml version=\"1.0\" standalone=\'no\'?>
 <!--*-nxml-*-->
 <!DOCTYPE service-group SYSTEM "avahi-service.dtd">
@@ -15,7 +23,7 @@ class Avahi():
 <name replace-wildcards="yes">${servicename} %h</name>
 
 <service>
-<type>_${servicename}._tcp</type>
+<type>_${servicename}._${type}</type>
 <port>${port}</port>
 </service>
 
@@ -23,11 +31,19 @@ class Avahi():
 """
         content = content.replace("${servicename}", servicename)
         content = content.replace("${port}", str(port))
-        tmpfile = j.system.fs.joinPaths(j.dirs.tmpDir, "avahi")
-        path="/etc/avahi/services"
-        j.system.fs.createDir(path)
-        j.system.fs.writeFile("%s/%s.service"%(path,servicename), content)
-        cmd="avahi-daemon --reload"
+        content = content.replace("${type}", type)
+        path = self._servicePath(servicename)
+        j.system.fs.writeFile(path, content)
+
+        cmd = "avahi-daemon --reload"
+        j.system.process.execute(cmd)
+
+    def removeService(self, servicename):
+        path = self._servicePath(servicename)
+        if j.system.fs.exists(path=path):
+            j.system.fs.remove(path)
+
+        cmd = "avahi-daemon --reload"
         j.system.process.execute(cmd)
 
     def getServices(self):
