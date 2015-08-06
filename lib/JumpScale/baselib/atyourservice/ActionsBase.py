@@ -247,41 +247,55 @@ class ActionsBase():
         this happens on system where process is
         """
         def do(process):
-            ports=serviceobj.getTCPPorts()
-            timeout=process["timeout_start"]
-            if timeout==0:
-                timeout=2
-            if not wait:
-                timeout = 0
-            if len(ports)>0:
-
-                for port in ports:
-                    #need to do port checks
-                    if wait:
-                        if j.system.net.waitConnectionTest("localhost", port, timeout)==False:
-                            return False
-                    elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
-                            return False
-            else:
-                #no ports defined
-                filterstr=process["filterstr"].strip()
-
-                if filterstr=="":
-                    raise RuntimeError("Process filterstr cannot be empty.")
-
-                start=j.base.time.getTimeEpoch()
-                now=start
-                while now<=start+timeout:
-                    if j.system.process.checkProcessRunning(filterstr):
+            startupmethod = process["startupmanager"]
+            if startupmethod == 'upstart':
+                domain, name = self._getDomainName(serviceobj, process)
+                # check if we are in our docker image which uses myinit instead of upstart
+                if j.system.fs.exists(path="/etc/my_init.d/"):
+                    _, res, _ = j.do.execute("sv status %s" % name, dieOnNonZeroExitCode=False,
+                                             outputStdout=False, outputStderr=False, captureout=True)
+                    if res.startswith('ok'):
                         return True
-                    now=j.base.time.getTimeEpoch()
-                return False
+                    else:
+                        return False
+                else:
+                    return j.system.platform.ubuntu.statusService(name)
+            else:
+                ports = serviceobj.getTCPPorts()
+                timeout = process["timeout_start"]
+                if timeout == 0:
+                    timeout = 2
+                if not wait:
+                    timeout = 0
+                if len(ports) > 0:
+
+                    for port in ports:
+                        # need to do port checks
+                        if wait:
+                            if j.system.net.waitConnectionTest("localhost", port, timeout)==False:
+                                return False
+                        elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
+                                return False
+                else:
+                    # no ports defined
+                    filterstr=process["filterstr"].strip()
+
+                    if filterstr=="":
+                        raise RuntimeError("Process filterstr cannot be empty.")
+
+                    start = j.base.time.getTimeEpoch()
+                    now = start
+                    while now <= start+timeout:
+                        if j.system.process.checkProcessRunning(filterstr):
+                            return True
+                        now = j.base.time.getTimeEpoch()
+                    return False
 
         for process in serviceobj.getProcessDicts():
-            result=do(process)
-            if result==False:
-                domain, name = self._getDomainName(serviceobj,process)
-                log("Status %s:%s not running" % (domain,name))
+            result = do(process)
+            if result is False:
+                domain, name = self._getDomainName(serviceobj, process)
+                log("Status %s:%s not running" % (domain, name))
                 return False
         log("Status %s is running" % (serviceobj))
         return True
