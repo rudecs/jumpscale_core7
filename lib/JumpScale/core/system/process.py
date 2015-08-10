@@ -1723,10 +1723,10 @@ class SystemProcess:
         # print pids
         return pids
 
-    def killProcessByName(self,name):
+    def killProcessByName(self,name,sig=None):
         pids=self.getProcessPid(name)
         for pid in pids:
-            kill(pid)
+            kill(pid,sig)
 
     def killProcessByPort(self,port):
         for pid in self.getPidsByPort(port):
