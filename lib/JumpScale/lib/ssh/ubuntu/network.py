@@ -27,8 +27,11 @@ class NetworkManager(object):
         Result (ip, netmask, gateway)
         """
         self._nicExists(device)
-        cmd = 'echo `ip a | grep %s | sed -n 2p | xargs | cut -d " " -f 2`' % device
+        cmd = 'echo `ip a | grep -P -e "inet .+%s$" | xargs | cut -d " " -f 2`' % device
         res = self.manager.connection.run(cmd)
+        if not res:
+            raise NetworkingError('No IP')
+
         ipmask = netaddr.IPNetwork(res)
         netmask = str(ipmask.netmask)
         ip = str(ipmask.ip)
