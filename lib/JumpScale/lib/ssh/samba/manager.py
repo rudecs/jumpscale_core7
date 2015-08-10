@@ -50,6 +50,7 @@ class SMBUser(object):
     
     def add(self, username, password):
         output = self._smbrun("add " + username + " " + password)
+        j.system.process.run("bash /etc/samba/update-uid.sh", True, False)
         return self._format(output)
 
 class SMBShare(object):
