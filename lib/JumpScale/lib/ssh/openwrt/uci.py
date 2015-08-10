@@ -24,7 +24,8 @@ class UCISection(collections.OrderedDict):
         elif name is None:
             raise ValueError('Not expecting a None value')
 
-        for c in '- ':
+        # check for invalid character. currently only space.
+        for c in ' ':
             if c in name:
                 raise ValueError(
                     'Value "%s" has unsupported character (%s)' % (name, c)
