@@ -217,6 +217,7 @@ elif args.action == 'makelocal':
         for servicefile in servicefiles:
             remotehrd = j.core.hrd.get(servicefile, prefixWithName=False)
             remotehrd.delete('producer.node')
+            remotehrd.save()
 
 else:
     if args.targettype or args.targetname:
