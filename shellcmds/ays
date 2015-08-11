@@ -215,7 +215,7 @@ elif args.action == 'makelocal':
     if args.tolocal and j.system.fs.exists(args.tolocal):
         servicefiles = j.system.fs.walk(args.tolocal, recurse=1, pattern='service.hrd', return_folders=0, return_files=1, followSoftlinks=False)
         for servicefile in servicefiles:
-            remotehrd = j.core.hrd.get(servicefile)
+            remotehrd = j.core.hrd.get(servicefile, prefixWithName=False)
             remotehrd.delete('producer.node')
 
 else:
