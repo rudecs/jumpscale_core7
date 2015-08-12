@@ -56,10 +56,8 @@ class Openvlcoud(object):
         # create ovc_git vm
         id, ip, port = self.api.createMachine(spacesecret, 'ovc_git', memsize='0.5', ssdsize='10', imagename='ubuntu.14.04.x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
 
-        if gitlabUrl.lower().startswith("https://"):
-            gitlabUrl=gitlabUrl[8:]
-        if gitlabUrl.lower().startswith("http://"):
-            gitlabUrl=gitlabUrl[7:]
+        if not gitlabUrl.lower().startswith("https"):
+            gitlabUrl = 'https://%s' % gitlabUrl
 
         # portforward 22 to 22 on ovc_git
         self.api.createTcpPortForwardRule(spacesecret, 'ovc_git', 22, pubipport=22)
@@ -85,7 +83,9 @@ class Openvlcoud(object):
         self._createGitRepo(gitlabUrl, gitlabLogin, gitlabPasswd, gitlabAccountname, gitlabReponame)
 
         # clone templates repo and change url
-        repoURL = 'https://%s/%s/%s' % (gitlabUrl, gitlabAccountname, gitlabReponame)
+        gitlabPasswd = gitlabPasswd.replace('$', '\$')
+        gitlabPasswd = gitlabPasswd.replace('@', '\@')
+        repoURL = 'https://%s:%s@%s/%s/%s' % (gitlabLogin, gitlabPasswd, gitlabUrl, gitlabAccountname, gitlabReponame)
         cl.run('git clone https://git.aydo.com/openvcloudEnvironments/OVC_GIT_Tmpl.git /opt/ovc_git')
         cl.run('cd /opt/ovc_git; git remote set-url origin %s' % repoURL)
 
