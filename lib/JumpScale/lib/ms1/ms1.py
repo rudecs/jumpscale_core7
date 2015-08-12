@@ -166,7 +166,7 @@ class MS1(object):
         return sizes
 
     def createMachine(self, spacesecret, name, memsize=1, ssdsize=40, vsansize=0, description='',
-                      imagename="ubuntu.14.04",delete=False, sshkey=None, **args):
+                      imagename="ubuntu.14.04.x64",delete=False, sshkey=None, **args):
         """
         memsize  #size is 0.5,1,2,4,8,16 in GB
         ssdsize  #10,20,30,40,100 in GB
