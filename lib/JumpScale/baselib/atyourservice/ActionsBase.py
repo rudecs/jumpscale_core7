@@ -67,11 +67,12 @@ class ActionsBase():
         if serviceobj.getProcessDicts()==[]:
             return
 
-        def start2(process):
+        def start2(process, nbr=None):
 
             cwd=process["cwd"]
             # args['process'] = process
-            self.stop(serviceobj)
+            if nbr is None:
+                self.stop(serviceobj)
 
             tcmd=process["cmd"]
             if tcmd=="jspython":
@@ -86,6 +87,8 @@ class ActionsBase():
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(serviceobj, process)
+            if nbr is not None:
+                name = "%s.%d" % (name, i)
             log("Starting %s:%s" % (domain, name))
 
             j.do.delete(serviceobj.getLogPath())
@@ -142,13 +145,17 @@ class ActionsBase():
         isrunning=self.check_up_local(serviceobj,wait=False)
         if isrunning:
             return
-        for process in serviceobj.getProcessDicts():
-            
-            if process.has_key("platform"):
+
+        processes = serviceobj.getProcessDicts()
+        for i, process in enumerate(processes):
+
+            if "platform" in process:
                 if not j.system.platformtype.checkMatch(process["platform"]):
                     continue
-
-            start2(process)
+            if len(processes) > 1:
+                start2(process, nbr=i)
+            else:
+                start2(process)
 
         isrunning=self.check_up_local(serviceobj)
         if isrunning==False:
@@ -168,7 +175,7 @@ class ActionsBase():
             else:
                 j.events.opserror_critical("could not start:%s"%serviceobj,"service.start.failed.other")
 
-    def stop(self,serviceobj):
+    def stop(self, serviceobj):
         """
         if you want a gracefull shutdown implement this method
         a uptime check will be done afterwards (local)
@@ -178,7 +185,7 @@ class ActionsBase():
         if serviceobj.getProcessDicts()==[]:
             return
 
-        def stop_process(process):
+        def stop_process(process, nbr=None):
             currentpids = (os.getpid(), os.getppid())
             for pid in self.get_pids(serviceobj,[process]):
                 if pid not in currentpids :
@@ -186,6 +193,9 @@ class ActionsBase():
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(serviceobj, process)
+            if nbr is not None:
+                name = "%s.%d" % (name, i)
+            log("Stopping %s:%s" % (domain, name))
             if j.system.fs.exists(path="/etc/my_init.d/%s"%name):
                 j.do.execute("sv stop %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
             elif startupmethod == "upstart":
@@ -201,9 +211,12 @@ class ActionsBase():
 
         processes = serviceobj.getProcessDicts()
         if processes:
-            log("Stopping %s" % serviceobj)
-            for process in processes:
-                stop_process(process)
+            for i, process in enumerate(processes):
+                if len(processes) > 1:
+                    stop_process(process, nbr=i)
+                else:
+                    stop_process(process)
+
         return True
 
     def get_pids(self,serviceobj,processes=None, **kwargs):
@@ -246,10 +259,12 @@ class ActionsBase():
         do checks to see if process(es) is (are) running.
         this happens on system where process is
         """
-        def do(process):
+        def do(process, nbr=None):
             startupmethod = process["startupmanager"]
             if startupmethod == 'upstart':
                 domain, name = self._getDomainName(serviceobj, process)
+                if nbr is not None:
+                    name = "%s.%d" % (name, i)
                 # check if we are in our docker image which uses myinit instead of upstart
                 if j.system.fs.exists(path="/etc/my_init.d/"):
                     _, res, _ = j.do.execute("sv status %s" % name, dieOnNonZeroExitCode=False,
@@ -290,9 +305,13 @@ class ActionsBase():
                             return True
                         now = j.base.time.getTimeEpoch()
                     return False
+        processes = serviceobj.getProcessDicts()
+        for i, process in enumerate(processes):
+            if len(processes) > 1:
+                result = do(process, nbr=i)
+            else:
+                result = do(process)
 
-        for process in serviceobj.getProcessDicts():
-            result = do(process)
             if result is False:
                 domain, name = self._getDomainName(serviceobj, process)
                 log("Status %s:%s not running" % (domain, name))
@@ -442,7 +461,7 @@ class ActionsBase():
         installed = node.actions.execute(node, 'test -f %s ; echo $?' % installationPath).strip()
 
         installedchecksum = node.actions.execute(node, 'cat %s' % installationPath).strip() if installed == '0' else 'not installed'
-        
+
         if serviceobj.hrd.get('service.installed.checksum', 'none') != installedchecksum:
             templocation = j.system.fs.joinPaths('/tmp', j.base.idgenerator.generateGUID())
             node.actions.upload(node, serviceobj.path, templocation)

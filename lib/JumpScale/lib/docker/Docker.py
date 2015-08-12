@@ -375,11 +375,6 @@ class Docker():
         # mem=1000000
         print(("install docker with name '%s'"%base))
 
-
-        from IPython import embed
-        print "DEBUG NOW ooo"
-        embed()
-        
         res=self.client.create_container(image=base, command=cmd, hostname=name, user="root", \
                 detach=False, stdin_open=False, tty=True, mem_limit=mem, ports=list(portsdict.keys()), environment=None, volumes=volskeys,  \
                 network_disabled=False, name=name, entrypoint=None, cpu_shares=cpu, working_dir=None, domainname=None, memswap_limit=0)
@@ -428,7 +423,7 @@ class Docker():
             c.file_upload(hrdf,hrdf)
         c.fabric.state.output["running"]=True
         c.fabric.state.output["stdout"]=True
-        c.run("cd /opt/code/github/jumpscale/jumpscale_core7/install/ssh/;python install.py")
+        c.run("cd /opt/code/github/jumpscale/jumpscale_core7/install/ && bash install.sh")
 
     def getImages(self):
         images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images()]

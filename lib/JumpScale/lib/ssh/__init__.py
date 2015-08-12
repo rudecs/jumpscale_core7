@@ -50,6 +50,11 @@ def rsync():
     from .rsync import manager
     return manager.RsyncFactory()
 
+def samba():
+    from .samba import manager
+    return manager.SambaFactory()
+
+
 
 def connect(addr='localhost', port=22, passwd=None,verbose=False,keypath=None):
 
@@ -85,3 +90,4 @@ j.ssh._register('nfs', nfs)
 j.ssh._register('aoe', aoe)
 j.ssh._register('unix', unix)
 j.ssh._register('rsync', rsync)
+j.ssh._register('samba', samba)
