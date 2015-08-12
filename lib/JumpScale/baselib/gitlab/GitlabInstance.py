@@ -11,31 +11,6 @@ import os
 import gitlab3
 import JumpScale.baselib.git
 
-def lazyLogIn(function):
-    """
-    Gitlab client REST API are very slow, directly authenticating portal against gitlab
-    takes time and shouldn't be done at the very beginning of starting portal.
-    This docorator makes sure that whenever a gitlab client function is called
-    the client will be authenticated if not already.
-    
-    SOmetimes, if connection lost to gitlab, client becomes suddenly unauthorized
-    but unaware of that because isLoggedIn flag is still True
-    this situation is handled as well, in case a function call returns UnAuthorized exception
-    client is  re-authenticated.
-    """
-    def wrapper(self, *args, **kwargs):
-        if not self.isLoggedIn:
-            login = self.login
-            passwd = self.passwd
-            self.isLoggedIn = self.authenticate(login, passwd)
-        try:
-            return function(self, *args, **kwargs)
-        except gitlab3.exceptions.UnauthorizedRequest:
-            self.isLoggedIn = self.authenticate(login, passwd)
-            return function(self, *args, **kwargs)
-    return wrapper
-
-
 class GitlabInstance():
     """
     Wrapper around gitlab3 library with Caching capabilities to improve performance.
@@ -66,6 +41,30 @@ class GitlabInstance():
         self.isLoggedIn = False
         self._cache = j.clients.redis.getByInstance('system')
         self._cache_expire = 300 #seconds (5 minutes)
+        self._init=False
+
+    def _init(self):
+        """
+        Gitlab client REST API are very slow, directly authenticating portal against gitlab
+        takes time and shouldn't be done at the very beginning of starting portal.
+        This decorator makes sure that whenever a gitlab client function is called
+        the client will be authenticated if not already.
+        
+        SOmetimes, if connection lost to gitlab, client becomes suddenly unauthorized
+        but unaware of that because isLoggedIn flag is still True
+        this situation is handled as well, in case a function call returns UnAuthorized exception
+        client is  re-authenticated.
+        """        
+        if not self.isLoggedIn:
+            login = self.login
+            passwd = self.passwd
+            self.isLoggedIn = self.authenticate(login, passwd)
+        try:
+            return function(self, *args, **kwargs)
+        except gitlab3.exceptions.UnauthorizedRequest:
+            self.isLoggedIn = self.authenticate(login, passwd)
+            return function(self, *args, **kwargs)
+        self._init=True
 
     def _getFromCache(self, username, key):
         """
@@ -101,7 +100,6 @@ class GitlabInstance():
         self.isLoggedIn = True
         return new_client.login(login, password)
 
-    @lazyLogIn
     def getGroupInfo(self, groupname, force_cache_renew=False, die=True):
         """
         Get a group info 
@@ -115,6 +113,7 @@ class GitlabInstance():
         @return: ``` gitlab3.Group ```
         
         """
+        self._init()
         key = ('group', groupname)
         if not force_cache_renew:
             result = self._getFromCache(self.login, key)
@@ -131,7 +130,6 @@ class GitlabInstance():
         else:
             return None
     
-    @lazyLogIn
     def getSpace(self, name, force_cache_renew=False, die=False):
         """
         Get Space Info [Space is a project]
@@ -144,6 +142,7 @@ class GitlabInstance():
         @type die: ``boolean``
         @return: ```gitlab3.Project```
         """
+        self._init()
         key = ('project', name)
         if not force_cache_renew:
             result = self._getFromCache(self.login, key)
@@ -157,7 +156,6 @@ class GitlabInstance():
         if die:
             j.events.inputerror_critical("Cannot find project with name:%s"%name)
     
-    @lazyLogIn
     def create(self,group, name, public=False):
         """
         Create a space/project in a certain group
@@ -167,6 +165,7 @@ class GitlabInstance():
         @param name: space name
         @type name: ``str``
         """
+        self._init()
         group2=self.getGroupInfo(group, force_cache_renew=True)
         ttype=self.addr.split("/",1)[1].strip("/ ")
         if ttype.find(".")!=-1:
@@ -195,7 +194,6 @@ class GitlabInstance():
             
         return proj,path
 
-    @lazyLogIn
     def getUserInfo(self, username, force_cache_renew=False):
         """
         Returns user info
@@ -204,6 +202,7 @@ class GitlabInstance():
         @type username: ``str``
         @return: ```gitlab3.User``` 
         """
+        self._init()
         key = ('user', username)
         
         if not force_cache_renew:
@@ -214,7 +213,6 @@ class GitlabInstance():
         self._addToCache(self.login, key, u)
         return self._getFromCache(self.login, key)['data']
 
-    @lazyLogIn
     def userExists(self, username, force_cache_renew=False):
         """
         Check user exists
@@ -223,19 +221,18 @@ class GitlabInstance():
         @type username: ``str``No JSON object could be decoded
         @return: ``bool`` 
         """
+        self._init()
         return bool(self.getUserInfo(username, force_cache_renew))
 
-    @lazyLogIn
     def createUser(self, username, password, email, groups):
+        self._init()
         id = self.gitlab.add_user(username=username, password=password, email=email)
         for group in groups:
             g = self.gitlabclient.find_group(name=group)
             g.add_member(id)
-            g.save()
-        
+            g.save()        
         self.listUsers(force_cache_renew=True)
         
-    @lazyLogIn
     def listUsers(self, force_cache_renew=False):
         """
         Get All users
@@ -243,6 +240,7 @@ class GitlabInstance():
         @type force_cache_renew: ``boolean`` 
         @return: ``lis``
         """
+        self._init()
         if not force_cache_renew:
             result = self._getFromCache(self.login, 'users')
             if not result['expired']:
@@ -251,7 +249,6 @@ class GitlabInstance():
         self._addToCache(self.login, 'users', users)
         return self._getFromCache(self.login, 'users')['data']
 
-    @lazyLogIn
     def listGroups(self, force_cache_renew=False):
         """
         GET ALL groups in gitlab that admin user (self.login) has access to
@@ -260,6 +257,7 @@ class GitlabInstance():
         @type force_cache_renew: ``boolean`` 
         @return: ``lis``
         """
+        self._init()
         if not force_cache_renew:
             result =  self._getFromCache(self.login, 'groups')
             if not result['expired']:
@@ -268,7 +266,6 @@ class GitlabInstance():
         self._addToCache(self.login, 'groups', all_groups)
         return self._getFromCache(self.login, 'groups')['data']
     
-    @lazyLogIn
     def getGroups(self,username, force_cache_renew=False):
         """
         Get groups for a certain user
@@ -279,7 +276,7 @@ class GitlabInstance():
         @type force_cache_renew: ``boolean`` 
         @return: ``lis``
         """
-
+        self._init()
         if not force_cache_renew:
             result = self._getFromCache(username, 'groups')
             if not result['expired']:
@@ -291,7 +288,6 @@ class GitlabInstance():
             self._addToCache(username, 'groups', [])
         return self._getFromCache(username, 'groups')['data']
     
-    @lazyLogIn
     def getUserSpaceRights(self, username, space, **kwargs):
         """
         
@@ -304,6 +300,7 @@ class GitlabInstance():
         @param space: user space (Project) in gitlab
         @type space: ```gitlab3.Project```
         """
+        self._init()
         prefix = "%s_" % username
         if  prefix in space:
             space = space.replace(prefix, '')
@@ -317,7 +314,6 @@ class GitlabInstance():
             return username, self.PERMISSIONS[rights.access_level]
         return username, ''
     
-    @lazyLogIn
     def getUserSpacesObjects(self, username, force_cache_renew=False):
         """
         Get userspace objects (not just names) for a specific user
@@ -328,6 +324,7 @@ class GitlabInstance():
         @param bypass_cache: If True, Force getting data from gitlab backend, otherwise try to get it from cache 1st 
         @type bypass_cache:`bool` 
         """
+        self._init()
         if not force_cache_renew:
             result =  self._getFromCache(username, 'spaces')
             if not result['expired']:
@@ -341,7 +338,6 @@ class GitlabInstance():
         return self._getFromCache(username, 'spaces')['data']
         
     
-    @lazyLogIn
     def getUserSpaces(self, username, force_cache_renew=False):
         """
         Get userspace names for a specific user
@@ -352,4 +348,5 @@ class GitlabInstance():
         @param bypass_cache: If True, Force getting data from gitlab backend, otherwise try to get it from cache 1st 
         @type bypass_cache:`bool` 
         """
+        self._init()
         return [p['name'] for p in self.getUserSpacesObjects(username, force_cache_renew)]

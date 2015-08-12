@@ -5,7 +5,7 @@ import JumpScale.portal
 # import JumpScale.lib.cloudrobots
 
 import JumpScale.baselib.remote
-import JumpScale.baselib.redis
+# import JumpScale.baselib.redis
 import JumpScale.portal
 import ujson as json
 import sys
@@ -44,18 +44,19 @@ class MS1(object):
     def __init__(self):
         self.secret = ''
         self.IMAGE_NAME = 'Ubuntu 14.04'
-        self.redis_cl = j.clients.redis.getByInstance('system')
+        # self.redis_cl = j.clients.redis.getByInstance('system')
         self.stdout=Output()
         self.stdout.ms1=self
         self.stdout.prevout=sys.stdout
         self.action=None
         self.vars={}
+        self.db=j.db.keyvaluestore.getFileSystemStore("/tmp/ms1.db")
 
 
     def getCloudspaceObj(self, space_secret,**args):
-        if not self.redis_cl.hexists('cloudrobot:cloudspaces:secrets', space_secret):
+        if not self.db.exists('cloudrobot:cloudspaces:secrets', space_secret):
             raise RuntimeError("E:Space secret does not exist, cannot continue (END)")
-        space=json.loads(self.redis_cl.hget('cloudrobot:cloudspaces:secrets', space_secret))
+        space=json.loads(self.db.get('cloudrobot:cloudspaces:secrets', space_secret))
         return space
 
     def getCloudspaceId(self, space_secret):
@@ -81,7 +82,7 @@ class MS1(object):
         else:
             raise RuntimeError("E:Could not find a matching cloud space with name %s and location %s" % (cloudspace_name, location))
 
-        self.redis_cl.hset('cloudrobot:cloudspaces:secrets', auth_key, json.dumps(cloudspace))
+        self.db.set('cloudrobot:cloudspaces:secrets', auth_key, json.dumps(cloudspace))
 
         return auth_key
 
@@ -156,12 +157,12 @@ class MS1(object):
     #     return {'publicip': cloudspace['publicipaddress']}
 
     def getMachineSizes(self,spacesecret):
-        if self.redis_cl.exists("ms1:cache:%s:sizes"%spacesecret):
-            return json.loads(self.redis_cl.get("ms1:cache:%s:sizes"%spacesecret))
+        if self.db.exists("ms1:cache:%s:sizes"%spacesecret):
+            return json.loads(self.db.get("ms1:cache:%s:sizes"%spacesecret))
         api = self.getApiConnection(spacesecret)
         sizes_actor = api.getActor('cloudapi', 'sizes')
         sizes=sizes_actor.list()
-        self.redis_cl.setex("ms1:cache:%s:sizes"%spacesecret,json.dumps(sizes),3600)
+        self.db.set("ms1:cache:%s:sizes"%spacesecret,json.dumps(sizes))
         return sizes
 
     def createMachine(self, spacesecret, name, memsize=1, ssdsize=40, vsansize=0, description='',
@@ -268,8 +269,8 @@ class MS1(object):
 
     def listImages(self,spacesecret,**args):
 
-        if self.redis_cl.exists("ms1:cache:%s:images"%spacesecret):
-            return json.loads(self.redis_cl.get("ms1:cache:%s:images"%spacesecret))
+        if self.db.exists("ms1:cache:%s:images"%spacesecret):
+            return json.loads(self.db.get("ms1:cache:%s:images"%spacesecret))
 
         api = self.getApiConnection(spacesecret)
         cloudspaces_actor = api.getActor('cloudapi', 'cloudspaces')
@@ -288,7 +289,7 @@ class MS1(object):
                 if found:
                     result[imagetype]=[image["id"],image["name"]]
 
-        self.redis_cl.setex("ms1:cache:%s:images"%spacesecret,json.dumps(result),600)
+        self.db.set("ms1:cache:%s:images"%spacesecret,json.dumps(result))
         return result
 
     def listMachinesInSpace(self, spacesecret,**args):
