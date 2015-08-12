@@ -61,7 +61,7 @@ def connect(addr='localhost', port=22, passwd=None,verbose=True,keypath=None):
     if keypath=="":
         keypath=None
 
-    c=j.remote.cuisine.connect(addr, port=22, passwd=passwd)
+    c=j.remote.cuisine.connect(addr, port=port, passwd=passwd)
     if keypath!=None:
         c.fabric.key_filename=keypath
         c.fabric.api.env["key_filename"]=keypath
