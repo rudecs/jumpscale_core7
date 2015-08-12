@@ -357,7 +357,7 @@ stop on runlevel [016]
         if self.whoami()!="root":
             j.events.inputerror_critical("only support root")
 
-    def generateLocalSSHKeyPair(self,type="rsa",overwrite=False):
+    def generateLocalSSHKeyPair(self, passphrase='', type="rsa",overwrite=False):
         self.checkroot()
         path="/root/.ssh/id_rsa"
         if overwrite and j.system.fs.exists(path=path):
@@ -365,5 +365,5 @@ stop on runlevel [016]
         if not j.system.fs.exists(path):    
             if type !="rsa":
                 j.events.inputerror_critical("only support rsa for now")
-            cmd="ssh-keygen -t rsa -b 4096"
+            cmd="ssh-keygen -t rsa -b 4096 -P %s" % passphrase
             j.do.executeInteractive(cmd)
