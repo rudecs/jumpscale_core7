@@ -349,5 +349,21 @@ stop on runlevel [016]
         path="/etc/apt/sources.list.d/%s.list"%name
         j.do.writeFile(path,"deb %s\n"%url)
         
+    def whoami(self):        
+        rc,result=j.system.process.execute("whoami")
+        return result.strip()
 
-        
+    def checkroot(self):
+        if self.whoami()!="root":
+            j.events.inputerror_critical("only support root")
+
+    def generateLocalSSHKeyPair(self,type="rsa",overwrite=False):
+        self.checkroot()
+        path="/root/.ssh/id_rsa"
+        if overwrite and j.system.fs.exists(path=path):
+            j.do.delete(path)
+        if not j.system.fs.exists(path):    
+            if type !="rsa":
+                j.events.inputerror_critical("only support rsa for now")
+            cmd="ssh-keygen -t rsa -b 4096"
+            j.do.executeInteractive(cmd)
