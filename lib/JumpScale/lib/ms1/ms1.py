@@ -165,7 +165,7 @@ class MS1(object):
 
     def getMachineSizes(self,spacesecret):
         if self.db.exists("ms1", "ms1:cache:%s:sizes"%spacesecret):
-            return json.loads(self.db.get("ms1:cache:%s:sizes"%spacesecret))
+            return json.loads(self.db.get('ms1', "ms1:cache:%s:sizes"%spacesecret))
         api = self.getApiConnection(spacesecret)
         sizes_actor = api.getActor('cloudapi', 'sizes')
         sizes=sizes_actor.list()
@@ -274,7 +274,8 @@ class MS1(object):
 
         self.sendUserMessage("machine active & reachable")
 
-        self.sendUserMessage("to connect do: 'ssh %s -p %s'" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
+        self.sendUserMessage("to connect from outise cloudspace do: 'ssh %s -p %s'" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
+        self.sendUserMessage("to connect from inside cloudspace do: 'ssh %s -p %s'" % (self.vars["machine.ip.addr"], 22))
 
         return machine_id, self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]
 
@@ -523,8 +524,17 @@ class MS1(object):
         cloudspace = cloudspaces_actor.get(cloudspace_id)
         pubip=cloudspace['publicipaddress']
 
+        connectionAddr = cloudspace['publicipaddress']
+        connectionPort = tempport
         if not j.system.net.waitConnectionTest(cloudspace['publicipaddress'], int(tempport), 20):
-            raise RuntimeError("E:Failed to connect to %s" % (tempport))
+            # if we can't connect with public IP, it probably means we try to access the vm from inside the cloudspace with another vm
+            # so we try to connect using the private ip
+            if not j.system.net.waitConnectionTest(local_ipaddr, 22, 20):
+                # if still can't connect, then it's an error
+                raise RuntimeError("E:Failed to connect to %s" % (tempport))
+            else:
+                connectionAddr = local_ipaddr
+                connectionPort = 22
 
         # if we don't specify the key to push
         # create one first
@@ -551,7 +561,7 @@ class MS1(object):
         username, password = machine['accounts'][0]['login'], machine['accounts'][0]['password']
         ssh_connection.fabric.api.env['password'] = password
         ssh_connection.fabric.api.env['connection_attempts'] = 5
-        ssh_connection.connect('%s:%s' % (cloudspace['publicipaddress'], tempport), username)
+        ssh_connection.connect('%s:%s' % (connectionAddr, connectionPort), username)
 
         name = name.replace('_', '')
         ssh_connection.run('echo "%s" > /etc/hostname' % name)
