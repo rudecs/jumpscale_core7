@@ -3,7 +3,6 @@ import time
 import imp
 import linecache
 import inspect
-import JumpScale.baselib.webdis
 import JumpScale.baselib.redis
 import multiprocessing
 import tarfile
