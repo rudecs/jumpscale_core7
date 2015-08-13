@@ -287,7 +287,7 @@ class MS1(object):
     def listImages(self,spacesecret,**args):
 
         if self.db.exists("ms1", "ms1:cache:%s:images"%spacesecret):
-            return json.loads(self.db.get("ms1:cache:%s:images"%spacesecret))
+            return json.loads(self.db.get('ms1', "ms1:cache:%s:images"%spacesecret))
 
         api = self.getApiConnection(spacesecret)
         cloudspaces_actor = api.getActor('cloudapi', 'cloudspaces')
