@@ -57,6 +57,22 @@ class Service(Base):
     sqlite_autoincrement = True
 
 
+class HRDItem(Base):
+    __tablename__ = 'template_hrd_item'
+    id = Column(Integer, primary_key=True)
+    name = 
+    temmplate_id ...
+    value = json
+    isTemplate = bool
+
+
+class Process
+    isTemplate = bool
+
+...
+
+RecipeItem
+
 class Template(Base):
     __tablename__ = 'template'
 
@@ -66,33 +82,11 @@ class Template(Base):
     name = Column(String, default="", index=True)
     instances = relationship("Instance", backref=backref('template', uselist=True))
     metapath = Column(String, default="", index=True)
-    hrd = Column(Integer, ForeignKey('hrd.id'), nullable=False)
+    hrd = relationship("HRDItem", backref=backref('template', uselist=True))
+    process
+    ...
     parent = Column(Integer, ForeignKey('template.id'), nullable=True, default='')
 
-class Args(Base):
-    __tablename__ = 'args'
-    id = Column(Integer, primary_key=True)
-    service_id = Column(String, ForeignKey('service.id'))
-    args = relationship("Service",
-                collection_class=attribute_mapped_collection('args'),
-                cascade="all, delete-orphan", single_parent=True)
-class HRD(Base):
-    __tablename__ = 'hrd'
-    id = Column(Integer, primary_key=True)
-    service_id = Column(String, ForeignKey('service.id'), nullable=True)
-    template_id = Column(String, ForeignKey('template.id'), nullable=True)
-    hrd = relationship("Template",
-                collection_class=attribute_mapped_collection('hrd'),
-                cascade="all, delete-orphan", single_parent=True,
-                foreign_keys=(template_id, service_id))
-    def __init__(self, dictionary={}):
-        self.hrd = dictionary
-
-class HRDdata(Base):
-    __tablename__ = 'hrddata'
-    id = Column(Integer, primary_key=True)
-    service_id = Column(String, ForeignKey('service.id'))
-    hrddata = Column(PickleType)
 
 class Producer(Base):
     __tablename__ = 'producer'
@@ -130,14 +124,3 @@ class Category(Base):
     def __ne__(self, other):
         return not self.__ne__(other)
 
-class Instance(Base):
-    __tablename__ = 'instance'
-    id = Column(Integer, primary_key=True)
-    template_id = Column(String, ForeignKey('template.id'))
-    instance = Column(String, default="", index=True)
-
-    def __eq__(self, other):
-        return self.instance == other.lower()
-
-    def __ne__(self, other):
-        return not self.__ne__(other)
