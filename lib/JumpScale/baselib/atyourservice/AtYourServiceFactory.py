@@ -4,6 +4,7 @@ from .Service import Service
 from .RemoteService import RemoteService
 import re
 from .ActionsBase import ActionsBase
+import AYSdb
 
 class AtYourServiceFactory():
 
@@ -315,6 +316,45 @@ class AtYourServiceFactory():
 
         service.init()
         return service
+
+    def loadServicesInSQL(self):
+        """
+        walk over all services and load into sqllite
+        """
+        db=j.db.sqlalchemy
+
+        sql=db.get(sqlitepath=j.dirs.varDir+"/toml.db",tomlpath=None,connectionstring='')
+
+
+        if not self._init:
+            self._doinit()
+        templates = self.findTemplates()
+        services = self.findServices()
+
+        attributes = ('domain', 'name', 'metapath', 'parent')
+        for template in templates:
+            templatesql = AYSdb.Template()
+            for attribute in attributes:
+                templatesql.__setattr__(attribute, template.__getattribute__(attribute))
+
+            hrd = template.getHRD()
+            templatesql.hrd = hrd.getHRDAsDict()
+            templatesql.instances = template.listInstances()
+            sql.session.add(templatesql)
+            sql.session.commit()
+
+
+        for service in services:
+            servicesql = AYSdb.Service()
+            attributes = ('domain', 'name', 'isntance', 'parent', 'path', 'noremote', 'templatepath',
+                          'cmd', 'priority', 'isInstalled', 'logPath', 'isLatest', 'producers', 'categories')
+            for attribute in attributes:
+                servicesql.__setattr__(attribute, service.__getattribute__(attribute))
+
+            sql.session.add(servicesql)
+            sql.session.commit()
+
+
 
     def getFromStr(self, representation, parent=None):
         """
