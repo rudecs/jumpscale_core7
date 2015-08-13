@@ -39,9 +39,16 @@ class Output(object):
     def flush(self):
         return None
 
+
+class MS1Factory(object):
+    def get(self, apiURL='www.mothership1.com'):
+        return MS1(apiURL)
+
+
 class MS1(object):
 
-    def __init__(self):
+    def __init__(self, apiURL):
+        self.apiURL = apiURL
         self.secret = ''
         self.IMAGE_NAME = 'Ubuntu 14.04'
         # self.redis_cl = j.clients.redis.getByInstance('system')
@@ -68,12 +75,12 @@ class MS1(object):
         @param location ca1 (canada),us2 (us)
         """
         params = {'username': login, 'password': password, 'authkey': ''}
-        response = requests.post('https://www.mothership1.com/restmachine/cloudapi/users/authenticate', params)
+        response = requests.post('https://%s/restmachine/cloudapi/users/authenticate' % self.apiURL, params)
         if response.status_code != 200:
             raise RuntimeError("E:Could not authenticate user %s" % login)
         auth_key = response.json()
         params = {'authkey': auth_key}
-        response = requests.post('https://www.mothership1.com/restmachine/cloudapi/cloudspaces/list', params)
+        response = requests.post('https://%s/restmachine/cloudapi/cloudspaces/list' % self.apiURL, params)
         cloudspaces = response.json()
 
         cloudspace = [cs for cs in cloudspaces if cs['name'] == cloudspace_name and cs['location'] == location]
@@ -93,7 +100,7 @@ class MS1(object):
             print(msg)
 
     def getApiConnection(self, space_secret,**args):
-        host = 'www.mothership1.com'# if cs["location"] == 'ca1' else '%s.mothership1.com' % cs["location"]
+        host = self.apiURL # if cs["location"] == 'ca1' else '%s.mothership1.com' % cs["location"]
         try:
             api=j.clients.portal.get(host, 443, space_secret)
         except Exception as e:
@@ -157,27 +164,36 @@ class MS1(object):
     #     return {'publicip': cloudspace['publicipaddress']}
 
     def getMachineSizes(self,spacesecret):
-        if self.db.exists("ms1:cache:%s:sizes"%spacesecret):
-            return json.loads(self.db.get("ms1:cache:%s:sizes"%spacesecret))
+        if self.db.exists("ms1", "ms1:cache:%s:sizes"%spacesecret):
+            return json.loads(self.db.get('ms1', "ms1:cache:%s:sizes"%spacesecret))
         api = self.getApiConnection(spacesecret)
         sizes_actor = api.getActor('cloudapi', 'sizes')
         sizes=sizes_actor.list()
-        self.db.set("ms1:cache:%s:sizes"%spacesecret,json.dumps(sizes))
+        self.db.set("ms1", "ms1:cache:%s:sizes"%spacesecret,json.dumps(sizes))
         return sizes
 
     def createMachine(self, spacesecret, name, memsize=1, ssdsize=40, vsansize=0, description='',
-                      imagename="ubuntu.14.04.x64",delete=False, sshkey=None, **args):
+                      imagename="ubuntu.14.04.x64",delete=False, sshkey=None, hostname="",**args):
         """
         memsize  #size is 0.5,1,2,4,8,16 in GB
         ssdsize  #10,20,30,40,100 in GB
         imagename= fedora,windows,ubuntu.13.10,ubuntu.12.04,windows.essentials,ubuntu.14.04.x64
                    zentyal,debian.7,arch,fedora,centos,opensuse,gitlab,ubuntu.jumpscale
+
+        sshkey = is content of pub key or path
+        hostname if "" then will be same as name
         """
 
         if delete:
             self.deleteMachine(spacesecret, name)
 
         self.vars = {}
+
+        if sshkey!="":
+            if j.system.fs.exists(path=sshkey):
+                if sshkey.find(".pub")==-1:
+                    j.events.inputerror_critical("public key path needs to have .pub at the end.")
+                sshkey=j.system.fs.fileGetContents(sshkey)
 
         ssdsize = int(ssdsize)
         try:
@@ -258,7 +274,8 @@ class MS1(object):
 
         self.sendUserMessage("machine active & reachable")
 
-        self.sendUserMessage("ssh %s -p %s" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
+        self.sendUserMessage("to connect from outise cloudspace do: 'ssh %s -p %s'" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
+        self.sendUserMessage("to connect from inside cloudspace do: 'ssh %s -p %s'" % (self.vars["machine.ip.addr"], 22))
 
         return machine_id, self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]
 
@@ -269,8 +286,8 @@ class MS1(object):
 
     def listImages(self,spacesecret,**args):
 
-        if self.db.exists("ms1:cache:%s:images"%spacesecret):
-            return json.loads(self.db.get("ms1:cache:%s:images"%spacesecret))
+        if self.db.exists("ms1", "ms1:cache:%s:images"%spacesecret):
+            return json.loads(self.db.get('ms1', "ms1:cache:%s:images"%spacesecret))
 
         api = self.getApiConnection(spacesecret)
         cloudspaces_actor = api.getActor('cloudapi', 'cloudspaces')
@@ -289,7 +306,7 @@ class MS1(object):
                 if found:
                     result[imagetype]=[image["id"],image["name"]]
 
-        self.db.set("ms1:cache:%s:images"%spacesecret,json.dumps(result))
+        self.db.set("ms1", "ms1:cache:%s:images"%spacesecret,json.dumps(result))
         return result
 
     def listMachinesInSpace(self, spacesecret,**args):
@@ -507,8 +524,17 @@ class MS1(object):
         cloudspace = cloudspaces_actor.get(cloudspace_id)
         pubip=cloudspace['publicipaddress']
 
+        connectionAddr = cloudspace['publicipaddress']
+        connectionPort = tempport
         if not j.system.net.waitConnectionTest(cloudspace['publicipaddress'], int(tempport), 20):
-            raise RuntimeError("E:Failed to connect to %s" % (tempport))
+            # if we can't connect with public IP, it probably means we try to access the vm from inside the cloudspace with another vm
+            # so we try to connect using the private ip
+            if not j.system.net.waitConnectionTest(local_ipaddr, 22, 20):
+                # if still can't connect, then it's an error
+                raise RuntimeError("E:Failed to connect to %s" % (tempport))
+            else:
+                connectionAddr = local_ipaddr
+                connectionPort = 22
 
         # if we don't specify the key to push
         # create one first
@@ -535,7 +561,12 @@ class MS1(object):
         username, password = machine['accounts'][0]['login'], machine['accounts'][0]['password']
         ssh_connection.fabric.api.env['password'] = password
         ssh_connection.fabric.api.env['connection_attempts'] = 5
-        ssh_connection.connect('%s:%s' % (cloudspace['publicipaddress'], tempport), username)
+        ssh_connection.connect('%s:%s' % (connectionAddr, connectionPort), username)
+
+        name = name.replace('_', '')
+        ssh_connection.run('echo "%s" > /etc/hostname' % name)
+        ssh_connection.run('hostname %s' % name)
+        ssh_connection.run('echo "127.0.0.1 %s" >> /etc/hosts' % name)
 
         # will overwrite all old keys
         ssh_connection.file_write(rloc, key)

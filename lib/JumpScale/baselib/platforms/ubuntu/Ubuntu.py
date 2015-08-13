@@ -31,7 +31,7 @@ class Ubuntu:
         """
         check if ubuntu or mint (which is based on ubuntu)
         """
-        if not self._checked:            
+        if not self._checked:
             try:
                 import lsb_release
                 info = lsb_release.get_distro_information()['ID']
@@ -54,7 +54,7 @@ class Ubuntu:
         """
         self.check()
         import lsb_release
-        result=lsb_release.get_distro_information()        
+        result=lsb_release.get_distro_information()
         return result["CODENAME"].lower().strip(),result["DESCRIPTION"],result["ID"].lower().strip(),result["RELEASE"],
 
     def existsUser(self,name):
@@ -119,7 +119,7 @@ class Ubuntu:
         j.do.execute(cmd)
         # import JumpScale.baselib.remote.cuisine
         # c=j.remote.cuisine.api
-        # c.group_user_ensure(group, user)            
+        # c.group_user_ensure(group, user)
 
     def checkInstall(self, packagenames, cmdname):
         """
@@ -142,7 +142,7 @@ class Ubuntu:
                 raise RuntimeError("Could not install package %s and check for command %s." % (packagename, cmdname))
 
     def install(self, packagename):
-        
+
         cmd='unset JSBASE;unset PYTHONPATH;apt-get install %s --force-yes -y'%packagename
         j.system.process.executeWithoutPipe(cmd)
 
@@ -196,7 +196,7 @@ class Ubuntu:
 
     def listFilesPkg(self,pkgname,regex=""):
         """
-        list files of dpkg 
+        list files of dpkg
         if regex used only output the ones who are matching regex
         """
         rc,out=j.system.process.execute("dpkg -L %s"%pkgname)
@@ -211,7 +211,7 @@ class Ubuntu:
         j.logger.log("ubuntu remove package:%s"%packagename,category="ubuntu.remove")
         self.check()
         if self._cache==None:
-            self.initApt()        
+            self.initApt()
         pkg = self._cache[packagename]
         if pkg.is_installed:
             pkg.mark_delete()
@@ -276,21 +276,21 @@ stop on runlevel [016]
     def updatePackageMetadata(self, force=True):
         self.check()
         if self._cache==None:
-            self.initApt()        
+            self.initApt()
         self._cache.update()
 
     def upgradePackages(self, force=True):
         self.check()
         if self._cache==None:
-            self.initApt()        
+            self.initApt()
         self.updatePackageMetadata()
         self._cache.upgrade()
 
-    def getPackageNamesRepo(self):        
+    def getPackageNamesRepo(self):
         return list(self._cache.keys())
 
     def getPackageNamesInstalled(self):
-        if self.installedPackageNames==[]:            
+        if self.installedPackageNames==[]:
             result=[]
             for key in self.getPackageNamesRepo():
                 p=self._cache[key]
@@ -304,7 +304,7 @@ stop on runlevel [016]
     def findPackagesRepo(self,packagename):
         packagename=packagename.lower().strip().replace("_","").replace("_","")
         if self._cache==None:
-            self.initApt()        
+            self.initApt()
         result=[]
         for item in self.getPackageNamesRepo():
             item2=item.replace("_","").replace("_","").lower()
@@ -315,7 +315,7 @@ stop on runlevel [016]
     def findPackagesInstalled(self,packagename):
         packagename=packagename.lower().strip().replace("_","").replace("_","")
         if self._cache==None:
-            self.initApt()        
+            self.initApt()
         result=[]
         for item in self.getPackageNamesInstalled():
             item2=item.replace("_","").replace("_","").lower()
@@ -348,6 +348,20 @@ stop on runlevel [016]
         name=url.replace("\\","/").replace("http://","").split("/")[0]
         path="/etc/apt/sources.list.d/%s.list"%name
         j.do.writeFile(path,"deb %s\n"%url)
-        
 
-        
+    def whoami(self):
+        rc,result=j.system.process.execute("whoami")
+        return result.strip()
+
+    def checkroot(self):
+        if self.whoami() != "root":
+            j.events.inputerror_critical("only support root")
+
+    def generateLocalSSHKeyPair(self, passphrase='', type="rsa", overwrite=False, path="/root/.ssh/id_rsa"):
+        if overwrite and j.system.fs.exists(path=path):
+            j.do.delete(path)
+        if not j.system.fs.exists(path):
+            if type not in ['rsa', 'dsa']:
+                j.events.inputerror_critical("only support rsa or dsa for now")
+            cmd="ssh-keygen -t %s -b 4096 -P '%s' -f %s" % (type, passphrase, path)
+            j.do.executeInteractive(cmd)

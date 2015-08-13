@@ -3,10 +3,12 @@ from JumpScale import j
 import os
 # import urllib.request, urllib.parse, urllib.error
 
-try:
-    import urlparse as urllibparse
-except:
-    import urllib.parse as urllibparse
+# try:
+#     import urlparse as urllibparse
+# except:
+#     import urllib.parse as urllibparse
+
+import urllib
 
 SAFECHARS = " "
 
@@ -118,7 +120,7 @@ class FileSystemKeyValueStore(KeyValueStoreBase):
 
     def _getStorePath(self, category, key,createIfNeeded=True):
         key = j.tools.text.toStr(key)
-        key = urllibparse.quote(key, SAFECHARS)
+        key = urllib.quote(key, SAFECHARS)
         origkey = key
         if len(key)<4:
             key = key + (4 - len(key)) * '_'

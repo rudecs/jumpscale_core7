@@ -74,7 +74,7 @@ class UnixManager(object):
         users=[j.do.getBaseName(item) for item in users if (item.strip()!="" and item.strip("/")!="home")]
         return users        
 
-    def secureSSH(self,sshkeypath,recoverypasswd=""):
+    def secureSSH(self,sshkeypath="",recoverypasswd=""):
         """
         * actions
             * will set recovery passwd for user recovery
@@ -84,18 +84,21 @@ class UnixManager(object):
             * will do some tricks to secure sshdaemon e.g. no pam, no root access.
         * locked down server where only the specified key can access and through the recovery created user
 
+        @param sshkeypath if =="" then will not set the ssh keys only work with recovery passwd
+
         """
 
-        if not j.system.fs.exists(sshkeypath):
+        if sshkeypath!="" and not j.system.fs.exists(sshkeypath):
             j.events.opserror_critical("Cannot find key on %s"%sshkeypath)
 
         if recoverypasswd=="" and os.environ.has_key("recoverypasswd"): 
             recoverypasswd=os.environ["recoverypasswd"]
         
         if len(recoverypasswd)<6:
-            j.events.opserror_critical("Choose longer passwd, do this by doing 'export recoverypasswd=something' before running this script.")            
+            j.events.opserror_critical("Choose longer passwd (min 6), do this by doing 'export recoverypasswd=something' before running this script.")            
 
-        sshkeypub=j.system.fs.fileGetContents(sshkeypath+".pub")
+        if sshkeypath!="":
+            sshkeypub=j.system.fs.fileGetContents(sshkeypath+".pub")
 
         def checkkeyavailable(sshkeypub):
             errormsg="Could not find SSH agent, please start by 'eval \"$(ssh-agent -s)\"' before running this cmd,\nand make sure appropriate keys are added with ssh-add ..."
@@ -115,13 +118,14 @@ class UnixManager(object):
                     return True
             return False
 
-        if not checkkeyavailable(sshkeypub):
+        if sshkeypath!="" and not checkkeyavailable(sshkeypub):
             #add the new key
             j.do.executeInteractive("ssh-add %s"%sshkeypath)
 
         #make sure recovery user exists
-        self.connection.user_remove("recovery")        
-        self.connection.dir_remove("/home/recovery/")
+        if self.connection.dir_exists("/home/recovery"):
+            self.connection.dir_remove("/home/recovery/")
+            self.connection.user_remove("recovery")        
         
         self.connection.user_ensure("recovery",recoverypasswd)
 
@@ -138,15 +142,15 @@ class UnixManager(object):
         ssh.close()
         print "ssh recovery user ok"
         
-        self.connection.dir_remove("/root/.ssh")
-        self.connection.dir_ensure("/root/.ssh")
-            
-        self.connection.ssh_authorize("root",sshkeypub)
+        if sshkeypath!="":
+            self.connection.dir_remove("/root/.ssh")
+            self.connection.dir_ensure("/root/.ssh")
+                
+            self.connection.ssh_authorize("root",sshkeypub)
 
-
-        print "test ssh connection with pkey"
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            print "test ssh connection with pkey"
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         CMDS="""
         #make sure user is in sudo group
@@ -166,10 +170,13 @@ class UnixManager(object):
         """
         self.executeBashScript(CMDS)
 
-        #play with paramiko to see if we can connect (ssh-agent will be used)
-        ssh.connect(hostname, port=port, username="root", password=None, pkey=None, key_filename=None, timeout=None, allow_agent=True, look_for_keys=False)
-        ssh.close()
-        print "ssh test with key ok"
+        if sshkeypath!="":
+            #play with paramiko to see if we can connect (ssh-agent will be used)
+            ssh.connect(hostname, port=port, username="root", password=None, pkey=None, key_filename=None, timeout=None, allow_agent=True, look_for_keys=False)
+            ssh.close()
+            print "ssh test with key ok"
+
+        print "secure machine done"
     
     def executeBashScript(self,content):
         content=j.tools.text.lstrip(content)
