@@ -1,5 +1,5 @@
 from JumpScale import j
-
+import json
 
 class OpenvcloudFactory(object):
     def get(self, apiurl='www.mothership1.com'):
@@ -10,25 +10,47 @@ class Openvlcoud(object):
     def __init__(self, apiurl):
         self._spacesecret = None
         self.api = j.tools.ms1.get(apiurl)
+        self.db=j.db.keyvaluestore.getFileSystemStore("aysgit")
+        self.reset=False
 
-    def getSpaceSecret(self, login, passwd, cloudspace, location):
+    def connect(self, login, passwd, location,cloudspace,reset=False):
+        """
+        example locations on mothership1:  ca1 (canada),us2 (us), eu2 (belgium), eu1 (uk)
+        @param reset if True then will not look at history
+        """
+        self.reset=reset
+        self.login=login
+        self.passwd=passwd
+        self.location=location
+        self.cloudspace=cloudspace
         self._spacesecret = self.api.getCloudspaceSecret(login, passwd, cloudspace, location)
         return self._spacesecret
 
-    def _createGitRepo(self, addr, login, passwd, account, repoName):
-        gitlab = j.clients.gitlab.get(addr=addr, login=login, passwd=passwd, instance='main')
-        gitlab.create(account, repoName, public=False)
+    def actionCheck(self,gitlaburl,actionname):
+        if self.reset:
+            return False
+        key="%s__%s"%(gitlaburl,actionname)
+        if self.db.exists("",key):
+            print "Action:%s done"%actionname
+            return self.db.get("",key)
+        return False
 
-    def initGitVM(self, gitlabUrl, gitlabLogin, gitlabPasswd, gitlabAccountname, gitlabReponame, recoverypasswd,delete=False):
+    def actionDone(self,gitlaburl,actionname,args=None):
+        key="%s__%s"%(gitlaburl,actionname)
+        self.db.set("",key,args)
+
+    def initAYSGitVM(self, gitlaburl, gitlablogin,gitlabpasswd,recoverypasswd,delete=False):
         """
+
+        gitlaburl example 
+        https://git.aydo.com/openvcloudEnvironments/testkds.git
+        #do not use login:passwd@ in the url
 
         master git machine is the machine which holds all the configuration for the master environment of an openvcloud
 
-        example locations on mothership1:  ca1 (canada),us2 (us), eu2 (belgium), eu1 (uk)
-
         example:
         cl.initMasterGitVMovc("despiegk","????","eu2","BE","git.aydo.com",\
-            gitlabLogin="despiegk",gitlabPasswd="????",\
+            gitlablogin="despiegk",gitlabpasswd="????",\
             gitlabAccountname="test",gitlabReponame="testspace",recoverypasswd="9999")
 
         will do the following
@@ -44,9 +66,26 @@ class Openvlcoud(object):
         - create openvcloud connection ays on vmachine so that future connections to openvcloud can be made
 
         """
+
+        #check gitlab repo exists or needs to be created
+        # create new git repo
+        print "create git repo"
+        if gitlaburl.find("@")!=-1:
+            j.events.inputerror_critical('do not use login:passwd@ in the url')
+        if not gitlaburl.startswith("http"):
+            gitlaburl="https://%s"%gitlaburl
+
+        gitlabAccountname, gitlabReponame=j.clients.gitlab.getAccountnameReponameFromUrl(gitlaburl)        
+        gitlaburl0="/".join(gitlaburl.split("/")[:3])      
+
+        if self.actionCheck(gitlaburl,"gitcreate")==False:
+            gitlab = j.clients.gitlab.get(gitlaburl0,gitlablogin,gitlabpasswd)
+            gitlab.create(gitlabAccountname, gitlabReponame, public=False)      
+            self.actionDone(gitlaburl,"gitcreate")  
+
         print "get secret key for cloud api"
         if self._spacesecret is None:
-            j.events.inputerror_critical('no spacesecret set, need to call getSpaceSecret() method first')
+            j.events.inputerror_critical('no spacesecret set, need to call connect() method first')
         else:
             spacesecret = self._spacesecret
 
@@ -59,51 +98,92 @@ class Openvlcoud(object):
         if len(recoverypasswd)<8:
             j.events.inputerror_critical("Recovery passwd needs to be at least 8 chars")
 
-        # create ovc_git vm
-        id, ip, port = self.api.createMachine(spacesecret, 'ovc_git', memsize='0.5', ssdsize='10', imagename='ubuntu.14.04.x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
+        if self.actionCheck(gitlaburl,"machinecreate")==False:
+            # create ovc_git vm
+            id, ip, port = self.api.createMachine(spacesecret, 'ovc_git', memsize='0.5', ssdsize='10', imagename='ubuntu.14.04.x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
 
-        if not gitlabUrl.lower().startswith("https"):
-            gitlabUrl = 'https://%s' % gitlabUrl
 
-        # portforward 22 to 22 on ovc_git
-        self.api.createTcpPortForwardRule(spacesecret, 'ovc_git', 22, pubipport=22)
+            # portforward 22 to 22 on ovc_git
+            self.api.createTcpPortForwardRule(spacesecret, 'ovc_git', 22, pubipport=22)
 
-        # ssh connetion to the vm
-        cl = j.ssh.connect(ip, port,keypath=keypath,verbose=True)
+            # ssh connetion to the vm
+            cl = j.ssh.connect(ip, port,keypath=keypath,verbose=True)
 
-        # generate key pair on the vm
-        print 'generate keypair on the vm'
-        cl.ssh_keygen('root', 'rsa')
+            # generate key pair on the vm
+            print 'generate keypair on the vm'
+            cl.ssh_keygen('root', 'rsa')
 
-        # secure vm and give access to the local machine
-        u = j.ssh.unix.get(cl)
-        u.secureSSH('', recoverypasswd=recoverypasswd)
+            # secure vm and give access to the local machine
+            u = j.ssh.unix.get(cl)
+            u.secureSSH('', recoverypasswd=recoverypasswd)
+            self.actionDone(gitlaburl,"machinecreate",(ip,port)) 
+        else:
+            ip,port=self.actionCheck(gitlaburl,"machinecreate")
+            cl=j.ssh.connect(ip, 22,keypath=keypath,verbose=True)
 
-        # install Jumpscale
-        print "install jumpscale"
-        cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
-        print "jumpscale installed"
+        if self.actionCheck(gitlaburl,"jumpscale")==False:
+            # install Jumpscale
+            print "install jumpscale"
+            cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
+            print "jumpscale installed"
 
-        print "add openvcloud domain to atyourservice"
-        content = """metadata.openvcloud            =
+            print "add openvcloud domain to atyourservice"
+            content = """
+metadata.openvcloud            =
     url:'https://git.aydo.com/0-complexity/openvcloud_ays',
 """
-        cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
+            cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
+            self.actionDone(gitlaburl,"jumpscale") 
 
-        # create new git repo
-        print "create git repo"
-        self._createGitRepo(gitlabUrl, gitlabLogin, gitlabPasswd, gitlabAccountname, gitlabReponame)
+        repopath="/opt/code/git/%s/%s/"%(gitlabAccountname,gitlabReponame)
+        if True or self.actionCheck(gitlaburl,"gitlabclone")==False:
+            # clone templates repo and change url
+            gitlabpasswd = gitlabpasswd.replace('$', '\$')
+            gitlabpasswd = gitlabpasswd.replace('@', '\@')
+            repoURL = 'https://%s:%s@%s/%s/%s' % (gitlablogin, gitlabpasswd, gitlaburl, gitlabAccountname, gitlabReponame)
+            cl.run('git clone https://git.aydo.com/openvcloudEnvironments/OVC_GIT_Tmpl.git %s'%repopath)
+            cl.run('cd %s; git remote set-url origin %s' % (repopath,repoURL))
+            self.actionDone(gitlaburl,"gitlabclone") 
+    
+        if self.actionCheck(gitlaburl,"gitcredentials")==False:
+            cl.run('jsconfig hrdset -n whoami.git.login -v %s'%gitlablogin)
+            cl.run('jsconfig hrdset -n whoami.git.passwd -v %s'%gitlabpasswd)
+            self.actionDone(gitlaburl,"gitcredentials") 
 
-        # clone templates repo and change url
-        gitlabPasswd = gitlabPasswd.replace('$', '\$')
-        gitlabPasswd = gitlabPasswd.replace('@', '\@')
-        repoURL = 'https://%s:%s@%s/%s/%s' % (gitlabLogin, gitlabPasswd, gitlabUrl, gitlabAccountname, gitlabReponame)
-        cl.run('git clone https://git.aydo.com/openvcloudEnvironments/OVC_GIT_Tmpl.git /opt/ovc_git')
-        cl.run('cd /opt/ovc_git; git remote set-url origin %s' % repoURL)
+        if self.actionCheck(gitlaburl,"ms1client")==False:
+            # create ms1_client to save ms1 connection info
+            args = 'param.location:%s param.login:%s param.passwd:%s param.cloudspace:%s' % (self.location, self.login, self.passwd, self.cloudspace)
+            cl.run('ays install -n ms1_client --data "%s"' % args)
+            self.actionDone(gitlaburl,"ms1client")
 
-        # create ms1_client to save ms1 connection info
-        args = 'param.location:%s param.login:%s param.passwd:%s param.cloudspace:%s' % (location, login, passwd, cloudspace)
-        cl.run('ays install -n ms1_client --data "%s"' % args)
+        if True or self.actionCheck(gitlaburl,"rememberssh")==False:
+            # create ms1_client to save ms1 connection info
+            args = 'param.recovery.passwd:%s param.ip:%s' % (recoverypasswd, ip)
+            cl.run('ays install -n git_vm --data "%s"' % args)
+            cl.run('cd %s;jscode push'%repopath)
+            self.actionDone(gitlaburl,"rememberssh")
+
+    def connectAYSGitVM(self, gitlaburl, gitlablogin,gitlabpasswd):
+        keypath='/root/.ssh/id_rsa'
+        if self.actionCheck(gitlaburl,"machinecreate")!=False:
+            #means on this machien we have alrady created the machine so we have the credentials
+            ip,port=self.actionCheck(gitlaburl,"machinecreate")
+            cl=j.ssh.connect(ip, 22,keypath=keypath,verbose=True)
+        else:
+            from IPython import embed
+            print "DEBUG NOW ooo"
+            embed()
+            
+
+        if self.actionCheck(gitlaburl,"gitcredentials")!=False:
+            cl.run('jsconfig hrdset -n whoami.git.login -v %s'%gitlablogin)
+            cl.run('jsconfig hrdset -n whoami.git.passwd -v %s'%gitlabpasswd)
+
+
+        cl.run('ays mdupdate')
+
+        cl.fabric.api.open_shell()
+
 
     def initReflectorVM(self,  passphrase, delete=False):
         """
@@ -123,7 +203,7 @@ class Openvlcoud(object):
 
         print "get secret key for cloud api"
         if self._spacesecret is None:
-            j.events.inputerror_critical('no spacesecret set, need to call getSpaceSecret() method first')
+            j.events.inputerror_critical('no spacesecret set, need to call connect() method first')
         else:
             spacesecret = self._spacesecret
 
@@ -192,7 +272,7 @@ class Openvlcoud(object):
 
         print "get secret key for cloud api"
         if self._spacesecret is None:
-            j.events.inputerror_critical('no spacesecret set, need to call getSpaceSecret() method first')
+            j.events.inputerror_critical('no spacesecret set, need to call connect() method first')
         else:
             spacesecret = self._spacesecret
 
@@ -263,7 +343,7 @@ class Openvlcoud(object):
 
         print "get secret key for cloud api"
         if self._spacesecret is None:
-            j.events.inputerror_critical('no spacesecret set, need to call getSpaceSecret() method first')
+            j.events.inputerror_critical('no spacesecret set, need to call connect() method first')
         else:
             spacesecret = self._spacesecret
 

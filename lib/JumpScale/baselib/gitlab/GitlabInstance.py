@@ -47,6 +47,7 @@ class GitlabInstance():
             self._cache = j.db.keyvaluestore.getMemoryStore()
         self._cache_expire = 300 #seconds (5 minutes)
 
+
     def _init(self):
         """
         Gitlab client REST API are very slow, directly authenticating portal against gitlab
@@ -125,6 +126,8 @@ class GitlabInstance():
             result = self._getFromCache(self.login, key)
             if not result['expired']:
                 return result['data']
+            if result==None and die:
+                j.events.inputerror_critical("Cannot find group with name:%s"%groupname)
 
         group = self.gitlab.find_group(name=groupname)
         self._addToCache(self.login, key, group)
@@ -172,7 +175,9 @@ class GitlabInstance():
         @type name: ``str``
         """
         self._init()
-        group2=self.getGroupInfo(group, force_cache_renew=True)
+        group2=self.getGroupInfo(group, force_cache_renew=True,die=False)
+        if group2==None:
+            j.events.inputerror_critical("cannot find group %s in gitlab."%group)
         ttype=self.addr.split("/",1)[1].strip("/ ")
         if ttype.find(".")!=-1:
             ttype=ttype.split(".",1)[0]
