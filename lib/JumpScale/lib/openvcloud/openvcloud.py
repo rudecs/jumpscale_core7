@@ -11,6 +11,10 @@ class Openvlcoud(object):
         self._spacesecret = None
         self.api = j.tools.ms1.get(apiurl)
 
+    def getSpaceSecret(self, login, passwd, cloudspace, location):
+        self._spacesecret = self.api.getCloudspaceSecret(login, passwd, cloudspace, location)
+        return self._spacesecret
+
     def _createGitRepo(self, addr, login, passwd, account, repoName):
         gitlab = j.clients.gitlab.get(addr=addr, login=login, passwd=passwd, instance='main')
         gitlab.create(account, repoName, public=False)
@@ -42,7 +46,8 @@ class Openvlcoud(object):
 
         """
         print "get secret key for cloud api"
-        spacesecret = self.api.getCloudspaceSecret(login, passwd, cloudspace, location)
+        if self._spacesecret is None:
+            spacesecret = self.getSpaceSecret(login, passwd, cloudspace, location)
 
         print "check local ssh key exists"
         keypath='/root/.ssh/id_rsa'
