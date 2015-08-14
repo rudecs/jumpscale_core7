@@ -160,7 +160,15 @@ metadata.openvcloud            =
             cl.run('cd %s; ays install -n ms1_client --data "%s"' % (repopath, args))
             self.actionDone(gitlaburl, "ms1client")
 
-        if True or self.actionCheck(gitlaburl, "rememberssh") is False:
+        if self.actionCheck(gitlaburl, "gitlab_client") is False:
+            # create gitlab_client to save gitlab connection info
+            scheme, host, _, _, _ = j.do.rewriteGitRepoUrl(gitlaburl)
+            url = scheme+host
+            args = 'instance.gitlab.client.url:%s instance.gitlab.client.login:%s instance.gitlab.client.passwd:%s' % (url, gitlablogin, gitlabpasswd)
+            cl.run('cd %s; ays install -n gitlab_client --data "%s"' % (repopath, args))
+            self.actionDone(gitlaburl, "gitlab_client")
+
+        if self.actionCheck(gitlaburl, "rememberssh") is False:
             # create ms1_client to save ms1 connection info
             args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, ip)
             cl.run('cd %s; ays install -n git_vm --data "%s"' % (repopath, args))
