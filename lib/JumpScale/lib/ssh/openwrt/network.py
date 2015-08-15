@@ -44,7 +44,7 @@ class Interface(BaseServiceSection):
 class Network(BaseService):
     PACKAGE = 'network'
 
-    def __init__(self, wrt):
+    def __init__(self, wrt=None):
         super(Network, self).__init__(wrt)
         self._nics = None
 

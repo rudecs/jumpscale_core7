@@ -13,7 +13,7 @@ class NetworkingError(Exception):
 
 class NetworkManager(object):
 
-    def __init__(self, manager):
+    def __init__(self, manager=None):
         self.manager = manager
         self._nics = None
 

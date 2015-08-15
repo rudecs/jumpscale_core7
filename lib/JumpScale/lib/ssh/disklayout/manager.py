@@ -3,19 +3,8 @@ from . import lsblk
 from . import mount
 from . import disks
 
-
-class DiskManagerFactory(object):
-    def get(self, connection=None):
-        """
-        Return disk manager for that cuisine connection.
-        """
-        if connection==None:
-            connection=j.ssh.connection
-        return DiskManager(connection)
-
-
 class DiskManager(object):
-    def __init__(self, con):
+    def __init__(self, con=None):
         self.con = con
 
     def _loadhrd(self, mount):
@@ -82,3 +71,15 @@ class DiskManager(object):
 
                 partition.hrd = hrd
         return devices
+
+class DiskManagerFactory(object):
+    # def _getFactoryEnabledClasses(self):
+    #     return (("","lsblk",lsblk()),("","mount",mount()),("","disks",disks()),("","DiskManager",DiskManager()))    
+
+    def get(self, connection=None):
+        """
+        Return disk manager for that cuisine connection.
+        """
+        if connection==None:
+            connection=j.ssh.connection
+        return DiskManager(connection)

@@ -1,12 +1,6 @@
 from .network import NetworkManager
 from JumpScale import j
 
-class UbuntuManagerFactory(object):
-    def get(self, connection=None):
-        """
-        Returns Ubuntu Manager
-        """
-        return UbuntuManager(connection)
 
 class UbuntuManager(object):
     """
@@ -33,3 +27,14 @@ class UbuntuManager(object):
         """
         return self._net
 
+
+class UbuntuManagerFactory(object):
+    def _getFactoryEnabledClasses(self):
+
+        return ([("","UbuntuManager",UbuntuManager()),("","NetworkManager",NetworkManager())])
+
+    def get(self, connection=None):
+        """
+        Returns Ubuntu Manager
+        """
+        return UbuntuManager(connection)

@@ -25,7 +25,7 @@ class UFWManagerFactory(object):
 
 
 class UFWRule(object):
-    def __init__(self, action, source, destination, number=None):
+    def __init__(self, action=None, source=None, destination=None, number=None):
         self._number = number
         self._source = source
         self._action = action
@@ -62,7 +62,7 @@ class UFWOperation(object):
 
 
 class StatusOp(UFWOperation):
-    def __init__(self, status):
+    def __init__(self, status=None):
         self._status = status
 
     def cmd(self):
@@ -75,7 +75,7 @@ class ResetOp(UFWOperation):
 
 
 class RuleOp(UFWOperation):
-    def __init__(self, rule, add=True):
+    def __init__(self, rule=None, add=True):
         self._add = add
         self._rule = rule
 
@@ -152,7 +152,7 @@ class UFWManager(object):
     ACTION_REJECT_IN = 'reject in'
     ACTION_REJECT_OUT = 'reject out'
 
-    def __init__(self, con):
+    def __init__(self, con=None):
         self._con = con
         self._rules = None
         self._enabled = None

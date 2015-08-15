@@ -10,19 +10,11 @@ OP_ERS = '--'
 class SSHError(Exception):
     pass
 
-
-class SSHFactory(object):
-    def get(self, con=None):
-        if con==None:
-            con=j.ssh.connection
-        return SSH(con)
-
-
 class SSH(object):
     SSH_ROOT = '~/.ssh'
     SSH_AUTHORIZED_KEYS = j.system.fs.joinPaths(SSH_ROOT, 'authorized_keys')
 
-    def __init__(self, con):
+    def __init__(self, con=None):
         self._con = con
         self._keys = None
         self._transactions = []
@@ -99,3 +91,12 @@ class SSH(object):
             )
 
             self._con.upstart_reload('ssh')
+
+class SSHFactory(object):
+    def _getFactoryEnabledClasses(self):
+        return ([("","SSH",SSH())])
+
+    def get(self, con=None):
+        if con==None:
+            con=j.ssh.connection
+        return SSH(con)

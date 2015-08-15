@@ -20,21 +20,12 @@ class UCIError(Exception):
     pass
 
 
-class OpenWRTFactory(object):
-    def get(self, connection=None):
-        """
-        Return disk manager for that cuisine connection.
-        """
-        if connection==None:
-            connection=j.ssh.connection
-
-        return OpenWRTManager(connection)
 
 
 class OpenWRTManager(object):
     WRT_SHELL = '/bin/ash -c'
 
-    def __init__(self, con):
+    def __init__(self, con=None):
         self._con = con
         self._dns = DNS(self)
         self._dhcp = DHCP(self)
@@ -137,3 +128,16 @@ class OpenWRTManager(object):
                 self._con.run(tmp)
             finally:
                 self._con.run('rm -f %s')
+
+
+class OpenWRTFactory(object):
+    def _getFactoryEnabledClasses(self):
+        return (("","UCI",UCI()),("","DNS",DNS()),("","DHCP",DHCP()),("","PureFTP",PureFTP()),("","Network",Network()),("","Firewall",Firewall()),("","OpenWRTManager",OpenWRTManager()))      
+    def get(self, connection=None):
+        """
+        Return disk manager for that cuisine connection.
+        """
+        if connection==None:
+            connection=j.ssh.connection
+
+        return OpenWRTManager(connection)

@@ -18,14 +18,8 @@ CMD_PS_PATTERN = re.compile(
 class AOEError(Exception):
     pass
 
-
-class AOEFactory(object):
-    def get(self, con):
-        return AOEManager(con)
-
-
 class VDisk(object):
-    def __init__(self, pid, major, minor, inf, path, size):
+    def __init__(self, pid=None, major=None, minor=None, inf=None, path=None, size=0):
         self._pid = pid
         self._major = major
         self._minor = minor
@@ -78,9 +72,8 @@ class VDisk(object):
     def __repr__(self):
         return str(self)
 
-
 class AOEManager(object):
-    def __init__(self, con):
+    def __init__(self, con=None):
         self._con = con
 
     def list(self, storpath="/mnt/disktargets/"):
@@ -194,3 +187,9 @@ class AOEManager(object):
 
         with settings(abort_exception=AOEError):
             self._con.run('rm -f %s' % path)
+
+class AOEFactory(object):
+    def get(self, con):
+        return AOEManager(con)
+    def _getFactoryEnabledClasses(self):
+        return (("","VDisk",VDisk()),("","AOEManager",AOEManager()))    

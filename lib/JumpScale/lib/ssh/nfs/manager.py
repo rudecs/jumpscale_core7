@@ -14,14 +14,8 @@ CLIENT_OPT_REGEXT = re.compile('\s*([^\(]+)\(([^\)]+)\)')
 class NFSError(Exception):
     pass
 
-
-class NFSFactory(object):
-    def get(self, con):
-        return NFS(con)
-
-
 class NFSExport(object):
-    def __init__(self, path):
+    def __init__(self, path=None):
         self._path = path
         self._clients = []
 
@@ -58,7 +52,7 @@ class NFSExport(object):
 
 
 class NFS(object):
-    def __init__(self, con):
+    def __init__(self, con=None):
         self._con = con
         self._exports = None
 
@@ -122,3 +116,9 @@ class NFS(object):
         with settings(abort_exception=NFSError):
             self._con.file_write(EXPORTS_FILE, buf.getvalue(), mode=644)
             self._con.upstart_reload('nfs-kernel-server')
+
+class NFSFactory(object):
+    def _getFactoryEnabledClasses(self):
+        return ([("","NFS",NFS()),("","NFSExport",NFSExport())])
+    def get(self, con):
+        return NFS(con)

@@ -10,7 +10,7 @@ import sys,time
 j.application.start("jscode2")
 
 parser = cmdutils.ArgumentParser()
-parser.add_argument("action", choices=['get','commit','push','update','status','list'], help='Command to perform')
+parser.add_argument("action", choices=['get','commit','push','update','status','list','init'], help='Command to perform')
 
 parser.add_argument('-n','--name',help='name or partial name of repo, can also be comma separated, if not specified then will ask, if \'*\' then all.')
 parser.add_argument('--url',help='url')
@@ -41,64 +41,12 @@ if opts.branch != None and opts.action in ['status']:
     raise RuntimeError("Cannot specify branch when asking status")
 
 
-def getRepos(account=None,name=None):
-    result=[]
-    if name==None:
-        name=""
-    if account==None:
-        account=""
-    accounttofind=account
-    
-    repos=[]
-    for top in j.system.fs.listDirsInDir(j.dirs.codeDir, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-        for account in j.system.fs.listDirsInDir("%s/%s"%(j.dirs.codeDir,top), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-            accountdir="%s/%s/%s"%(j.dirs.codeDir,top,account)
-            if j.system.fs.exists(path="%s/.git"%accountdir):
-                raise RuntimeError("there should be no .git at %s level"%accountdir)
-            else:
-                for reponame in j.system.fs.listDirsInDir("%s/%s/%s"%(j.dirs.codeDir,top,account), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                    repodir="%s/%s/%s/%s"%(j.dirs.codeDir,top,account,reponame)
-                    if j.system.fs.exists(path="%s/.git"%repodir):
-                        if name.find("*")!=-1:
-                            if name=="*" or reponame.startswith(name.replace("*","")):
-                                repos.append([top,account,reponame,repodir])
-                        elif name!="":
-                            if reponame.lower().strip()==name.lower().strip():
-                                repos.append([top,account,reponame,repodir])
-                        else:
-                            repos.append([top,account,reponame,repodir])
+
+repos=j.clients.git.find(opts.accounts,opts.name,interactive=True,returnGitClient=True)
 
 
-    accounts=[]
-    for top,account,reponame,repodir in repos:
-        if account not in accounts:
-            if accounttofind.find("*")!=-1:
-                if accounttofind=="*" or account.startswith(accounttofind.replace("*","")):
-                    accounts.append(account)
-            elif accounttofind!=None and accounttofind!="":
-                if account.lower().strip()==accounttofind.lower().strip():
-                    accounts.append(account)
-            else:
-                accounts.append(account)
-    accounts.sort()
+repos=[(r.type,r.account,r.name,r.branchName,r,r.baseDir) for r in repos]
 
-
-    if len(repos)>20 and accounttofind=='':
-        print ("Select account to choose from, too many choices.")
-        accounts=j.console.askChoiceMultiple(accounts)
-        
-    repos=[item for item in repos if item[1] in accounts]
-
-    #only ask if * in name or name not specified
-    if name.find("*")==-1 or name==None:
-        repos=j.console.askArrayRow(repos)
-
-    for top,account,reponame,repodir in repos:
-        cl=j.clients.git.getClient(repodir)
-        result.append((top,account,reponame,"unknown",cl,repodir))
-    return result
-
-repos=getRepos(opts.accounts,opts.name)
 
 if opts.action == "status":
     print("\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev")

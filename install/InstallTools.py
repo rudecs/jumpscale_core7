@@ -113,26 +113,34 @@ class InstallTools():
     def touch(self,path):
         self.writeFile(path,"")
 
+    def textstrip(self,content,ignorecomments=False):
+        #remove all spaces at beginning & end of line when relevant
+
+        #find generic prepend for full file
+        minchars=9999
+        prechars = 0
+        for line in content.split("\n"):
+            if line.strip()=="":
+                continue
+            if ignorecomments:
+                if line.startswith('#') and not line.startswith("#!"):
+                    continue
+            prechars=len(line)-len(line.lstrip())
+            if prechars<minchars:
+                minchars=prechars
+
+        if prechars>0:
+            #remove the prechars
+            content="\n".join([line[minchars:] for line in content.split("\n")])
+
+        return content
+
     def writeFile(self,path,content,strip=True):
 
         self.createDir(self.getDirName(path))
 
         if strip:
-            #remove all spaces at beginning & end of line when relevant
-
-            #find generic prepend for full file
-            minchars=9999
-            prechars = 0
-            for line in content.split("\n"):
-                if line.strip()=="" or (line.startswith('#') and not line.startswith("#!")):
-                    continue
-                prechars=len(line)-len(line.lstrip())
-                if prechars<minchars:
-                    minchars=prechars
-
-            if prechars>0:
-                #remove the prechars
-                content="\n".join([line[minchars:] for line in content.split("\n")])
+            content=self.textstrip(content,True)
 
         with open(path, "w") as fo:
             fo.write(content)
@@ -1163,7 +1171,7 @@ class InstallTools():
             (repository_host, repository_type, repository_account, repository_name, repository_url)
         """
 
-        if not url:
+        if url=="":
             raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
 
         if login==None and (url.find("github.com/")!=-1 or url.find("git.aydo.com")!=-1):

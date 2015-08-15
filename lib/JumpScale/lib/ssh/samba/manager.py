@@ -9,10 +9,6 @@ from sambaparser import SambaConfigParser
 CONFIG_FILE = '/etc/samba/smb.conf'
 EXCEPT_SHARES = ['global', 'printers', 'homes']
 
-class SambaFactory(object):
-    def get(self, con):
-        return Samba(con)
-
 class SMBUser(object):
     def __init__(self, verbose=False):
         # self._smb = cmd_sambatool(self._stdout, self._stderr)
@@ -113,7 +109,7 @@ class SMBShare(object):
         return True
 
 class Samba:
-    def __init__(self, con):
+    def __init__(self, con=None):
         self._users = SMBUser(True)
         self._shares = SMBShare()
         self._con = con;
@@ -138,3 +134,11 @@ class Samba:
     
     def addUser(self, username, password):
         return self._users.add(username, password)
+
+class SambaFactory(object):
+
+    def _getFactoryEnabledClasses(self):
+        return (("","Samba",Samba()),("Samba","SMBUser",SMBUser()),("Samba","SMBShare",SMBShare()),("Samba","SambaConfigParser",SambaConfigParser()))
+
+    def get(self, con):
+        return Samba(con)

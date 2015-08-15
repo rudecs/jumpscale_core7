@@ -5,6 +5,9 @@ import os
 
 class TelegramFactory:
 
+    def _getFactoryEnabledClasses(self):
+        return ([("","TelegramBot",TelegramBot())])  
+
     def get(self, telegramkey=""):
         """
         @param telegramkey eg. 112456445:AAFgQVEWPGztQc1S8NW0NXY8rqQLDPx0knM

@@ -6,7 +6,7 @@ class UCISection(collections.OrderedDict):
     _option = '\toption {key} \'{value}\'\n'
     _list = '\tlist {key} \'{value}\'\n'
 
-    def __init__(self, type, name=None, *args, **kwargs):
+    def __init__(self, type=None, name=None, *args, **kwargs):
         super(UCISection, self).__init__(*args, **kwargs)
         self.type = self._validate(type)
         self.name = self._validate(name, True)

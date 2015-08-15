@@ -1,6 +1,7 @@
 import time
 from JumpScale import j
 import re
+import textwrap
 matchquote = re.compile(r'\'[^\']*\'')
 matchlist = re.compile(r'\[[^\']*\]')
 re_nondigit= re.compile(r'\D')
@@ -58,11 +59,22 @@ class Text:
             return str(value)
 
     @staticmethod
+    def strip(content):
+        return j.do.textstrip(content)
+
+    @staticmethod
     def prefix(prefix,txt):
         out=""
         txt=txt.rstrip("\n")
         for line in txt.split("\n"):
             out+="%s%s\n"%(prefix,line)
+        return out
+
+    @staticmethod
+    def wrap(txt,length=80):
+        out=""
+        for line in txt.split("\n"):
+            out+=textwrap.fill(line,length,subsequent_indent="    ")+"\n"
         return out
 
     @staticmethod
@@ -316,7 +328,7 @@ class Text:
     @staticmethod
     def getMacroCandidates( txt):
         """
-        look for {{}} return as list
+        look for \{\{\}\} return as list
         """
         result = []
         items = txt.split("{{")

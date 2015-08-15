@@ -2,22 +2,50 @@ from JumpScale import j
 
 class GitClient(object):
 
-    def __init__(self, baseDir, remoteUrl, branchName='master', cleanDir=False,login="",passwd=""):
+    def __init__(self, baseDir):
+
+        if not j.system.fs.exists(path=baseDir):
+            j.events.inputerror_critical("git repo on %s not found."%baseDir)
+
+        #split path to find parts
+        baseDir=baseDir.replace("\\","/")
+        if baseDir.find("/code/")==-1:
+            j.events.inputerror_critical("jumpscale code management always requires path in form of $somewhere/code/$type/$account/$reponame")
+        base=baseDir.split("/code/",1)[1]
+
+        if base.count("/")!=2:
+            j.events.inputerror_critical("jumpscale code management always requires path in form of $somewhere/code/$type/$account/$reponame")
+
+        self.type,self.account,self.name=base.split("/")
+
         self.baseDir = baseDir
-        self.remoteUrl = remoteUrl
-        self.branchName = branchName
-        self.cleanDir = cleanDir
-        self.login=login
-        self.passwd=passwd
+
+        gitconfig="%s/.git/config"%baseDir
+        config=j.system.fs.fileGetContents(gitconfig)
+
+        self.remoteUrl = None
+        self.branchName = None
+
+        for line in config.split("\n"):
+            line=line.strip()
+            if line=="":
+                continue
+            if line.find("url =")!=-1 or line.find("url=")!=-1 :
+                self.remoteUrl=line.split("=")[1].strip()
+
+            if line.startswith("[branch"):
+                self.branchName=line.split("\"")[1].strip()
+        
+        if self.remoteUrl==None or self.branchName==None:
+            j.events.inputerror_critical("git repo on %s is corrupt could not find branch & remote url"%baseDir)
+
         self._repo = None
 
-        if cleanDir:
-            j.system.fs.removeDirTree(baseDir)
-            j.system.fs.createDir(baseDir)
-            self._clone()
+    def __repr__(self):
+        return str(self.__dict__)
 
-        if branchName != 'master':
-            self.switchBranch(branchName)
+    def __str__(self):
+        return self.__repr__
 
     @property
     def repo(self):
@@ -33,11 +61,6 @@ class GitClient(object):
 
     def init(self):
         self.repo
-
-    def _clone(self):
-        # Load git when we absolutly need it cause it does not work in gevent mode
-        import git
-        self._repo = git.Repo.clone_from(self.remoteUrl, self.baseDir)
 
     def switchBranch(self, branchName):
         self.repo.git.checkout(branchName)

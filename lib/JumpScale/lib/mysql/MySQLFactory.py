@@ -1,5 +1,5 @@
 from JumpScale import j
-import _mysql
+# import _mysql
 import time
 import calendar
 from htmllib import HTMLParser

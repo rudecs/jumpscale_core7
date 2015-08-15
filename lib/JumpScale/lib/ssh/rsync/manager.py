@@ -14,14 +14,8 @@ CONFIG_FILE = '/etc/rsyncd.conf'
 class RsyncError(Exception):
     pass
 
-
-class RsyncFactory(object):
-    def get(self, con):
-        return Rsync(con)
-
-
 class RsyncModule(object):
-    def __init__(self, name):
+    def __init__(self, name=None):
         self.name = name
         self.params = {}
 
@@ -45,9 +39,8 @@ class RsyncModule(object):
     def __repr__(self):
         return str(self)
 
-
 class Rsync(object):
-    def __init__(self, con):
+    def __init__(self, con=None):
         self._con = con
         self._modules = None
         self._globalParams = {}
@@ -183,3 +176,9 @@ class Rsync(object):
 
     def __repr__(self):
         return str(self)
+
+class RsyncFactory(object):
+    def _getFactoryEnabledClasses(self):
+        return (("","RsyncModule",RsyncModule()),("","Rsync",Rsync()))    
+    def get(self, con):
+        return Rsync(con)

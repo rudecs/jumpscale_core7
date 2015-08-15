@@ -10,7 +10,7 @@ class TelegramBot:
     """
     """
 
-    def __init__(self,telegramkey):
+    def __init__(self,telegramkey=None):
         """
         @param key eg. 112456445:AAFgQVEWPGztQc1S8NW0NXY8rqQLDPx0knM
         """

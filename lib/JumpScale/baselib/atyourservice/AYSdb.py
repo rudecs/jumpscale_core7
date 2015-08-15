@@ -57,35 +57,35 @@ class Service(Base):
     sqlite_autoincrement = True
 
 
-class HRDItem(Base):
-    __tablename__ = 'template_hrd_item'
-    id = Column(Integer, primary_key=True)
-    name = 
-    temmplate_id ...
-    value = json
-    isTemplate = bool
+# class HRDItem(Base):
+#     __tablename__ = 'template_hrd_item'
+#     id = Column(Integer, primary_key=True)
+#     name = 
+#     temmplate_id ...
+#     value = json
+#     isTemplate = bool
 
 
-class Process
-    isTemplate = bool
+# class Process
+#     isTemplate = bool
 
-...
+# ...
 
-RecipeItem
+# RecipeItem
 
-class Template(Base):
-    __tablename__ = 'template'
+# class Template(Base):
+#     __tablename__ = 'template'
 
-    id = Column(Integer, primary_key=True)
-    service_id = Column(Integer, ForeignKey('service.id'))
-    domain = Column(String, default="", index=True)
-    name = Column(String, default="", index=True)
-    instances = relationship("Instance", backref=backref('template', uselist=True))
-    metapath = Column(String, default="", index=True)
-    hrd = relationship("HRDItem", backref=backref('template', uselist=True))
-    process
-    ...
-    parent = Column(Integer, ForeignKey('template.id'), nullable=True, default='')
+#     id = Column(Integer, primary_key=True)
+#     service_id = Column(Integer, ForeignKey('service.id'))
+#     domain = Column(String, default="", index=True)
+#     name = Column(String, default="", index=True)
+#     instances = relationship("Instance", backref=backref('template', uselist=True))
+#     metapath = Column(String, default="", index=True)
+#     hrd = relationship("HRDItem", backref=backref('template', uselist=True))
+#     process
+#     ...
+#     parent = Column(Integer, ForeignKey('template.id'), nullable=True, default='')
 
 
 class Producer(Base):
