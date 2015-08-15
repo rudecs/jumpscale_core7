@@ -34,8 +34,8 @@ class GitFactory:
         accounttofind=account
 
         def checkaccount(account):
-            print accounts
-            print "%s %s"%(account,accounttofind)
+            # print accounts
+            # print "%s %s"%(account,accounttofind)
             if account not in accounts:
                 if accounttofind.find("*")!=-1:
                     if accounttofind=="*" or account.startswith(accounttofind.replace("*","")):
@@ -45,7 +45,7 @@ class GitFactory:
                         accounts.append(account)
                 else:
                     accounts.append(account)
-            print account in accounts
+            # print account in accounts
             return account in accounts
 
         def _getRepos(codeDir,account=None,name=None):
