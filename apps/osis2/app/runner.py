@@ -147,11 +147,11 @@ def prepare_sqlapp(namespace, models, sqluri, from_spec_file=True):
     return app
 
 def start(basedir, hrd):
-    port = hrd.getInt('instance.param.ros.port')
-    mongdb_instance = hrd.get('instance.param.ros.mongodb.connection', '')
-    sqluri = hrd.get('instance.param.ros.sqlalchemy.uri', '')
-    use_reloader = hrd.getBool('instance.param.ros.use_reloader')
-    use_debugger = hrd.getBool('instance.param.ros.use_debugger')
+    port = hrd.getInt('instance.param.osis2.port')
+    mongdb_instance = hrd.get('instance.param.osis2.mongodb.connection', '')
+    sqluri = hrd.get('instance.param.osis2.sqlalchemy.uri', '')
+    use_reloader = hrd.getBool('instance.param.osis2.use_reloader')
+    use_debugger = hrd.getBool('instance.param.osis2.use_debugger')
 
     if mongdb_instance:
         mongohrd = j.application.getAppInstanceHRD('mongodb_client', mongdb_instance) 

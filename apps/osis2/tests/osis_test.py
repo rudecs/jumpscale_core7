@@ -1,13 +1,13 @@
 import unittest
 from JumpScale import j
-from JumpScale.grid.ros.client import NotFound, RemoteError
+from JumpScale.grid.osis2.client import NotFound, RemoteError
 
 class RosTest(object):
     NAME = None
     TABLE = 'user'
 
     def setUp(self):
-        self.cl = j.clients.ros.get()
+        self.cl = j.clients.osis2.get()
         self.tcl = getattr(self.cl, self.NAME)
         self.bucket = getattr(self.tcl, self.TABLE)
         for e in self.bucket.list():

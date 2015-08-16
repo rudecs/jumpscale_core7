@@ -45,7 +45,7 @@ class GitFactory:
                         accounts.append(account)
                 else:
                     accounts.append(account)
-            # print account in accounts
+            # print accountsunt in accounts
             return account in accounts
 
         def _getRepos(codeDir,account=None,name=None):
