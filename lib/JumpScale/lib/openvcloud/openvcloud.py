@@ -148,8 +148,8 @@ metadata.openvcloud            =
 
         if self.actionCheck(gitlaburl, 'copyKeys') is False:
             keys = {
-                '/root/.ssh/id_rsa': j.system.fs.joinPaths(repopath, 'keys', 'id_rsa'),
-                '/root/.ssh/id_rsa.pub': j.system.fs.joinPaths(repopath, 'keys', 'id_rsa.pub'),
+                '/root/.ssh/id_rsa': j.system.fs.joinPaths(repopath, 'keys', 'git_root'),
+                '/root/.ssh/id_rsa.pub': j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'),
             }
             for source, dest in keys.iteritems():
                 content = cl.file_read(source)
