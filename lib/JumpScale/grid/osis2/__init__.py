@@ -1,7 +1,7 @@
 from JumpScale import j
 
 def cb():
-    from JumpScale.gridosis2.factory import ClientFactory
+    from JumpScale.grid.osis2.factory import ClientFactory
     return ClientFactory()
 
 
