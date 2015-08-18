@@ -100,7 +100,10 @@ def deps(F):  # F is func or method without instance
             for dep in packagechain:
                 if dep in processed.get(F.func_name):
                     dep.args = service.args
-                    result = processresult(result, F(dep, *args, deps=False, **kwargs))
+                    try:
+                        result = processresult(result, F(dep, *args, deps=False, **kwargs))
+                    except Exception:
+                        print 'Performing action "%s" on dependecy "%s" failed' % (F.func_name, dep.name)
         else:
             result = processresult(
                 result, F(service, *args, deps=False, **kwargs))
