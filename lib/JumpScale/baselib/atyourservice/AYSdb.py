@@ -8,21 +8,22 @@ db = j.db.sqlalchemy
 Base = db.getBaseClass()
 
 service_to_service = Table("service_to_service", Base.metadata,
-    Column("child_service_id", Integer, ForeignKey("service.id"), primary_key=True),
-    Column("parent_service_id", Integer, ForeignKey("service.id"), primary_key=True)
-)
+                           Column("child_service_id", Integer, ForeignKey("service.id"), primary_key=True),
+                           Column("parent_service_id", Integer, ForeignKey("service.id"), primary_key=True)
+                           )
 
 template_to_template = Table("template_to_template", Base.metadata,
-    Column("child_template_id", Integer, ForeignKey("template.id"), primary_key=True),
-    Column("parent_template_id", Integer, ForeignKey("template.id"), primary_key=True)
-)
+                             Column("child_template_id", Integer, ForeignKey("template.id"), primary_key=True),
+                             Column("parent_template_id", Integer, ForeignKey("template.id"), primary_key=True)
+                             )
+
 
 class Service(Base):
     __tablename__ = 'service'
     id = Column(Integer, primary_key=True, nullable=False)
     domain = Column(String, default="", index=True)
     name = Column(String, default="", index=True)
-    isntance = Column(String, default="", index=True)
+    instance = Column(String, default="", index=True)
     parent = Column("Service", ForeignKey('service.id'))
     path = Column(String, default="", index=True)
     noremote = Column(Boolean, default="", index=True)
@@ -32,60 +33,82 @@ class Service(Base):
     isInstalled = Column(Boolean, default=True, index=True)
     logPath = Column(String, default="", index=True)
     isLatest = Column(Boolean, default=True, index=True)
-    hrd = Column(Integer, ForeignKey('hrd.id'), nullable=False)
     producers = relationship("Producer", backref=backref('service', uselist=False))
     categories = relationship("Category", backref=backref('service', uselist=True))
-    hrddata = relationship("HRDdata", backref=backref('service', uselist=False))
+    hrddata = relationship("HRDItem", backref=backref('service', uselist=False))
     tcpPorts = relationship("TCPPort", backref=backref('service', uselist=True))
     servicetemplate = relationship("Template", backref=backref('service', uselist=False))
-    args = relationship("Args", backref=backref('service', uselist=False))
     parents = relationship("Service",
-                        secondary="service_to_service",
-                        primaryjoin="Service.id==service_to_service.c.child_service_id",
-                        secondaryjoin="Service.id==service_to_service.c.parent_service_id",
-                        backref="service_parents")
+                           secondary="service_to_service",
+                           primaryjoin="Service.id==service_to_service.c.child_service_id",
+                           secondaryjoin="Service.id==service_to_service.c.parent_service_id",
+                           backref="service_parents")
     dependencies = relationship("Service",
-                        secondary="service_to_service",
-                        primaryjoin="Service.id==service_to_service.c.parent_service_id",
-                        secondaryjoin="Service.id==service_to_service.c.child_service_id",
-                        backref="service_dependencies")
+                                secondary="service_to_service",
+                                primaryjoin="Service.id==service_to_service.c.parent_service_id",
+                                secondaryjoin="Service.id==service_to_service.c.child_service_id",
+                                backref="service_dependencies")
     children = relationship("Service",
-                        secondary="service_to_service",
-                        primaryjoin="Service.id==service_to_service.c.parent_service_id",
-                        secondaryjoin="Service.id==service_to_service.c.child_service_id",
-                        backref="service_children")
+                            secondary="service_to_service",
+                            primaryjoin="Service.id==service_to_service.c.parent_service_id",
+                            secondaryjoin="Service.id==service_to_service.c.child_service_id",
+                            backref="service_children")
     sqlite_autoincrement = True
 
 
-# class HRDItem(Base):
-#     __tablename__ = 'template_hrd_item'
-#     id = Column(Integer, primary_key=True)
-#     name = 
-#     temmplate_id ...
-#     value = json
-#     isTemplate = bool
+class HRDItem(Base):
+    __tablename__ = 'hrd_item'
+    id = Column(Integer, primary_key=True)
+    service_id = Column(String, ForeignKey('service.id'), nullable=True)
+    template_id = Column(String, ForeignKey('template.id'),  nullable=True)
+    key = Column(String, default='', index=True)
+    value = Column(String, default='', index=True)
+    isTemplate = Column(Boolean, default=False, index=True)
 
 
-# class Process
-#     isTemplate = bool
+class Process(Base):
+    __tablename__ = 'process_item'
+    id = Column(Integer, primary_key=True)
+    service_id = Column(String, ForeignKey('service.id'), nullable=True)
+    template_id = Column(String, ForeignKey('template.id'),  nullable=True)
+    args = Column(String, default='', index=True)
+    cmd = Column(String, default='', index=True)
+    cwd = Column(String, default='', index=True)
+    filterstr = Column(String, default='', index=True)
+    ports = relationship("TCPPort", backref=backref('process', uselist=True))
+    priority = Column(Integer, default="", index=True)
+    startupmanager = Column(Boolean, default=False, index=True)
+    timeout_start = Column(Integer, default="", index=True)
+    timeout_stop = Column(Integer, default="", index=True)
+    env = Column(String, default="", index=True)
+    name = Column(String, default="", index=True)
+    user = Column(String, default="", index=True)
+    test = Column(String, default="", index=True)
+    isTemplate = Column(Boolean, default=False, index=True)
 
-# ...
 
-# RecipeItem
+class RecipeItem(Base):
+    __tablename__ = 'recipe_item'
+    id = Column(Integer, primary_key=True)
+    service_id = Column(String, ForeignKey('service.id'), nullable=True)
+    template_id = Column(String, ForeignKey('template.id'),  nullable=True)
+    order = Column(String, default='', index=True)
+    recipe = Column(String, default='', index=True)
+    isTemplate = Column(Boolean, default=False, index=True)
 
-# class Template(Base):
-#     __tablename__ = 'template'
 
-#     id = Column(Integer, primary_key=True)
-#     service_id = Column(Integer, ForeignKey('service.id'))
-#     domain = Column(String, default="", index=True)
-#     name = Column(String, default="", index=True)
-#     instances = relationship("Instance", backref=backref('template', uselist=True))
-#     metapath = Column(String, default="", index=True)
-#     hrd = relationship("HRDItem", backref=backref('template', uselist=True))
-#     process
-#     ...
-#     parent = Column(Integer, ForeignKey('template.id'), nullable=True, default='')
+class Template(Base):
+    __tablename__ = 'template'
+
+    id = Column(Integer, primary_key=True)
+    service_id = Column(Integer, ForeignKey('service.id'), nullable=True)
+    domain = Column(String, default="", index=True)
+    name = Column(String, default="", index=True)
+    instances = relationship("Instance", backref=backref('template', uselist=True))
+    metapath = Column(String, default="", index=True)
+    hrd = relationship("HRDItem", backref=backref('template', uselist=True))
+    processes = relationship("Process", backref=backref('template', uselist=True))
+    recipe = relationship("RecipeItem", backref=backref('template', uselist=True))
 
 
 class Producer(Base):
@@ -100,10 +123,12 @@ class Producer(Base):
     def __ne__(self, other):
         return not self.__ne__(other)
 
+
 class TCPPort(Base):
     __tablename__ = 'tcpport'
     id = Column(Integer, primary_key=True)
-    service_id = Column(String, ForeignKey('service.id'))
+    service_id = Column(String, ForeignKey('service.id'), nullable=True)
+    process_id = Column(String, ForeignKey('process_item.id'), nullable=True)
     tcpport = Column(Integer, default="", index=True)
 
     def __eq__(self, other):
@@ -111,6 +136,7 @@ class TCPPort(Base):
 
     def __ne__(self, other):
         return not self.__ne__(other)
+
 
 class Category(Base):
     __tablename__ = 'category'
@@ -124,3 +150,15 @@ class Category(Base):
     def __ne__(self, other):
         return not self.__ne__(other)
 
+
+class Instance(Base):
+    __tablename__ = 'instance'
+    id = Column(Integer, primary_key=True)
+    template_id = Column(String, ForeignKey('template.id'))
+    instance = Column(String, default="", index=True)
+
+    def __eq__(self, other):
+        return self.instance == other.lower()
+
+    def __ne__(self, other):
+        return not self.__ne__(other)

@@ -11,7 +11,6 @@ except:
 import JumpScale.baselib.redis
 import copy
 import time
-import JumpScale.baselib.webdis
 
 from fabric.api import hide
 import time

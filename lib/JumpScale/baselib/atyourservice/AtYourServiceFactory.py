@@ -1,10 +1,11 @@
 from JumpScale import j
 from .ServiceTemplate import ServiceTemplate
-from .Service import Service
+from .Service import Service, getProcessDicts
 from .RemoteService import RemoteService
 import re
 from .ActionsBase import ActionsBase
-# import AYSdb
+import AYSdb
+import json
 
 class AtYourServiceFactory():
 
@@ -321,38 +322,79 @@ class AtYourServiceFactory():
         """
         walk over all services and load into sqllite
         """
-        db=j.db.sqlalchemy
 
-        sql=db.get(sqlitepath=j.dirs.varDir+"/toml.db",tomlpath=None,connectionstring='')
+        def _loadHRDItems(hrddict, objectsql):
+            hrds = list()
+            recipes = list()
+            processes = list()
+            for key, value in hrddict.items():
+                if key.startswith('service.process'):
+                    continue
+                if key.startswith('git.export') or key.startswith('service.web.export'):
+                    recipesql = AYSdb.RecipeItem()
+                    recipesql.order = key.split('export.', 1)[1]
+                    recipesql.recipe = json.dumps(value)
+                    sql.session.add(recipesql)
+                    recipes.append(recipesql)
+                else:
+                    hrdsql = AYSdb.HRDItem()
+                    hrdsql.key = key
+                    hrdsql.value = json.dumps(value)
+                    hrdsql.isTemplate = True
+                    sql.session.add(hrdsql)
+                    hrds.append(hrdsql)
 
+            for process in getProcessDicts(hrd):
+                processsql = AYSdb.Process()
+                for key, value in process.items():
+                    processsql.__setattr__(key, value)
+                sql.session.add(processsql)
+                processes.append(processsql)
+
+            objectsql.hrd = hrds
+            objectsql.processes = processes
+            objectsql.recipes = recipes
+
+        sql = j.db.sqlalchemy.get(sqlitepath=j.dirs.varDir+"/AYS.db",tomlpath=None,connectionstring='')
 
         if not self._init:
             self._doinit()
         templates = self.findTemplates()
         services = self.findServices()
 
-        attributes = ('domain', 'name', 'metapath', 'parent')
+        attributes = ('domain', 'name', 'metapath')
         for template in templates:
             templatesql = AYSdb.Template()
             for attribute in attributes:
                 templatesql.__setattr__(attribute, template.__getattribute__(attribute))
 
             hrd = template.getHRD()
-            templatesql.hrd = hrd.getHRDAsDict()
-            templatesql.instances = template.listInstances()
+            try:                
+                hrddict = hrd.getHRDAsDict()
+            except Exception, e:
+                continue
+
+            _loadHRDItems(hrddict, templatesql)
             sql.session.add(templatesql)
-            sql.session.commit()
+
+        sql.session.commit()
 
 
         for service in services:
             servicesql = AYSdb.Service()
-            attributes = ('domain', 'name', 'isntance', 'parent', 'path', 'noremote', 'templatepath',
-                          'cmd', 'priority', 'isInstalled', 'logPath', 'isLatest', 'producers', 'categories')
+            attributes = ('domain', 'name', 'instance', 'parent', 'path', 'noremote', 'templatepath',
+                          'cmd', 'isInstalled', 'isLatest', 'producers', 'categories')
             for attribute in attributes:
                 servicesql.__setattr__(attribute, service.__getattribute__(attribute))
 
+            hrddict = service.getHRD()
+            _loadHRDItems(hrddict, servicesql)
+
+            servicesql.priority = service.getPriority()
+            servicesql.logPath = service.getLogPath()
+
             sql.session.add(servicesql)
-            sql.session.commit()
+        sql.session.commit()
 
 
 

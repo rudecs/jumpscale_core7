@@ -19,6 +19,34 @@ def loadmodule(name, path):
     mod = imp.load_source(name, path)
     return mod
 
+
+def getProcessDicts(hrd, deps=True, args={}):
+    counter = 0
+
+    defaults = {"prio": 10, "timeout_start": 10,
+                "timeout_start": 10, "startupmanager": "tmux"}
+    musthave = ["cmd", "args", "prio", "env", "cwd", "timeout_start",
+                "timeout_start", "ports", "startupmanager", "filterstr", "name", "user"]
+
+    procs = hrd.getListFromPrefixEachItemDict("service.process", musthave=musthave, defaults=defaults, aredict=[
+                                                   'env'], arelist=["ports"], areint=["prio", "timeout_start", "timeout_start"])
+    for process in procs:
+        counter += 1
+
+        process["test"] = 1
+
+        if process["name"].strip() == "":
+            process["name"] = "%s_%s" % (
+                hrd.get("service.name"), hrd.get("service.instance"))
+
+        if hrd.exists("env.process.%s" % counter):
+            process["env"] = hrd.getDict("env.process.%s" % counter)
+
+        if not isinstance(process["env"], dict):
+            raise RuntimeError("process env needs to be dict")
+
+    return procs
+
 # decorator to get dependencies
 
 
@@ -240,6 +268,9 @@ class Service(object):
         if processes:
             return processes[0].get('prio', 100)
         return 199
+
+    def getProcessDicts(self, deps=True, args={}):
+        return getProcessDicts(self.hrd, deps=True, args={})
 
     def _loadActions(self):
         if self.templatepath != "":
@@ -477,33 +508,6 @@ class Service(object):
     def restart(self, deps=True, processed={}):
         self.stop()
         self.start()
-
-    def getProcessDicts(self, deps=True, args={}):
-        counter = 0
-
-        defaults = {"prio": 10, "timeout_start": 10,
-                    "timeout_start": 10, "startupmanager": "tmux"}
-        musthave = ["cmd", "args", "prio", "env", "cwd", "timeout_start",
-                    "timeout_start", "ports", "startupmanager", "filterstr", "name", "user"]
-
-        procs = self.hrd.getListFromPrefixEachItemDict("service.process", musthave=musthave, defaults=defaults, aredict=[
-                                                       'env'], arelist=["ports"], areint=["prio", "timeout_start", "timeout_start"])
-        for process in procs:
-            counter += 1
-
-            process["test"] = 1
-
-            if process["name"].strip() == "":
-                process["name"] = "%s_%s" % (
-                    self.hrd.get("service.name"), self.hrd.get("service.instance"))
-
-            if self.hrd.exists("env.process.%s" % counter):
-                process["env"] = self.hrd.getDict("env.process.%s" % counter)
-
-            if not isinstance(process["env"], dict):
-                raise RuntimeError("process env needs to be dict")
-
-        return procs
 
     @deps
     def prepare(self, deps=True, reverse=True, processed={}):

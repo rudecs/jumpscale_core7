@@ -11,7 +11,7 @@ from .RemoteService import RemoteService
 def log(msg, level=1):
     j.logger.log(msg, level=level, category='JSERVICE')
 
-class ServiceTemplate():
+class ServiceTemplate(object):
 
     def __init__(self, domain, name, path, parent):
         self.name = name
