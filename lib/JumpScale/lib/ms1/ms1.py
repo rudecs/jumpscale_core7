@@ -74,7 +74,7 @@ class MS1(object):
         """
         @param location ca1 (canada),us2 (us)
         """
-        params = {'username': login, 'password': password, 'authkey': ''}
+        params = {'username': login, 'password': password}
         response = requests.post('https://%s/restmachine/cloudapi/users/authenticate' % self.apiURL, params)
         if response.status_code != 200:
             raise RuntimeError("E:Could not authenticate user %s" % login)
@@ -163,12 +163,15 @@ class MS1(object):
     #                 portforwarding_actor.create(machine['cloudspaceid'], cloudspace['publicipaddress'], str(port), machine['id'], str(port))
     #     return {'publicip': cloudspace['publicipaddress']}
 
-    def getMachineSizes(self,spacesecret):
+    def getMachineSizes(self,spacesecret, cloudspaceId):
         if self.db.exists("ms1", "ms1:cache:%s:sizes"%spacesecret):
             return json.loads(self.db.get('ms1', "ms1:cache:%s:sizes"%spacesecret))
         api = self.getApiConnection(spacesecret)
         sizes_actor = api.getActor('cloudapi', 'sizes')
-        sizes=sizes_actor.list()
+        try:
+            sizes=sizes_actor.list(cloudspaceId=cloudspaceId)
+        except TypeError:
+            sizes=sizes_actor.list()
         self.db.set("ms1", "ms1:cache:%s:sizes"%spacesecret,json.dumps(sizes))
         return sizes
 
@@ -230,7 +233,7 @@ class MS1(object):
         self.vars["machine.name"] = name
 
         memsize2 = memsizes[memsize]
-        size_ids = [size['id'] for size in self.getMachineSizes(spacesecret) if size['memory'] == int(memsize2)]
+        size_ids = [size['id'] for size in self.getMachineSizes(spacesecret, cloudspace_id) if size['memory'] == int(memsize2)]
         if len(size_ids)==0:
             raise RuntimeError('E:Could not find a matching memory size %s'% memsize2)
 
@@ -300,11 +303,9 @@ class MS1(object):
             name=image["name"]
             namelower=name.lower()
             for imagetype in imagetypes:
-                found=True
-                if namelower.find(imagetype) == -1:
-                    found = False
-                if found:
+                if namelower.find(imagetype) != -1:
                     result[imagetype]=[image["id"],image["name"]]
+            result[image['name']]=[image["id"],image["name"]]
 
         self.db.set("ms1", "ms1:cache:%s:images"%spacesecret,json.dumps(result))
         return result
