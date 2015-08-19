@@ -244,7 +244,7 @@ class AtYourServiceFactory():
             if producercategory in item.categories:
                 return item
 
-    def new(self, domain="", name="", instance="main", path=None, parent=None, args={}):
+    def new(self, domain="", name="", instance="main", path=None, parent=None, args={}, hrdSeed=None):
         """
         will create a new service
         """
@@ -253,7 +253,7 @@ class AtYourServiceFactory():
 
         if len(serviceTmpls) == 0:
             raise RuntimeError("cannot find service template %s__%s" % (domain, name))
-        obj = serviceTmpls[0].newInstance(instance, path=path, parent=parent, args=args, precise=True)
+        obj = serviceTmpls[0].newInstance(instance, path=path, parent=parent, args=args, precise=True, hrdSeed=hrdSeed)
         return obj
 
     def remove(self, domain="", name="", instance="", parent=None):

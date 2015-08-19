@@ -80,6 +80,7 @@ group.add_argument('--verbose', required=False, action='store_true', default=Fal
 group.add_argument('--local', required=False, action='store_true', default=False, help='Apply action locally. No remote services will be executed.')
 group.add_argument('-tn', '--targetname', required=False, default=None, help='node instance on which to execute the action')
 group.add_argument('-tt', '--targettype', required=False, default=None, help='node type on which to execute the action')
+group.add_argument('-hs', '--hrdseed', required=False, default=None, help='path to an hrd file that contains')
 # group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
 
 # install
@@ -260,7 +261,7 @@ else:
                     raise RuntimeError("no templates found for %s__%s. Be more precise please" % (args.domain, args.name))
 
                 tmpls[0].install(instance=args.instance, start=True, deps=(not args.single), reinstall=args.reinstall,
-                                 args=getHRDData(args), parent=getParent(args, precise=True), noremote=args.noremote)
+                                 args=getHRDData(args), parent=getParent(args, precise=True), noremote=args.noremote, hrdSeed=args.hrdseed)
 
     elif args.action == 'update':
         for service in services:
