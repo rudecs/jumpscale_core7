@@ -88,7 +88,7 @@ group = parser.add_argument_group(title="Install/Update/Expand/Configure")
 group.add_argument('--data', required=False,
                    help='use this to pass hrd information to ays e.g. \'redis.name:system redis.port:9999 redis.disk:0\'')
 group.add_argument('--cmd', required=False, help='use this to pass cmd to services e.g. \'ls -l\'')
-group.add_argument('--parent', required=False,
+group.add_argument('--parent', required=False, default='',
                    help='parent services (domain__name__instance). Can also define ancestors through \'ancestordomain__ancestorname__ancestorinstance:parentdomain__parentname__parentinstance\'')
 group.add_argument('--immediate', required=False, action='store_true',
                    default=False, help='use this to get the first level match of services')
