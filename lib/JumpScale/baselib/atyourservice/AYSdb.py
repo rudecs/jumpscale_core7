@@ -20,11 +20,12 @@ template_to_template = Table("template_to_template", Base.metadata,
 
 class Service(Base):
     __tablename__ = 'service'
+
     id = Column(Integer, primary_key=True, nullable=False)
     domain = Column(String, default="", index=True)
     name = Column(String, default="", index=True)
     instance = Column(String, default="", index=True)
-    parent = Column("Service", ForeignKey('service.id'))
+    parent = Column(Integer, ForeignKey('service.id'))
     path = Column(String, default="", index=True)
     noremote = Column(Boolean, default="", index=True)
     templatepath = Column(String, default="", index=True)
@@ -115,7 +116,8 @@ class Producer(Base):
     __tablename__ = 'producer'
     id = Column(Integer, primary_key=True)
     service_id = Column(String, ForeignKey('service.id'))
-    producer = Column(PickleType)
+    key = Column(String, default="", index=True)
+    value = Column(String, default="", index=True)
 
     def __eq__(self, other):
         return self.producer == other.lower()

@@ -102,8 +102,8 @@ def deps(F):  # F is func or method without instance
                     dep.args = service.args
                     try:
                         result = processresult(result, F(dep, *args, deps=False, **kwargs))
-                    except Exception:
-                        print 'Performing action "%s" on dependecy "%s" failed' % (F.func_name, dep.name)
+                    except Exception, e:
+                        print 'Performing action "%s" on dependecy "%s" failed with exception %s' % (F.func_name, dep.name, e)
         else:
             result = processresult(
                 result, F(service, *args, deps=False, **kwargs))

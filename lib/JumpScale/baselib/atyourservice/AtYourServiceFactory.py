@@ -148,7 +148,7 @@ class AtYourServiceFactory():
         self._templateCache[key] = finalRes
         return finalRes
 
-    def findServices(self, domain="", name="", instance="", parent=None, precise=False):
+    def findServices(self, domain="", name="", instance="", parent='', precise=False):
         """
         FindServices looks for actual services that are created
         """
@@ -383,15 +383,31 @@ class AtYourServiceFactory():
         for service in services:
             servicesql = AYSdb.Service()
             attributes = ('domain', 'name', 'instance', 'parent', 'path', 'noremote', 'templatepath',
-                          'cmd', 'isInstalled', 'isLatest', 'producers', 'categories')
+                          'cmd')
             for attribute in attributes:
                 servicesql.__setattr__(attribute, service.__getattribute__(attribute))
 
-            hrddict = service.getHRD()
+            hrddict = service.hrd.getHRDAsDict()
             _loadHRDItems(hrddict, servicesql)
 
             servicesql.priority = service.getPriority()
             servicesql.logPath = service.getLogPath()
+            servicesql.isInstalled = service.isInstalled()
+            servicesql.isLatest = service.isLatest()
+
+            producers = list()
+            for key, value in service.producers.items():
+                producersql = AYSdb.Producer(key=key, value=value)
+                sql.session.add(producersql)
+                producers.append(producersql)
+            servicesql.producer = producers
+
+            categories = list()
+            for category in service.categories:
+                categorysql = AYSdb.Category(category=category)
+                sql.session.add(categorysql)
+                categories.append(categorysql)
+            servicesql.category = categories
 
             sql.session.add(servicesql)
         sql.session.commit()
