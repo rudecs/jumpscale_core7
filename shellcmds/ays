@@ -137,7 +137,7 @@ def getHRDData(args):
 
 
 def getParent(args, precise=False):
-    if args.parent is None:
+    if args.parent is None or args.parent == '':
         return None
     if not isinstance(args.parent, basestring):
         return args.parent
