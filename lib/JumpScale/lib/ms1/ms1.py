@@ -186,7 +186,6 @@ class MS1(object):
         sshkey = is content of pub key or path
         hostname if "" then will be same as name
         """
-
         if delete:
             self.deleteMachine(spacesecret, name)
 
@@ -297,7 +296,7 @@ class MS1(object):
         images_actor = api.getActor('cloudapi', 'images')
         result={}
         alias={}
-        imagetypes=["ubuntu.jumpscale","fedora","windows","ubuntu.13.10","ubuntu.12.04","windows.essentials","ubuntu.14.04.x64",\
+        imagetypes=["ubuntu.jumpscale","fedora","windows","ubuntu.13.10","ubuntu.12.04","windows.essentials","ubuntu.14.04.x64","ubuntu 14.04 x64",\
             "zentyal","debian.7","arch","fedora","centos","opensuse","gitlab"]
         for image in images_actor.list():
             name=image["name"]
@@ -397,8 +396,35 @@ class MS1(object):
         self._deletePortForwardRule(spacesecret, name, pubip, pubipport, 'tcp')
         portforwarding_actor.create(cloudspace_id, pubip, str(pubipport), machine_id, str(machineport), protocol)
 
-
         return "OK"
+
+    def addDisk(self, spaceSecret, vmName, diskName, size=10, description=None, type='D'):
+        """
+        Add a disk to a vm
+        @param spaceSecret str: cloudspace secret
+        @param vmName str: name of the vm
+        @param diskName str: name of the disk
+        @param size int: size of the disk in GB, min 1, max 2000
+        @param description str: description of the disk
+        @param type str: type of the disk B=Boot;D=Data;T=Temp
+        """
+        types = ['B', 'D', 'T']
+        if type not in types:
+            j.events.inputerror_critical('type should be one of these : %s' ', '.join(types))
+
+        if int(size) > 2000:
+            j.events.inputerror_critical('max size is 2000 GB')
+        if int(size) < 1:
+            j.events.inputerror_critical('min size is 1 GB')
+
+        api, machines_actor, machine_id, cloudspace_id = self._getMachineApiActorId(spaceSecret, vmName)
+
+        vmStatus = machines_actor.get(machine_id)
+        if vmStatus['status'] != 'HALTED':
+            j.events.opserror_critical('The VM should be alted to add a disk', category='')
+
+        self.sendUserMessage('creation of the disk %s (%s GB)' % (diskName, size))
+        machines_actor.addDisk(machineId=machine_id, diskName=diskName, description=description, size=size, type=type)
 
     def _deletePortForwardRule(self, spacesecret, name,pubip,pubipport, protocol):
         # self.sendUserMessage("Delete PFW rule:%s %s %s"%(pubip,pubipport,protocol),args=args)
@@ -449,10 +475,6 @@ class MS1(object):
 
         self.vars["space.free.tcp.port"]=str(i)
         self.vars["space.free.udp.port"]=str(i)
-
-
-
-
 
         return self.vars
 
