@@ -323,19 +323,47 @@ class AtYourServiceFactory():
         walk over all services and load into sqllite
         """
 
-        def _loadHRDItems(hrddict, objectsql):
+        def _loadHRDItems(hrddict, hrd, objectsql):
             hrds = list()
             recipes = list()
             processes = list()
+            dependencies = list()
             for key, value in hrddict.items():
                 if key.startswith('service.process'):
                     continue
-                if key.startswith('git.export') or key.startswith('service.web.export'):
+                elif key.startswith('process'):
+                    processsql = AYSdb.Process()
+                    if key == 'ports':
+                        ports = list()
+                        for port in value:
+                            tcpportsql = AYSdb.TCPPort(tcpport=port)
+                            sql.session.add(tcpportsql)
+                            ports.append(tcpportsql)
+                        processsql.ports = ports
+                    elif key == 'env':
+                        processsql.env = json.dumps(value)
+                    else:
+                        processsql.__setattr__(key, value)
+                    sql.session.add(processsql)
+                    processes.append(processsql)
+                elif key.startswith('git.export') or key.startswith('service.web.export'):
                     recipesql = AYSdb.RecipeItem()
                     recipesql.order = key.split('export.', 1)[1]
                     recipesql.recipe = json.dumps(value)
                     sql.session.add(recipesql)
                     recipes.append(recipesql)
+                elif key.startswith("service.dependencies") or key.startswith('dependencies'):
+                    if not isinstance(value, list):
+                        value = [value]
+                    for val in value:
+                        dependencysql = AYSdb.Dependency()
+                        dependencysql.order = key.split('dependencies.', 1)[1] if key.startswith('dependencies.') else '1'
+                        dependencysql.domain = val.get('domain', '')
+                        dependencysql.name = val.get('name', '')
+                        dependencysql.instance = val.get('instance', '')
+                        dependencysql.args = json.dumps(val.get('args', '{}'))
+                        sql.session.add(dependencysql)
+                        dependencies.append(dependencysql)
                 else:
                     hrdsql = AYSdb.HRDItem()
                     hrdsql.key = key
@@ -344,16 +372,10 @@ class AtYourServiceFactory():
                     sql.session.add(hrdsql)
                     hrds.append(hrdsql)
 
-            for process in getProcessDicts(hrd):
-                processsql = AYSdb.Process()
-                for key, value in process.items():
-                    processsql.__setattr__(key, value)
-                sql.session.add(processsql)
-                processes.append(processsql)
-
             objectsql.hrd = hrds
             objectsql.processes = processes
             objectsql.recipes = recipes
+            objectsql.dependencies = dependencies
 
         sql = j.db.sqlalchemy.get(sqlitepath=j.dirs.varDir+"/AYS.db",tomlpath=None,connectionstring='')
 
@@ -368,16 +390,20 @@ class AtYourServiceFactory():
             for attribute in attributes:
                 templatesql.__setattr__(attribute, template.__getattribute__(attribute))
 
+            instances = list()
+            for instance in template.listInstances():
+                instancesql = AYSdb.Instance(instance=instance)
+                sql.session.add(instancesql)
+                instances.append(instancesql)
+            templatesql.instances = instances
             hrd = template.getHRD()
-            try:                
-                hrddict = hrd.getHRDAsDict()
-            except Exception, e:
-                continue
+            hrddict = hrd.getHRDAsDict()
 
-            _loadHRDItems(hrddict, templatesql)
+            _loadHRDItems(hrddict, hrd, templatesql)
             sql.session.add(templatesql)
 
         sql.session.commit()
+
 
 
         for service in services:
@@ -388,7 +414,7 @@ class AtYourServiceFactory():
                 servicesql.__setattr__(attribute, service.__getattribute__(attribute))
 
             hrddict = service.hrd.getHRDAsDict()
-            _loadHRDItems(hrddict, servicesql)
+            _loadHRDItems(hrddict, service.hrd, servicesql)
 
             servicesql.priority = service.getPriority()
             servicesql.logPath = service.getLogPath()
@@ -408,6 +434,26 @@ class AtYourServiceFactory():
                 sql.session.add(categorysql)
                 categories.append(categorysql)
             servicesql.category = categories
+
+            processes = list()
+            procs = getProcessDicts(hrd)
+            for process in procs:
+                processsql = AYSdb.Process()
+                for key, value in process.items():
+                    if key == 'ports':
+                        ports = list()
+                        for port in value:
+                            tcpportsql = AYSdb.TCPPort(tcpport=port)
+                            sql.session.add(tcpportsql)
+                            ports.append(tcpportsql)
+                        processsql.ports = ports
+                    elif key == 'env':
+                        processsql.env = json.dumps(value)
+                    else:
+                        processsql.__setattr__(key, value)
+                sql.session.add(processsql)
+                processes.append(processsql)
+            servicesql.processes = processes
 
             sql.session.add(servicesql)
         sql.session.commit()

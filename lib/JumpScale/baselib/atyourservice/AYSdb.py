@@ -36,19 +36,17 @@ class Service(Base):
     isLatest = Column(Boolean, default=True, index=True)
     producers = relationship("Producer", backref=backref('service', uselist=False))
     categories = relationship("Category", backref=backref('service', uselist=True))
-    hrddata = relationship("HRDItem", backref=backref('service', uselist=False))
+    hrd = relationship("HRDItem", backref=backref('service', uselist=False))
     tcpPorts = relationship("TCPPort", backref=backref('service', uselist=True))
     servicetemplate = relationship("Template", backref=backref('service', uselist=False))
+    processes = relationship("Process", backref=backref('service', uselist=True))
+    recipe = relationship("RecipeItem", backref=backref('service', uselist=True))
+    dependencies = relationship("Dependency", backref=backref('service', uselist=True))
     parents = relationship("Service",
                            secondary="service_to_service",
                            primaryjoin="Service.id==service_to_service.c.child_service_id",
                            secondaryjoin="Service.id==service_to_service.c.parent_service_id",
                            backref="service_parents")
-    dependencies = relationship("Service",
-                                secondary="service_to_service",
-                                primaryjoin="Service.id==service_to_service.c.parent_service_id",
-                                secondaryjoin="Service.id==service_to_service.c.child_service_id",
-                                backref="service_dependencies")
     children = relationship("Service",
                             secondary="service_to_service",
                             primaryjoin="Service.id==service_to_service.c.parent_service_id",
@@ -77,8 +75,8 @@ class Process(Base):
     cwd = Column(String, default='', index=True)
     filterstr = Column(String, default='', index=True)
     ports = relationship("TCPPort", backref=backref('process', uselist=True))
-    priority = Column(Integer, default="", index=True)
-    startupmanager = Column(Boolean, default=False, index=True)
+    priority = Column(String, default="", index=True)
+    startupmanager = Column(String, default=False, index=True)
     timeout_start = Column(Integer, default="", index=True)
     timeout_stop = Column(Integer, default="", index=True)
     env = Column(String, default="", index=True)
@@ -98,6 +96,19 @@ class RecipeItem(Base):
     isTemplate = Column(Boolean, default=False, index=True)
 
 
+class Dependency(Base):
+    __tablename__ = 'dependency'
+    id = Column(Integer, primary_key=True)
+    service_id = Column(String, ForeignKey('service.id'), nullable=True)
+    template_id = Column(String, ForeignKey('template.id'),  nullable=True)
+    order = Column(String, default='', index=True)
+    domain = Column(String, default='', index=True)
+    name = Column(String, default='', index=True)
+    instance = Column(String, default='', index=True)
+    args = Column(String, default='', index=True)
+    isTemplate = Column(Boolean, default=False, index=True)
+
+
 class Template(Base):
     __tablename__ = 'template'
 
@@ -110,6 +121,7 @@ class Template(Base):
     hrd = relationship("HRDItem", backref=backref('template', uselist=True))
     processes = relationship("Process", backref=backref('template', uselist=True))
     recipe = relationship("RecipeItem", backref=backref('template', uselist=True))
+    dependencies = relationship("Dependency", backref=backref('template', uselist=True))
 
 
 class Producer(Base):
