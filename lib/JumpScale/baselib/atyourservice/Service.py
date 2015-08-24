@@ -19,6 +19,34 @@ def loadmodule(name, path):
     mod = imp.load_source(name, path)
     return mod
 
+
+def getProcessDicts(hrd, deps=True, args={}):
+    counter = 0
+
+    defaults = {"prio": 10, "timeout_start": 10,
+                "timeout_start": 10, "startupmanager": "tmux"}
+    musthave = ["cmd", "args", "prio", "env", "cwd", "timeout_start",
+                "timeout_start", "ports", "startupmanager", "filterstr", "name", "user"]
+
+    procs = hrd.getListFromPrefixEachItemDict("service.process", musthave=musthave, defaults=defaults, aredict=[
+                                                   'env'], arelist=["ports"], areint=["prio", "timeout_start", "timeout_start"])
+    for process in procs:
+        counter += 1
+
+        process["test"] = 1
+
+        if process["name"].strip() == "":
+            process["name"] = "%s_%s" % (
+                hrd.get("service.name"), hrd.get("service.instance"))
+
+        if hrd.exists("env.process.%s" % counter):
+            process["env"] = hrd.getDict("env.process.%s" % counter)
+
+        if not isinstance(process["env"], dict):
+            raise RuntimeError("process env needs to be dict")
+
+    return procs
+
 # decorator to get dependencies
 
 
@@ -72,7 +100,10 @@ def deps(F):  # F is func or method without instance
             for dep in packagechain:
                 if dep in processed.get(F.func_name):
                     dep.args = service.args
-                    result = processresult(result, F(dep, *args, deps=False, **kwargs))
+                    try:
+                        result = processresult(result, F(dep, *args, deps=False, **kwargs))
+                    except Exception, e:
+                        print 'Performing action "%s" on dependecy "%s" failed with exception %s' % (F.func_name, dep.name, e)
         else:
             result = processresult(
                 result, F(service, *args, deps=False, **kwargs))
@@ -81,7 +112,7 @@ def deps(F):  # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None):
+    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None, hrdSeed=None):
         self.processed = dict()
         self.domain = domain
         self.instance = instance
@@ -99,6 +130,13 @@ class Service(object):
         self._producers = None
         self.cmd = None
         self.noremote = False
+
+        self.hrdSeed = None
+        if isinstance(hrdSeed, basestring):
+            self.hrdSeed = j.core.hrd.get(path=hrdSeed, prefixWithName=False)
+        else:
+            self.hrdSeed = hrdSeed
+
         if servicetemplate is not None:
             self.domain = servicetemplate.domain
             self.name = servicetemplate.name
@@ -241,6 +279,9 @@ class Service(object):
             return processes[0].get('prio', 100)
         return 199
 
+    def getProcessDicts(self, deps=True, args={}):
+        return getProcessDicts(self.hrd, deps=True, args={})
+
     def _loadActions(self):
         if self.templatepath != "":
             self._apply()
@@ -264,6 +305,7 @@ class Service(object):
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
         mergeArgsHDRData = self.args.copy()
         mergeArgsHDRData.update(self.hrddata)
+        mergeArgsHDRData.update(self.extractFromHRDSeed(self.domain, self.name, self.instance))
         mergeArgsHDRData['service.installed.checksum'] = self._getMetaChecksum()
         self._hrd = j.core.hrd.get(
             hrdpath, args=mergeArgsHDRData, prefixWithName=False)
@@ -384,12 +426,19 @@ class Service(object):
                 instance = item["instance"].strip()
             if instance == "":
                 instance = "main"
+
+            # merge data from seed hrd if any
+            data = self.extractFromHRDSeed(domain, name, instance)
+            hrddata.update(data)
+
             services = j.atyourservice.findServices(name=name, instance=instance, parent=self.parent, precise=True)
             if len(services) > 0:
                 service = services[0]
             else:
-                print "Dependecy %s_%s_%s not found, creating ..." % (domain, name, instance)
-                service = j.atyourservice.new(domain=domain, name=name, instance=instance, path='', args=hrddata, parent=self.parent)
+                if j.application.debug:
+                    print "Dependecy %s_%s_%s not found, creating ..." % (domain, name, instance)
+
+                service = j.atyourservice.new(domain=domain, name=name, instance=instance, path='', args=hrddata, parent=self.parent, hrdSeed=self.hrdSeed)
                 if self.noremote is False and len(self.producers):
                     for cat, prod in self.producers.iteritems():
                         service.init()
@@ -437,6 +486,23 @@ class Service(object):
                     chain.append(dep)
         return chain
 
+    def extractFromHRDSeed(self, domain, name, instance):
+        if self.hrdSeed is None:
+            return {}
+        else:
+            if domain == '':
+                domain = 'jumpscale'
+            data = {}
+            target = '%s.%s.%s' % (domain, name, instance)
+            entries = self.hrdSeed.prefix(target)
+            if len(entries) > 0:
+                for e in entries:
+                    key = e.replace(target+'.', '')
+                    if not key.startswith('instance'):
+                        key = 'instance.'+key
+                    data[key] = self.hrdSeed.get(e)
+            return data
+
     def __eq__(self, service):
         if service is None:
             return False
@@ -477,33 +543,6 @@ class Service(object):
     def restart(self, deps=True, processed={}):
         self.stop()
         self.start()
-
-    def getProcessDicts(self, deps=True, args={}):
-        counter = 0
-
-        defaults = {"prio": 10, "timeout_start": 10,
-                    "timeout_start": 10, "startupmanager": "tmux"}
-        musthave = ["cmd", "args", "prio", "env", "cwd", "timeout_start",
-                    "timeout_start", "ports", "startupmanager", "filterstr", "name", "user"]
-
-        procs = self.hrd.getListFromPrefixEachItemDict("service.process", musthave=musthave, defaults=defaults, aredict=[
-                                                       'env'], arelist=["ports"], areint=["prio", "timeout_start", "timeout_start"])
-        for process in procs:
-            counter += 1
-
-            process["test"] = 1
-
-            if process["name"].strip() == "":
-                process["name"] = "%s_%s" % (
-                    self.hrd.get("service.name"), self.hrd.get("service.instance"))
-
-            if self.hrd.exists("env.process.%s" % counter):
-                process["env"] = self.hrd.getDict("env.process.%s" % counter)
-
-            if not isinstance(process["env"], dict):
-                raise RuntimeError("process env needs to be dict")
-
-        return procs
 
     @deps
     def prepare(self, deps=True, reverse=True, processed={}):

@@ -11,7 +11,7 @@ from .RemoteService import RemoteService
 def log(msg, level=1):
     j.logger.log(msg, level=level, category='JSERVICE')
 
-class ServiceTemplate():
+class ServiceTemplate(object):
 
     def __init__(self, domain, name, path, parent):
         self.name = name
@@ -20,12 +20,13 @@ class ServiceTemplate():
         self.parent = parent
         self.metapath = path
 
-    def newInstance(self,instance="main", args={}, hrddata={}, path='', parent=None, precise=False):
+    def newInstance(self,instance="main", args={}, hrddata={}, path='', parent=None, precise=False, hrdSeed=None):
         # TODO, should take in account the domain too
         services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent, precise=precise)
         if len(services)>0:
-            print "Service %s__%s__%s already exists" % (self.domain,self.name,instance)
-            print "No creation, just retrieve existing service"
+            if j.application.debug:
+                print "Service %s__%s__%s already exists" % (self.domain,self.name,instance)
+                print "No creation, just retrieve existing service"
             return services[0]
         fullpath = path or ('%s/domain__name__instance' % parent.path if parent else '')
         remote = [p for p in j.atyourservice.findParents(path=fullpath) if 'node' in p.categories]
@@ -34,7 +35,7 @@ class ServiceTemplate():
             service = RemoteService(instance=instance, servicetemplate=self, args=args, path=path, parent=parent,
                                     remotecategory='node', remoteinstance=remote.instance)
         else:
-            service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent)
+            service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent, hrdSeed=hrdSeed)
         return service
 
     def getHRD(self):
@@ -74,7 +75,7 @@ class ServiceTemplate():
         services = j.atyourservice.findServices(domain=self.domain,name=self.name)
         return [service.instance for service in services]
 
-    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False):
+    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False, hrdSeed=None):
         """
         Install Service.
 
@@ -102,7 +103,7 @@ class ServiceTemplate():
         if support==False:
             j.events.opserror_critical("Cannot install %s__%s because unsupported platform." % (self.domain, self.name))
 
-        service = self.newInstance(instance=instance, args=args, parent=parent, precise=True)
+        service = self.newInstance(instance=instance, args=args, parent=parent, precise=True, hrdSeed=hrdSeed)
         service.args.update(args)
         service.noremote = noremote
         service.install(start=start, deps=deps, reinstall=reinstall)

@@ -24,7 +24,7 @@ def action():
         instances = ays.listInstances()
         for instance in instances:
             aysinstance = ays.getInstance(instance)
-            if not aysinstance.actions.check_up_local(wait=False):
+            if not aysinstance.actions.check_up_local(aysinstance, wait=False):
                  message = "Process %s:%s:%s is not running" % (aysinstance.domain, aysinstance.name, instance)
                  j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
                  

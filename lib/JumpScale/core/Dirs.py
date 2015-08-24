@@ -31,7 +31,7 @@ class Dirs(object):
 
         self._hrdDir=None
         self._serviceTemplateDir=None
-       
+
         self.baseDir=j.application.config.get("system.paths.base")
         self.appDir = j.application.config.get("system.paths.app")
         self.varDir = j.application.config.get("system.paths.var")
@@ -250,10 +250,13 @@ class Dirs(object):
         if self.gitConfigDir is not None and self.gitConfigDir != "unknown":
             return self.gitConfigDir
         while path.strip("/") != "":
-            if "services" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False) and\
-               "servicetemplates" in j.system.fs.listDirsInDir(path, recursive=False, dirNameOnly=True, findDirectorySymlinks=False):
-                self.gitConfigDir = path
-                return path
+            # from ipdb import set_trace;set_trace()
+            if "services" in j.system.fs.listDirsInDir(path, dirNameOnly=True):
+                files = j.system.fs.listFilesInDir(j.system.fs.joinPaths(path,'services'))
+                if ".aysrepo" in [j.system.fs.getBaseName(file) for file in files] or\
+                   "servicetemplates" in j.system.fs.listDirsInDir(path, dirNameOnly=True):
+                    self.gitConfigDir = path
+                    return path
             path = j.system.fs.getParent(path)
         self.gitConfigDir = None
         return None
