@@ -1,4 +1,5 @@
 import datetime
+import base64
 try:
     import ujson as json
 except:
@@ -8,7 +9,14 @@ from JumpScale import j
 
 import os
 
-import gitlab3
+# import gitlab3
+try:
+    import gitlab
+except Exception,e:
+    cmd="pip install pyapi-gitlab"
+    if str(e).find('No module named gitlab')!=-1:
+        j.do.executeInteractive(cmd)
+    
 import JumpScale.baselib.git
 
 class GitlabInstance():
@@ -37,137 +45,109 @@ class GitlabInstance():
             self.login=login
             self.passwd=passwd
 
-        self.gitlab=gitlab3.GitLab(self.addr)
-        self.isLoggedIn = False
-        # self._cache = j.clients.redis.getByInstance('system')
-        try:
-            redis = j.db.keyvaluestore.getRedisStore()
-            self._cache = redis
-        except:
-            self._cache = j.db.keyvaluestore.getMemoryStore()
-        self._cache_expire = 300 #seconds (5 minutes)
-
-
-    def _init(self):
-        """
-        Gitlab client REST API are very slow, directly authenticating portal against gitlab
-        takes time and shouldn't be done at the very beginning of starting portal.
-        This decorator makes sure that whenever a gitlab client function is called
-        the client will be authenticated if not already.
-
-        SOmetimes, if connection lost to gitlab, client becomes suddenly unauthorized
-        but unaware of that because isLoggedIn flag is still True
-        this situation is handled as well, in case a function call returns UnAuthorized exception
-        client is  re-authenticated.
-        """
-        if not self.isLoggedIn:
-            login = self.login
-            passwd = self.passwd
-            self.isLoggedIn = self.authenticate(login, passwd)
-        # try:
-        #     return function(self, *args, **kwargs)
-        # except gitlab3.exceptions.UnauthorizedRequest:
-        #     self.isLoggedIn = self.authenticate(login, passwd)
-        #     return function(self, *args, **kwargs)
-
-    def _getFromCache(self, username, key):
-        """
-        Since gitlab client is way to slow, we need to cache results
-        for performance sake.
-        This function returns the result if not lifetime exceeded 5 minutes
-        otherwise returns null.
-
-        """
-        cachespace = "gitlabClient_%s_%s" % (username, str(key))
-        try:
-            res = self._cache.get('gitlab', cachespace)
-            if res:
-                return {'expired':False, 'data':json.loads(res)}
-            else:
-                raise RuntimeError
-        except RuntimeError:
-            return {'expired':True, 'data':None}
-
-    def _addToCache(self, username, key, value):
-        """
-        Since gitlab client is way to slow, we need to cache results
-        for performance sake.
-        This function used to add key/value to cache
-        """
-        cachespace = "gitlabClient_%s_%s" % (username, str(key))
-        self._cache.set('gitlab', cachespace, json.dumps(value))
-
-    def authenticate(self, login, password):
-        """
-        Everytime a user authenticates, he has a new client instance
-        To overcome Race conditions
-        """
-
-        new_client = gitlab3.GitLab(self.addr)
+        self.gitlab = gitlab.Gitlab(addr)
+        self.gitlab.login(self.login,self.passwd)
         self.isLoggedIn = True
-        return new_client.login(login, password)
 
-    def getGroupInfo(self, groupname, force_cache_renew=False, die=True):
+        # # self.gitlab=gitlab3.GitLab(self.addr)
+        # self.isLoggedIn = False
+
+        #will be default 5 min
+        self.cache=j.db.cache.get(j.db.keyvaluestore.getRedisStore(namespace="cache"))
+
+    def getFile(self,group,project,path):
+        """
+        project = name of project in group
+        """
+        project=self.getProject(project)
+        project["id"]
+        
+        res=self.gitlab.getfile(project["id"],path,"master")
+        if res==False:
+            j.events.inputerror_critical("cannot find file:%s in gitlab in project:%s"%(path,project))
+
+        return base64.decodestring(res["content"])
+
+    def getHRD(self,group,project,path): 
+        content=self.getFile(group,project,path)
+        return j.core.hrd.get(content=content)            
+
+    def downloadFile(self,group,project,path,dest):
+        content=self.getFile(group,project,path)
+        j.system.fs.createDir(j.system.fs.getDirName(dest))
+        j.system.fs.writeFile(filename=dest,contents=content)
+
+    def _getFromCache(self,key,renew=False):
+        if renew:
+            self.cache.delete(key)        
+        expired,result = self.cache.get(key)
+        return result
+
+
+    def getGroupInfo(self, groupname, renew=False):
         """
         Get a group info
 
         @param groupname: groupname
         @type groupname: ``str``
-        @param force_cache_renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
-        @type force_cache_renew: ``boolean``
+        @param renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
+        @type renew: ``boolean``
         @param die: Raise exception if group not found
         @type die: ``boolean``
         @return: ``` gitlab3.Group ```
 
         """
-        self._init()
-        key = ('group', groupname)
-        if not force_cache_renew:
-            result = self._getFromCache(self.login, key)
-            if not result['expired']:
-                return result['data']
-            if result==None and die:
-                j.events.inputerror_critical("Cannot find group with name:%s"%groupname)
-
-        group = self.gitlab.find_group(name=groupname)
-        self._addToCache(self.login, key, group)
-
-        if group:
-            return self._getFromCache(self.login, key)['data']
-        if die:
-            j.events.inputerror_critical("Cannot find group with name:%s"%groupname)
+        groups=self.listGroups(renew=renew)
+        groupname=groupname.lower()
+        items=[item for item in groups if item["name"].lower()==groupname]
+        if len(items)>0:
+            return items[0]
         else:
-            return None
+            j.events.inputerror_critical("cannot find group:%s in gitlab"%groupname)
+        
 
-    def getSpace(self, name, force_cache_renew=False, die=False):
+        # result=self._getFromCache(groupname)
+        # if result!=None:
+        #     return result
+        # else:
+        #     from IPython import embed
+        #     print "DEBUG NOW groupinfo"
+        #     embed()
+            
+        #     group = self.gitlab.find_group(name=groupname)
+        #     self.cache.set(groupname,group)
+
+        # if die:
+        #     j.events.inputerror_critical("Cannot find group with name:%s"%groupname)
+        # else:
+        #     return None
+
+    def getProject(self, name, renew=False):
         """
-        Get Space Info [Space is a project]
+        @param name: Project/Project name
+        @param renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
 
-        @param name: Project/Space name
-        @type name: ``str``
-        @param force_cache_renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
-        @type force_cache_renew: ``boolean``
-        @param die: Raise exception if space not found
-        @type die: ``boolean``
-        @return: ```gitlab3.Project```
         """
-        self._init()
-        key = ('project', name)
-        if not force_cache_renew:
-            result = self._getFromCache(self.login, key)
-            if not result['expired']:
-                return result['data']
+        projects=self.getProjects()
+        name=name.lower()
+        items=[item for item in projects if item["name"].lower()==name]
+        if len(items)>0:
+            return items[0]
+        else:
+            j.events.inputerror_critical("cannot find group:%s in gitlab"%name)
+        
+    def getProjects(self):
+        key="projects"
+        result=self._getFromCache(key,renew=False)
+        if result==None:
+            result = self.gitlab.getprojects()
+            self.cache.set(key,result)
+        return result
 
-        p = self.gitlab.find_project(name=name)
-        self._addToCache(self.login, key, p)
-        if p:
-            return self._getFromCache(self.login, key)['data']
-        if die:
-            j.events.inputerror_critical("Cannot find project with name:%s"%name)
 
-    def create(self,group, name, public=False):
+    def createProject(self,group, name, public=False):
         """
-        Create a space/project in a certain group
+        Create a project in a certain group
 
         @param group: groupname
         @type group: ``str``
@@ -175,16 +155,15 @@ class GitlabInstance():
         @type name: ``str``
         """
         self._init()
-        group2=self.getGroupInfo(group, force_cache_renew=True,die=False)
-        if group2==None:
-            j.events.inputerror_critical("cannot find group %s in gitlab."%group)
+        group2=self.getGroupInfo(group, renew=True)
+
         ttype=self.addr.split("/",1)[1].strip("/ ")
         if ttype.find(".")!=-1:
             ttype=ttype.split(".",1)[0]
         path="%s/%s/%s/%s"%(j.dirs.codeDir,ttype,group,name)
-        if not self.getSpace(name, force_cache_renew=True, die=False):
+        if not self.getProject(name, renew=True, die=False):
             self.gitlab.add_project(name,public=public,namespace_id=group2['id'])
-            proj=self.getSpace(name, force_cache_renew=True)
+            proj=self.getProject(name, renew=True)
             j.do.delete(path, force=True)
             j.system.fs.createDir(path)
             def do(cmd):
@@ -198,7 +177,7 @@ class GitlabInstance():
             do("git remote add origin https://%s:%s@%s/%s/%s.git"%(self.login,self.passwd,addr,group,name))
             do("git push -u origin master")
         else:
-            proj=self.getSpace(name, force_cache_renew=True)
+            proj=self.getProject(name, renew=True)
             url=proj['web_url']
             if group:
                 return group
@@ -206,7 +185,7 @@ class GitlabInstance():
 
         return proj,path
 
-    def getUserInfo(self, username, force_cache_renew=False):
+    def getUserInfo(self, username, renew=False):
         """
         Returns user info
 
@@ -217,7 +196,7 @@ class GitlabInstance():
         self._init()
         key = ('user', username)
 
-        if not force_cache_renew:
+        if not renew:
             result = self._getFromCache(self.login, key)
             if not result['expired']:
                 return result['data']
@@ -225,7 +204,7 @@ class GitlabInstance():
         self._addToCache(self.login, key, u)
         return self._getFromCache(self.login, key)['data']
 
-    def userExists(self, username, force_cache_renew=False):
+    def userExists(self, username, renew=False):
         """
         Check user exists
 
@@ -234,7 +213,7 @@ class GitlabInstance():
         @return: ``bool``
         """
         self._init()
-        return bool(self.getUserInfo(username, force_cache_renew))
+        return bool(self.getUserInfo(username, renew))
 
     def createUser(self, username, password, email, groups):
         self._init()
@@ -243,17 +222,17 @@ class GitlabInstance():
             g = self.gitlabclient.find_group(name=group)
             g.add_member(id)
             g.save()
-        self.listUsers(force_cache_renew=True)
+        self.listUsers(renew=True)
 
-    def listUsers(self, force_cache_renew=False):
+    def listUsers(self, renew=False):
         """
         Get All users
-        @param force_cache_renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
-        @type force_cache_renew: ``boolean``
+        @param renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
+        @type renew: ``boolean``
         @return: ``lis``
         """
         self._init()
-        if not force_cache_renew:
+        if not renew:
             result = self._getFromCache(self.login, 'users')
             if not result['expired']:
                 return result['data']
@@ -261,46 +240,54 @@ class GitlabInstance():
         self._addToCache(self.login, 'users', users)
         return self._getFromCache(self.login, 'users')['data']
 
-    def listGroups(self, force_cache_renew=False):
+    def getGroups(self, renew=False):
         """
-        GET ALL groups in gitlab that admin user (self.login) has access to
+        GET ALL groups in gitlab that user has access to
 
-        @param force_cache_renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
-        @type force_cache_renew: ``boolean``
+        @param renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
+        @type renew: ``boolean``
         @return: ``lis``
         """
-        self._init()
-        if not force_cache_renew:
-            result =  self._getFromCache(self.login, 'groups')
-            if not result['expired']:
-                return result['data']
-        all_groups = self.gitlab.groups()
-        self._addToCache(self.login, 'groups', all_groups)
-        return self._getFromCache(self.login, 'groups')['data']
+        key="groups"
+        result=self._getFromCache(key,renew=renew)
+        if result==None:
+            result = self.gitlab.getgroups()
+            self.cache.set(key,result)
+        return result
 
-    def getGroups(self,username, force_cache_renew=False):
-        """
-        Get groups for a certain user
+        
 
-        @param username: username
-        @type username: ``str``
-        @param force_cache_renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
-        @type force_cache_renew: ``boolean``
-        @return: ``lis``
-        """
-        self._init()
-        if not force_cache_renew:
-            result = self._getFromCache(username, 'groups')
-            if not result['expired']:
-                return result['data']
-        try:
-            groups =  [ group.name for group in self.gitlab.groups(sudo=username) ]
-            self._addToCache(username, 'groups', groups)
-        except gitlab3.exceptions.ForbiddenRequest:
-            self._addToCache(username, 'groups', [])
-        return self._getFromCache(username, 'groups')['data']
+    #     if not renew:
+    #         result =  self._getFromCache(self.login, 'groups')
+    #         if not result['expired']:
+    #             return result['data']
+    #     all_groups = self.gitlab.groups()
+    #     self._addToCache(self.login, 'groups', all_groups)
+    #     return self._getFromCache(self.login, 'groups')['data']
 
-    def getUserSpaceRights(self, username, space, **kwargs):
+    # # def getGroups(self,username, renew=False):
+    #     """
+    #     Get groups for a certain user
+
+    #     @param username: username
+    #     @type username: ``str``
+    #     @param renew: If True, get data from gitlab backend then update cache, otherwise try cache 1st
+    #     @type renew: ``boolean``
+    #     @return: ``lis``
+    #     """
+    #     self._init()
+    #     if not renew:
+    #         result = self._getFromCache(username, 'groups')
+    #         if not result['expired']:
+    #             return result['data']
+    #     try:
+    #         groups =  [ group.name for group in self.gitlab.groups(sudo=username) ]
+    #         self._addToCache(username, 'groups', groups)
+    #     except gitlab3.exceptions.ForbiddenRequest:
+    #         self._addToCache(username, 'groups', [])
+    #     return self._getFromCache(username, 'groups')['data']
+
+    def getUserProjectRights(self, username, space, **kwargs):
         """
 
         10:'', #guest
@@ -317,16 +304,16 @@ class GitlabInstance():
         if  prefix in space:
             space = space.replace(prefix, '')
 
-        space = self.getSpace(space)
+        space = self.getProject(space)
         if not space:
-            raise RuntimeError("Space %s not found" % space)
+            raise RuntimeError("Project %s not found" % space)
 
         rights = space.find_member(username=username)
         if rights:
             return username, self.PERMISSIONS[rights.access_level]
         return username, ''
 
-    def getUserSpacesObjects(self, username, force_cache_renew=False):
+    def getUserProjectsObjects(self, username, renew=False):
         """
         Get userspace objects (not just names) for a specific user
         Gitlab userspaces always start with 'portal_'
@@ -337,7 +324,7 @@ class GitlabInstance():
         @type bypass_cache:`bool`
         """
         self._init()
-        if not force_cache_renew:
+        if not renew:
             result =  self._getFromCache(username, 'spaces')
             if not result['expired']:
                 return result['data']
@@ -349,8 +336,7 @@ class GitlabInstance():
             self._addToCache(username, 'spaces', [])
         return self._getFromCache(username, 'spaces')['data']
 
-
-    def getUserSpaces(self, username, force_cache_renew=False):
+    def getUserProjects(self, username, renew=False):
         """
         Get userspace names for a specific user
         Gitlab userspaces always start with 'portal_'
@@ -361,4 +347,4 @@ class GitlabInstance():
         @type bypass_cache:`bool`
         """
         self._init()
-        return [p['name'] for p in self.getUserSpacesObjects(username, force_cache_renew)]
+        return [p['name'] for p in self.getUserProjectsObjects(username, renew)]

@@ -176,12 +176,18 @@ metadata.openvcloud            =
             self.actionDone(gitlaburl, "rememberssh")
 
     def connectAYSGitVM(self, gitlaburl, gitlablogin,gitlabpasswd):
+        """
+        @param gitlaburl= 'https://git.aydo.com/openvcloudEnvironments/scaleout1'
+
+        """
         keypath='/root/.ssh/id_rsa'
         if self.actionCheck(gitlaburl, "machinecreate"):
             # means on this machien we have alrady created the machine so we have the credentials
             ip, port = self.actionCheck(gitlaburl, "machinecreate")
             cl = j.ssh.connect(ip, 22, keypath=keypath, verbose=True)
         else:
+            cl=j.clients.gitlab.get("https://git.aydo.com","despiegk","dct009dct")
+            hrd=cl.getHRD("openvcloudEnvironments","scaleout1","services/openvcloud__git_vm__main/service.hrd")
             from IPython import embed
             print "DEBUG NOW ooo"
             embed()

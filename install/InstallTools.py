@@ -32,6 +32,8 @@ class InstallTools():
 
         self.TMP=tempfile.gettempdir().replace("\\","/")
 
+        self._whoami=None
+
         if platform.system().lower()=="windows":
             self.TYPE="WIN"
             self.BASE="%s/"%os.environ["JSBASE"].replace("\\","/")
@@ -78,6 +80,8 @@ class InstallTools():
             #if we get here it means is std python excepthook (I hope)
             # print ("OUR OWN EXCEPTHOOK")
             sys.excepthook = self.excepthook
+
+        self._initSSH_ENV()
 
 
     def excepthook(self, ttype, pythonExceptionObject, tb):
@@ -1108,6 +1112,8 @@ class InstallTools():
         '''
         return int(time.time())
 
+
+
     def rewriteGitRepoUrl(self, url="", login=None, passwd=None):
         """
         Rewrite the url of a git repo with login and passwd if specified
@@ -1156,25 +1162,269 @@ class InstallTools():
             }
         return protocol, repository_host, repository_account, repository_name, repository_url
 
-    def getGitRepoArgs(self, url="", dest=None, login=None, passwd=None, reset=False):
+    def parseGitConfig(self,repopath):
+        """
+        @param repopath is root path of git repo
+        @return (giturl,account,reponame,branch,login,passwd)
+        login will be ssh if ssh is used 
+        login & passwd is only for https 
+        """
+        path=j.system.fs.joinPaths(dest,".git","config")
+        if not j.system.fs.exists(path=path):
+            j.events.inputerror_critical("cannot find %s"%path)
+        config=j.system.fs.fileGetContents(path)
+        state="start"
+        for line in config.split("\n"):
+            line2=line.lower().strip()
+            if state=="remote":
+                if line.startswith("url"):
+                    url=line.split("=",1)[1]
+                    url=url.strip().strip("\"").strip()
+            if line2.find("[remote")!=-1:
+                state="remote"
+            if line2.find("[branch"):
+                branch=line.split(" \"")[1].strip("]\" ").strip("]\" ").strip("]\" ")
+
+    def whoami(self):
+        if self._whoami!=None:
+            return self._whoami
+        rc,result,err=self.execute("whoami",dieOnNonZeroExitCode=False,outputStdout=False, outputStderr=False)
+        if rc>0:
+            #could not start ssh-agent
+            raise RuntimeError("Could not call whoami,\nstdout:%s\nstderr:%s\n"%(result,err))
+        else:
+            self._whoami=result.strip()
+        return self._whoami
+
+    def addSSHAgentToBashrc(self,path=None):
+        if path==None:
+            if "root"==self.whoami():
+                self.addSSHAgentToBashrc(path="/root/.bashrc")
+            path=self.joinPaths(os.environ["HOME"],".bashrc")
+            self.addSSHAgentToBashrc(path=path)
+        else:
+            content=self.readFile(path)
+            out=""
+            for line in content.split("\n"):
+                if line.find("#JSSSHAGENT")!=-1:
+                    continue 
+                if line.find("SSH_AUTH_SOCK")!=-1:
+                    continue 
+
+                out+="%s\n"%line
+
+            out+="\njs 'j.do.loadSSHAgent()' #JSSSHAGENT\n"
+            socketpath="%s/sshagent_socket"%path.replace("/.bashrc","")
+            out+="export SSH_AUTH_SOCK=%s \n"%socketpath
+            out=out.replace("\n\n\n","\n\n")
+            out=out.replace("\n\n\n","\n\n")
+            self.writeFile(path,out)
+
+    def _initSSH_ENV(self,force=False): 
+        if force or not os.environ.has_key("SSH_AUTH_SOCK"):
+            os.putenv("SSH_AUTH_SOCK",self._getSSHSocketpath())     
+            os.environ["SSH_AUTH_SOCK"]=self._getSSHSocketpath()
+        #prob not needed so disable for now
+        # pid=int(self.readFile(self.joinPaths(self.TMP,"ssh-agent-pid")))
+        # os.putenv("SSH_AGENT_PID",str(pid))
+        # return pid
+
+    def _getSSHSocketpath(self):
+
+        # if "root"==self.whoami():
+        #     socketpath="/root/sshagent_socket"
+        # else:
+        socketpath="%s/sshagent_socket"%os.environ["HOME"]     
+        return socketpath    
+
+    def loadSSHKeys(self,path=None):
+        """
+        @param loadedkeys this is to win time, it represents the already loaded keys
+        """        
+
+        if path!=None:
+            #specific path so load
+            self._initSSH_ENV()
+            #timeout after 10 h
+            rc,result,err=self.execute("ssh-add %s -t 36000"%path,dieOnNonZeroExitCode=False,outputStdout=False, outputStderr=False)
+            # if rc>0:
+            #     raise RuntimeError("Could not add key to sshagent, something went wrong,\nstdout:%s\nstderr:%s\n"%(result,err))                
+        else:
+            #no path specified need to find key paths
+            if "root"==self.whoami():
+                self.listFilesInDir(self.joinPaths(os.environ["HOME"],".ssh"),filter="*.pub")
+                for keypath in self.listFilesInDir("/root/.ssh",filter="*.pub"):
+                    self.loadSSHKeys(path=keypath[:-4])
+
+            for keypath in self.listFilesInDir(self.joinPaths(os.environ["HOME"],".ssh"),filter="*.pub"):
+                self.loadSSHKeys(path=keypath[:-4])
+
+    def authorizeSSHKey(self,remoteipaddr,login="root",remoteLogin="root",passwd=None,keypath=None):
+        """
+        if keypath==None then it defaults to "~/.ssh/id_rsa"
+        """
+        # import cuisine
+        import paramiko
+        # import fabric
+        paramiko.util.log_to_file("/tmp/paramiko.log")
+        ssh = paramiko.SSHClient()        
+        
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        if passwd!=None:
+            # from fabric.api import env
+            # env.no_keys = True
+            ssh.connect(remoteipaddr, username=login, password=passwd, allow_agent=False,look_for_keys=False)
+        else:
+            ssh.connect(remoteipaddr, username=login, password=passwd)
+            pass
+        ftp=ssh.open_sftp()
+        if remoteLogin=="root":
+            authkeypath="/root/.ssh/authorized_keys"
+        else:
+            authkeypath="/home/remoteLogin/.ssh/authorized_keys"
+
+        ftp.get(authkeypath,"%s/authorized_keys"%self.TMP)
+        self.readFile("%s/authorized_keys"%self.TMP)
+
+        
+        # cuisine.connect(remoteipaddr,user=login,password=passwd)
+        from IPython import embed
+        print "DEBUG NOW authorizeSSHKey"
+        embed()
+        
+
+    def loadSSHAgent(self,path=None,createkeys=False,keyname="id_rsa"):
+        """
+        check if ssh-agent is available & there is key loaded
+       
+        @param path: is path to private ssh key
+
+        the primary key is 'id_rsa' and will be used as default e.g. if authorizing another node then this key will be used
+
+        """        
+        if path==None:
+            path2=self.joinPaths(os.environ["HOME"],".ssh",keyname)
+            if not self.exists(path2):
+                if createkeys:
+                    self.executeInteractive("ssh-keygen -t rsa -b 4096 -f %s"%path2)
+                    return self.loadSSHAgent(path=path2,createkeys=False)
+        else:
+            if not self.exists(path):
+                raise RuntimeError("Cannot find ssh key on %s"%path)
+        #key is now in path
+        #1 lets try if we can get ssh-agent and if we should start
+        socketpath=self._getSSHSocketpath()
+        if not self.exists(socketpath):
+            #ssh-agent not loaded
+            rc,result,err=self.execute("ssh-agent -a %s"%socketpath,dieOnNonZeroExitCode=False,outputStdout=False, outputStderr=False)
+            if rc>0:
+                #could not start ssh-agent
+                raise RuntimeError("Could not start ssh-agent, something went wrong,\nstdout:%s\nstderr:%s\n"%(result,err))
+            else:
+                #get pid from result of ssh-agent being started
+                if not self.exists(socketpath):
+                    raise RuntimeError("Serious bug, ssh-agent not started while there was no error, should never get here")
+                pid=int([item for item in result.split("\n") if item.find("pid")!=-1][-1].split(" ")[-1].strip("; "))
+                self.writeFile(self.joinPaths(self.TMP,"ssh-agent-pid"),str(pid))
+                self.addSSHAgentToBashrc()
+                return self.loadSSHAgent(path=path,createkeys=createkeys)
+        else:
+            #ssh agent should be loaded because ssh-agent socket has been found
+            # pid=int(self.readFile(self.joinPaths(self.TMP,"ssh-agent-pid")))
+            self._initSSH_ENV(True)
+            rc,result,err=self.execute("ssh-add -l",dieOnNonZeroExitCode=False,outputStdout=False, outputStderr=False)            
+            if rc==2:#>0 and err.find("not open a connection")!=-1:
+                #no ssh-agent found
+                raise RuntimeError("Could not connect to ssh-agent, this is bug, ssh-agent should be loaded by now") 
+            elif rc==1:
+                #no keys but agent loaded
+                result=""
+            elif rc>0:
+                raise RuntimeError("Could not start ssh-agent, something went wrong,\nstdout:%s\nstderr:%s\n"%(result,err))
+        
+        self.loadSSHKeys(path=path)
+        
+            
+
+    def checkSSHAgentAvailable(self):
+
+        
+        if rc==0:
+            #sshagent is loaded
+            pass
+                
+
+        from IPython import embed
+        print "DEBUG NOW checkSSHAgentKeyAvailable"
+        embed()
+        p
+        
+
+        errormsg="Could not find SSH agent, please start by 'eval \"$(ssh-agent -s)\"' before running this cmd,\nand make sure appropriate keys are added with ssh-add ..."
+        sshkeypubcontent=" ".join(sshkeypub.split(" ")[1:]).strip().split("==")[0]+"=="
+        #check if current priv key is in ssh-agent
+        agent=paramiko.agent.Agent()
+        try:
+            keys=agent.get_keys()
+        except Exception,e:
+            j.events.opserror_critical( errormsg)
+        
+        if keys==():
+            j.events.opserror_critical( errormsg)                
+
+        for key in keys:
+            if key.get_base64()==sshkeypubcontent:
+                return True
+        return False
+
+    def getGitRepoArgs(self, url="", dest=None, login=None, passwd=None, reset=False,branch=None):
         """
         Extracts and returns data useful in cloning a Git repository.
 
         Args:
-            url (str): the HTTP URL of the Git repository to clone from. ex: 'https://github.com/odoo/odoo.git'
+            url (str): the HTTP/GIT URL of the Git repository to clone from. eg: 'https://github.com/odoo/odoo.git'
             dest (str): the local filesystem path to clone to
-            login (str): authentication login name
-            passwd (str): authentication login password
+            login (str): authentication login name (only for http)
+            passwd (str): authentication login password (only for http)
             reset (boolean): if True, any cached clone of the Git repository will be removed
+            branch (str): branch to be used
+
+        #### Process for finding authentication credentials:
+
+        - first check there is an ssh-agent and there is a key attached to it, if yes then no login & passwd will be used & method will always be git
+        - if not ssh found (we ONLY support by means of ssh-agent) 
+            - then we will check if url is github & ENV argument GITHUBUSER & GITHUBPASSWD is set
+                - if env arguments set, we will use those & ignore login/passwd arguments
+            - we will check if login/passwd specified in URL, if yes willl use those (so they get priority on login/passwd arguments)
+            - we will see if login/passwd specified as arguments, if yes will use those
+        - if we don't know login or passwd yet then
+            - login/passwd will be fetched from local git repo directory (if it exists and reset==False)
+        - if at this point still no login/passwd then we will try to checkout with anonymous
+
+
+        #### Process for defining branch
+
+        - if branch arg: None
+            - check if git directory exists if yes take that branch
+            - default to 'master'
+        - if it exists, use the branch arg
 
         Returns:
-            (repository_host, repository_type, repository_account, repository_name, repository_url)
+            (repository_host, repository_type, repository_account, repository_name,branch, login, passwd)
+
+            - repository_type http or git
+
+        Remark:
+            url can be empty, then the git params will be fetched out of the git configuration at that path
         """
 
         if url=="":
-            raise RuntimeError("Not supported yet, need to find out of url out of gitconfig the right params")
+            if not j.system.fs.exists(path=dest):
+                j.events.inputerror_critical("Could not find git repo path:%s, url was not specified so git destination needs to be specified."%(dest))
+            
+        
 
-        if login==None and (url.find("github.com/")!=-1 or url.find("git.aydo.com")!=-1):
+        if login==None and url.find("github.com/")!=-1:
             #can see if there if login & passwd in OS env
             #if yes fill it in
             if os.environ.has_key("GITHUBUSER"):
@@ -1648,7 +1898,7 @@ class Installer():
             C2="""#!/bin/bash
             # set -x
             source {env}
-            echo sandbox:{base}
+            #echo sandbox:{base}
             # echo $base/bin/python "$@"
             $base/bin/python "$@"
             """
@@ -1656,7 +1906,7 @@ class Installer():
             C2="""#!/bin/bash
             # set -x
             source {env}
-            echo sandbox:{base}
+            #echo sandbox:{base}
             # echo $base/bin/python "$@"
             python "$@"
             """            

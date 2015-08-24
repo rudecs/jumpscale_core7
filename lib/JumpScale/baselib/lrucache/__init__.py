@@ -5,6 +5,6 @@ def cb():
     return LRUCacheFactory()
 
 j.base.loader.makeAvailable(j, 'db')
-j.db._register('cache', cb)
+j.db._register('cachelru', cb)
 
 

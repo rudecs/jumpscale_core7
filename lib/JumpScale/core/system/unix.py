@@ -48,6 +48,7 @@ class UnixSystem:
         @param var: Variable name
         @type var: string
         '''
+        #@todo there are better ways of doing this
         exitcode, output = j.system.process.execute(". %s > /dev/null && echo $%s"%(file,var))
         if exitcode !=0:
             return ""

@@ -4,7 +4,13 @@ from JumpScale import j
 
 j.application.start("jsshell")
 
-from IPython import embed
-embed()
+import sys
+if len(sys.argv)==2:
+    toexec=sys.argv[1]
+    toexec=toexec.strip("'\" ").strip("'\" ")    
+    eval(toexec)
+else:
+    from IPython import embed
+    embed()
 
-j.application.stop()
+    j.application.stop()
