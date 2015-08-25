@@ -5,10 +5,10 @@ import urllib
 
 class OpenvcloudFactory(object):
     def get(self, apiurl='www.mothership1.com'):
-        return Openvlcoud(apiurl)
+        return Openvclcoud(apiurl)
 
 
-class Openvlcoud(object):
+class Openvclcoud(object):
     def __init__(self, apiurl):
         self._spacesecret = None
         self.api = j.tools.ms1.get(apiurl)
@@ -196,7 +196,7 @@ metadata.openvcloud            =
             ip, port = self.actionCheck(gitlaburl, "machinecreate")
             cl = j.ssh.connect(ip, 22, keypath=keypath, verbose=True)
         else:
-            cl=j.clients.gitlab.get("https://git.aydo.com","despiegk","dct009dct")
+            cl=j.clients.gitlab.get("https://git.aydo.com",gitlablogin,gitlabpasswd)
             hrd=cl.getHRD("openvcloudEnvironments","scaleout1","services/openvcloud__git_vm__main/service.hrd")
             from IPython import embed
             print "DEBUG NOW ooo"

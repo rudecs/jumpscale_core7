@@ -40,13 +40,14 @@ class CRedis():
     """
 
     def __init__(self, addr="127.0.0.1",port=9999,timeout=None):
+        self.addr=addr
         self.port=port
-        self.redis=credis.Connection(host=addr,port=port,socket_timeout=timeout)
+        self.redis=credis.Connection(host=self.addr,port=self.port,socket_timeout=timeout)
         self.connect()    
         self.fallbackredis=None
 
     def getFallBackRedis(self):        
-        self.fallbackredis=j.clients.redis.getRedisClient(addr,port)
+        self.fallbackredis=j.clients.redis.getRedisClient(self.addr,self.port)
         #certain commands (which are not performance sensitive need normal pyredis)
 
     def connect(self):
