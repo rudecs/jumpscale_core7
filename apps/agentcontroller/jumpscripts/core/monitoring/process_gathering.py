@@ -174,7 +174,7 @@ def action():
         
                 processOsisObject=cacheobj.db
                 
-                processOsisObject.active=jpinstance.actions.check_up_local(wait=False)
+                processOsisObject.active=jpinstance.actions.check_up_local(jpinstance, wait=False)
                 processOsisObject.ports = ports
                 processOsisObject.jpname = jpinstance.name
                 processOsisObject.jpdomain=jpinstance.domain
