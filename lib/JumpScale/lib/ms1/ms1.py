@@ -176,7 +176,7 @@ class MS1(object):
         return sizes
 
     def createMachine(self, spacesecret, name, memsize=1, ssdsize=40, vsansize=0, description='',
-                      imagename="ubuntu.14.04.x64",delete=False, sshkey=None, hostname="",**args):
+                      imagename="ubuntu.14.04.x64",delete=False, sshkey=None, hostname="", stackId=None,**args):
         """
         memsize  #size is 0.5,1,2,4,8,16 in GB
         ssdsize  #10,20,30,40,100 in GB
@@ -185,6 +185,8 @@ class MS1(object):
 
         sshkey = is content of pub key or path
         hostname if "" then will be same as name
+        stack stackId where to create the vm. if not None
+              the vm will be created on this stack. otherwise best stack will be choosen automaticly
         """
         if delete:
             self.deleteMachine(spacesecret, name)
@@ -225,7 +227,8 @@ class MS1(object):
         api = self.getApiConnection(spacesecret)
         cloudspaces_actor = api.getActor('cloudapi', 'cloudspaces')
         machines_actor = api.getActor('cloudapi', 'machines')
-
+        if stackId is not None:
+            machine_cb_actor = api.getActor('cloudbroker', 'machine')
         cloudspace_id = self.getCloudspaceId(spacesecret)
 
         self.vars["cloudspace.id"] = cloudspace_id
@@ -246,13 +249,37 @@ class MS1(object):
         templateid=images[imagename][0]
 
         self.sendUserMessage("create machine: %s"%(name))
-        try:
-            machine_id = machines_actor.create(cloudspaceId=cloudspace_id, name=name, description=description, \
-                sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2))
-        except Exception as e:
-            if str(e).find("Selected name already exists") != -1:
-               j.events.inputerror_critical("Could not create machine it does already exist.","ms1.createmachine.exists")
-            raise RuntimeError("E:Could not create machine, unknown error.")
+        if stackId and machine_cb_actor:
+            # we want to deploy on a specific stack
+            def valid():
+                machines = machine_cb_actor.list(cloudspaceId=cloudspace_id)
+                names = []
+                for m in machines:
+                    if m['status'] != 'DESTROYED':
+                        names.append(m['name'])
+                if name in names:
+                    j.events.inputerror_critical("Could not create machine it does already exist.","ms1.createmachine.exists")
+
+                    return False
+                cloudspaceObj = cloudspaces_actor.get(cloudspace_id)
+                if cloudspaceObj['status'] not in ['DEPLOYED', 'VIRTUAL']:
+                    j.events.inputerror_critical("Could not create machine it does already exist.","ms1.createmachine.exists")
+                    return False
+                return True
+
+            if valid():
+                try:
+                    machine_id = machine_cb_actor.createOnStack(cloudspaceId=cloudspace_id, name=name, description=description, sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2), stackid=stackId)
+                except Exception as e:
+                    j.events.opserror_critical("Could not create machine on stack %s, unknown error : %s." % (stackId, e.message), "ms1.createmachine.exists")
+        else:
+            try:
+                machine_id = machines_actor.create(cloudspaceId=cloudspace_id, name=name, description=description, \
+                    sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2))
+            except Exception as e:
+                if str(e).find("Selected name already exists") != -1:
+                   j.events.inputerror_critical("Could not create machine it does already exist.","ms1.createmachine.exists")
+                raise RuntimeError("E:Could not create machine, unknown error : %s", e.message)
 
         self.vars["machine.id"] = machine_id
 
@@ -586,7 +613,7 @@ class MS1(object):
         ssh_connection.fabric.api.env['connection_attempts'] = 5
         ssh_connection.connect('%s:%s' % (connectionAddr, connectionPort), username)
 
-        name = name.replace('_', '')
+        name = name.replace('_', '').replace(' ','-')
         ssh_connection.run('echo "%s" > /etc/hostname' % name)
         ssh_connection.run('hostname %s' % name)
         ssh_connection.run('echo "127.0.0.1 %s" >> /etc/hosts' % name)
