@@ -149,7 +149,7 @@ def getParent(args, precise=False):
 
 
 def getTarget(args):
-    return j.atyourservice.get('jumpscale', name=(args.targettype or ''), instance=(args.targetname or ''),
+    return j.atyourservice.get(name=(args.targettype or ''), instance=(args.targetname or ''),
                                parent=getParent(args, precise=args.immediate))
 
 

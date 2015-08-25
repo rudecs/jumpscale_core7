@@ -125,7 +125,9 @@ class HRDBase():
                 if j.tools.text.isNumeric(keyparts[1]):
                     if keyparts[0] not in ddict.keys():
                         ddict[keyparts[0]]=[]
-                    ddict[keyparts[0]].append(self.get(key).replace("\\n","\n"))
+                    val = self.get(key)
+                    val = val.replace("\\n","\n") if isinstance(val, str) else val
+                    ddict[keyparts[0]].append(val)
                     ddict.pop(key)                
             elif key.count(".")==2:
                 keyparts=key.split(".")

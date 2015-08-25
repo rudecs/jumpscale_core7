@@ -109,7 +109,7 @@ class Openvclcoud(object):
             self.api.createTcpPortForwardRule(spacesecret, 'ovc_git', 22, pubipport=22)
 
             # ssh connetion to the vm
-            cl = j.ssh.connect(ip, port, keypath=keypath,verbose=True)
+            cl = j.ssh.connect(ip, port, keypath=keypath, verbose=True)
 
             # generate key pair on the vm
             print 'generate keypair on the vm'
@@ -182,6 +182,7 @@ metadata.openvcloud            =
             # create ms1_client to save ms1 connection info
             args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, ip)
             cl.run('cd %s; ays install -n git_vm --data "%s"' % (repopath, args))
+            cl.run('git config --global push.default simple')
             cl.run('cd %s;jscode push' % repopath)
             self.actionDone(gitlaburl, "rememberssh")
 
