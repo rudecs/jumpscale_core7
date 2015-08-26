@@ -9,7 +9,7 @@ from JumpScale import j
 
 
 class NodeBase():
-    def __init__(self,ipaddr,sshport=22,redis=None,role=None):
+    def __init__(self,ipaddr,sshport=22,role=None):
         """
         existing roles
         - vnas
@@ -18,7 +18,7 @@ class NodeBase():
 
         """
 
-        self.redis = redis
+        self.redis = ... comes from j.tools.perftesttools...
 
         self.ipaddr=ipaddr
 

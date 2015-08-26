@@ -43,3 +43,16 @@ class PerfTestToolsFactory(object):
         if path!=None:
             j.system.fs.writeFile(filename=path,contents=C)
         return C
+
+    def monitor(self):
+        """
+        will do monitoring & send results to redis, env is used to get config parameters from
+        """
+        pass
+
+    def influxpump(self):
+        """
+        will dump redis stats into influxdb & env is used to get config parameters from
+        influxdb is always on localhost & std login/passwd
+        """
+        pass

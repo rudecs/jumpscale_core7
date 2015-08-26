@@ -10,30 +10,27 @@ from MonitoringTools import MonitoringTools
 
 
 class NodeMonitor(NodeBase,MonitorTools):
-    def __init__(self,ipaddr,sshport=22,redis=None): 
-        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,redis=redis,role="monitor")
+    def __init__(self): 
+        #@todo get ipaddr & sshport from factory class
+        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="monitor")
         self.tmuxinit()
-        self.startRedis2Influxdb()
+        self.startInfluxPump()
 
-    def startRedis2Influxdb(self):  
+    def startInfluxPump(self):  
         env={}
-        from IPython import embed
-        print "DEBUG NOW startRedis2Influxdb"
-        embed()
-        
         env["redishost"]=self.redis.addr
         env["redisport"]=self.redis.port
-        env["idbhost"]=self.redis.addr
-        env["idbport"]=self.redis.port
+        env["idbhost"]="localhost" #influxdb
+        env["idbport"]=???
         env["idblogin"]="root"
         env["idbpasswd"]="root"
+        #this remotely let the influx pump work: brings data from redis to influx
         self.executeInScreen("influxpump","js 'j.tools.perftests.influxpump()'",env=env)   
 
     def tmuxinit(self):
         if self.remote:
             # self.ssh.execute("tmux kill-session -t mgmt", dieOnError=False)
             self.ssh.execute("tmux new-session -d -s mgmt -n mgmt", dieOnError=False)
-            self._runRemote()
         else:
             self.ssh.execute("tmux kill-session -t influxpump", dieOnError=False)
             self.ssh.execute("tmux new-session -d -s influxpump -n influxpump")
@@ -57,16 +54,16 @@ class NodeMonitor(NodeBase,MonitorTools):
             print "total throughput:%s (%s/%s)"%self.getTotalThroughput()
             time.sleep(1)
 
-    def _runRemote(self):
-        mypath=os.path.realpath(__file__)
-        luapath=j.system.fs.joinPaths(j.system.fs.getDirName(mypath),"stat.lua")
-        j.system.fs.writeFile("/tmp/key",self.key)
-        print "push scripts & ssh key to monitoring vm."
-        ftp=self.ssh.getSFtpConnection()
-        ftp.put(mypath,"/tmp/perftest.py")
-        ftp.put(luapath,"/tmp/stat.lua")
-        ftp.put("/tmp/key","/root/.ssh/perftest")
-        # print "load sshagent"
-        # self.execute("export SSH_AUTH_SOCK=/root/sshagent_socket;ssh-add /root/.ssh/perftest", dieOnError=False)     
-        print "start perftest script now on remote"
-        self.executeInScreen("mgmt","cd /tmp;python perftest.py")    
+    # def _runRemote(self):
+    #     mypath=os.path.realpath(__file__)
+    #     luapath=j.system.fs.joinPaths(j.system.fs.getDirName(mypath),"stat.lua")
+    #     j.system.fs.writeFile("/tmp/key",self.key)
+    #     print "push scripts & ssh key to monitoring vm."
+    #     ftp=self.ssh.getSFtpConnection()
+    #     ftp.put(mypath,"/tmp/perftest.py")
+    #     ftp.put(luapath,"/tmp/stat.lua")
+    #     ftp.put("/tmp/key","/root/.ssh/perftest")
+    #     # print "load sshagent"
+    #     # self.execute("export SSH_AUTH_SOCK=/root/sshagent_socket;ssh-add /root/.ssh/perftest", dieOnError=False)     
+    #     print "start perftest script now on remote"
+    #     self.executeInScreen("mgmt","cd /tmp;python perftest.py")    

@@ -10,18 +10,14 @@ from MonitoringTools import MonitoringTools
 
 
 class NodeHost(NodeBase,MonitoringTools):
-    def __init__(self,ipaddr,sshport=22,redis=None): 
+    def __init__(self,ipaddr,sshport=22): 
         """
         is host running the hypervisor
         """
-        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,redis=redis,role="monitor")
+        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="host")
 
     def startMonitor(self,cpu=1,disks=1,net=0):  
         env={}
-        from IPython import embed
-        print "DEBUG NOW startMonitor2"
-        embed()
-        
         env["redishost"]=self.redis.addr
         env["redisport"]=self.redis.port
         env["cpu"]=1
