@@ -1,8 +1,8 @@
 from JumpScale import j
 
-import NodeNas from NodeNas
-import NodeHost from NodeHost
-import NodeMonitor from NodeMonitor
+from NodeNas import NodeNas
+from NodeHost import NodeHost
+from NodeMonitor import NodeMonitor
 import os
 
 class PerfTestToolsFactory(object):

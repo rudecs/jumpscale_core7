@@ -214,7 +214,7 @@ class Disk():
         return self.__str__()
 
 class NodeBase():
-    def __init__(self,ipaddr,sshport=22,nrdisks=0,role=None,fstype="xfs"):
+    def __init__(self,ipaddr,sshport=22,nrdisks=0,role=None,fstype="xfs", testpaths=[]):
         """
         existing roles
         - vnas
@@ -230,6 +230,7 @@ class NodeBase():
         self.ismaster=False
         self.ishost=False
         self.perftester=PerformanceTesterTools()
+        self.testpaths = testpaths
 
         self.ssh=j.remote.ssh.getSSHClientUsingSSHAgent(host=ipaddr, username='root', port=sshport, timeout=10)
         # self.sal=j.ssh.unix.get(self.ssh)
@@ -240,7 +241,7 @@ class NodeBase():
 
     def initDisksRemote(self):
         if self.role=="vnas":
-            if testpaths==[] and self.nrdisks>0:
+            if self.testpaths==[] and self.nrdisks>0:
                 diskids="bcdefghijklmnopqrstuvwxyz"
                 for i in range(self.nrdisks+1):
                     diskname="/dev/vd%s"%diskids[i]
@@ -275,7 +276,7 @@ class NodeBase():
             else:
                 self.nrdisks=0
                 i=0
-                for mountpath in testpaths:
+                for mountpath in self.testpaths:
                     disk=Disk("/dummy/%s"%i)
                     self.disks.append(disk)            
                     disk.screenname="ptest%s"%(i+1)
@@ -333,7 +334,7 @@ class NodeBase():
     def __repr__(self):
         return self.__str__()
 
-class NodeHost(NodeBase,MonitoringTools):
+class NodeHost(NodeBase, MonitorTools):
     def __init__(self,ipaddr,sshport=22,redis=None): 
         """
         is host running the hypervisor
@@ -341,7 +342,7 @@ class NodeHost(NodeBase,MonitoringTools):
         self.ismaster=False
         self.ishost=True
         self.redis=redis
-        Node.__init__(self,ipaddr=ipaddr,sshport=sshport,nrdisks=0,testpaths=[])
+        NodeBase.__init__(self, ipaddr=ipaddr, sshport=sshport, nrdisks=0, testpaths=[])
 
     def startRedis2Influxdb(self):  
         mypath=os.path.realpath(__file__)
@@ -363,13 +364,13 @@ class NodeHost(NodeBase,MonitoringTools):
         self.executeInScreen("monitor","cd /tmp;python perftest.py monitorhost")    
         print "monitoring on %s running"%self
 
-class NodeMaster(NodeBase,MonitoringTools):
+class NodeMaster(NodeBase, MonitorTools):
     def __init__(self,ipaddr,sshport=22,redis=None,remote=False,key=""): 
         self.ismaster=True   
         self.redis=redis
         self.remote=remote
         self.key=key
-        Node.__init__(self,ipaddr=ipaddr,sshport=sshport,nrdisks=0,testpaths=[])
+        NodeBase.__init__(self, ipaddr=ipaddr, sshport=sshport, nrdisks=0, testpaths=[])
 
     def startRedis2Influxdb(self):  
         mypath=os.path.realpath(__file__)
