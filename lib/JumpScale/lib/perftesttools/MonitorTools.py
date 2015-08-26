@@ -6,6 +6,8 @@ import time
 import json
 import os
 import psutil
+from JumpScale.lib.perftesttools import InfluxDumper
+
 
 class MonitorClient():
     def __init__(self,redis,nodename):
@@ -156,8 +158,11 @@ class PerformanceTesterTools():
         """
         if disknr<1:
             raise RuntimeError("disknr starts with 1")
-        disk=node.disks[disknr-1]        
-        print "SEQUENTIAL WRITE %s %s"%(node,disk)
+        if len(node.disks) < disknr:
+            print 'Not enough disks'
+            return
+        disk=node.disks[disknr-1]
+        print "SEQUENTIAL WRITE %s %s"%(node, node.disks)
         
         path="%s/testfile"%disk.mountpath
         filepaths=""
@@ -178,22 +183,22 @@ class Disk():
 
     def initDiskXFS(self):
         print "initxfs:%s"%self
-        res=self.node.ssh.execute("lsblk -f |grep %s"%self.devnameshort, dieOnError=False)[1].strip()
+        res=self.node.ssh.sudo("lsblk -f |grep %s"%self.devnameshort).strip()
         if res=="":
             #did not find formatted disk
-            self.node.ssh.execute("mkfs.xfs -f /dev/vdb")
+            self.node.ssh.sudo("mkfs.xfs -f /dev/vdb")
         elif res.find("xfs")==-1:
             #did find but no xfs
-            self.node.ssh.execute("mkfs.xfs -f /dev/vdb")
-        self.node.ssh.execute("mkdir -p /storage/%s"%self.disknr)
-        self.node.ssh.execute("mount %s /storage/%s"%(self.devname,self.disknr), dieOnError=False)
+            self.node.ssh.sudo("mkfs.xfs -f /dev/vdb")
+        self.node.ssh.sudo("mkdir -p /storage/%s"%self.disknr)
+        self.node.ssh.sudo("mount %s /storage/%s"%(self.devname,self.disknr))
         print "initxfs:%s check mount"%self
         if not self.checkMount():
             raise RuntimeError("could not mount %s"%self)
         print "initxfs:%s done"%self
 
     def checkMount(self):
-        rc,result,err=self.node.ssh.execute("mount")
+        result=self.node.ssh.sudo("mount")
         for line in result.split("\n"):
             if line.find(" on ")!=-1 and line.startswith(self.devname) and line.find(self.node.fstype)!=-1:
                 return True
@@ -214,7 +219,7 @@ class Disk():
         return self.__str__()
 
 class NodeBase():
-    def __init__(self,ipaddr,sshport=22,nrdisks=0,role=None,fstype="xfs", testpaths=[]):
+    def __init__(self,ipaddr,sshport=22,nrdisks=0,role=None,fstype="xfs", testpaths=[], key=''):
         """
         existing roles
         - vnas
@@ -224,6 +229,7 @@ class NodeBase():
 
         """
         self.ipaddr=ipaddr
+        self.sshport = sshport
         self.disks=[]
         self.nrdisks=nrdisks
         self.fstype=fstype
@@ -231,13 +237,34 @@ class NodeBase():
         self.ishost=False
         self.perftester=PerformanceTesterTools()
         self.testpaths = testpaths
+        self.key = key
 
-        self.ssh=j.remote.ssh.getSSHClientUsingSSHAgent(host=ipaddr, username='root', port=sshport, timeout=10)
+        self.ssh = self._getSSHClient()
+        # self.ssh=j.remote.ssh.getSSHClientUsingSSHAgent(host=ipaddr, username='root', port=sshport, timeout=10)
+        # self.ssh=j.remote.ssh.getSSHClientUsingKey(keypath='~/.ssh/id_rsa.pub', host=ipaddr, username='root', port=sshport, timeout=10)
         # self.sal=j.ssh.unix.get(self.ssh)
         self.role=role
         self.tmuxinit()
 
         self.initDisksRemote()
+
+    def _getSSHClient(self):
+        c = j.remote.cuisine
+        self.fabric = c.fabric
+        self.fabric.env['warn_only'] = True
+
+        if self.key:
+            self.fabric.env["key"] = self.key
+        else:
+            self.fabric.env["key_filename"] = '/root/.ssh/id_rsa.pub'
+
+        self.fabric.env['use_ssh_config'] = True
+        self.fabric.env['user'] = 'root'
+
+        connection = c.connect(self.ipaddr, self.sshport)
+
+        return connection
+
 
     def initDisksRemote(self):
         if self.role=="vnas":
@@ -252,7 +279,7 @@ class NodeBase():
 
                 #check mounts
                 print "check disks are mounted and we find them all"
-                rc,result,err=self.ssh.execute("mount")
+                result=self.ssh.sudo("mount")
                 for line in result.split("\n"):
                     if line.find(" on ")!=-1 and line.startswith("/dev/v"):# and line.find(self.fstype)!=-1:
                         #found virtual disk
@@ -286,33 +313,32 @@ class NodeBase():
                     i+=1
 
     def tmuxinit(self):
-        # self.ssh.execute("killall tmux",dieOnError=False)   
+        # self.ssh.sudo("killall tmux",dieOnError=False)   
         try:  
-            self.ssh.execute("tmux kill-session -t perftest")
+            self.ssh.sudo("tmux kill-session -t perftest")
         except:
             pass
         print "init tmux remote"
-        self.ssh.execute("tmux new-session -d -s perftest -n ptest1")            
+        self.ssh.sudo("tmux new-session -d -s perftest -n ptest1")            
         
         for i in range(self.nrdisks+1):
             if i!=0: #first disk already done
                 print "init tmux screen:%s"%i
-                self.ssh.execute("tmux new-window -t 'perftest' -n 'ptest%s'" % (i+1))
-        self.ssh.execute("tmux new-window -t 'perftest' -n 'monitor'") 
-        self.ssh.execute("tmux new-window -t 'perftest' -n 'iostat'")  
+                self.ssh.sudo("tmux new-window -t 'perftest' -n 'ptest%s'" % (i+1))
+        self.ssh.sudo("tmux new-window -t 'perftest' -n 'monitor'") 
+        self.ssh.sudo("tmux new-window -t 'perftest' -n 'iostat'")  
        
         self.executeInScreen("iostat","apt-get install iotools;iostat -c -d 1")  
 
     def startMonitorRemote(self):
         mypath=os.path.realpath(__file__)
         luapath=j.system.fs.joinPaths(j.system.fs.getDirName(mypath),"stat.lua")
-        ftp=self.ssh.getSFtpConnection()
-        ftp.put(mypath,"/tmp/perftest.py")
-        ftp.put(luapath,"/tmp/stat.lua")
+        self.fabric.put(mypath,"/tmp/perftest.py")
+        self.fabric.put(luapath,"/tmp/stat.lua")
         self.executeInScreen("monitor","cd /tmp;python perftest.py monitor")    
         
     def execute(self,cmd, dieOnError=False):
-        self.ssh.execute(cmd, dieOnError=dieOnError)
+        self.ssh.sudo(cmd)
 
     def executeInScreen(self,screenname,cmd):
         """
@@ -335,57 +361,55 @@ class NodeBase():
         return self.__str__()
 
 class NodeHost(NodeBase, MonitorTools):
-    def __init__(self,ipaddr,sshport=22,redis=None): 
+    def __init__(self,ipaddr,sshport=22,redis=None, testpaths=[]): 
         """
         is host running the hypervisor
         """
         self.ismaster=False
         self.ishost=True
         self.redis=redis
-        NodeBase.__init__(self, ipaddr=ipaddr, sshport=sshport, nrdisks=0, testpaths=[])
+        NodeBase.__init__(self, ipaddr=ipaddr, sshport=sshport, nrdisks=0, testpaths=testpaths)
 
     def startRedis2Influxdb(self):  
         mypath=os.path.realpath(__file__)
         luapath=j.system.fs.joinPaths(j.system.fs.getDirName(mypath),"stat.lua")
-        ftp=self.ssh.getSFtpConnection()
-        ftp.put(mypath,"/tmp/perftest.py")
-        ftp.put(luapath,"/tmp/stat.lua")
+        self.fabric.put(mypath,"/tmp/perftest.py")
+        self.fabric.put(luapath,"/tmp/stat.lua")
         self.executeInScreen("monitor","cd /tmp;python perftest.py monitor")    
 
     def tmuxinit(self):
-        # self.ssh.execute("tmux kill-session -t mgmt", dieOnError=False)
-        self.ssh.execute("tmux new-session -d -s monitor -n monitor", dieOnError=False)
+        # self.ssh.sudo("tmux kill-session -t mgmt", dieOnError=False)
+        self.ssh.sudo("tmux new-session -d -s monitor -n monitor")
         mypath=os.path.realpath(__file__)
         luapath=j.system.fs.joinPaths(j.system.fs.getDirName(mypath),"stat.lua")
         j.system.fs.writeFile("/tmp/key",self.key)
         print "push monitoring of physical node underneith hypervisor"
-        ftp=self.ssh.getSFtpConnection()
-        ftp.put(mypath,"/tmp/perftest.py")
+        self.fabric.put(mypath,"/tmp/perftest.py")
         self.executeInScreen("monitor","cd /tmp;python perftest.py monitorhost")    
         print "monitoring on %s running"%self
 
 class NodeMaster(NodeBase, MonitorTools):
-    def __init__(self,ipaddr,sshport=22,redis=None,remote=False,key=""): 
+    def __init__(self,ipaddr,sshport=22,redis=None,remote=False,key="", role=''): 
         self.ismaster=True   
         self.redis=redis
         self.remote=remote
         self.key=key
-        NodeBase.__init__(self, ipaddr=ipaddr, sshport=sshport, nrdisks=0, testpaths=[])
+        self.role = role
+        NodeBase.__init__(self, ipaddr=ipaddr, sshport=sshport, nrdisks=0, testpaths=[], key='')
 
     def startRedis2Influxdb(self):  
         mypath=os.path.realpath(__file__)
-        ftp=self.ssh.getSFtpConnection()
-        ftp.put(mypath,"/tmp/perftest.py")
+        self.fabric.put(mypath,"/tmp/perftest.py")
         self.executeInScreen("dumper","cd /tmp;python perftest.py dbpopulate")  
 
     def tmuxinit(self):
         if self.remote:
-            # self.ssh.execute("tmux kill-session -t mgmt", dieOnError=False)
-            self.ssh.execute("tmux new-session -d -s mgmt -n mgmt", dieOnError=False)
+            # self.ssh.sudo("tmux kill-session -t mgmt", dieOnError=False)
+            self.ssh.sudo("tmux new-session -d -s mgmt -n mgmt")
             self._runRemote()
         else:
-            self.ssh.execute("tmux kill-session -t dumper", dieOnError=False)
-            self.ssh.execute("tmux new-session -d -s dumper -n dumper")
+            self.ssh.sudo("tmux kill-session -t dumper")
+            self.ssh.sudo("tmux new-session -d -s dumper -n dumper")
 
     def getTotalIOPS(self):
         return (self.getStatObject(key="iops")["val"],self.getStatObject(key="iops_r")["val"],self.getStatObject(key="iops_w")["val"])
@@ -411,10 +435,9 @@ class NodeMaster(NodeBase, MonitorTools):
         luapath=j.system.fs.joinPaths(j.system.fs.getDirName(mypath),"stat.lua")
         j.system.fs.writeFile("/tmp/key",self.key)
         print "push scripts & ssh key to monitoring vm."
-        ftp=self.ssh.getSFtpConnection()
-        ftp.put(mypath,"/tmp/perftest.py")
-        ftp.put(luapath,"/tmp/stat.lua")
-        ftp.put("/tmp/key","/root/.ssh/perftest")
+        self.fabric.put(mypath,"/tmp/perftest.py")
+        self.fabric.put(luapath,"/tmp/stat.lua")
+        self.fabric.put("/tmp/key","/root/.ssh/perftest")
         # print "load sshagent"
         # self.execute("export SSH_AUTH_SOCK=/root/sshagent_socket;ssh-add /root/.ssh/perftest", dieOnError=False)     
         print "start perftest script now on remote"
@@ -479,12 +502,11 @@ else:
     # nodemaster.loopPrintStatus()
 
     def singleLocalNodeTest():
-        nodemaster=NodeMaster("127.0.0.1",redis=redis)  
-        node1=Node("127.0.0.1",22,testpaths=["/var/1"]) 
+        nodemaster=NodeMaster("127.0.0.1",redis=redis, role='vnas')  
+        node1=NodeHost("127.0.0.1",22,testpaths=["/var/1"]) 
         nodemaster.startRedis2Influxdb() #make sure that script which pushes content in influxdb is started
-        node1.startMonitor()
-        nodehost=Node("127.0.0.1",22) 
-        pt=PerformanceTester()
+        node1.startMonitorRemote()
+        pt=PerformanceTesterTools()
         pt.sequentialWriteReadBigBlock(node=node1,disknr=1,nrfiles=3)
 
 
@@ -519,7 +541,7 @@ Ha5/w/N6XfqnrkCeqJ2i
         print "start redisdumper"
         nodemaster.startRedis2Influxdb() #make sure that script which pushes content in influxdb is started
         print "start performance tester class"
-        pt=PerformanceTester()
+        pt=PerformanceTesterTools()
         nodesObj=[]
         nodes=["192.168.103.240","192.168.103.239","192.168.103.238","192.168.103.237"]
 

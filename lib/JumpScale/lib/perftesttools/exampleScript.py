@@ -6,11 +6,11 @@ def singleLocalNodeTest():
 
     j.tools.perftesttools.init(monitorNodeIp="localhost",sshPort=22,redispasswd="",sshkey="")
 
-    monitor=j.tools.perftesttools.getNodeMonitor()
-    nas=j.tools.perftesttools.getNodeNas("localhost",22,nrdisks=0,fstype="xfs")
-    host=j.tools.perftesttools.getNodeHost("localhost",22)
+    monitor=j.tools.perftesttools.getNodeMonitor("localhost")
+    nas=j.tools.perftesttools.getNodeNAS("localhost", 22, nrdisks=2, fstype="xfs", role='vnas')
+    host=j.tools.perftesttools.getNodeHost("localhost", 22, role='vnas')
 
-    nas.perftester.sequentialWriteReadBigBlock(nrfilesParallel=1)
+    nas.perftester.sequentialWriteReadBigBlock(nas, 1, nrfiles=1)
 
 
 def multiNodeMultDiskStripTest():

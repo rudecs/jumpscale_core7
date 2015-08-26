@@ -1,8 +1,8 @@
 from JumpScale import j
 
-from NodeNas import NodeNas
-from NodeHost import NodeHost
-from NodeMonitor import NodeMonitor
+from MonitorTools import NodeBase
+from MonitorTools import NodeHost
+from MonitorTools import NodeMaster
 import os
 
 class PerfTestToolsFactory(object):
@@ -21,20 +21,20 @@ class PerfTestToolsFactory(object):
         self.monitorNodeAddr=None
         self.redispasswd=""
 
-    def init(self,monitorNodeIp,sshPort,redispasswd="",sshkey=""):
+    def init(self,monitorNodeIp, sshPort, redispasswd="",sshkey=""):
         self.monitorNodeIp=monitorNodeIp
-        self.monitorNodeSSHPort=sshport
+        self.monitorNodeSSHPort=sshPort
         self.redispasswd=redispasswd
         self.sshkey=sshkey
 
-    def getNodeNAS(self, ipaddr,sshport=22,nrdisks=0,fstype="xfs"):
-        return NodeNas(ipaddr,sshport,nrdisks,fstype)
+    def getNodeNAS(self, ipaddr,sshport=22,nrdisks=0,fstype="xfs", role=''):
+        return NodeBase(ipaddr=ipaddr, sshport=sshport, nrdisks=nrdisks, fstype=fstype, role=role)
         
     def getNodeHost(self, ipaddr,sshport=22):
         return NodeHost(ipaddr,sshport)
 
     def getNodeMonitor(self, ipaddr,sshport=22):
-        return NodeMonitor(ipaddr,sshport)
+        return NodeMaster(ipaddr,sshport)
 
     def getExampleScript(self,path=None):
         dirpath=j.system.fs.getDirName(os.path.realpath(__file__))
