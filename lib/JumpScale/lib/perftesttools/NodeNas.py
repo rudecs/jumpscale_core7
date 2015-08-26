@@ -12,8 +12,8 @@ from MonitorTools import *
 from Disk import *
 
 class NodeNas(NodeBase,MonitorTools):
-    def __init__(self,ipaddr,sshport=22,redis=None,nrdisks=0,fstype="xfs"): 
-        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,redis=redis,role="nas")
+    def __init__(self,ipaddr,sshport=22,nrdisks=0,fstype="xfs"): 
+        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="nas")
         
         self.disks=[]
         self.nrdisks=nrdisks
