@@ -87,7 +87,7 @@ class NetConfigFactory():
             br.connect(interface)
 
     def newVlanBridge(self, name, parentbridge, vlanid, mtu=None):
-        addVlanPatch(parentbridge, name, vlanid, mtu=None)
+        addVlanPatch(parentbridge, name, vlanid, mtu=mtu)
 
     def ensureVXNet(self, networkid, backend):
         vxnet = vxlan.VXNet(networkid, backend)
