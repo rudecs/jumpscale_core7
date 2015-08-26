@@ -31,7 +31,7 @@ class RemoteService(Service):
         self.actions.executeaction(self, actionname="start")
 
     def restart(self, deps=True, processed={}):
-        self.actions.executeaction(self, actionname="restop")
+        self.actions.executeaction(self, actionname="restart")
 
     def prepare(self, deps=True, reverse=True, processed={}):
         self.actions.executeaction(self, actionname="prepare")
