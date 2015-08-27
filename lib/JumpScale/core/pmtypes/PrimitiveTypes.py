@@ -10,6 +10,10 @@ class Boolean(BaseType):
 
     @staticmethod
     def fromString(s):
+        if isinstance(s, bool):
+            return s
+
+        s = str(s)
         if s.upper() in ('0', 'FALSE'):
             return False
         elif s.upper() in ('1', 'TRUE'):
