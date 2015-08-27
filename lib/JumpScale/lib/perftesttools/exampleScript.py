@@ -2,27 +2,7 @@ from JumpScale import j
 
 j.application.start("pertests")
 
-def singleLocalNodeTest():
-
-    j.tools.perftesttools.init(monitorNodeIp="localhost",sshPort=22,redispasswd="",sshkey="")
-
-    monitor=j.tools.perftesttools.getNodeMonitor("localhost")
-    nas=j.tools.perftesttools.getNodeNAS("localhost", 22, nrdisks=2, fstype="xfs", role='vnas')
-    host=j.tools.perftesttools.getNodeHost("localhost", 22, role='vnas')
-
-    nas.perftester.sequentialWriteReadBigBlock(nas, 1, nrfiles=1)
-
-
-def multiNodeMultDiskStripTest():
-
-    """
-    if you want to work from the monitoring vm: (remote option)
-    on monitoring vm do, to make sure there are keys & ssh-agent is loaded
-        js 'j.do.loadSSHAgent(createkeys=True)'
-        #now logout & back login into that node, this only needs to happen once
-
-    """
-    mgmtkey="""
+ssh_mgmtkey="""
 -----BEGIN DSA PRIVATE KEY-----
 MIIBuwIBAAKBgQCUsI1t6Hxvgbhi+2iXEMa3a5IlVv9AQmdqzywo63KlJklRBV8B
 sS/H0QaYE6msIQOucddUf3pxNCcI0YzXIc68ViQJ/N20tLKtKn1Cs+FAQG5HgAaB
@@ -36,6 +16,29 @@ DeKKIzr8KKGcUPROIQmy6fooeN4idnrtI9c2QXBNYHWqekHDuTpWZAIVAIaQPzv8
 Ha5/w/N6XfqnrkCeqJ2i
 -----END DSA PRIVATE KEY-----        
 """
+
+def singleLocalNodeTest():
+
+    j.tools.perftesttools.init(monitorNodeIp="localhost",sshPort=22,redispasswd="",sshkey=ssh_mgmtkey)
+
+    monitor=j.tools.perftesttools.getNodeMonitor()
+    nas=j.tools.perftesttools.getNodeNAS("localhost", 22, nrdisks=2, fstype="xfs", role='vnas',name="nas1",debugdisk="/dev/sda")
+    host=j.tools.perftesttools.getNodeHost("localhost", 22,name="host1")
+
+    nas.initTest()
+    nas.perftester.sequentialReadWrite(size="2000m",nrfiles=1)
+
+
+def multiNodeMultDiskStripTest():
+
+    """
+    if you want to work from the monitoring vm: (remote option)
+    on monitoring vm do, to make sure there are keys & ssh-agent is loaded
+        js 'j.do.loadSSHAgent(createkeys=True)'
+        #now logout & back login into that node, this only needs to happen once
+
+    """
+
     nrdisks=6
 
     j.tools.perftesttools.init(monitorNodeIp="192.168.103.252",sshPort=22,sshkey=mgmtkey)

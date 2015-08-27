@@ -8,6 +8,7 @@ from JumpScale import j
 
 class Disk():
     def __init__(self,devname,node=None,disknr=None,screenname=None):
+        devname.replace("//","/")
         self.devname=devname
         self.devnameshort=self.devname.split("/")[2]
         self.mounted=False
@@ -43,7 +44,7 @@ class Disk():
         """
         gets executed in right screen for the disk
         """
-        self.node.executeInScreen(self.screenname,cmd,env=env)
+        self.node.executeInScreen(self.screenname,cmd,env=env,session="perftest")
 
     def __str__(self):
         return "disk:%s"%(self.devname)

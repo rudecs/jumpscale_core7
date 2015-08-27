@@ -11,10 +11,13 @@ from PerfTestTools import *
 from MonitorTools import *
 from Disk import *
 
-class NodeNas(NodeBase,MonitorTools):
-    def __init__(self,ipaddr,sshport=22,nrdisks=0,fstype="xfs"): 
-        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="nas")
+class NodeNas(NodeBase):
+    def __init__(self,ipaddr,sshport=22,nrdisks=0,fstype="xfs",debugdisk="",name=""): 
+        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="nas",name=name)
         
+        self.debugdisk=debugdisk
+        if self.debugdisk!="":
+            self.debug=True
         self.disks=[]
         self.nrdisks=nrdisks
         self.fstype=fstype
@@ -23,44 +26,22 @@ class NodeNas(NodeBase,MonitorTools):
 
         self.perftester=PerfTestTools(self)
 
-        self.tmuxinit()
+        disks=[item.devnameshort for item in self.disks]
+        self.startMonitor(disks=disks)
 
-    def startMonitor(self):  
-        env={}
-        from IPython import embed
-        print "DEBUG NOW startMonitor"
-        embed()
-        
-        env["redishost"]=self.redis.addr
-        env["redisport"]=self.redis.port
-        env["cpu"]=0
-        env["disks"]=1
-        env["net"]=0
-        self.executeInScreen("monitor","js 'j.tools.perftests.monitor()'",env=env)    
-
-    def tmuxinit(self):
-        # self.ssh.execute("killall tmux",dieOnError=False)   
-        try:  
-            self.ssh.execute("tmux kill-session -t perftest")
-        except:
-            pass
-        print "init tmux remote"
-        self.ssh.execute("tmux new-session -d -s perftest -n ptest1")            
-        
-        for i in range(self.nrdisks+1):
-            if i!=0: #first disk already done
-                print "init tmux screen:%s"%i
-                self.ssh.execute("tmux new-window -t 'perftest' -n 'ptest%s'" % (i+1))
-
-        # self.ssh.execute("tmux new-window -t 'perftest' -n 'iostat'")         
-        # self.executeInScreen("iostat","apt-get install iotools;iostat -c -d 1")  
+    def initTest(self):
+        screens=[]
+        for i in range(self.nrdisks):
+            screens.append("ptest%s"%i)
+        self.prepareTmux("perftest",screens)
 
     def initDisks(self):
-        if testpaths==[] and self.nrdisks>0:
+
+        if self.debug==False:
             diskids="bcdefghijklmnopqrstuvwxyz"
-            for i in range(self.nrdisks+1):
+            for i in range(self.nrdisks):
                 diskname="/dev/vd%s"%diskids[i]
-                disk=Disk(diskname,node=self,disknr=i+1,screenname="ptest%s"%(i+1))
+                disk=Disk(diskname,node=self,disknr=i+1,screenname="ptest%s"%(i))
                 self.disks.append(disk)            
 
             #check mounts
@@ -86,17 +67,15 @@ class NodeNas(NodeBase,MonitorTools):
 
             print "all disks mounted"                    
 
-        else:
-            self.nrdisks=0
+        else:            
             i=0
-            for mountpath in testpaths:
-                disk=Disk("/dummy/%s"%i)
-                self.disks.append(disk)            
-                disk.screenname="ptest%s"%(i+1)
-                disk.disknr=i+1
-                disk.mountpath=mountpath
-                disk.node=self
-                i+=1
+            disk=Disk(self.debugdisk)
+            self.disks.append(disk)            
+            disk.screenname="ptest%s"%i
+            disk.disknr=i+1
+            disk.mountpath="/tmp/dummyperftest/%s"%i
+            j.system.fs.createDir(disk.mountpath)
+            disk.node=self
 
     def findDisk(self,devname):
         for disk in self.disks:

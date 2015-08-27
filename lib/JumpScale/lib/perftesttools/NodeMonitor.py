@@ -6,34 +6,31 @@ from JumpScale import j
 # import os
 # import psutil
 from NodeBase import NodeBase
-from MonitoringTools import MonitoringTools
 
 
-class NodeMonitor(NodeBase,MonitorTools):
-    def __init__(self): 
-        #@todo get ipaddr & sshport from factory class
-        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="monitor")
-        self.tmuxinit()
+class NodeMonitor(NodeBase):
+    def __init__(self,ipaddr,sshport,name=""): 
+        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="monitor",name=name)
+        if self.name=="":
+            self.name="monitor"
         self.startInfluxPump()
 
     def startInfluxPump(self):  
         env={}
-        env["redishost"]=self.redis.addr
-        env["redisport"]=self.redis.port
+
+        if  j.tools.perftesttools.monitorNodeIp==None:
+            raise RuntimeError("please do j.tools.perftesttools.init() before calling this")
+
+        env["redishost"]=j.tools.perftesttools.monitorNodeIp
+        env["redisport"]=9999
         env["idbhost"]="localhost" #influxdb
-        env["idbport"]=???
+        env["idbport"]=8086
         env["idblogin"]="root"
         env["idbpasswd"]="root"
         #this remotely let the influx pump work: brings data from redis to influx
-        self.executeInScreen("influxpump","js 'j.tools.perftests.influxpump()'",env=env)   
 
-    def tmuxinit(self):
-        if self.remote:
-            # self.ssh.execute("tmux kill-session -t mgmt", dieOnError=False)
-            self.ssh.execute("tmux new-session -d -s mgmt -n mgmt", dieOnError=False)
-        else:
-            self.ssh.execute("tmux kill-session -t influxpump", dieOnError=False)
-            self.ssh.execute("tmux new-session -d -s influxpump -n influxpump")
+        self.prepareTmux("mgmt",["influxpump","mgmt"])
+        self.executeInScreen("influxpump","js 'j.tools.perftesttools.influxpump()'",env=env,session="mgmt")   
 
     def getTotalIOPS(self):
         return (self.getStatObject(key="iops")["val"],self.getStatObject(key="iops_r")["val"],self.getStatObject(key="iops_w")["val"])

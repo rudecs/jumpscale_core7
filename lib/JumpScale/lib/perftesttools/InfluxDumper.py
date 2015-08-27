@@ -1,16 +1,15 @@
 from JumpScale import j
 
-# import statsd
 # import sys
-# import time
-# import json
+import time
+import json
 # import os
-# import psutil
+import psutil
 
 
 class InfluxDumper():
 
-    def __init__(self,redis,server,port,login="root",passwd="root",dbname="monitoring"):
+    def __init__(self,redis,server="localhost",port=8086,login="root",passwd="root",dbname="monitoring"):
         self.redis=redis
         self.dbname=dbname
         self.influxdb=j.clients.influxdb.get(host=server, port=port, username=login, password=passwd, database=None, ssl=False, verify_ssl=False, timeout=None, use_udp=False, udp_port=4444)
@@ -57,4 +56,5 @@ class InfluxDumper():
                     data=[]
                 counter+=1
                 res=self.redis.lpop(q)
+                print res
             time.sleep(1)            

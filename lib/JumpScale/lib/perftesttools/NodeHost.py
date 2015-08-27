@@ -6,22 +6,21 @@ from JumpScale import j
 # import os
 # import psutil
 from NodeBase import NodeBase
-from MonitoringTools import MonitoringTools
 
 
-class NodeHost(NodeBase,MonitoringTools):
-    def __init__(self,ipaddr,sshport=22): 
+
+class NodeHost(NodeBase):
+    def __init__(self,ipaddr,sshport=22,name=""): 
         """
         is host running the hypervisor
         """
-        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="host")
+        NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="host",name=name)
 
-    def startMonitor(self,cpu=1,disks=1,net=0):  
-        env={}
-        env["redishost"]=self.redis.addr
-        env["redisport"]=self.redis.port
-        env["cpu"]=1
-        env["disks"]=0
-        env["net"]=0
-        self.executeInScreen("monitor","js 'j.tools.perftests.monitor()'",env=env)    
+        self.startMonitor()
 
+
+    def authorizeKey(self,keypath="/home/despiegk/.ssh/perftest.pub"):
+        from IPython import embed
+        print "DEBUG NOW authorizeKey"
+        embed()
+        
