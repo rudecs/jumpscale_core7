@@ -1259,38 +1259,42 @@ class InstallTools():
             for keypath in self.listFilesInDir(self.joinPaths(os.environ["HOME"],".ssh"),filter="*.pub"):
                 self.loadSSHKeys(path=keypath[:-4])
 
-    def authorizeSSHKey(self,remoteipaddr,login="root",remoteLogin="root",passwd=None,keypath=None):
-        """
-        if keypath==None then it defaults to "~/.ssh/id_rsa"
-        """
-        # import cuisine
-        import paramiko
-        # import fabric
-        paramiko.util.log_to_file("/tmp/paramiko.log")
-        ssh = paramiko.SSHClient()        
+    # def authorizeSSHKey(self,remoteipaddr,login="root",remoteLogin="root",passwd=None,keypath=None):
+    #     """
+    #     if keypath==None then it defaults to "~/.ssh/id_rsa"
+    #     """
+    #     # import cuisine
+    #     import paramiko
+    #     # import fabric
+    #     paramiko.util.log_to_file("/tmp/paramiko.log")
+    #     ssh = paramiko.SSHClient()        
         
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        if passwd!=None:
-            # from fabric.api import env
-            # env.no_keys = True
-            ssh.connect(remoteipaddr, username=login, password=passwd, allow_agent=False,look_for_keys=False)
-        else:
-            ssh.connect(remoteipaddr, username=login, password=passwd)
-            pass
-        ftp=ssh.open_sftp()
-        if remoteLogin=="root":
-            authkeypath="/root/.ssh/authorized_keys"
-        else:
-            authkeypath="/home/remoteLogin/.ssh/authorized_keys"
+    #     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    #     print "ssh connect:%s %s"%(remoteipaddr,login)
+    #     if passwd!=None:
+    #         # from fabric.api import env
+    #         # env.no_keys = True
+    #         ssh.connect(remoteipaddr, username=login, password=passwd, allow_agent=False,look_for_keys=False)
+    #     else:
+    #         ssh.connect(remoteipaddr, username=login, password=passwd)
+    #         pass
+    #     print "ok"
+    #     ftp=ssh.open_sftp()
+    #     if remoteLogin=="root":
+    #         if login!="root":
+    #         else:
+    #             authkeypath="/root/.ssh/authorized_keys"
+    #     else:
+    #         authkeypath="/home/%s/.ssh/authorized_keys"%(remoteLogin)
 
-        ftp.get(authkeypath,"%s/authorized_keys"%self.TMP)
-        self.readFile("%s/authorized_keys"%self.TMP)
+    #     ftp.get(authkeypath,"%s/authorized_keys"%self.TMP)
+    #     self.readFile("%s/authorized_keys"%self.TMP)
 
         
-        # cuisine.connect(remoteipaddr,user=login,password=passwd)
-        from IPython import embed
-        print "DEBUG NOW authorizeSSHKey"
-        embed()
+    #     # cuisine.connect(remoteipaddr,user=login,password=passwd)
+    #     from IPython import embed
+    #     print "DEBUG NOW authorizeSSHKey"
+    #     embed()
         
 
     def loadSSHAgent(self,path=None,createkeys=False,keyname="id_rsa"):
