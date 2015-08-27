@@ -30,8 +30,8 @@ class PerfTestToolsFactory(object):
     def getNodeNAS(self, ipaddr,sshport=22,nrdisks=0,fstype="xfs", role=''):
         return NodeBase(ipaddr=ipaddr, sshport=sshport, nrdisks=nrdisks, fstype=fstype, role=role)
         
-    def getNodeHost(self, ipaddr,sshport=22):
-        return NodeHost(ipaddr,sshport)
+    def getNodeHost(self):
+        return NodeHost(self.monitorNodeIp,self.monitorNodeSSHPort)
 
     def getNodeMonitor(self, ipaddr,sshport=22):
         return NodeMaster(ipaddr,sshport)
