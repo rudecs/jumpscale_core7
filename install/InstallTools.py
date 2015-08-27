@@ -842,7 +842,7 @@ class InstallTools():
             cmd = "curl '%s' -o '%s' %s %s --connect-timeout 5 --retry %s --retry-max-time %s"%(url,to,user,minsp,retry,timeout)
             if self.exists(to):
                 cmd += " -C -"
-            # print cmd
+            print cmd
             self.delete("%s.downloadok"%to)
             rc, out, err = self.execute(cmd, dieOnNonZeroExitCode=False)
             if rc == 33: # resume is not support try again withouth resume

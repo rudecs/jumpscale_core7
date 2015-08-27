@@ -32,6 +32,14 @@ class TelegramBot:
         handler = DemoHandler()
         self.api.add_handler(handler)
 
+    def addHandler(self,handler):
+        """
+        handler = OurHandler()
+        telegrambot.addHandler(handler)
+        """
+        self.api.add_handler(handler)
+
+
     def start(self):
         self.api.process_updates()
 
