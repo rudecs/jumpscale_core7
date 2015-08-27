@@ -26,11 +26,12 @@ class PerfTestToolsFactory(object):
         self.nodes=[]
         self.sshkey=None
 
-    def init(self,monitorNodeIp, sshPort, redispasswd="",sshkey=None):
+    def init(self,testname,monitorNodeIp, sshPort, redispasswd="",sshkey=None):
         """
         sshkey can be path to key or the private key itself
         the goal is you use ssh-agent & your keys pre-loaded, best not to manually work with keys !!!
         """
+        self.testname=testname
         self.monitorNodeIp=monitorNodeIp
         self.monitorNodeSSHPort=sshPort
         self.redispasswd=redispasswd
@@ -87,6 +88,6 @@ class PerfTestToolsFactory(object):
         influxdb is always on localhost & std login/passwd
         """
         redis=j.clients.redis.getRedisClient(os.environ["redishost"], os.environ["redisport"])
-        d=InfluxDumper(redis)
+        d=InfluxDumper(os.environ["testname"],redis)
         d.start()
         

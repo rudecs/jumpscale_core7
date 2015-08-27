@@ -14,7 +14,7 @@ class OurCuisine():
         self.fabric = j.remote.fabric.api
         j.remote.fabric.setHost()
 
-    def connect(self,addr,port,passwd=None):
+    def connect(self,addr,port,passwd=None,login="root"):
         if passwd!="":
             env.password=passwd
 
@@ -25,6 +25,7 @@ class OurCuisine():
         # if j.system.net.tcpPortConnectionTest(addr,port)==False:
             # j.events.opserror_critical("Cannot SSH connect to %s:%s, port does not answer on tcp test."%(addr,port))
 
+        self.fabric.env['user'] = login
         self.api.connect('%s:%s' % (addr,port), "root")
 
         env.password=passwd

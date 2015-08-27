@@ -27,6 +27,7 @@ class NodeMonitor(NodeBase):
         env["idbport"]=8086
         env["idblogin"]="root"
         env["idbpasswd"]="root"
+        env["testname"]=j.tools.perftesttools.testname
         #this remotely let the influx pump work: brings data from redis to influx
 
         self.prepareTmux("mgmt",["influxpump","mgmt"])

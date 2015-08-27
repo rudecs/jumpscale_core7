@@ -13,11 +13,14 @@ class MonitorClient():
     def __init__(self):
         luapath="stat.lua"
         lua=j.system.fs.fileGetContents(luapath)
-        self._sha=self.redis.script_load(lua)
+        self._sha=self.redis.script_load(lua)       
 
-    def reset(self):
-        self.redis.delete("stats")
-        self.redis.delete("queues:stats")
+    # def reset(self):
+    #     import ipdb
+    #     ipdb.set_trace()
+        
+    #     self.redis.delete("stats")
+    #     self.redis.delete("queues:stats")
 
     def measure(self,key,measurement,tags,value,type="A",aggrkey=""):
         """
@@ -27,18 +30,19 @@ class MonitorClient():
 
         res = self.redis.evalsha(self._sha,1,key,measurement,value,str(now),type,tags,self.nodename)
 
-        if aggrkey!="":
-            tags=j.core.tags.getObject(tags)
-            try:
-                tags.tagDelete("node")
-            except:
-                pass
-            try:
-                tags.tagDelete("disk")
-            except:
-                pass            
-            tags.tagSet("node","total")
-            res= self.redis.evalsha(self._sha,1,aggrkey,measurement,value,str(now),type,tags,"total")   
+        #LETS NOT DO TOTAL FOR NOW
+        # if aggrkey!="":
+        #     tags=j.core.tags.getObject(tags)
+        #     try:
+        #         tags.tagDelete("node")
+        #     except:
+        #         pass
+        #     try:
+        #         tags.tagDelete("disk")
+        #     except:
+        #         pass            
+        #     tags.tagSet("node","total")
+        #     res= self.redis.evalsha(self._sha,1,aggrkey,measurement,value,str(now),type,tags,"total")   
 
         print "%s %s"%(key,res)
 
@@ -157,7 +161,7 @@ class MonitorTools(MonitorClient):
                 val=int(res[i])
                 measurement=names[i]
                 key="%s.%s"%(self.nodename,measurement)
-                self.measureDiff(key,measurement,tags,val,aggrkey=measurement)
+                self.measure(key,measurement,tags,val,aggrkey=measurement)
 
         
     def netstat(self):
