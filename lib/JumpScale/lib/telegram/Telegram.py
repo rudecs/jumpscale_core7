@@ -1,4 +1,16 @@
-import requests
+try:
+    import grequests as requests
+except:
+    cmd='pip install grequests'
+    j.do.execute(cmd)
+    import grequests as requests
+
+# import requests as requests
+from gevent import monkey
+# monkey.patch_socket()
+monkey.patch_time()
+monkey.patch_all()
+
 from Models import Message
 import os
 import sys
@@ -39,13 +51,19 @@ class Telegram:
         self.loopingUpdateHandler = False
         self.lastID = 0
         self.handlers = []
+        self.debug=False
 
     def send_request(self, action, params={}, files=[]):
         """Wraps the url building and sends the requst to Telegram's servers.
         Returns the processed data in JSON or a JSON object containing the
         error message."""
         url = "{}{}/{}".format(self.api_url, self.access_token, action)
+        
         r = requests.post(url, params=params, files=files)
+
+        #for async lib
+        r = requests.map([r])
+        r=r[0]
         # print url
         # print params
         try:
@@ -76,7 +94,7 @@ class Telegram:
             args[method] = filepath
         return self.send_request(command, args, files)
 
-    def get_updates(self, offset=0, limit=100, timeout=0):
+    def get_updates(self, offset=0, limit=100, timeout=5):
         """Using /getUpdates to poll updates from Telegram."""
         return self.send_request("getUpdates", {"offset": offset,
                                                 "limit": limit,
@@ -174,12 +192,15 @@ class Telegram:
             for k, v in self.handlerTypeCallback.items():
                 if (k == "update" or hasattr(message, k))\
                    and hasattr(handler, v):
-                    try:
+                    if self.debug:
                         getattr(handler, v)(self, message)
-                    except:
-                        print("""Oops, there has been a problem
-                              with this handler : {}""".format(handler))
-                        print(sys.exc_info())
+                    else:
+                        try:
+                            getattr(handler, v)(self, message)
+                        except:
+                            print("""Oops, there has been a problem
+                                  with this handler : {}""".format(handler))
+                            print(sys.exc_info())
 
     def process_updates(self):
         """Pools updates and dispatches them to the handlers."""
