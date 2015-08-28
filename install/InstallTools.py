@@ -842,7 +842,7 @@ class InstallTools():
             cmd = "curl '%s' -o '%s' %s %s --connect-timeout 5 --retry %s --retry-max-time %s"%(url,to,user,minsp,retry,timeout)
             if self.exists(to):
                 cmd += " -C -"
-            # print cmd
+            print cmd
             self.delete("%s.downloadok"%to)
             rc, out, err = self.execute(cmd, dieOnNonZeroExitCode=False)
             if rc == 33: # resume is not support try again withouth resume
@@ -1259,39 +1259,60 @@ class InstallTools():
             for keypath in self.listFilesInDir(self.joinPaths(os.environ["HOME"],".ssh"),filter="*.pub"):
                 self.loadSSHKeys(path=keypath[:-4])
 
-    def authorizeSSHKey(self,remoteipaddr,login="root",remoteLogin="root",passwd=None,keypath=None):
+    def authorizeSSHKey(self,remoteipaddr,login="root",remoteuser="root",passwd=None,keypathpub=None,sshport=22):
         """
         if keypath==None then it defaults to "~/.ssh/id_rsa"
         """
-        # import cuisine
+        # cmd="scp %s %s@%s:~/%s"%(keypath,login,remoteipaddr,j.system.fs.getBaseName(keypath))
+        # j.do.executeInteractive(cmd)
+
+
         import paramiko
-        # import fabric
         paramiko.util.log_to_file("/tmp/paramiko.log")
         ssh = paramiko.SSHClient()        
         
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        if passwd!=None:
-            # from fabric.api import env
-            # env.no_keys = True
-            ssh.connect(remoteipaddr, username=login, password=passwd, allow_agent=False,look_for_keys=False)
-        else:
-            ssh.connect(remoteipaddr, username=login, password=passwd)
-            pass
+        print "ssh connect:%s %s"%(remoteipaddr,login)
+        # from fabric.api import env
+        # env.no_keys = True
+        ssh.connect(remoteipaddr, username=login, password=passwd, allow_agent=False,look_for_keys=False)
+        print "ok"
+
+        if keypathpub==None:
+            if login!="root":
+                keypathpub="/home/%s/.ssh/id_rsa"%login
+            else:
+                keypathpub="/root/.ssh/id_rsa"
+
+
         ftp=ssh.open_sftp()
-        if remoteLogin=="root":
+        if remoteuser=="root":
             authkeypath="/root/.ssh/authorized_keys"
         else:
-            authkeypath="/home/remoteLogin/.ssh/authorized_keys"
+            authkeypath="/home/%s/.ssh/authorized_keys"%(remoteLogin)
 
-        ftp.get(authkeypath,"%s/authorized_keys"%self.TMP)
-        self.readFile("%s/authorized_keys"%self.TMP)
+        if not self.exists(keypathpub):
+            raise RuntimeError("Cannot find keypath:%s"%keypathpub)
 
-        
-        # cuisine.connect(remoteipaddr,user=login,password=passwd)
-        from IPython import embed
-        print "DEBUG NOW authorizeSSHKey"
-        embed()
-        
+        if login!="root":
+            basename=self.getBaseName(keypathpub)
+            tmpfile="/home/%s/.ssh/%s"%(login,basename)
+            print "push key to /home/%s/.ssh/%s"%(login,basename)
+            ftp.put(keypathpub,tmpfile)
+
+            #cannot upload directly to root dir
+            cmd="ssh %s@%s 'cat %s | sudo tee -a %s '"%(login,remoteipaddr,tmpfile,authkeypath)
+            print "do the following on the console\nsudo -s\ncat %s >> %s"%(tmpfile,authkeypath)
+            print cmd
+            self.executeInteractive(cmd)
+
+        else:
+            ftp.get(authkeypath,"%s/authorized_keys"%self.TMP)
+            self.readFile("%s/authorized_keys"%self.TMP)    
+            from IPython import embed
+            print "DEBUG NOW authorizeSSHKey on j.do"
+            embed()
+            
 
     def loadSSHAgent(self,path=None,createkeys=False,keyname="id_rsa"):
         """

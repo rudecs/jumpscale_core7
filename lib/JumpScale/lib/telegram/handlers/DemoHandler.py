@@ -9,7 +9,7 @@ STICKERFILE = "https://telegram-stickers.github.io/public/stickers/flags/8.png"
 class DemoHandler:
 
     def __init__(self):
-        url="http://www.greenitglobe.com/gig/.files/img/logo.png"
+        url="http://www.greenitglobe.com/en/images/logo.png"
         self.image = "%s/giglogo.png"%j.dirs.tmpDir
         self.sound = "%s/test.mp3"%j.dirs.tmpDir
         self.sticker = "%s/sticker.png"%j.dirs.tmpDir
