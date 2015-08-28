@@ -249,6 +249,7 @@ class MS1(object):
         templateid=images[imagename][0]
 
         self.sendUserMessage("create machine: %s"%(name))
+
         if stackId and machine_cb_actor:
             # we want to deploy on a specific stack
             def valid():
@@ -576,28 +577,35 @@ class MS1(object):
 
         connectionAddr = cloudspace['publicipaddress']
         connectionPort = tempport
-        if not j.system.net.waitConnectionTest(cloudspace['publicipaddress'], int(tempport), 20):
-            # if we can't connect with public IP, it probably means we try to access the vm from inside the cloudspace with another vm
-            # so we try to connect using the private ip
-            if not j.system.net.waitConnectionTest(local_ipaddr, 22, 20):
-                # if still can't connect, then it's an error
-                raise RuntimeError("E:Failed to connect to %s" % (tempport))
+        counter = 0
+        while counter < 3:
+            if not j.system.net.waitConnectionTest(cloudspace['publicipaddress'], int(tempport), 5):
+                # if we can't connect with public IP, it probably means we try to access the vm from inside the cloudspace with another vm
+                # so we try to connect using the private ip
+                if not j.system.net.waitConnectionTest(local_ipaddr, 22, 5):
+                    if counter >=3:
+                        # if still can't connect, then it's an error
+                        raise RuntimeError("E:Failed to connect to %s" % (tempport))
+                else:
+                    connectionAddr = local_ipaddr
+                    connectionPort = 22
+                    break
+                counter = counter+1
             else:
-                connectionAddr = local_ipaddr
-                connectionPort = 22
+                break
 
         # if we don't specify the key to push
         # create one first
         key = None
         if sshkey is None:
-            keyloc = "/root/.ssh/id_dsa.pub"
+            keyloc = "/root/.ssh/id_rsa.pub"
 
             if not j.system.fs.exists(path=keyloc):
-                j.system.process.executeWithoutPipe("ssh-keygen -t dsa")
+                j.system.process.executeWithoutPipe("ssh-keygen -t rsa")
                 if not j.system.fs.exists(path=keyloc):
                     raise RuntimeError("cannot find path for key %s, was keygen well executed"%keyloc)
 
-            j.system.fs.chmod("/root/.ssh/id_dsa", 0o600)
+            j.system.fs.chmod("/root/.ssh/id_rsa", 0o600)
             key = j.system.fs.fileGetContents(keyloc)
         else:
             key = sshkey

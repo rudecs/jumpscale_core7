@@ -50,28 +50,28 @@ def rsync():
     from .rsync import manager
     return manager.RsyncFactory()
 
+
 def samba():
     from .samba import manager
     return manager.SambaFactory()
 
 
-
 def connect(addr='localhost', port=22, passwd=None,verbose=True,keypath=None):
 
-    if keypath=="":
-        keypath=None
+    if keypath == "":
+        keypath = None
 
-    c=j.remote.cuisine.connect(addr, port=port, passwd=passwd)
-    if keypath!=None:
-        c.fabric.key_filename=keypath
-        c.fabric.api.env["key_filename"]=keypath
+    c = j.remote.cuisine.connect(addr, port=port, passwd=passwd)
+    if keypath != None:
+        c.fabric.key_filename = keypath
+        c.fabric.api.env["key_filename"] = keypath
         if not j.do.exists(keypath):
-            j.events.opserror_critical("cannot find key:%s"%keypath)
+            j.events.opserror_critical("cannot find key:%s" % keypath)
     c.fabric.api.env['connection_attempts'] = 5
 
     if not verbose:
-        c.fabric.state.output["running"]=False
-        c.fabric.state.output["stdout"]=False
+        c.fabric.state.output["running"] = False
+        c.fabric.state.output["stdout"] = False
     j.ssh.connection = c
     return c
 
