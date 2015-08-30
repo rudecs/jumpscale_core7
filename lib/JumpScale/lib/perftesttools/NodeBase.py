@@ -7,6 +7,10 @@ from JumpScale import j
 # import psutil
 
 from MonitorTools import *
+# from pssh import ParallelSSHClient
+
+from gevent import monkey
+monkey.patch_socket()
 
 class NodeBase(MonitorTools):
     def __init__(self,ipaddr,sshport=22,role=None,name=""):
@@ -17,11 +21,11 @@ class NodeBase(MonitorTools):
         - host
 
         """
-
+        
         if  j.tools.perftesttools.monitorNodeIp==None:
             raise RuntimeError("please do j.tools.perftesttools.init() before calling this")
-        self.redis=j.clients.redis.getRedisClient(j.tools.perftesttools.monitorNodeIp, j.tools.perftesttools.monitorNodeSSHPort, \
-            password=j.tools.perftesttools.redispasswd)
+        print "connect redis: %s:%s"%(j.tools.perftesttools.monitorNodeIp, 9999)
+        self.redis=j.clients.redis.getGeventRedisClient(j.tools.perftesttools.monitorNodeIp, 9999)
 
         self.key=j.tools.perftesttools.sshkey
         self.name=name
@@ -29,14 +33,21 @@ class NodeBase(MonitorTools):
         self.ipaddr=ipaddr
         self.sshport = sshport
 
-        self.ssh=j.remote.ssh.getSSHClientUsingSSHAgent(host=ipaddr, username='root', port=sshport, timeout=10)
-        # self._initFabriclient()
-        # self.sal=j.ssh.unix.get(self.ssh)
+        self.debug=False
+
+        print "ssh init %s"%self
+        self.ssh=j.remote.ssh.getSSHClientUsingSSHAgent(host=ipaddr, username='root', port=sshport, timeout=10,gevent=True)
+        print "OK"
+
+        # self.ssh=ParallelSSHClient([ipaddr],port=sshport)
+        #user=None, password=None, port=None, pkey=None, forward_ssh_agent=True, num_retries=3, timeout=10, pool_size=10, proxy_host=None, proxy_port=22
+
         self.role=role
 
 
 
     def startMonitor(self,cpu=1,disks=[],net=1):
+        disks=[str(disk) for disk in disks]
         self.prepareTmux("mon%s"%self.role,["monitor"])      
         env={}
         if  j.tools.perftesttools.monitorNodeIp==None:
@@ -52,6 +63,7 @@ class NodeBase(MonitorTools):
     def execute(self,cmd, env={},dieOnError=True,report=True):
         if report:
             print cmd
+        
         return self.ssh.execute(cmd, dieOnError=dieOnError)
         # if dieOnError:
         #     self.fabric.env['warn_only'] = True

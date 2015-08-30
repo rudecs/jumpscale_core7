@@ -5,11 +5,14 @@ except:
     j.do.execute(cmd)
     import grequests as requests
 
+# import requests
+
 # import requests as requests
 from gevent import monkey
 # monkey.patch_socket()
-monkey.patch_time()
-monkey.patch_all()
+# monkey.patch_time()
+# monkey.patch_all()
+# monkey.patch_all(socket=True, dns=True, time=False, select=True, thread=False, os=True, ssl=False, httplib=False, subprocess=False, sys=False, aggressive=False, Event=False)
 
 from Models import Message
 import os
@@ -61,9 +64,10 @@ class Telegram:
         
         r = requests.post(url, params=params, files=files)
 
-        #for async lib
+        #for async lib (use when using grequests)
         r = requests.map([r])
         r=r[0]
+
         # print url
         # print params
         try:
