@@ -736,3 +736,40 @@ class Text:
                     val=val.strip()
                 res2[key]=val
         return res2
+
+    @staticmethod
+    def getTemplateVars(text):
+        """
+        template vars are in form of $(something)
+        @return [("something1","$(Something)"),...
+        """
+        import re
+        p = re.compile(ur'\$\([\w\.\-\_]*\)')
+        res=re.findall(p,text)
+        res2=[(item.strip("$").strip("()").lower(),item) for item in res if item not in res]
+        return res2
+
+    @staticmethod
+    def existsTemplateVars(text):
+        """
+        return True if they exist
+        """
+        import re
+        p = re.compile(ur'\$\([\w\.\-\_]*\)')
+        res=re.findall(p,text)
+        return len(res)>0
+
+    @staticmethod
+    def replaceTemplateVars(text,args={}):
+        """
+        @return changes,text
+        changes = {key:newval, ...}
+        """
+        changes={}
+        for key,match in Text.getTemplateVars(text):
+            
+            if args.has_key(key):
+                text=text.replace(match,args[key])
+                changes[key]=args[key]
+        return changes,text
+

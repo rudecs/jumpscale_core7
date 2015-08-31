@@ -305,8 +305,8 @@ class SystemFS:
         if self.exists(path):
             try:
                 os.remove(path)
-            except:
-                raise RuntimeError("File with path: %s could not be removed\nDetails: %s"%(path, sys.exc_info()[0]))
+            except Exception,e:
+                raise RuntimeError("File with path: %s could not be removed\nDetails: %s\n%s"%(path,e, sys.exc_info()[0]))
             self.log('Done removing file with path: %s'%path)
 
     def createEmptyFile(self, filename):

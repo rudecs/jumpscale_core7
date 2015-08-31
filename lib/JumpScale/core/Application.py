@@ -63,10 +63,12 @@ class Application:
     def connectRedis(self):
         if j.logger.enabled:
             if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
-                import JumpScale.baselib.redis
-                if j.clients.redis.isRunning('system'):
-                    self.redis = j.clients.redis.getByInstance('system')
-                    return        
+                self.redis=j.logger.redis
+                # import JumpScale.baselib.redis
+                # if j.clients.redis.isRunning('system'):
+                #     self.redis = j.clients.redis.getByInstance('system')
+                #     return        
+                return
             print "WARNING: no system redis found (port 9999, needs to be installed as instance 'system')."
             j.logger.enabled=False
 
