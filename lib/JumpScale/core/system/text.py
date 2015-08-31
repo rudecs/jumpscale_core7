@@ -642,8 +642,11 @@ class Text:
         text=text.strip(",").strip()
         if not text.find(".")==1:
             return False
-        text=text.replace(".","")
-        return text.isdigit()
+        try:
+            float(text)
+            return True
+        except ValueError:
+            return False
 
     @staticmethod
     def isInt(text):
