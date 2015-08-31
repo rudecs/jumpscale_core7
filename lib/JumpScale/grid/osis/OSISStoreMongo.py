@@ -298,7 +298,7 @@ class OSISStoreMongo(OSISStore):
                         new_value = j.basetype.float.fromString(value[1:])
                     params[key] = {'$lte': new_value}
                 elif '*' in value:
-                    params[key] = {'$regex': '.*%s.*' % value.replace('*', '')}
+                    params[key] = {'$regex': '%s' % value.replace('*', '')}
 
             result=[]
             for item in db.find(params,limit=size,skip=start,fields=fields,sort=sortlist):
@@ -323,17 +323,18 @@ class OSISStoreMongo(OSISStore):
                                 mongoquery[k] = {operatormap[operator]: val}
                     if 'wildcard' in queryitem:
                         for k, v in list(queryitem['wildcard'].items()):
-                            mongoquery[k] = {'$regex': '.*%s.*' % str(v).replace('*', ''), '$options':'i'}
+                            mongoquery[k] = {'$regex': '%s' % str(v).replace('*', ''), '$options':'i'}
                     if 'terms' in queryitem:
                         for k, v in list(queryitem['terms'].items()):
                             mongoquery[k] = {'$in': v}
 
-                wilds = dict()
+                
                 mongoquery['$or'] = list()
                 for queryitem in query['query']['bool']['should']:
+                    wilds = dict()
                     if 'wildcard' in queryitem:
                         for k, v in list(queryitem['wildcard'].items()):
-                            wilds[k] = {'$regex': '.*%s.*' % str(v).replace('*', '')}
+                            wilds[k] = {'$regex': '%s' % str(v).replace('*', '')}
                             mongoquery['$or'].append(wilds)
 
                 if not mongoquery['$or']:
