@@ -33,13 +33,13 @@ class mainclass(parentclass):
         """
         get dict value
         """
-        gid, _, id = key.rpartition('_')
+        gid, _, id = key.partition('_')
         self.runTasklet('exists', key, session)
         db, counter = self._getMongoDB(session)
         return not db.find_one({"id":id})==None
 
     def get(self, key, full=False, session=None):
-        gid, _, id = key.rpartition('_')
+        gid, _, id = key.partition('_')
         self.runTasklet('get', key, session)
         db, counter = self._getMongoDB(session)
         res=db.find_one({"id":id})
