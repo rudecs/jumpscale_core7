@@ -579,11 +579,19 @@ class Text:
                 res.append(item)
             return res
             
-        if change==False:
-            if Text.isInt(value2):                
-                return Text.getInt(value2)
-            elif  Text.isFloat(value2):
-                return Text.getFloat(value2)
+            # Check if it's not an ip address
+            # because int/float test fails on "1.1.1.1" for exemple
+            try:
+    
+                socket.inet_aton(value2)
+                
+            except socket.error:
+
+                # if Text.contains(
+                if Text.isInt(value2):
+                    return Text.getInt(value2)
+                elif  Text.isFloat(value2):
+                    return Text.getFloat(value2)
         # value2=value2.replace("\n","\\n")
         return value2
 
