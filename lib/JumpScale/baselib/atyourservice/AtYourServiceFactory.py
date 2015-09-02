@@ -90,6 +90,31 @@ class AtYourServiceFactory():
             branch = repo['branch'] if 'branch' in repo else 'master'
             j.do.pullGitRepo(url=repo['url'], branch=branch)
 
+    def updateExternalRepos(self, repos=[]):
+        """
+        update the git repo that contains the external services
+        args:
+            repos : list of dict of repos to update, if empty, all repos are updated
+                    {
+                        'url' : 'http://github.com/account/repo',
+                        'branch' : 'master'
+                    }
+        """
+        if len(repos) == 0:
+            metadata = j.application.config.getDictFromPrefix('atyourservice.ays')
+            repos = metadata.values()
+
+        destinations = dict()
+        for repo in repos:
+            type = 'git'
+            _, account, reponame = repo.get('url', '/').rstrip('.git').rsplit('/', 2)
+            branch = repo['branch'] if 'branch' in repo else 'master'
+            dest = '/tmp/%s/%s/%s/' % (type, account, reponame)
+            j.do.pullGitRepo(url=repo['url'], branch=branch, dest=dest)
+            destinations[repo.get('name', reponame)] = dest
+
+        return destinations
+
     def getActionsBaseClass(self):
         return ActionsBase
 
@@ -318,7 +343,7 @@ class AtYourServiceFactory():
         service.init()
         return service
 
-    def loadServicesInSQL(self):
+    def loadAYSInSQL(self):
         """
         walk over all services and load into sqllite
         """
@@ -377,88 +402,143 @@ class AtYourServiceFactory():
             objectsql.recipes = recipes
             objectsql.dependencies = dependencies
 
-        sql = j.db.sqlalchemy.get(sqlitepath=j.dirs.varDir+"/AYS.db",tomlpath=None,connectionstring='')
+        sqlitepath = j.dirs.varDir+"/AYS.db"
+
+        # Delete previously loaded AYS objects
+        j.system.fs.remove(sqlitepath)
+
+        sql = j.db.sqlalchemy.get(sqlitepath=sqlitepath, tomlpath=None, connectionstring='')
 
         if not self._init:
             self._doinit()
-        templates = self.findTemplates()
-        services = self.findServices()
+        templates = {'local': self.findTemplates()}
+        services = {'local': self.findServices()}
+
+        destinations = self.updateExternalRepos()
+        for destname, dest in destinations.items():
+            cservices = j.system.fs.joinPaths(dest, 'services')
+            ctemplates = j.system.fs.joinPaths(dest, 'servicetemplates')
+            for service in j.system.fs.listDirsInDir(cservices):
+                domain, name, instance = j.system.fs.getBaseName(service).split('__')
+                ctemplate = ServiceTemplate(domain, name, None, parent=None)
+                cservice = ctemplate.newInstance(instance=instance, path=service)
+                if destname not in services:
+                    services[destname] = list()
+                services[destname].append(cservice)
+
+            for domain in j.system.fs.listDirsInDir(ctemplates):
+                for name in j.system.fs.listDirsInDir(domain):
+                    ctemplate = ServiceTemplate(j.system.fs.getBaseName(domain), j.system.fs.getBaseName(name), name, parent=None)
+                    if destname not in templates:
+                        templates[destname] = list()
+                    templates[destname].append(ctemplate)
+
 
         attributes = ('domain', 'name', 'metapath')
-        for template in templates:
-            templatesql = AYSdb.Template()
-            for attribute in attributes:
-                templatesql.__setattr__(attribute, template.__getattribute__(attribute))
+        for templatetype, templates in templates.items():
+            for template in templates:
+                templatesql = AYSdb.Template()
+                for attribute in attributes:
+                    templatesql.__setattr__(attribute, template.__getattribute__(attribute))
 
-            instances = list()
-            for instance in template.listInstances():
-                instancesql = AYSdb.Instance(instance=instance)
-                sql.session.add(instancesql)
-                instances.append(instancesql)
-            templatesql.instances = instances
-            hrd = template.getHRD()
-            hrddict = hrd.getHRDAsDict()
+                instances = list()
+                for instance in template.listInstances():
+                    instancesql = AYSdb.Instance(instance=instance)
+                    sql.session.add(instancesql)
+                    instances.append(instancesql)
+                templatesql.instances = instances
+                templatesql.type = templatetype
+                hrd = template.getHRD()
+                hrddict = hrd.getHRDAsDict()
 
-            _loadHRDItems(hrddict, hrd, templatesql)
-            sql.session.add(templatesql)
+                _loadHRDItems(hrddict, hrd, templatesql)
+                sql.session.add(templatesql)
 
+        for servicetype, services in services.items():
+            for service in services:
+                servicesql = AYSdb.Service()
+                attributes = ('domain', 'name', 'instance', 'parent', 'path', 'noremote', 'templatepath',
+                              'cmd')
+                for attribute in attributes:
+                    servicesql.__setattr__(attribute, service.__getattribute__(attribute))
+
+                hrddict = service.hrd.getHRDAsDict()
+                _loadHRDItems(hrddict, service.hrd, servicesql)
+
+                servicesql.priority = service.getPriority()
+                servicesql.logPath = service.getLogPath()
+                servicesql.isInstalled = service.isInstalled()
+                servicesql.isLatest = service.isLatest()
+
+                servicesql.type = servicetype
+
+                producers = list()
+                for key, value in service.producers.items():
+                    producersql = AYSdb.Producer(key=key, value=value)
+                    sql.session.add(producersql)
+                    producers.append(producersql)
+                servicesql.producer = producers
+
+                categories = list()
+                for category in service.categories:
+                    categorysql = AYSdb.Category(category=category)
+                    sql.session.add(categorysql)
+                    categories.append(categorysql)
+                servicesql.category = categories
+
+                processes = list()
+                procs = getProcessDicts(hrd)
+                for process in procs:
+                    processsql = AYSdb.Process()
+                    for key, value in process.items():
+                        if key == 'ports':
+                            ports = list()
+                            for port in value:
+                                tcpportsql = AYSdb.TCPPort(tcpport=port)
+                                sql.session.add(tcpportsql)
+                                ports.append(tcpportsql)
+                            processsql.ports = ports
+                        elif key == 'env':
+                            processsql.env = json.dumps(value)
+                        else:
+                            processsql.__setattr__(key, value)
+                    sql.session.add(processsql)
+                    processes.append(processsql)
+                servicesql.processes = processes
+
+                sql.session.add(servicesql)
         sql.session.commit()
 
+    def getServicefromSQL(self, serviceid=None, domain=None, name=None, instance=None, reload=False):
+        if reload:
+            self.loadAYSInSQL()
 
+        from JumpScale.baselib.atyourservice import AYSdb
+        sql = j.db.sqlalchemy.get(sqlitepath=j.dirs.varDir+"/AYS.db", tomlpath=None, connectionstring='')
 
-        for service in services:
-            servicesql = AYSdb.Service()
-            attributes = ('domain', 'name', 'instance', 'parent', 'path', 'noremote', 'templatepath',
-                          'cmd')
-            for attribute in attributes:
-                servicesql.__setattr__(attribute, service.__getattribute__(attribute))
+        if serviceid is not None:
+            result = [sql.session.query(AYSdb.Service).get(serviceid)]
+        elif domain or name or instance:
+            result = sql.session.query(AYSdb.Service).filter_by(domain=domain, name=name, instance=instance)
+        else:
+            result = sql.session.query(AYSdb.Service).all()
+        return result
+        
+    def getTemplatefromSQL(self, templateid=None, domain=None, name=None, instance=None, reload=False):
+        if reload:
+            self.loadAYSInSQL()
 
-            hrddict = service.hrd.getHRDAsDict()
-            _loadHRDItems(hrddict, service.hrd, servicesql)
+        from JumpScale.baselib.atyourservice import AYSdb
+        sql = j.db.sqlalchemy.get(sqlitepath=j.dirs.varDir+"/AYS.db", tomlpath=None, connectionstring='')
 
-            servicesql.priority = service.getPriority()
-            servicesql.logPath = service.getLogPath()
-            servicesql.isInstalled = service.isInstalled()
-            servicesql.isLatest = service.isLatest()
-
-            producers = list()
-            for key, value in service.producers.items():
-                producersql = AYSdb.Producer(key=key, value=value)
-                sql.session.add(producersql)
-                producers.append(producersql)
-            servicesql.producer = producers
-
-            categories = list()
-            for category in service.categories:
-                categorysql = AYSdb.Category(category=category)
-                sql.session.add(categorysql)
-                categories.append(categorysql)
-            servicesql.category = categories
-
-            processes = list()
-            procs = getProcessDicts(hrd)
-            for process in procs:
-                processsql = AYSdb.Process()
-                for key, value in process.items():
-                    if key == 'ports':
-                        ports = list()
-                        for port in value:
-                            tcpportsql = AYSdb.TCPPort(tcpport=port)
-                            sql.session.add(tcpportsql)
-                            ports.append(tcpportsql)
-                        processsql.ports = ports
-                    elif key == 'env':
-                        processsql.env = json.dumps(value)
-                    else:
-                        processsql.__setattr__(key, value)
-                sql.session.add(processsql)
-                processes.append(processsql)
-            servicesql.processes = processes
-
-            sql.session.add(servicesql)
-        sql.session.commit()
-
-
+        if templateid is not None:
+            result = [sql.session.query(AYSdb.Template).get(templateid)]
+        elif domain or name or instance:
+            result = sql.session.query(AYSdb.Template).filter_by(domain=domain, name=name, instance=instance)
+        else:
+            result = sql.session.query(AYSdb.Template).all()
+        return result
+        
 
     def getFromStr(self, representation, parent=None):
         """

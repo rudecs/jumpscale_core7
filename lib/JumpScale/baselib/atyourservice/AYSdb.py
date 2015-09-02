@@ -22,6 +22,7 @@ class Service(Base):
     __tablename__ = 'service'
 
     id = Column(Integer, primary_key=True, nullable=False)
+    type = Column(String, default="local", index=True)
     domain = Column(String, default="", index=True)
     name = Column(String, default="", index=True)
     instance = Column(String, default="", index=True)
@@ -113,6 +114,7 @@ class Template(Base):
     __tablename__ = 'template'
 
     id = Column(Integer, primary_key=True)
+    type = Column(String, default="local", index=True)
     service_id = Column(Integer, ForeignKey('service.id'), nullable=True)
     domain = Column(String, default="", index=True)
     name = Column(String, default="", index=True)
