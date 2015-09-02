@@ -24,10 +24,13 @@ class NodeNas(NodeBase):
 
         self.initDisks()
 
+
         self.perftester=PerfTestTools(self)
 
         disks=[item.devnameshort for item in self.disks]
         self.startMonitor(disks=disks)
+
+        self.initTest()
 
     def initTest(self):
         screens=[]
