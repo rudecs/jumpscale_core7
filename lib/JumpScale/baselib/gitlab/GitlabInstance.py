@@ -199,11 +199,14 @@ class GitlabInstance():
 
         if not renew:
             result = self._getFromCache(self.login, key)
-            if not result['expired']:
+            if result:
                 return result['data']
-        u = self.gitlab.find_user(username=username)
-        self._addToCache(self.login, key, u)
-        return self._getFromCache(self.login, key)['data']
+        from ipdb import set_trace;set_trace()
+        users = self.gitlab.getusers(search=username)
+        user = [u['username'] for u in users if u['username'] == username]
+        if user == 1:
+            self._addToCache(self.login, key, user[0])
+        return self._getFromCache(self.login, key)
 
     def userExists(self, username, renew=False):
         """
