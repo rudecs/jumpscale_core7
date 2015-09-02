@@ -204,7 +204,7 @@ class GitlabInstance():
         from ipdb import set_trace;set_trace()
         users = self.gitlab.getusers(search=username)
         user = [u['username'] for u in users if u['username'] == username]
-        if user == 1:
+        if len(user) == 1:
             self._addToCache(self.login, key, user[0])
         return self._getFromCache(self.login, key)
 
