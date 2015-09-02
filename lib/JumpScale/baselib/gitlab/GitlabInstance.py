@@ -195,8 +195,6 @@ class GitlabInstance():
         @type username: ``str``
         @return: ```gitlab3.User```
         """
-
-        from ipdb import set_trace;set_trace()
         users = self.gitlab.getusers(search=username)
         user = [u for u in users if u['username'] == username]
         if len(user) == 1:
