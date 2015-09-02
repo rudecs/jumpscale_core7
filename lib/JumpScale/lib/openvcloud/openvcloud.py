@@ -82,7 +82,7 @@ class Openvclcoud(object):
 
         gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
         if self.actionCheck(gitlaburl, "gitcreate") is False:
-            gitlab.create(gitlabAccountname, gitlabReponame, public=False)
+            gitlab.createProject(gitlabAccountname, gitlabReponame, public=False)
             self.actionDone(gitlaburl, "gitcreate")
 
         print "get secret key for cloud api"

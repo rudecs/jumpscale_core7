@@ -16,7 +16,9 @@ except Exception,e:
     cmd="pip install pyapi-gitlab"
     if str(e).find('No module named gitlab')!=-1:
         j.do.executeInteractive(cmd)
-    
+    import gitlab
+
+
 import JumpScale.baselib.git
 
 class GitlabInstance():
@@ -61,16 +63,16 @@ class GitlabInstance():
         """
         project=self.getProject(project)
         project["id"]
-        
+
         res=self.gitlab.getfile(project["id"],path,"master")
         if res==False:
             j.events.inputerror_critical("cannot find file:%s in gitlab in project:%s"%(path,project))
 
         return base64.decodestring(res["content"])
 
-    def getHRD(self,group,project,path): 
+    def getHRD(self,group,project,path):
         content=self.getFile(group,project,path)
-        return j.core.hrd.get(content=content)            
+        return j.core.hrd.get(content=content)
 
     def downloadFile(self,group,project,path,dest):
         content=self.getFile(group,project,path)
@@ -79,7 +81,7 @@ class GitlabInstance():
 
     def _getFromCache(self,key,renew=False):
         if renew:
-            self.cache.delete(key)        
+            self.cache.delete(key)
         expired,result = self.cache.get(key)
         return result
 
@@ -97,14 +99,14 @@ class GitlabInstance():
         @return: ``` gitlab3.Group ```
 
         """
-        groups=self.listGroups(renew=renew)
+        groups=self.getGroups(renew=renew)
         groupname=groupname.lower()
         items=[item for item in groups if item["name"].lower()==groupname]
         if len(items)>0:
             return items[0]
         else:
             j.events.inputerror_critical("cannot find group:%s in gitlab"%groupname)
-        
+
 
         # result=self._getFromCache(groupname)
         # if result!=None:
@@ -113,7 +115,7 @@ class GitlabInstance():
         #     from IPython import embed
         #     print "DEBUG NOW groupinfo"
         #     embed()
-            
+
         #     group = self.gitlab.find_group(name=groupname)
         #     self.cache.set(groupname,group)
 
@@ -134,8 +136,9 @@ class GitlabInstance():
         if len(items)>0:
             return items[0]
         else:
-            j.events.inputerror_critical("cannot find group:%s in gitlab"%name)
-        
+            j.events.inputerror_warning("cannot find group:%s in gitlab"%name)
+            return False
+
     def getProjects(self):
         key="projects"
         result=self._getFromCache(key,renew=False)
@@ -154,15 +157,14 @@ class GitlabInstance():
         @param name: space name
         @type name: ``str``
         """
-        self._init()
         group2=self.getGroupInfo(group, renew=True)
 
         ttype=self.addr.split("/",1)[1].strip("/ ")
         if ttype.find(".")!=-1:
             ttype=ttype.split(".",1)[0]
         path="%s/%s/%s/%s"%(j.dirs.codeDir,ttype,group,name)
-        if not self.getProject(name, renew=True, die=False):
-            self.gitlab.add_project(name,public=public,namespace_id=group2['id'])
+        if not self.getProject(name, renew=True):
+            self.gitlab.createproject(name,public=public,namespace_id=group2['id'])
             proj=self.getProject(name, renew=True)
             j.do.delete(path, force=True)
             j.system.fs.createDir(path)
@@ -193,7 +195,6 @@ class GitlabInstance():
         @type username: ``str``
         @return: ```gitlab3.User```
         """
-        self._init()
         key = ('user', username)
 
         if not renew:
@@ -212,11 +213,9 @@ class GitlabInstance():
         @type username: ``str``No JSON object could be decoded
         @return: ``bool``
         """
-        self._init()
         return bool(self.getUserInfo(username, renew))
 
     def createUser(self, username, password, email, groups):
-        self._init()
         id = self.gitlab.add_user(username=username, password=password, email=email)
         for group in groups:
             g = self.gitlabclient.find_group(name=group)
@@ -231,7 +230,6 @@ class GitlabInstance():
         @type renew: ``boolean``
         @return: ``lis``
         """
-        self._init()
         if not renew:
             result = self._getFromCache(self.login, 'users')
             if not result['expired']:
@@ -255,7 +253,7 @@ class GitlabInstance():
             self.cache.set(key,result)
         return result
 
-        
+
 
     #     if not renew:
     #         result =  self._getFromCache(self.login, 'groups')
@@ -275,7 +273,7 @@ class GitlabInstance():
     #     @type renew: ``boolean``
     #     @return: ``lis``
     #     """
-    #     self._init()
+
     #     if not renew:
     #         result = self._getFromCache(username, 'groups')
     #         if not result['expired']:
@@ -299,7 +297,6 @@ class GitlabInstance():
         @param space: user space (Project) in gitlab
         @type space: ```gitlab3.Project```
         """
-        self._init()
         prefix = "%s_" % username
         if  prefix in space:
             space = space.replace(prefix, '')
@@ -323,7 +320,6 @@ class GitlabInstance():
         @param bypass_cache: If True, Force getting data from gitlab backend, otherwise try to get it from cache 1st
         @type bypass_cache:`bool`
         """
-        self._init()
         if not renew:
             result =  self._getFromCache(username, 'spaces')
             if not result['expired']:
@@ -346,5 +342,4 @@ class GitlabInstance():
         @param bypass_cache: If True, Force getting data from gitlab backend, otherwise try to get it from cache 1st
         @type bypass_cache:`bool`
         """
-        self._init()
         return [p['name'] for p in self.getUserProjectsObjects(username, renew)]
