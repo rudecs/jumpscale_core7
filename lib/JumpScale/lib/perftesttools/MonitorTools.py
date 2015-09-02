@@ -11,7 +11,7 @@ from JumpScale.lib.perftesttools import InfluxDumper
 
 class MonitorClient():
     def __init__(self):
-        luapath="stat.lua"
+        luapath="/opt/code/github/jumpscale/jumpscale_core7/lib/JumpScale/lib/perftesttools/stat.lua"
         lua=j.system.fs.fileGetContents(luapath)
         self._sha=self.redis.script_load(lua)       
 

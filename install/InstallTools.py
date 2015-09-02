@@ -1367,36 +1367,36 @@ class InstallTools():
         
             
 
-    def checkSSHAgentAvailable(self):
+    # def checkSSHAgentAvailable(self):
 
         
-        if rc==0:
-            #sshagent is loaded
-            pass
+    #     if rc==0:
+    #         #sshagent is loaded
+    #         pass
                 
 
-        from IPython import embed
-        print "DEBUG NOW checkSSHAgentKeyAvailable"
-        embed()
-        p
+    #     from IPython import embed
+    #     print "DEBUG NOW checkSSHAgentKeyAvailable"
+    #     embed()
+    #     p
         
 
-        errormsg="Could not find SSH agent, please start by 'eval \"$(ssh-agent -s)\"' before running this cmd,\nand make sure appropriate keys are added with ssh-add ..."
-        sshkeypubcontent=" ".join(sshkeypub.split(" ")[1:]).strip().split("==")[0]+"=="
-        #check if current priv key is in ssh-agent
-        agent=paramiko.agent.Agent()
-        try:
-            keys=agent.get_keys()
-        except Exception,e:
-            j.events.opserror_critical( errormsg)
+    #     errormsg="Could not find SSH agent, please start by 'eval \"$(ssh-agent -s)\"' before running this cmd,\nand make sure appropriate keys are added with ssh-add ..."
+    #     sshkeypubcontent=" ".join(sshkeypub.split(" ")[1:]).strip().split("==")[0]+"=="
+    #     #check if current priv key is in ssh-agent
+    #     agent=paramiko.agent.Agent()
+    #     try:
+    #         keys=agent.get_keys()
+    #     except Exception,e:
+    #         j.events.opserror_critical( errormsg)
         
-        if keys==():
-            j.events.opserror_critical( errormsg)                
+    #     if keys==():
+    #         j.events.opserror_critical( errormsg)                
 
-        for key in keys:
-            if key.get_base64()==sshkeypubcontent:
-                return True
-        return False
+    #     for key in keys:
+    #         if key.get_base64()==sshkeypubcontent:
+    #             return True
+    #     return False
 
     def getGitRepoArgs(self, url="", dest=None, login=None, passwd=None, reset=False,branch=None):
         """

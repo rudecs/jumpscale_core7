@@ -19,7 +19,7 @@ class NodeNas(NodeBase):
         if self.debugdisk!="":
             self.debug=True
         self.disks=[]
-        self.nrdisks=nrdisks
+        self.nrdisks=int(nrdisks)
         self.fstype=fstype
 
         self.initDisks()

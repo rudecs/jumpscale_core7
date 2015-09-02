@@ -1,3 +1,4 @@
+from JumpScale import j
 try:
     import grequests as requests
 except:
