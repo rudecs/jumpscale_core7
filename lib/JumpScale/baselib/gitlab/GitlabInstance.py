@@ -195,18 +195,14 @@ class GitlabInstance():
         @type username: ``str``
         @return: ```gitlab3.User```
         """
-        key = ('user', username)
 
-        if not renew:
-            result = self._getFromCache(self.login, key)
-            if result:
-                return result['data']
         from ipdb import set_trace;set_trace()
         users = self.gitlab.getusers(search=username)
-        user = [u['username'] for u in users if u['username'] == username]
+        user = [u for u in users if u['username'] == username]
         if len(user) == 1:
-            self._addToCache(self.login, key, user[0])
-        return self._getFromCache(self.login, key)
+            return user[0]
+        else:
+            j.events.opserror_critical('username %s not found' % username)
 
     def userExists(self, username, renew=False):
         """
