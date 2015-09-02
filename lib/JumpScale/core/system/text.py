@@ -579,11 +579,19 @@ class Text:
                 res.append(item)
             return res
             
-        if change==False:
-            if Text.isInt(value2):                
-                return Text.getInt(value2)
-            elif  Text.isFloat(value2):
-                return Text.getFloat(value2)
+            # Check if it's not an ip address
+            # because int/float test fails on "1.1.1.1" for exemple
+            try:
+    
+                socket.inet_aton(value2)
+                
+            except socket.error:
+
+                # if Text.contains(
+                if Text.isInt(value2):
+                    return Text.getInt(value2)
+                elif  Text.isFloat(value2):
+                    return Text.getFloat(value2)
         # value2=value2.replace("\n","\\n")
         return value2
 
@@ -642,8 +650,11 @@ class Text:
         text=text.strip(",").strip()
         if not text.find(".")==1:
             return False
-        text=text.replace(".","")
-        return text.isdigit()
+        try:
+            float(text)
+            return True
+        except ValueError:
+            return False
 
     @staticmethod
     def isInt(text):
@@ -736,3 +747,40 @@ class Text:
                     val=val.strip()
                 res2[key]=val
         return res2
+
+    @staticmethod
+    def getTemplateVars(text):
+        """
+        template vars are in form of $(something)
+        @return [("something1","$(Something)"),...
+        """
+        import re
+        p = re.compile(ur'\$\([\w\.\-\_]*\)')
+        res=re.findall(p,text)
+        res2=[(item.strip("$").strip("()").lower(),item) for item in res if item not in res]
+        return res2
+
+    @staticmethod
+    def existsTemplateVars(text):
+        """
+        return True if they exist
+        """
+        import re
+        p = re.compile(ur'\$\([\w\.\-\_]*\)')
+        res=re.findall(p,text)
+        return len(res)>0
+
+    @staticmethod
+    def replaceTemplateVars(text,args={}):
+        """
+        @return changes,text
+        changes = {key:newval, ...}
+        """
+        changes={}
+        for key,match in Text.getTemplateVars(text):
+            
+            if args.has_key(key):
+                text=text.replace(match,args[key])
+                changes[key]=args[key]
+        return changes,text
+

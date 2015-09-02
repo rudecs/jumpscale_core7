@@ -19,15 +19,18 @@ class NodeNas(NodeBase):
         if self.debugdisk!="":
             self.debug=True
         self.disks=[]
-        self.nrdisks=nrdisks
+        self.nrdisks=int(nrdisks)
         self.fstype=fstype
 
         self.initDisks()
+
 
         self.perftester=PerfTestTools(self)
 
         disks=[item.devnameshort for item in self.disks]
         self.startMonitor(disks=disks)
+
+        self.initTest()
 
     def initTest(self):
         screens=[]
