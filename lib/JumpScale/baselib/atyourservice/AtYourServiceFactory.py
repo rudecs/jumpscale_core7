@@ -519,12 +519,13 @@ class AtYourServiceFactory():
         if serviceid is not None:
             result = [sql.session.query(AYSdb.Service).get(serviceid)]
         elif domain or name or instance:
-            result = sql.session.query(AYSdb.Service).filter_by(domain=domain, name=name, instance=instance)
+            kwargs = {argname:argvalue for argname, argvalue in {'domain':domain, 'name':name, 'instance':instance}.items() if argvalue != None}
+            result = sql.session.query(AYSdb.Service).filter_by(**kwargs).all()
         else:
             result = sql.session.query(AYSdb.Service).all()
         return result
         
-    def getTemplatefromSQL(self, templateid=None, domain=None, name=None, instance=None, reload=False):
+    def getTemplatefromSQL(self, templateid=None, domain=None, name=None, metapath=None, reload=False):
         if reload:
             self.loadAYSInSQL()
 
@@ -533,8 +534,9 @@ class AtYourServiceFactory():
 
         if templateid is not None:
             result = [sql.session.query(AYSdb.Template).get(templateid)]
-        elif domain or name or instance:
-            result = sql.session.query(AYSdb.Template).filter_by(domain=domain, name=name, instance=instance)
+        elif domain or name or metapath:
+            kwargs = {argname:argvalue for argname, argvalue in {'domain':domain, 'name':name, 'metapath':metapath}.items() if argvalue != None}
+            result = sql.session.query(AYSdb.Template).filter_by(**kwargs).all()
         else:
             result = sql.session.query(AYSdb.Template).all()
         return result
