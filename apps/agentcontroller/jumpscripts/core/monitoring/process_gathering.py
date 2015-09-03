@@ -185,7 +185,7 @@ def action():
                 processOsisObject.getSetGuid()
                 processOsisObject.type="jsprocess"
                 processOsisObject.statkey=process_key
-                processOsisObject.systempids = jpinstance.actions.get_pids()
+                processOsisObject.systempids = jpinstance.actions.get_pids(jpinstance)
         
                 if processOsisObject.systempids:            
                     loadFromSystemProcessInfo(process_key,cacheobj,processOsisObject.systempids[0])
