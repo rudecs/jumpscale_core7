@@ -204,7 +204,7 @@ class AtYourServiceFactory():
 
         parentregex = ''
         if parent and isinstance(parent, (Service, RemoteService)):
-            parentregex = '.*%s__%s__%s' % (parent.domain, parent.name, parent.instance)
+            parentregex = '%s__%s__%s' % (parent.domain, parent.name, parent.instance)
         elif parent and isinstance(parent, basestring):
             parentregex = parent.replace(':', '.')
             # get only last parent
@@ -224,7 +224,7 @@ class AtYourServiceFactory():
         serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9_\.]*',
                                         name if name.strip() else '[a-zA-Z0-9_\.]*',
                                         instance if instance.strip() else '[a-zA-Z0-9_\.]*')
-        preciseregex = '.*' if parent is not None or not precise else ''
+        preciseregex = '.*' if parent is not None else ''
 
         startregex = j.dirs.getHrdDir().rstrip('/').replace('/', '.')
 
