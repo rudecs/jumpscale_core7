@@ -344,9 +344,10 @@ class RedisWorkerFactory(object):
 
     def getQueuedJobs(self, queue=None, asWikiTable=True):
         result = list()
-        queues = [queue] if queue else ["io","hypervisor","default"]
-        for item in queues:
-            jobs = self.redis.lrange('queues:workers:work:%s' % item, 0, -1)
+        queues = [queue] if queue else ["io","hypervisor","default", 'process']
+        for quename in queues:
+            queue = self.queue[quename]
+            jobs = self.redis.lrange(queue.key, 0, -1)
             for jobstring in jobs:
                 result.append(json.loads(jobstring))
         if asWikiTable:

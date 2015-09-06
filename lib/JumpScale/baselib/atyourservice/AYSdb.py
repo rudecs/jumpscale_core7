@@ -22,6 +22,7 @@ class Service(Base):
     __tablename__ = 'service'
 
     id = Column(Integer, primary_key=True, nullable=False)
+    type = Column(String, default="local", index=True)
     domain = Column(String, default="", index=True)
     name = Column(String, default="", index=True)
     instance = Column(String, default="", index=True)
@@ -34,6 +35,7 @@ class Service(Base):
     isInstalled = Column(Boolean, default=True, index=True)
     logPath = Column(String, default="", index=True)
     isLatest = Column(Boolean, default=True, index=True)
+    children = Column(String, default="", index=True)
     producers = relationship("Producer", backref=backref('service', uselist=False))
     categories = relationship("Category", backref=backref('service', uselist=True))
     hrd = relationship("HRDItem", backref=backref('service', uselist=False))
@@ -42,16 +44,6 @@ class Service(Base):
     processes = relationship("Process", backref=backref('service', uselist=True))
     recipe = relationship("RecipeItem", backref=backref('service', uselist=True))
     dependencies = relationship("Dependency", backref=backref('service', uselist=True))
-    parents = relationship("Service",
-                           secondary="service_to_service",
-                           primaryjoin="Service.id==service_to_service.c.child_service_id",
-                           secondaryjoin="Service.id==service_to_service.c.parent_service_id",
-                           backref="service_parents")
-    children = relationship("Service",
-                            secondary="service_to_service",
-                            primaryjoin="Service.id==service_to_service.c.parent_service_id",
-                            secondaryjoin="Service.id==service_to_service.c.child_service_id",
-                            backref="service_children")
     sqlite_autoincrement = True
 
 
@@ -113,6 +105,7 @@ class Template(Base):
     __tablename__ = 'template'
 
     id = Column(Integer, primary_key=True)
+    type = Column(String, default="local", index=True)
     service_id = Column(Integer, ForeignKey('service.id'), nullable=True)
     domain = Column(String, default="", index=True)
     name = Column(String, default="", index=True)

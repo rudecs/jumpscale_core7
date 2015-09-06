@@ -663,14 +663,18 @@ class Text:
 
     @staticmethod
     def getBool(text):
-        text=text.strip()
+        if j.basetype.boolean.check(text):
+            return text
         if j.basetype.string.check(text):
+            text=text.strip()
             if text.lower()=="none":
                 return False
             elif text==None:
                 return False
             elif text=="":
                 return False
+            elif text.lower() == 'true':
+                return True
             else:
                 return False
         else:
