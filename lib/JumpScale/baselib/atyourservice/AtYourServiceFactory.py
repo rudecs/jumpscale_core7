@@ -204,7 +204,7 @@ class AtYourServiceFactory():
 
         parentregex = ''
         if parent and isinstance(parent, (Service, RemoteService)):
-            parentregex = '%s__%s__%s' % (parent.domain, parent.name, parent.instance)
+            parentregex = '.*%s__%s__%s' % (parent.domain, parent.name, parent.instance)
         elif parent and isinstance(parent, basestring):
             parentregex = parent.replace(':', '.')
             # get only last parent
@@ -224,7 +224,7 @@ class AtYourServiceFactory():
         serviceregex = "%s__%s__%s" % (domain if domain.strip() else '[a-zA-Z0-9_\.]*',
                                         name if name.strip() else '[a-zA-Z0-9_\.]*',
                                         instance if instance.strip() else '[a-zA-Z0-9_\.]*')
-        preciseregex = '.*' if parent is not None else ''
+        preciseregex = '.*' if parent is not None or not precise else ''
 
         startregex = j.dirs.getHrdDir().rstrip('/').replace('/', '.')
 
@@ -454,17 +454,30 @@ class AtYourServiceFactory():
                 _loadHRDItems(hrddict, hrd, templatesql)
                 sql.session.add(templatesql)
 
-        for servicetype, services in services.items():
-            for service in services:
+        for servicetype, serviceslist in services.items():
+            children = list()
+            for service in serviceslist + children:
+                parentsql = None
+                if isinstance(service.parent, Service):
+                    parent = sql.session.query(AYSdb.Service).filter_by(domain=service.parent.domain, name=service.parent.name,
+                                                                 instance=service.parent.instance, path=service.parent.path).all()
+                    if not parent:
+                        children.append(service)
+                        continue
+                    else:
+                        parentsql = parent[0].id
+
                 servicesql = AYSdb.Service()
-                attributes = ('domain', 'name', 'instance', 'parent', 'path', 'noremote', 'templatepath',
+                attributes = ('domain', 'name', 'instance', 'path', 'noremote', 'templatepath',
                               'cmd')
+
                 for attribute in attributes:
                     servicesql.__setattr__(attribute, service.__getattribute__(attribute))
 
                 hrddict = service.hrd.getHRDAsDict()
                 _loadHRDItems(hrddict, service.hrd, servicesql)
 
+                servicesql.parent = parentsql
                 servicesql.priority = service.getPriority()
                 servicesql.logPath = service.getLogPath()
                 servicesql.isInstalled = service.isInstalled()
@@ -505,6 +518,8 @@ class AtYourServiceFactory():
                     sql.session.add(processsql)
                     processes.append(processsql)
                 servicesql.processes = processes
+
+                servicesql.children = json.dumps(service.listChildren())
 
                 sql.session.add(servicesql)
         sql.session.commit()
