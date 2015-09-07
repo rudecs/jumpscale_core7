@@ -36,19 +36,24 @@ class Docker():
         self.copy(name,path,path)
         j.tools.docker.run(name,"chmod 770 %s;%s"%(path,path))
 
-    def copy(self,name,src,dest):
-        rndd=j.base.idgenerator.generateRandomInt(10,1000000)
-        dest0="/var/docker/%s/%s"%(name,rndd)
+    def copy(self, name, src, dest):
+        rndd = j.base.idgenerator.generateRandomInt(10, 1000000)
+        temp = "/var/docker/%s/%s" % (name, rndd)
+        j.system.fs.createDir(temp)
+        source_name = j.system.fs.getBaseName(src)
         if j.system.fs.isDir(src):
-            j.do.copyTree(src,dest0)
+            j.do.copyTree(src, j.system.fs.joinPaths(temp, source_name))
         else:
-            j.do.copyFile(src,dest0)
-        ddir=j.system.fs.getDirName(dest)
-        cmd="mkdir -p %s"%(ddir)
-        self.run(name,cmd)
-        cmd="cp -a /var/jumpscale/%s %s"%(rndd,dest)
-        self.run(name,cmd)
-        j.do.delete(dest0)
+            j.do.copyFile(src, j.system.fs.joinPaths(temp, source_name))
+
+        ddir = j.system.fs.getDirName(dest)
+        cmd = "mkdir -p %s" % (ddir)
+        self.run(name, cmd)
+
+        cmd = "cp -ra /var/jumpscale/%s/%s %s" % (rndd, source_name, dest)
+        self.run(name, cmd)
+        j.do.delete(temp)
+
 
     @property
     def basepath(self):
