@@ -50,7 +50,7 @@ class Docker():
         cmd = "mkdir -p %s" % (ddir)
         self.run(name, cmd)
 
-        cmd = "cp -ra /var/jumpscale/%s/%s %s" % (rndd, source_name, dest)
+        cmd = "cp -r /var/jumpscale/%s/%s %s" % (rndd, source_name, dest)
         self.run(name, cmd)
         j.do.delete(temp)
 
