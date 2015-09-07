@@ -44,6 +44,7 @@ class Machine(OsisBaseObject):
         self.gid = int(self.gid)
         self.id = int(self.id)
         # self.sguid=struct.pack("<HHL",self.gid,self.bid,self.id)
-        self.guid = "%s_%s" % (self.gid, self.id)
+        if not self.guid:
+            self.guid = "%s_%s" % (self.gid, self.id)
         self.lastcheck=j.base.time.getTimeEpoch() 
         return self.guid

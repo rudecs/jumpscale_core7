@@ -36,14 +36,15 @@ def action():
                 libvirt.VIR_DOMAIN_PAUSED: 'PAUSED'}
 
     allmachines = syscl.machine.search({'nid': j.application.whoAmI.nid, 'gid': j.application.whoAmI.gid})[1:]
-    allmachines = { machine['id']: machine for machine in allmachines }
+    allmachines = { machine['guid']: machine for machine in allmachines }
     domainmachines = list()
     try:
         domains = con.listAllDomains()
         for domain in domains:
-            domainmachines.append(domain.ID())
+            domainmachines.append(domain.UUIDString())
             machine = syscl.machine.new()
             machine.id = domain.ID()
+            machine.guid = domain.UUIDString().replace('-', '')
             machine.name = domain.name()
             machine.nid = j.application.whoAmI.nid
             machine.gid = j.application.whoAmI.gid
@@ -80,7 +81,7 @@ def action():
                 vdisk.path = path
                 vdisk.type = disk.find('driver').attrib['type']
                 vdisk.devicename = disk.find('target').attrib['dev']
-                vdisk.machineid = machine.id
+                vdisk.machineid = machine.guid
                 vdisk.active = j.system.fs.exists(path)
                 if vdisk.active:
                     try:
@@ -108,5 +109,5 @@ def action():
 
 if __name__ == '__main__':
     import JumpScale.grid.osis
-    j.core.osis.client = j.clients.osis.getByInstance('processmanager')
+    j.core.osis.client = j.clients.osis.getByInstance('main')
     action()
