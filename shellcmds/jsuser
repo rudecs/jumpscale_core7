@@ -134,7 +134,10 @@ if opts.action =='add' or opts.action =='set':
 
     if opts.action =='add' and userclient.exists("%s_%s"%(j.application.whoAmI.gid,name)):
         j.errorconditionhandler.raiseOperationalCritical(message='user already exists', category="jsuser.add.exists")
-
+	
+    if '-' in name:
+        j.errorconditionhandler.raiseOperationalCritical(message="Usernames MUST NOT contain '-'", category="jsuser.add.invalid")
+        
     user=userclient.new()
     user.id=name
     user.groups=groups
