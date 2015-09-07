@@ -463,7 +463,7 @@ class ActionsBase():
         installedchecksum = node.actions.execute(node, 'cat %s' % installationPath).strip() if installed == '0' else 'not installed'
 
         if serviceobj.hrd.get('service.installed.checksum', 'none') != installedchecksum:
-            templocation = j.system.fs.joinPaths('/tmp', j.base.idgenerator.generateGUID())
+            templocation = j.system.fs.joinPaths('/tmp', j.base.idgenerator.generateGUID(), '')
             node.actions.upload(node, serviceobj.path, templocation)
             node.actions.execute(node, 'ays makelocal --tolocal "%s"' % templocation)
 
