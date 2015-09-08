@@ -94,7 +94,8 @@ class InteractiveHandler:
         print "redis connection ok"        
 
     def checkSession(self,tg,message,name="main",newcom=True):
-        username=message.from_user.username
+        # username=message.from_user.username
+        username=self.getUserName(message)
         key="%s_%s"%(username,name)
         if not self.sessions.has_key(key):
             self.sessions[key]=Session(self,tg,message.chat.id,username,name)
@@ -107,7 +108,8 @@ class InteractiveHandler:
         return self.sessions[key]
 
     def stopSession(self,tg,message,name):
-        username=message.from_user.username
+        # username=message.from_user.username
+        username=self.getUserName(message)
         key="%s_%s"%(username,name)
         if self.sessions.has_key(key):
             session=self.sessions[key]
@@ -116,7 +118,8 @@ class InteractiveHandler:
 
 
     def checkFirst(self,message):
-        username=message.from_user.username
+        # username=message.from_user.username
+        username=self.getUserName(message)
         if username in self.once:
             return False
         else:
@@ -133,7 +136,16 @@ class InteractiveHandler:
         markup=[["Yes"],["No"]]
         result=session.send_message("Do you want custom settings?",True,markup=markup)
         session.stop_communication()
-        
+    
+    def getUserName(self,message):
+        try:
+            username=message.from_user.username
+        except Exception,e:
+            # username=message.from_user.id
+            username=message.from_user.last_name+" "+message.from_user.first_name
+            username=username.replace(" ","_").strip().lower()
+        return username
+
     def on_text(self, tg, message):
 
 
@@ -156,7 +168,8 @@ class InteractiveHandler:
 
         print "recv:%s"%message.text
 
-        username=message.from_user.username
+        username=self.getUserName(message)
+            
         if self.redisconfig.hexists("sessions_active",username):
             sessionName=self.redisconfig.hget("sessions_active",username)
             session=self.checkSession(tg,message,name=sessionName,newcom=False)
