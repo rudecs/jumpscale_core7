@@ -22,11 +22,11 @@ roles = ['master']
 
 def action():
     osis = j.core.osis.client
-    results = osis.search('system', 'stats', 'select difference(value) from /stats.gauges.\d+_\d+_cpu.num_ctx_switches/ group by time(1h) limit 1')
+    results = osis.search('system', 'stats', 'select derivative(value) from /\d+_\d+_cpu.num_ctx_switches.*/ where time > now() - 1h group by time(1h)  limit 1')
 
-    for noderesult in results:
-        parts = noderesult['name'].split('.')[2]
-        avgctx = abs(noderesult['points'][0][-1] / 3600.) #thresholds or per second
+    for noderesult in results['raw'].get('series', []):
+        parts = noderesult['name'].split('.')[0]
+        avgctx = abs(noderesult['values'][0][-1] / 3600.) #thresholds or per second
         gid, nid, type = parts.split('_')
         gid = int(gid)
         nid = int(nid)
