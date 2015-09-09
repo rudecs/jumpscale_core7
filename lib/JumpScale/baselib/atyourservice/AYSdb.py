@@ -111,6 +111,7 @@ class Template(Base):
     name = Column(String, default="", index=True)
     instances = relationship("Instance", backref=backref('template', uselist=True))
     metapath = Column(String, default="", index=True)
+    instancehrd = Column(String, default="", index=True)
     hrd = relationship("HRDItem", backref=backref('template', uselist=True))
     processes = relationship("Process", backref=backref('template', uselist=True))
     recipe = relationship("RecipeItem", backref=backref('template', uselist=True))

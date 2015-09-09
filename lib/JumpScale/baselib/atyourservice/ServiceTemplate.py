@@ -43,6 +43,14 @@ class ServiceTemplate(object):
             self.hrd=j.core.hrd.get(j.system.fs.joinPaths(self.metapath,"service.hrd"))
         return self.hrd
 
+    def getInstanceHRD(self):
+        # Gets instance HRDs as string. ASKs are non-interactive in this case
+        instancehrd = ''
+        instancehrdpath = j.system.fs.joinPaths(self.metapath, "instance.hrd")
+        if j.system.fs.exists(instancehrdpath):
+            instancehrd = j.system.fs.fileGetContents(instancehrdpath)
+        return instancehrd
+
     def getInstance(self, instance=None, parent=None):
         """
         get first installed or main

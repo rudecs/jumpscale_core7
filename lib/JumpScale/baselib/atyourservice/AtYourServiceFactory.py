@@ -446,6 +446,7 @@ class AtYourServiceFactory():
                     instancesql = AYSdb.Instance(instance=instance)
                     sql.session.add(instancesql)
                     instances.append(instancesql)
+                templatesql.instancehrd = template.getInstanceHRD()
                 templatesql.instances = instances
                 templatesql.type = templatetype
                 hrd = template.getHRD()
