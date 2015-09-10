@@ -1,10 +1,14 @@
 #!/usr/bin/env jspython
 from JumpScale import j
 from JumpScale.baselib import cmdutils
-
+import re
 import sys,time
 
 j.application.start("jsuser")
+
+def _isValidUserName(username):
+        r = re.compile('^[a-z0-9]{1,20}$')
+        return r.match(username) is not None
 
 parser = cmdutils.ArgumentParser()
 parser.add_argument("action", choices=['add','set','delete','list','auth','addgroup','delgroup','passwd'], help='Command to perform')
@@ -134,7 +138,10 @@ if opts.action =='add' or opts.action =='set':
 
     if opts.action =='add' and userclient.exists("%s_%s"%(j.application.whoAmI.gid,name)):
         j.errorconditionhandler.raiseOperationalCritical(message='user already exists', category="jsuser.add.exists")
-
+	
+    if not _isValidUserName(name):
+        j.errorconditionhandler.raiseOperationalCritical(message='Username name may not exceed 20 characters and may only contain a-z and 0-9', category="jsuser.add.invalid")
+        
     user=userclient.new()
     user.id=name
     user.groups=groups

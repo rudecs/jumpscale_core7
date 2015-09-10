@@ -12,5 +12,14 @@ class GrafanaClient(object):
     def updateDashboard(self, dashboard):
         url = os.path.join(self._url, 'api/dashboards/db')
         data = {'dashboard': dashboard, 'overwrite': True}
-        return requests.post(url, json=data).json()
+        result = requests.post(url, json=data)
+        return result.json()
+
+    def listDashBoards(self):
+        url = os.path.join(self._url, 'api/search/')
+        return requests.get(url).json()
+
+    def delete(self, dashboard):
+        url = os.path.join(self._url, 'api/dashboards', dashboard['uri'])
+        return requests.delete(url)
 

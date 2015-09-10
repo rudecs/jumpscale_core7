@@ -60,6 +60,11 @@ class PerfTestToolsFactory(object):
         self.nodes.append(n)
         return n
 
+    def getNodeBase(self, ipaddr,sshport=22,name=""):
+        n=NodeHost(ipaddr,sshport,name=name)
+        self.nodes.append(n)
+        return n
+
     def getNodeMonitor(self,name=""):
         n=NodeMonitor(self.monitorNodeIp,self.monitorNodeSSHPort,name=name)
         self.nodes.append(n)
