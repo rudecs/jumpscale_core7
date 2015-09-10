@@ -3,16 +3,17 @@ from JumpScale import j
 
 class GitClient(object):
 
-    def __init__(self, base_dir):
-        if not j.system.fs.exists(path=base_dir):
-            j.events.inputerror_critical("git repo on %s not found." % base_dir)
+    def __init__(self, baseDir): # NOQA
+        self._repo = None
+        if not j.system.fs.exists(path=baseDir):
+            j.events.inputerror_critical("git repo on %s not found." % baseDir)
 
         # split path to find parts
-        base_dir = base_dir.replace("\\", "/")
-        if base_dir.find("/code/") == -1:
+        baseDir = baseDir.replace("\\", "/") # NOQA
+        if baseDir.find("/code/") == -1:
             j.events.inputerror_critical(
                 "jumpscale code management always requires path in form of $somewhere/code/$type/$account/$reponame")
-        base = base_dir.split("/code/", 1)[1]
+        base = baseDir.split("/code/", 1)[1]
 
         if base.count("/") != 2:
             j.events.inputerror_critical(
@@ -20,28 +21,10 @@ class GitClient(object):
 
         self.type, self.account, self.name = base.split("/")
 
-        self.base_dir = base_dir
+        self.baseDir = baseDir
 
-        gitconfig = "%s/.git/config" % base_dir
-        config = j.system.fs.fileGetContents(gitconfig)
-
-        self.remoteUrl = None
-        self.branch_name = None
-
-        for line in config.split("\n"):
-            line = line.strip()
-            if line == "":
-                continue
-            if line.find("url =") != -1 or line.find("url=") != -1:
-                self.remoteUrl = line.split("=")[1].strip()
-
-            if line.startswith("[branch"):
-                self.branch_name = line.split("\"")[1].strip()
-
-        if self.remoteUrl is None or self.branch_name is None:
-            j.events.inputerror_critical("git repo on %s is corrupt could not find branch & remote url" % base_dir)
-
-        self._repo = None
+        if len(self.repo.remotes) != 1:
+            j.events.inputerror_critical("git repo on %s is corrupt could not find remote url" % baseDir)
 
     def __repr__(self):
         return str(self.__dict__)
@@ -50,22 +33,37 @@ class GitClient(object):
         return self.__repr__
 
     @property
+    def remoteUrl(self):
+        return self.repo.remotes[0].url
+
+    @property
+    def branchName(self):
+        return self.repo.git.rev_parse('HEAD', abbrev_ref=True)
+
+    @property
     def repo(self):
         # Load git when we absolutly need it cause it does not work in gevent mode
         import git
         if not self._repo:
             j.system.process.execute("git config --global http.sslVerify false")
-            if not j.system.fs.exists(self.base_dir):
+            if not j.system.fs.exists(self.baseDir):
                 self._clone()
             else:
-                self._repo = git.Repo(self.base_dir)
+                self._repo = git.Repo(self.baseDir)
         return self._repo
 
     def init(self):
         self.repo
 
-    def switchBranch(self, branch_name):
-        self.repo.git.checkout(branch_name)
+    def switchBranch(self, branchName, create=True): # NOQA
+        if create:
+            import git
+            try:
+                self.repo.git.branch(branchName)
+            except git.GitCommandError:
+                # probably branch exists.
+                pass
+        self.repo.git.checkout(branchName)
 
     def getModifiedFiles(self):
         result = {}
@@ -74,13 +72,15 @@ class GitClient(object):
         result["M"] = []
         result["R"] = []
 
-        cmd = "cd %s;git status --porcelain" % self.base_dir
+        cmd = "cd %s;git status --porcelain" % self.baseDir
         rc, out = j.system.process.execute(cmd)
         for item in out.split("\n"):
-            if item.strip() == "":
+            item = item.strip()
+            if item == '':
                 continue
-            item2 = item.split(" ", 1)[1]
-            result["N"].append(item2)
+            state, _, _file = item.partition(" ")
+            if state == '??':
+                result["N"].append(_file)
 
         for diff in self.repo.index.diff(None):
             path = diff.a_blob.path
@@ -95,7 +95,7 @@ class GitClient(object):
         return result
 
     def addRemoveFiles(self):
-        cmd = 'cd %s;git add -A :/' % self.base_dir
+        cmd = 'cd %s;git add -A :/' % self.baseDir
         j.system.process.execute(cmd)
         # result=self.getModifiedFiles()
         # self.removeFiles(result["D"])
@@ -176,7 +176,7 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 '''
-        ignorefilepath = j.system.fs.joinPaths(self.base_dir, '.gitignore')
+        ignorefilepath = j.system.fs.joinPaths(self.baseDir, '.gitignore')
         if not j.system.fs.exists(ignorefilepath):
             j.system.fs.writeFile(ignorefilepath, gitignore)
         else:

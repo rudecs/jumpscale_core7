@@ -3,150 +3,135 @@
 from JumpScale import j
 
 from JumpScale.baselib import cmdutils
-import JumpScale.baselib.git
 
-import sys,time
+# import sys
+# import time
 
 j.application.start("jscode2")
 
 parser = cmdutils.ArgumentParser()
-parser.add_argument("action", choices=['get','commit','push','update','status','list','init'], help='Command to perform')
+parser.add_argument(
+    "action", choices=['get', 'commit', 'push', 'update', 'status', 'list', 'init'], help='Command to perform')
 
-parser.add_argument('-n','--name',help='name or partial name of repo, can also be comma separated, if not specified then will ask, if \'*\' then all.')
-parser.add_argument('--url',help='url')
+parser.add_argument(
+    '-n', '--name',
+    help='name or partial name of repo, can also be comma separated, if not specified then will ask, if \'*\' then all.'
+)
+parser.add_argument('--url', help='url')
 
-parser.add_argument('-m','--message',help='commit message',default="new")
-parser.add_argument('-b','--branch',help='branch')
+parser.add_argument('-m', '--message', help='commit message', default="new")
+parser.add_argument('-b', '--branch', help='branch')
 
-parser.add_argument('-a','--accounts',help='comma separated list of accounts, if not specified then will ask, if \'*\' then all.')
+parser.add_argument(
+    '-a', '--accounts', help='comma separated list of accounts, if not specified then will ask, if \'*\' then all.')
 
-parser.add_argument('-u','--update',required=False, action='store_true',help='update merge before doing push or commit')
+parser.add_argument('-u', '--update', required=False, action='store_true',
+                    help='update merge before doing push or commit')
 
-parser.add_argument('-f','--force',required=False, action='store_true',help='auto answer yes on every question')
-parser.add_argument('-d','--deletechanges',required=False, action='store_true',help='will delete all changes when doing update')
+parser.add_argument('-f', '--force', required=False, action='store_true', help='auto answer yes on every question')
+parser.add_argument('-d', '--deletechanges', required=False, action='store_true',
+                    help='will delete all changes when doing update')
 
-parser.add_argument('-o','--onlychanges',required=False, action='store_true',help='will only do an action where modified files are found')
+parser.add_argument('-o', '--onlychanges', required=False, action='store_true',
+                    help='will only do an action where modified files are found')
 
 
 opts = parser.parse_args()
 
-if opts.accounts==None and opts.name==None:
-    if j.system.fs.exists("%s/%s"%(j.system.fs.getcwd(),".git")):
-        #we are in repo
-        opts.name=j.system.fs.getBaseName(j.system.fs.getcwd())
-        opts.accounts=j.system.fs.getBaseName(j.system.fs.getParent(j.system.fs.getcwd()))
+if opts.accounts is None and opts.name is None:
+    if j.system.fs.exists("%s/%s" % (j.system.fs.getcwd(), ".git")):
+        # we are in repo
+        opts.name = j.system.fs.getBaseName(j.system.fs.getcwd())
+        opts.accounts = j.system.fs.getBaseName(j.system.fs.getParent(j.system.fs.getcwd()))
 
 
-if opts.branch != None and opts.action in ['status']: 
+if opts.branch is not None and opts.action in ['status']:
     raise RuntimeError("Cannot specify branch when asking status")
 
 
+repos = j.clients.git.find(opts.accounts, opts.name, interactive=True, returnGitClient=True)
 
-repos=j.clients.git.find(opts.accounts,opts.name,interactive=True,returnGitClient=True)
 
+repos = [(r.type, r.account, r.name, r.branchName, r, r.baseDir) for r in repos]
 
-repos=[(r.type,r.account,r.name,r.branchName,r,r.baseDir) for r in repos]
+if opts.action == 'init':
+    pass
 
 
 if opts.action == "status":
-    print("\n\nSTATUS: account reponame                  branch added:modified:deleted   insyncwithremote?   localrev       remoterev")
-    print("=========================================================================================================================")
+    print ("\n\nSTATUS: account reponame                  " +
+           "branch added:modified:deleted   insyncwithremote?   localrev       remoterev")
+    print ("==============================================" +
+           "===========================================================================")
 
 
-for provider,account,reponame,branch,client,path in repos:
+for provider, account, reponame, branch, client, path in repos:
 
     # from IPython import embed;embed()
-    if j.application.config.exists("whoami.git.passwd") == False or j.application.config.exists("whoami.git.login") == False:
-        raise RuntimeError("git configuration not found, please install github_client service (ays install -n github_client)")
+    if (j.application.config.exists("whoami.git.passwd") is False or
+            j.application.config.exists("whoami.git.login") is False):
+        raise RuntimeError(
+            "git configuration not found, please install github_client service (ays install -n github_client)")
     else:
         # from ipdb import set_trace;set_trace()
-        _,url,_ = j.do.execute("cd %s;git config --get remote.origin.url" % path)
+        _, url, _ = j.do.execute("cd %s;git config --get remote.origin.url" % path)
         if str(url).find("@") == -1:
             login = j.application.config.get("whoami.git.login")
             passwd = j.application.config.get("whoami.git.passwd")
-            _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url),login=login,passwd=passwd)
-            j.do.executeInteractive("cd %s;git remote set-url origin '%s'" %(path,repository_url))
+            _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url), login=login, passwd=passwd)
+            j.do.executeInteractive("cd %s;git remote set-url origin '%s'" % (path, repository_url))
 
     if opts.action == "update" and opts.deletechanges:
-        print(("force update %s/%s/%s"%(provider,account,reponame)))
+        print(("force update %s/%s/%s" % (provider, account, reponame)))
         client.pull()
         client.update(force=True)
         continue
 
     if opts.action == "get":
-        cmd="git config --global push.default matching"
+        cmd = "git config --global push.default matching"
         j.do.execute(cmd)
-        j.do.pullGitRepo(opts.url,dest=None,depth=None,ignorelocalchanges=opts.deletechanges,reset=False,branch=opts.branch)
+        j.do.pullGitRepo(opts.url, dest=None, depth=None,
+                         ignorelocalchanges=opts.deletechanges, reset=False, branch=opts.branch)
         continue
 
-    #is dirty hack, am sure there are better ways (@TODO)
+    # is dirty hack, am sure there are better ways (@TODO)
     if opts.action == "push":
-        print(("push git repo:%s"%path))
-        j.do.pushGitRepos(message=opts.message,name=reponame,update=True,provider=provider,account=account)
+        print(("push git repo:%s" % path))
+        j.do.pushGitRepos(message=opts.message, name=reponame, update=True, provider=provider, account=account)
 
     nrmods = 0
-    if opts.action in ['status','commit','update']:
+    if opts.action in ['status', 'commit', 'update']:
 
-        mods=client.getModifiedFiles()
+        mods = client.getModifiedFiles()
 
-        nrmods= len(mods["D"])+len(mods["M"])+len(mods["N"])+len(mods["R"])
+        nrmods = len(mods["D"]) + len(mods["M"]) + len(mods["N"]) + len(mods["R"])
 
-        if opts.onlychanges and nrmods==0:
+        if opts.onlychanges and nrmods == 0:
             continue
 
         # lrev,lid,provider,branch,user,msg,ddate=client.client.tip()
-        branch=client.branchName
+        branch = client.branchName
 
-        if opts.branch != None:
+        if opts.branch is not None:
             if branch != opts.branch:
-                print(("set branch:%s"%opts.branch))
-                from IPython import embed
-                print("DEBUG NOW not suported yet")
-                embed()
-                #@todo FIX !!!! URGENT
-                cmd="cd %s;hg branch %s"%(path,opts.branch)
-                j.system.process.execute(cmd,dieOnNonZeroExitCode=False, outputToStdout=True, useShell=True, ignoreErrorOutput=False)                
-                cmd="cd %s;hg update %s"%(path,opts.branch)
-                j.system.process.execute(cmd)
-                print(("updated to branch:%s"%opts.branch))
-                lrev,lid,ttype,branch,user,msg,ddate=client.client.tip()
-                branch=client.getbranchname()
+                print(("set branch:%s" % opts.branch))
+                client.switchBranch(opts.branch, create=True)
 
+        lrev = client.repo.head.commit.hexsha
+        branch = client.branchName
 
-        # changesets=bitbucket.getChangeSets(reponame=reponame,limit=1)
-        # if changesets.has_key("error"):
-        #     print "could not process repo: %s %s error:%s"%(account,reponame,changesets["error"]["message"])
-        #     # print changesets            
-        #     continue
-        # try:
-        #     remotelastrevision=changesets["changesets"][0]["revision"]
-        # except Exception,e:
-        #     from IPython import embed
-        #     print "DEBUG NOW jscode check error from changeset pull"
-        #     embed()
-            
-        # rid=changesets["changesets"][0]["raw_node"] #remoteid
+        reposync = "?"
+        remotelastrevision = "?"
 
-        # if lid==rid:
-        #     reposync="Y"
-        # else:
-        #     reposync="N"
+        if nrmods > 0:
+            reposync = "N"
 
-        reposync="?"
-        lrev="?"
-        remotelastrevision="?"
-
-        if nrmods>0:
-            reposync="N"            
-
-
-        print(("%-15s %-25s %-10s n%-3s:m%-3s:d%-3s:r%-6s reposync:%-9s  lrev:%-9s rrev:%-5s" %(account,reponame,client.branchName,\
-            len(mods["N"]),len(mods["M"]),len(mods["D"]),len(mods["R"]),\
-            reposync,\
-            lrev,remotelastrevision)))
+        print ("%-15s %-25s %-10s n%-3s:m%-3s:d%-3s:r%-6s reposync:%-9s  lrev:%-9s rrev:%-5s" %
+               (account, reponame, client.branchName, len(mods["N"]), len(mods["M"]), len(mods["D"]),
+                len(mods["R"]), reposync, lrev, remotelastrevision))
 
     if opts.action in ['commit']:
-        if nrmods==0:
+        if nrmods == 0:
             print("no need to commit is in sync")
             continue
 
@@ -155,32 +140,31 @@ for provider,account,reponame,branch,client,path in repos:
     #         print "no need to update, repo is in sync"
     #         continue
 
-    if opts.action in ['commit']:        
-        if nrmods==0:
+    if opts.action in ['commit']:
+        if nrmods == 0:
             print("no need to commit, no mods")
             continue
 
-    if nrmods>0:
+    if nrmods > 0:
         print("MODS:")
-        for key,item in list(mods.items()):
-            if len(item)>0:
-                print((" %s"%key))
+        for key, item in list(mods.items()):
+            if len(item) > 0:
+                print((" %s" % key))
                 for subitem in item:
-                    print(("    - %s"%(subitem)))
+                    print(("    - %s" % (subitem)))
 
+    if opts.action in ['commit', 'update']:
 
-    if opts.action in ['commit','update']:
-
-        if nrmods>0:
-            if opts.message==None:
-                message=j.console.askString("commit message")    
+        if nrmods > 0:
+            if opts.message is None:
+                message = j.console.askString("commit message")
             else:
-                message=opts.message
+                message = opts.message
 
             print("ADD/REMOVE/COMMIT")
             client.commit(message=message, addremove=True)
 
-    if opts.update or opts.action =='update':
+    if opts.update or opts.action == 'update':
         print("PULL")
         client.pull()
 
