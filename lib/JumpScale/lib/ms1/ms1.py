@@ -307,7 +307,8 @@ class MS1(object):
         self.sendUserMessage("to connect from outise cloudspace do: 'ssh %s -p %s'" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
         self.sendUserMessage("to connect from inside cloudspace do: 'ssh %s -p %s'" % (self.vars["machine.ip.addr"], 22))
 
-        return machine_id, self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]
+        ss = ssh.host().split(':')
+        return machine_id, ss[0], (ss[1] if ss[1] else 22)
 
     def getMachineObject(self,spacesecret, name,**args):
         api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)

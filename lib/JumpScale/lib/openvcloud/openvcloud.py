@@ -11,9 +11,10 @@ class OpenvcloudFactory(object):
 class Openvclcoud(object):
     def __init__(self, apiurl):
         self._spacesecret = None
+        self.apiURL = apiurl
         self.api = j.tools.ms1.get(apiurl)
-        self.db=j.db.keyvaluestore.getFileSystemStore("aysgit")
-        self.reset=False
+        self.db = j.db.keyvaluestore.getFileSystemStore("aysgit")
+        self.reset = False
 
     def connect(self, login, passwd, location,cloudspace,reset=False):
         """
@@ -102,7 +103,7 @@ class Openvclcoud(object):
 
         if self.actionCheck(gitlaburl, "machinecreate") is False:
             # create ovc_git vm
-            id, ip, port = self.api.createMachine(spacesecret, 'ovc_git', memsize='0.5', ssdsize='10', imagename='ubuntu.14.04.x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
+            id, ip, port = self.api.createMachine(spacesecret, 'ovc_git', memsize='0.5', ssdsize='10', imagename='ubuntu 14.04 x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
 
 
             # portforward 22 to 22 on ovc_git
@@ -217,3 +218,59 @@ metadata.openvcloud            =
         cl.run('ays mdupdate')
 
         cl.fabric.api.open_shell()
+
+    def initVnasCloudSpace(self, delete=False):
+        print "get secret key for cloud api"
+        if self._spacesecret is None:
+            j.events.inputerror_critical('no spacesecret set, need to call connect() method first')
+        else:
+            spacesecret = self._spacesecret
+
+        print "check local ssh key exists"
+        keypath='/root/.ssh/id_rsa'
+        if not j.system.fs.exists(path=keypath):
+            print "generate local rsa key"
+            j.system.platform.ubuntu.generateLocalSSHKeyPair()
+
+        if self.actionCheck(spacesecret, "vnas_machinecreate") is False:
+            # create ovc_git vm
+            id, ip, port = self.api.createMachine(spacesecret, 'vnas_master', memsize='2', ssdsize='10', imagename='ubuntu 14.04 x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
+
+            # portforward 22 to 22 on ovc_git
+            self.api.createTcpPortForwardRule(spacesecret, 'vnas_master', 22, pubipport=1500)
+
+            # ssh connetion to the vm
+            cl = j.ssh.connect(ip, port, keypath=keypath, verbose=True)
+
+            # generate key pair on the vm
+            print 'generate keypair on the vm'
+            cl.ssh_keygen('root', 'rsa')
+
+            self.actionDone(spacesecret, "vnas_machinecreate", (ip, port))
+        else:
+            ip, port = self.actionCheck(spacesecret, "vnas_machinecreate")
+            cl = j.ssh.connect(ip, 22, keypath=keypath, verbose=True)
+
+        if self.actionCheck(spacesecret, "vnas_jumpscale") is False:
+            # install Jumpscale
+            print "install jumpscale"
+            cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
+            print "jumpscale installed"
+
+            print "add openvcloud domain to atyourservice"
+            content = """
+metadata.openvcloud            =
+    url:'https://git.aydo.com/0-complexity/openvcloud_ays',
+"""
+            cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
+            self.actionDone(spacesecret, "vnas_jumpscale")
+
+        if self.actionCheck(spacesecret, "vnas_ovc_client") is False:
+            # create ovc_client to save ovc connection info
+            args = 'instance.param.location:%s instance.param.login:%s instance.param.passwd:%s instance.param.cloudspace:%s instance.param.apiurl:%s' % (self.location, self.login, self.passwd, self.cloudspace, self.apiURL)
+            cl.run('ays install -n ovc_client --data "%s"' % args)
+            self.actionDone(spacesecret, "vnas_ovc_client")
+
+        ss = cl.host().split(':')
+        ip, port = ss[0], ss[1]
+        print "connect to the vnas_master with\nssh root@%s -p %s" % (ip, port)
