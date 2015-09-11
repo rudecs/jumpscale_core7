@@ -275,7 +275,9 @@ class Docker():
         cmd="cd %s;tar xzvf %s -C ."%(path,bpath)
         j.system.process.executeWithoutPipe(cmd)
 
-    def create(self,name="",ports="",vols="",volsro="",stdout=True,base="despiegk/mc",nameserver=["8.8.8.8"],replace=True,cpu=None,mem=0,jumpscale=False,ssh=True,myinit=True):
+    def create(self, name="", ports="", vols="", volsro="", stdout=True, base="despiegk/mc", nameserver=["8.8.8.8"],
+               replace=True, cpu=None, mem=0, jumpscale=False, ssh=True, myinit=True, sharecode=False):
+
         """
         @param ports in format as follows  "22:8022 80:8080"  the first arg e.g. 22 is the port in the container
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
@@ -334,7 +336,7 @@ class Docker():
         j.system.fs.createDir(tmppath)
         volsdict[tmppath]="/tmp"
 
-        if j.system.fs.exists(path="/opt/code"):
+        if sharecode and j.system.fs.exists(path="/opt/code"):
             if "/opt/code" not in volsdict:
                 volsdict["/opt/code"]="/opt/code"
 

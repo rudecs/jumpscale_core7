@@ -16,16 +16,17 @@ class Disk():
         self.node=node
         self.disknr=disknr
         self.screenname=screenname
+        # print "init disk:%s"%self
 
     def initDiskXFS(self):
         print "initxfs:%s"%self
         res=self.node.ssh.execute("lsblk -f |grep %s"%self.devnameshort, dieOnError=False)[1].strip()
         if res=="":
             #did not find formatted disk
-            self.node.ssh.execute("mkfs.xfs -f /dev/vdb")
+            self.node.ssh.execute("mkfs.xfs -f /dev/%s"%self.devnameshort)
         elif res.find("xfs")==-1:
             #did find but no xfs
-            self.node.ssh.execute("mkfs.xfs -f /dev/vdb")
+            self.node.ssh.execute("mkfs.xfs -f /dev/%s"%self.devnameshort)
         self.node.ssh.execute("mkdir -p /storage/%s"%self.disknr)
         self.node.ssh.execute("mount %s /storage/%s"%(self.devname,self.disknr), dieOnError=False)
         print "initxfs:%s check mount"%self

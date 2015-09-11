@@ -1,51 +1,44 @@
 from JumpScale import j
 
+
 class GitClient(object):
 
-    def __init__(self, baseDir):
-
+    def __init__(self, baseDir): # NOQA
+        self._repo = None
         if not j.system.fs.exists(path=baseDir):
-            j.events.inputerror_critical("git repo on %s not found."%baseDir)
+            j.events.inputerror_critical("git repo on %s not found." % baseDir)
 
-        #split path to find parts
-        baseDir=baseDir.replace("\\","/")
-        if baseDir.find("/code/")==-1:
-            j.events.inputerror_critical("jumpscale code management always requires path in form of $somewhere/code/$type/$account/$reponame")
-        base=baseDir.split("/code/",1)[1]
+        # split path to find parts
+        baseDir = baseDir.replace("\\", "/") # NOQA
+        if baseDir.find("/code/") == -1:
+            j.events.inputerror_critical(
+                "jumpscale code management always requires path in form of $somewhere/code/$type/$account/$reponame")
+        base = baseDir.split("/code/", 1)[1]
 
-        if base.count("/")!=2:
-            j.events.inputerror_critical("jumpscale code management always requires path in form of $somewhere/code/$type/$account/$reponame")
+        if base.count("/") != 2:
+            j.events.inputerror_critical(
+                "jumpscale code management always requires path in form of $somewhere/code/$type/$account/$reponame")
 
-        self.type,self.account,self.name=base.split("/")
+        self.type, self.account, self.name = base.split("/")
 
         self.baseDir = baseDir
 
-        gitconfig="%s/.git/config"%baseDir
-        config=j.system.fs.fileGetContents(gitconfig)
-
-        self.remoteUrl = None
-        self.branchName = None
-
-        for line in config.split("\n"):
-            line=line.strip()
-            if line=="":
-                continue
-            if line.find("url =")!=-1 or line.find("url=")!=-1 :
-                self.remoteUrl=line.split("=")[1].strip()
-
-            if line.startswith("[branch"):
-                self.branchName=line.split("\"")[1].strip()
-        
-        if self.remoteUrl==None or self.branchName==None:
-            j.events.inputerror_critical("git repo on %s is corrupt could not find branch & remote url"%baseDir)
-
-        self._repo = None
+        if len(self.repo.remotes) != 1:
+            j.events.inputerror_critical("git repo on %s is corrupt could not find remote url" % baseDir)
 
     def __repr__(self):
         return str(self.__dict__)
 
     def __str__(self):
         return self.__repr__
+
+    @property
+    def remoteUrl(self):
+        return self.repo.remotes[0].url
+
+    @property
+    def branchName(self):
+        return self.repo.git.rev_parse('HEAD', abbrev_ref=True)
 
     @property
     def repo(self):
@@ -62,49 +55,58 @@ class GitClient(object):
     def init(self):
         self.repo
 
-    def switchBranch(self, branchName):
+    def switchBranch(self, branchName, create=True): # NOQA
+        if create:
+            import git
+            try:
+                self.repo.git.branch(branchName)
+            except git.GitCommandError:
+                # probably branch exists.
+                pass
         self.repo.git.checkout(branchName)
 
     def getModifiedFiles(self):
-        result={}
-        result["D"]=[]
-        result["N"]=[]
-        result["M"]=[]
-        result["R"]=[]
+        result = {}
+        result["D"] = []
+        result["N"] = []
+        result["M"] = []
+        result["R"] = []
 
-        cmd="cd %s;git status --porcelain"%self.baseDir
-        rc,out=j.system.process.execute(cmd)
+        cmd = "cd %s;git status --porcelain" % self.baseDir
+        rc, out = j.system.process.execute(cmd)
         for item in out.split("\n"):
-            if item.strip()=="":
+            item = item.strip()
+            if item == '':
                 continue
-            item2=item.split(" ",1)[1]
-            result["N"].append(item2)
-        
+            state, _, _file = item.partition(" ")
+            if state == '??':
+                result["N"].append(_file)
+
         for diff in self.repo.index.diff(None):
-            path=diff.a_blob.path
+            path = diff.a_blob.path
             if diff.deleted_file:
                 result["D"].append(path)
             elif diff.new_file:
                 result["N"].append(path)
             elif diff.renamed:
-                result["R"].append(path)            
-            else:                
+                result["R"].append(path)
+            else:
                 result["M"].append(path)
         return result
 
     def addRemoveFiles(self):
-        cmd='cd %s;git add -A :/'%self.baseDir
+        cmd = 'cd %s;git add -A :/' % self.baseDir
         j.system.process.execute(cmd)
         # result=self.getModifiedFiles()
         # self.removeFiles(result["D"])
         # self.addFiles(result["N"])
 
     def addFiles(self, files=[]):
-        if files!=[]:
+        if files != []:
             self.repo.index.add(files)
 
     def removeFiles(self, files=[]):
-        if files!=[]:
+        if files != []:
             self.repo.index.remove(files)
 
     def pull(self):
@@ -113,12 +115,12 @@ class GitClient(object):
     def fetch(self):
         self.repo.git.fetch()
 
-    def commit(self, message='',addremove=True):
+    def commit(self, message='', addremove=True):
         if addremove:
             self.addRemoveFiles()
         self.repo.index.commit(message)
 
-    def push(self,force=False):
+    def push(self, force=False):
         if force:
             self.repo.git.push('-f')
         else:
@@ -180,13 +182,13 @@ docs/_build/
         else:
             lines = gitignore.split('\n')
             inn = j.system.fs.fileGetContents(ignorefilepath)
-            linesExisting = inn.split('\n')
+            lines = inn.split('\n')
             linesout = []
-            for line in linesExisting:
+            for line in lines:
                 if line.strip():
                     linesout.append(line)
             for line in lines:
-                if line not in linesExisting and line.strip():
+                if line not in lines and line.strip():
                     linesout.append(line)
             out = '\n'.join(linesout)
             if out.strip() != inn.strip():

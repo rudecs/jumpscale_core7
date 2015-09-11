@@ -57,9 +57,10 @@ class NodeNas(NodeBase):
                     if devname.startswith("/dev/vda"):
                         continue
                     disk=self.findDisk(devname)
-                    disk.mounted=True
-                    disk.mountpath=line.split(" on ")[1].split(" type")[0].strip()
-                    disk.node=self
+                    if disk!=None:
+                        disk.mounted=True
+                        disk.mountpath=line.split(" on ")[1].split(" type")[0].strip()
+                        disk.node=self
 
             for disk in self.disks:
                 if disk.mounted==False:
@@ -84,4 +85,4 @@ class NodeNas(NodeBase):
         for disk in self.disks:
             if disk.devname==devname:
                 return disk
-        raise RuntimeError("cannot find disk:%s"%devname)                
+        return None
