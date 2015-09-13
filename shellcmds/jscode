@@ -1,11 +1,27 @@
 #!/usr/bin/env jspython
-
+import os
+import sys
 from JumpScale import j
 
 from JumpScale.baselib import cmdutils
 
 # import sys
 # import time
+
+SSH_AGENT_SCRIPT = """
+ssh-add -l &>/dev/null
+if [ "$?" == 2 ]; then
+  test -r ~/.ssh-agent && \
+    eval "$(<~/.ssh-agent)" >/dev/null
+
+  ssh-add -l &>/dev/null
+  if [ "$?" == 2 ]; then
+    (umask 066; ssh-agent > ~/.ssh-agent)
+    eval "$(<~/.ssh-agent)" >/dev/null
+    ssh-add
+  fi
+fi
+"""
 
 j.application.start("jscode2")
 
@@ -55,7 +71,20 @@ repos = j.clients.git.find(opts.accounts, opts.name, interactive=True, returnGit
 repos = [(r.type, r.account, r.name, r.branchName, r, r.baseDir) for r in repos]
 
 if opts.action == 'init':
-    pass
+    key_path = os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
+    if not os.path.exists(key_path):
+        os.system('ssh-keygen -f %s' % key_path)
+
+    username = raw_input('Git Username: ')
+    email = raw_input('Git Email: ')
+    os.system('git config --global user.name "%s"' % username)
+    os.system('git config --global user.email "%s"' % email)
+
+    with open('/etc/profile.d/ssh-agent.sh', 'w') as script:
+        script.write(SSH_AGENT_SCRIPT)
+        print 'Please logout and relogin for your ssh keys to be loaded'
+
+    sys.exit(0)
 
 
 if opts.action == "status":
