@@ -20,7 +20,8 @@ parser.add_argument("-b", '--base', help='base to clone from')
 parser.add_argument("-p", '--passwd', help='password for machine')
 parser.add_argument("-r", '--prefix', help='prefix')
 parser.add_argument("-k", '--key', help='key for syncing')
-parser.add_argument("-s", '--sharecode', help='share host /opt/code', action='store_true', default=False)
+parser.add_argument('--no-sharecode', help='dont share host /opt/code witch container',
+                    action='store_true', default=False)
 parser.add_argument("-j", '--jumpscale', help='only relevant for new, will install jumpscale',
                     action='store_true', default=False)
 parser.add_argument('--ports', help='format "22:8022 80:8080"  the first arg e.g. 22 is the port in the container')
@@ -83,7 +84,7 @@ if opts.action == 'new':
     if opts.base is None:
         opts.base = "despiegk/mc"
     l.create(name=opts.name, stdout=True, base=opts.base, ports=opts.ports, vols=opts.vols,
-             volsro=opts.volsro, cpu=opts.cpu, mem=opts.mem, jumpscale=opts.jumpscale, sharecode=opts.sharecode)
+             volsro=opts.volsro, cpu=opts.cpu, mem=opts.mem, jumpscale=opts.jumpscale, sharecode=not opts.no_sharecode)
 
 if opts.action == 'getip':
     if opts.name is None:
