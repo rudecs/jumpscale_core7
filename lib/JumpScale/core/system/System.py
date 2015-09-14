@@ -103,7 +103,7 @@ class System(Loader):
     @type: number
     '''
 
-    _jPlatformType=None
+    _ayslatformType=None
     '''PlatformType of currently running platform
 
     @type: L{jumpscale.enumerators.PlatformType.PlatformType}
@@ -119,7 +119,7 @@ class System(Loader):
         and initializes the C{fs}, C{net} and C{process} attributes.
         '''
         super(System, self).__init__()
-        self.platformtype=self._jPlatformType
+        self.platformtype=self._ayslatformType
         self.fs = SystemFS()
         self.net = SystemNet()
         self.string=String()

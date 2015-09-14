@@ -204,8 +204,8 @@
     prop:id int,,
     prop:gid int,,
     prop:nid int,,
-    prop:jpdomain str,,
-    prop:jpname str,,
+    prop:aysdomain str,,
+    prop:aysname str,,
     prop:pname str,, process name
     prop:sname str,, name as specified in startup manager
     prop:ports list(int),,

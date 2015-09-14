@@ -33,7 +33,7 @@ class ProcessCmds():
         cacheobj.db.active=True
         cacheobj.db.sname = name
         cacheobj.db.pname = name
-        cacheobj.db.jpdomain=domain
+        cacheobj.db.aysdomain=domain
         cacheobj.db.type="js"
         cacheobj.db.getSetGuid()
         cacheobj.db.workingdir=workingdir

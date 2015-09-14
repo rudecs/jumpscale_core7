@@ -51,10 +51,10 @@ class OSISClientFactory(object):
     def get(self, ipaddr=None, port=5544,user=None,passwd=None,ssl=False,gevent=False):
         if ipaddr==None or user==None or passwd==None:
             osisInstances=j.atyourservice.findServices(name="osis_client",domain="jumpscale")
-            # inames=osisjp.listInstances()
+            # inames=osisays.listInstances()
             if len(osisInstances)>0:
                 osisService = osisInstances[0]
-                # osisjp=osisjp.load(instance=inames[0])
+                # osisays=osisays.load(instance=inames[0])
                 hrd=osisService.hrd
                 if ipaddr==None:
                     ipaddr=hrd.get("instance.param.osis.client.addr")

@@ -1997,7 +1997,7 @@ class Installer():
             rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale/
             rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale/
             rm /usr/local/bin/js*
-            rm /usr/local/bin/jpack*
+            rm /usr/local/bin/ays*
             rm /usr/local/bin/osis*
             rm -rf /opt/jumpscale7/lib/JumpScale
             rm -rf /opt/sentry/

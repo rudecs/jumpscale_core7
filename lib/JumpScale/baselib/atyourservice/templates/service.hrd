@@ -1,7 +1,7 @@
 base='/opt/mariadb'
 
 process.1=
-    name:'$(jp.instance)_$(jp.name)',
+    name:'$(ays.instance)_$(ays.name)',
     cmd:'$(base)/bin/nginx -c $(base)/cfg/nginx/nginx.conf',
     args:,
     env:,

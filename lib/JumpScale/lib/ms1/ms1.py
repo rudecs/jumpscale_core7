@@ -108,7 +108,7 @@ class MS1(object):
 
         return api
 
-    # def deployAppDeck(self, spacesecret, name, memsize=1024, ssdsize=40, vsansize=0, jpdomain='solutions', jpname=None, config=None, description=None,**args):
+    # def deployAppDeck(self, spacesecret, name, memsize=1024, ssdsize=40, vsansize=0, aysdomain='solutions', aysname=None, config=None, description=None,**args):
     #     machine_id = self.deployMachineDeck(spacesecret, name, memsize, ssdsize, vsansize, description)
     #     api = self.getApiConnection(location)
     #     portforwarding_actor = api.getActor('cloudapi', 'portforwarding')
@@ -143,13 +143,13 @@ class MS1(object):
     #     ssh_connection.fabric.api.env['connection_attempts'] = 5
     #     ssh_connection.connect('%s:%s' % (cloudspace['publicipaddress'], ssh_port), username)
 
-    #     # install jpackages there
-    #     ssh_connection.sudo('jpackage mdupdate')
+    #     # install ays there
+    #     ssh_connection.sudo('ays mdupdate')
     #     if config:
-    #         jpackage_hrd_file = j.system.fs.joinPaths(j.dirs.hrdDir, '%s_%s' % (jpdomain, jpname))
-    #         ssh_connection.file_write(jpackage_hrd_file, config, sudo=True)
-    #     if jpdomain and jpname:
-    #         ssh_connection.sudo('jpackage install -n %s -d %s' % (jpname, jpdomain))
+    #         ays_hrd_file = j.system.fs.joinPaths(j.dirs.hrdDir, '%s_%s' % (aysdomain, aysname))
+    #         ssh_connection.file_write(ays_hrd_file, config, sudo=True)
+    #     if aysdomain and aysname:
+    #         ssh_connection.sudo('ays install -n %s -d %s' % (aysname, aysdomain))
 
     #     #cleanup
     #     cloudspace_forward_rules = portforwarding_actor.list(machine['cloudspaceid'])

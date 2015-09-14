@@ -42,7 +42,7 @@ ays commands:
     removedata
     - remove data of app (e.g. database, e.g. vmachine when node ays)
     execute
-    - execute cmd on service e.g. ssh cmd on node jp or sql statement on database ...
+    - execute cmd on service e.g. ssh cmd on node ays or sql statement on database ...
     - use --cmd with to specify command to be execute
     monitor
     - do uptime check, local monitor & remote monitor check, if all ok return True
@@ -111,14 +111,14 @@ group = parser.add_argument_group(title="Make Local")
 group.add_argument('--tolocal', required=False, help='Comma-seperated list of services to be localized')
 
 
-def sorter(jp1, jp2):
-    prio1 = jp1.getPriority()
-    prio2 = jp2.getPriority()
+def sorter(ays1, ays2):
+    prio1 = ays1.getPriority()
+    prio2 = ays2.getPriority()
     if prio1 != prio2:
         return cmp(prio1, prio2)
     else:
-        key1 = "%s_%s" % (jp1.domain, jp2.name)
-        key2 = "%s_%s" % (jp2.domain, jp2.name)
+        key1 = "%s_%s" % (ays1.domain, ays2.name)
+        key2 = "%s_%s" % (ays2.domain, ays2.name)
         return cmp(key1, key2)
 
 
@@ -181,14 +181,14 @@ if '--help' in sys.argv or '-h' in sys.argv:
 args = parser.parse_args()
 args.deps = not args.nodeps
 
-# jpargs = {}
+# aysargs = {}
 # if args.node!=None:
-#     jpargs["node2execute"]=args.node
+#     aysargs["node2execute"]=args.node
 # if args.lua!=None:
-#     jpargs["lua"]=args.lua
+#     aysargs["lua"]=args.lua
 
 # if args.cmd is not None:
-    # jpargs['cmd'] = args.cmd.strip()
+    # aysargs['cmd'] = args.cmd.strip()
 
 
 j.application.debug = args.verbose

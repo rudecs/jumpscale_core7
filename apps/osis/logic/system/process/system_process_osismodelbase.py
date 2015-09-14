@@ -6,8 +6,8 @@ class system_process_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P_id=0
         self._P_gid=0
         self._P_nid=0
-        self._P_jpdomain=""
-        self._P_jpname=""
+        self._P_aysdomain=""
+        self._P_aysname=""
         self._P_pname=""
         self._P_sname=""
         self._P_ports=list()
@@ -99,42 +99,42 @@ class system_process_osismodelbase(j.code.classGetJSRootModelBase()):
         del self._P_nid
 
     @property
-    def jpdomain(self):
-        return self._P_jpdomain
+    def aysdomain(self):
+        return self._P_aysdomain
 
-    @jpdomain.setter
-    def jpdomain(self, value):
+    @aysdomain.setter
+    def aysdomain(self, value):
         if not isinstance(value, str) and value is not None:
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property jpdomain input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: process, value was:" + str(value)
+                msg="property aysdomain input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: process, value was:" + str(value)
                 raise TypeError(msg)
 
-        self._P_jpdomain=value
+        self._P_aysdomain=value
 
-    @jpdomain.deleter
-    def jpdomain(self):
-        del self._P_jpdomain
+    @aysdomain.deleter
+    def aysdomain(self):
+        del self._P_aysdomain
 
     @property
-    def jpname(self):
-        return self._P_jpname
+    def aysname(self):
+        return self._P_aysname
 
-    @jpname.setter
-    def jpname(self, value):
+    @aysname.setter
+    def aysname(self, value):
         if not isinstance(value, str) and value is not None:
             if isinstance(value, basestring) and j.basetype.string.checkString(value):
                 value = j.basetype.string.fromString(value)
             else:
-                msg="property jpname input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: process, value was:" + str(value)
+                msg="property aysname input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: process, value was:" + str(value)
                 raise TypeError(msg)
 
-        self._P_jpname=value
+        self._P_aysname=value
 
-    @jpname.deleter
-    def jpname(self):
-        del self._P_jpname
+    @aysname.deleter
+    def aysname(self):
+        del self._P_aysname
 
     @property
     def pname(self):

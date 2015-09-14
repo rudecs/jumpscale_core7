@@ -16,8 +16,8 @@ class Process(OsisBaseObject):
             self.id = 0
             self.gid = gid
             self.nid = nid
-            self.jpdomain= ""
-            self.jpname= ""
+            self.aysdomain= ""
+            self.aysname= ""
             self.pname = name  #process name
             self.sname= "" #name as specified in startup manager
             self.ports = []
@@ -51,7 +51,7 @@ class Process(OsisBaseObject):
         """
         return unique key for object, is used to define unique id
         """
-        C="%s_%s_%s_%s_%s_%s_%s_%s"% (self.gid,self.nid, self.jpdomain,self.jpname,self.workingdir,self.cmd,self.pname,self.sname)
+        C="%s_%s_%s_%s_%s_%s_%s_%s"% (self.gid,self.nid, self.aysdomain,self.aysname,self.workingdir,self.cmd,self.pname,self.sname)
         return j.tools.hash.md5_string(C)
 
     def getSetGuid(self):
@@ -62,7 +62,7 @@ class Process(OsisBaseObject):
         self.id = int(self.id)
         
         # if self.sname != "":
-        #     key="%s_%s"%(self.jpdomain,self.sname)
+        #     key="%s_%s"%(self.aysdomain,self.sname)
         # else:
         #     key=self.pname
 
@@ -75,7 +75,7 @@ class Process(OsisBaseObject):
         is like returning the hash, is used to see if object changed
         """
         out=""
-        for item in ["gid","nid","jpdomain","jpname","pname","sname","ports","systempids","epochstart","epochstop","active","cmd","workingdir"]:
+        for item in ["gid","nid","aysdomain","aysname","pname","sname","ports","systempids","epochstart","epochstop","active","cmd","workingdir"]:
             out+=str(self.__dict__[item])
         return j.tools.hash.md5_string(out)
 

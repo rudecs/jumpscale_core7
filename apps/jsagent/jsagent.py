@@ -144,11 +144,11 @@ class ProcessManager():
 
         if "hekad" in self.services:
             hekaServices=j.atyourservice.findservices("jumpscale","hekad")
-            # if not jp.isInstalled(instance="0"):
+            # if not ays.isInstalled(instance="0"):
             if len(hekaServices)==0:
                 hekad=j.atyourservice.new(name='hekad',instance='hekad')
                 hekad.install()
-                # jp.install(hrddata={},instance="hekad")
+                # ays.install(hrddata={},instance="hekad")
 
             p=Process()
             p.domain="jumpscale"

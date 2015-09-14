@@ -24,7 +24,7 @@ def clean():
     for r,d,f in os.walk("/usr"):
       for path in f:
           match=False
-          if path.startswith("jscode") or path.startswith("jpackage") or path.startswith("jspackage") or path.startswith("jsdevelop")\
+          if path.startswith("jscode") or path.startswith("ays") or path.startswith("jsdevelop")\
               or path.startswith("jsreinstall") or path.startswith("jsprocess") or path.startswith("jslog") or path.startswith("jsshell") or path.startswith("osis"):
               match=True
           if path in ["js"]:
@@ -43,7 +43,7 @@ rm -rf /usr/local/lib/python2.7/site-packages/jumpscale/
 rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale/
 rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale/
 rm /usr/local/bin/js*
-rm /usr/local/bin/jpack*
+rm /usr/local/bin/ays*
 """    
     for cmd in cmds.split("\n"):
       if cmd.strip()<>"":
@@ -70,7 +70,7 @@ setup(name='JumpScale-core',
       package_dir = {'':'lib'},
       include_package_data = True,
       package_data = {'JumpScale':list_files(basedir='lib/JumpScale',subdir='core/_defaultcontent') +
-                                  list_files(basedir='lib/JumpScale',subdir='baselib/jpackages/templates')
+                                  list_files(basedir='lib/JumpScale',subdir='baselib/atyourservice/templates')
                      },
       scripts=scripts,
 

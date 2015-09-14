@@ -41,7 +41,7 @@ def action():
 
 
     def aggregate(cacheobj,process_key,key,value,avg=True,ttype="N",percent=False):
-        if cacheobj.db.jpdomain<>"":
+        if cacheobj.db.aysdomain<>"":
             cat="js"
         else:
             cat="os"
@@ -158,13 +158,13 @@ def action():
     #walk over startupmanager processes (make sure we don't double count)
     for ays in j.atyourservice.findTemplates():
         for instance in ays.listInstances():
-            jpinstance = ays.getInstance(instance)
-            if not jpinstance.isInstalled():
+            aysinstance = ays.getInstance(instance)
+            if not aysinstance.isInstalled():
                 continue
 
-            ports = jpinstance.getTCPPorts()
-            for d in jpinstance.getProcessDicts():
-                process_key="%s_%s"%(jpinstance.domain, jpinstance.name)
+            ports = aysinstance.getTCPPorts()
+            for d in aysinstance.getProcessDicts():
+                process_key="%s_%s"%(aysinstance.domain, aysinstance.name)
                 cwd = d.get('cwd')
                 cmd = d.get('cmd')
 
@@ -174,10 +174,10 @@ def action():
         
                 processOsisObject=cacheobj.db
                 
-                processOsisObject.active=jpinstance.actions.check_up_local(jpinstance, wait=False)
+                processOsisObject.active=aysinstance.actions.check_up_local(aysinstance, wait=False)
                 processOsisObject.ports = ports
-                processOsisObject.jpname = jpinstance.name
-                processOsisObject.jpdomain=jpinstance.domain
+                processOsisObject.aysname = aysinstance.name
+                processOsisObject.aysdomain=aysinstance.domain
                 processOsisObject.workingdir = cwd
                 processOsisObject.cmd = cmd
                 processOsisObject.sname = process_key
@@ -185,7 +185,7 @@ def action():
                 processOsisObject.getSetGuid()
                 processOsisObject.type="jsprocess"
                 processOsisObject.statkey=process_key
-                processOsisObject.systempids = jpinstance.actions.get_pids(jpinstance)
+                processOsisObject.systempids = aysinstance.actions.get_pids(aysinstance)
         
                 if processOsisObject.systempids:            
                     loadFromSystemProcessInfo(process_key,cacheobj,processOsisObject.systempids[0])

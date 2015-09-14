@@ -107,8 +107,8 @@ class TEST(unittest.TestCase):
             obj.epochstop=obj.epochstart+j.base.idgenerator.generateRandomInt(1,600)
             r=j.base.idgenerator.generateRandomInt(0,2)
             domains=["jumpscale","incubaid","adomain"]
-            obj.jpdomain=domains[r]
-            obj.jpname="jpname%s"%i
+            obj.aysdomain=domains[r]
+            obj.aysname="aysname%s"%i
             obj.pname="process%s"%i
             obj.sname="process%s"%i
             client.set(obj)
