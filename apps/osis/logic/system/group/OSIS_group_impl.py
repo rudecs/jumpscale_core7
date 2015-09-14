@@ -41,7 +41,12 @@ class mainclass(parentclass):
         return not db.find_one({"id":id})==None
 
     def get(self, key, full=False, session=None):
-        gid, _, id = key.partition('_')
+        if '_' in key:
+            gid, _, id = key.partition('_')
+            if not gid.isdigit():
+                id = key
+        else:
+            id = key
         self.runTasklet('get', key, session)
         db, counter = self._getMongoDB(session)
         res=db.find_one({"id":id})
