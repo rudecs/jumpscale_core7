@@ -518,9 +518,9 @@ class Service(object):
     def build(self, deps=True, processed={}):
         self.log("build instance")
         for dep in self.getDependencies(build=True):
-            if dep.name not in j.atyourservice._justinstalled:
-                dep.install()
-                j.atyourservice._justinstalled.append(dep.name)
+            if dep.name not in processed.get('build', []):
+                processed.setdefault('build', [])
+                processed['build'].append(dep.name)
 
         for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
             # pull the required repo
@@ -532,7 +532,7 @@ class Service(object):
                 "https://", "").replace("http://", "").replace(".git", "")
             self._getRepo(
                 recipeitem['url'], recipeitem=recipeitem, dest="/opt/build/%s" % name)
-            self.actions.build(self)
+        self.actions.build(self)
 
     @deps
     def start(self, deps=True, processed={}):
