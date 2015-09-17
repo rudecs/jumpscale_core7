@@ -116,11 +116,20 @@ class ProcessManager():
         self.dir_hekadconfig=j.system.fs.joinPaths(self.dir_data,"dir_hekadconfig")
         self.dir_actions=j.system.fs.joinPaths(self.dir_data,"actions")
         j.system.fs.createDir(self.dir_data)
-
         if j.system.net.tcpPortConnectionTest("localhost",9999)==False:
-            redisService = j.atyourservice.get('jumpscale','redis','system')
-            if not redisService.isInstalled() and not j.system.net.tcpPortConnectionTest("localhost",9999):
-                redisService.install(hrddata={"redis.port":9999,"redis.disk":"0","redis.mem":40})
+            redisServices = j.atyourservice.findServices('jumpscale', 'redis', 'system')
+            if len(redisServices) <= 0:
+                args = {'instance.param.port': 9999,
+                        'instance.param.disk': 0,
+                        'instance.param.mem': 40,
+                        'instance.param.ip': '127.0.0.1',
+                        'instance.param.passwd': '',
+                        'instance.param.unixsocket': 0}
+                redisService = j.atyourservice.new('jumpscale', 'redis', 'system', args=args)
+                redisService.install()
+            else:
+                redisService = redisServices[0]
+                redisService.start()
             if j.system.net.waitConnectionTest("localhost",9999,10)==False:
                 j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 
