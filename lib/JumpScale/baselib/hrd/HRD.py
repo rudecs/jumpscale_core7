@@ -491,8 +491,10 @@ class HRD(HRDBase):
                 # print ("%s:%s"%(state,line))
                 if vartype=="ask":
                     vartype="base" #ask was temporary type, is really a string
+
+                name2 = name
                 if self.prefixWithName:
-                    name="%s.%s"%(self.name,name)
+                    name2="%s.%s"%(self.name,name)
 
                 if vartype=="binaryqp":
                     post=binascii.a2b_qp(post)
@@ -500,7 +502,7 @@ class HRD(HRDBase):
 
                 self.items[name]=HRDItem(name,self,vartype,post,comments)
                 if self.tree!=None:
-                    self.tree.items[name]=self.items[name]
+                    self.tree.items[name2]=self.items[name]
                     
                 state="look4var"
                 comments=""

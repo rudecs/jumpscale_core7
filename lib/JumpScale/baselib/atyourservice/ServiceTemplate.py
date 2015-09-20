@@ -125,8 +125,15 @@ class ServiceTemplate(object):
         args      -- arguments to be used when building
         """
 
+        path = j.system.fs.joinPaths('/tmp', j.base.idgenerator.generateGUID(), '')
+
+        j.system.fs.createDir(path)
+        j.system.fs.copyFile(j.system.fs.joinPaths(self.metapath, 'service.hrd'), path)
+        j.system.fs.copyFile(j.system.fs.joinPaths(self.metapath, 'actions.py'), path)
+
+        hrd = j.core.hrd.get(path, prefixWithName=True)
+        
         #check if this platform is supported
-        hrd = self.getHRD(prefix=True)
         support = False
         myplatforms = j.system.platformtype.getMyRelevantPlatforms()
         supported = hrd.getList("platform.supported",default=[])
@@ -140,8 +147,10 @@ class ServiceTemplate(object):
             j.events.opserror_critical("Cannot build %s__%s because unsupported platform." % (self.domain, self.name))
 
         service = Service(args=args, hrd=hrd, hrdSeed=hrdSeed)
-        service.path = self.metapath
+        service.path = path
         service.build(deps=deps)
+
+        j.system.fs.removeDirTree(path)
 
     def __repr__(self):
         return "%-15s:%s" % (self.domain, self.name)
