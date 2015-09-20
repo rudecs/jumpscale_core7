@@ -32,9 +32,9 @@ class Openvclcoud(object):
     def actionCheck(self,gitlaburl,actionname):
         if self.reset:
             return False
-        
+
         key="%s__%s" % (gitlaburl, actionname)
-        
+
         if self.db.exists("", key):
             print "Action: %s done" % actionname
             return self.db.get("", key)
@@ -76,16 +76,16 @@ class Openvclcoud(object):
         #check gitlab repo exists or needs to be created
         # create new git repo
         print "[+] creating git repository"
-        
+
         if gitlaburl.find("@")!=-1:
             j.events.inputerror_critical('[-] do not use "login:passwd@" in the url')
-            
+
         if not gitlaburl.startswith("http"):
             gitlaburl = "https://%s" % gitlaburl
 
         gitlabAccountname, gitlabReponame = j.clients.gitlab.getAccountnameReponameFromUrl(gitlaburl)
         gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
-        
+
         print '[+] git group: %s' % gitlabAccountname
         print '[+] environment: %s' % gitlabReponame
 
@@ -95,14 +95,14 @@ class Openvclcoud(object):
             self.actionDone(gitlaburl, "gitcreate")
 
         print "[+] get secret key for cloud api"
-        
+
         if self._spacesecret is None:
             j.events.inputerror_critical('[-] no spacesecret set, need to call connect() method first')
         else:
             spacesecret = self._spacesecret
 
         print "[+] checking local ssh key"
-        
+
         keypath = '/root/.ssh/id_rsa'
         if not j.system.fs.exists(path=keypath):
             print "[+] generating local rsa key"
@@ -138,7 +138,7 @@ class Openvclcoud(object):
             # install Jumpscale
             print "[+] installing jumpscale"
             cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
-            
+
             # print "jumpscale installed"
 
             print "[+] adding openvcloud domain to atyourservice"
@@ -153,28 +153,28 @@ metadata.openvcloud            =
             cl.run('jsconfig hrdset -n whoami.git.login -v "%s"' % gitlablogin)
             cl.run('jsconfig hrdset -n whoami.git.passwd -v "%s"' % urllib.quote_plus(gitlabpasswd))
             infos = gitlab.getUserInfo(gitlablogin)
-            
+
             email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
             name = infos['name'] if infos['name'] != '' else gitlablogin
-            
+
             cl.run('git config --global user.email "%s"' % email)
             cl.run('git config --global user.name "%s"' % name)
             self.actionDone(gitlaburl, "gitcredentials")
-        
+
         repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
-        
+
         if self.actionCheck(gitlaburl, "gitlabclone") is False:
             # clone templates repo and change url
             _, _, _, _, repoURL = j.do.rewriteGitRepoUrl(gitlaburl, gitlablogin, urllib.quote_plus(gitlabpasswd))
-            
+
             if not cl.file_exists(repopath):
                 host = 'https://%s:%s@%s' % (gitlablogin, urllib.quote_plus(gitlabpasswd), 'git.aydo.com')
                 cl.run('git clone %s/openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
                 cl.run('cd %s; git remote set-url origin %s' % (repopath, repoURL))
-                
+
                 # Note: rebase prevents for asking to merge local tree with remote
                 cl.run('cd %s; git pull --rebase' % repopath)
-                
+
             self.actionDone(gitlaburl, "gitlabclone")
 
         if self.actionCheck(gitlaburl, 'copyKeys') is False:
@@ -182,11 +182,11 @@ metadata.openvcloud            =
                 '/root/.ssh/id_rsa': j.system.fs.joinPaths(repopath, 'keys', 'git_root'),
                 '/root/.ssh/id_rsa.pub': j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'),
             }
-            
+
             for source, dest in keys.iteritems():
                 content = cl.file_read(source)
                 cl.file_write(dest, content)
-            
+
             self.actionDone(gitlaburl, 'copyKeys')
 
         if self.actionCheck(gitlaburl, "ms1client") is False:
@@ -210,7 +210,7 @@ metadata.openvcloud            =
             cl.run('git config --global push.default simple')
             cl.run('cd %s;jscode push' % repopath)
             self.actionDone(gitlaburl, "rememberssh")
-        
+
         print "[+] setup completed"
 
     def connectAYSGitVM(self, gitlaburl, gitlablogin,gitlabpasswd):
@@ -245,7 +245,7 @@ metadata.openvcloud            =
 
         cl.fabric.api.open_shell()
 
-    def initVnasCloudSpace(self, delete=False):
+    def initVnasCloudSpace(self, gitlablogin, gitlabpasswd, delete=False):
         print "get secret key for cloud api"
         if self._spacesecret is None:
             j.events.inputerror_critical('no spacesecret set, need to call connect() method first')
@@ -291,6 +291,11 @@ metadata.openvcloud            =
             cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
             self.actionDone(spacesecret, "vnas_jumpscale")
 
+        if self.actionCheck(spacesecret, "vnas-gitcredentials") is False:
+            cl.run('jsconfig hrdset -n whoami.git.login -v "%s"' % gitlablogin)
+            cl.run('jsconfig hrdset -n whoami.git.passwd -v "%s"' % urllib.quote_plus(gitlabpasswd))
+            self.actionDone(spacesecret, "vnas-gitcredentials")
+
         if self.actionCheck(spacesecret, "vnas_ovc_client") is False:
             # create ovc_client to save ovc connection info
             args = 'instance.param.location:%s instance.param.login:%s instance.param.passwd:%s instance.param.cloudspace:%s instance.param.apiurl:%s' % (self.location, self.login, self.passwd, self.cloudspace, self.apiURL)
@@ -300,3 +305,11 @@ metadata.openvcloud            =
         ss = cl.host().split(':')
         ip, port = ss[0], ss[1]
         print "connect to the vnas_master with\nssh root@%s -p %s" % (ip, port)
+
+    def vmExists(self, spacesecret, name):
+        try:
+            cl.api.getMachineObject(cl._spacesecret, 'vnas_master')
+        except Exception as e:
+            if e.message and e.message.find('Could not find machine') != -1:
+                return False
+        return True
