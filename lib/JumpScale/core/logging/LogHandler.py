@@ -166,15 +166,11 @@ class LogHandler(object):
             self.connectRedis()
 
     def connectRedis(self):
-        # if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
-        if self.redis!=None:
+        if self.redis is None:
             #found redis        
-            import JumpScale.baselib.redis
-            # if j.clients.redis.isRunning('system'):
             if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
-                # self.redis=j.clients.redis.getByInstance('system')
-                # self.redis=j.clients.redis.getRedisClient("localhost",9999)
-                self.redis=j.clients.redis.getGeventRedisClient("localhost", 9999, fromcache=True, password='')
+                import JumpScale.baselib.redis
+                self.redis=j.clients.redis.getRedisClient("localhost", 9999, fromcache=True, password='')
                 luapath="%s/core/logging/logs.lua"%j.dirs.jsLibDir
                 if j.system.fs.exists(path=luapath):
                     lua=j.system.fs.fileGetContents(luapath)

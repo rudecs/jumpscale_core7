@@ -97,7 +97,6 @@ def purge(opts,action):
             return j.base.time.getEpochAgo(time)
         return j.base.time.getEpochFuture(time)
 
-    esclient = j.clients.elasticsearch.get()
     query = dict()
 
         
@@ -107,41 +106,33 @@ def purge(opts,action):
         timeElement='epoch'
     
     if opts.ffrom:
-        query['range'] = dict()
-        query['range'][timeElement] = dict()
-        query['range'][timeElement]['gt'] = int(_getEpoch(opts.ffrom))
+        query[timeElement] = {'$gt': int(_getEpoch(opts.ffrom))}
     
     if opts.to==None:
         opts.to="-4h"
 
     if opts.to:
-        if 'range' not in query:
-            query['range'] = dict()
-            query['range'][timeElement] = dict()
-        query['range'][timeElement]['lt'] = int(_getEpoch(opts.to))
+        query[timeElement] = {'$lt': int(_getEpoch(opts.to))}
 
-    queryfull={"query":query}
 
     # print queryfull
 
     if query:
         if action in ['purgelogs']:
-            index='system_log'
+            table = 'log'
         elif action in ['purgejobs']:
-            index='system_job'
+            table ='system_job'
         elif action in ['purgeecos']:
-            index='system_eco'
+            table='eco'
 
-        beforecount = esclient.count(index=index, query=query, doc_type='json')['count']
-        result = esclient.delete_by_query(index=index, query=query, doc_type='json')
-        aftercount = esclient.count(index=index, query=query, doc_type='json')['count']
-
-        if result['_indices'][index]['_shards']['successful'] == result['_indices'][index]['_shards']['total'] and result['ok']:
-            print('purge %s executed successfully. %s records deleted.' % (index, beforecount-aftercount))
+        import JumpScale.grid
+        scl = j.clients.osis.getNamespace('system')
+        db = getattr(scl, table)
+        print query
+        print 'Deleted %s' % db.deleteSearch(query)
 
 
 if opts.action in ['purgeall','purgelogs','purgejobs', 'purgeecos']:
-    import JumpScale.baselib.elasticsearch
     if opts.action=="purgeall":
         opts.to="+1h"
         purge(opts,'purgelogs')

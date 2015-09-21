@@ -871,6 +871,17 @@ class InstallTools():
             return True
         return False
 
+    def executeBashScript(self,content,path=None,die=True):
+        if die:
+            content="set -ex\n%s"%content
+        if path!=None:
+            content="cd %s\n%s"%content
+            path2=self.joinPaths(path,"do.sh")
+        else:
+            path2=self.getTmpPath("do.sh")
+        self.writeFile(path2,content,strip=True)
+        return self.execute("sh %s"%path2,die=die)
+
     def executeCmds(self,cmdstr, outputStdout=True, outputStderr=True,useShell = True,log=True,cwd=None,timeout=120,errors=[],ok=[],captureout=True,dieOnNonZeroExitCode=True):
         rc_=""
         out_=""
@@ -1997,7 +2008,8 @@ class Installer():
             rm -rf /usr/local/lib/python2.7/dist-packages/JumpScale/
             rm -rf /usr/local/lib/python2.7/dist-packages/jumpscale/
             rm /usr/local/bin/js*
-            rm /usr/local/bin/ays*
+            rm /usr/local/bin/jpack*
+	    rm /usr/local/bin/ays*
             rm /usr/local/bin/osis*
             rm -rf /opt/jumpscale7/lib/JumpScale
             rm -rf /opt/sentry/
