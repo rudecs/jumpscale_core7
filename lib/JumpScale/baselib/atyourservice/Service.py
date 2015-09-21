@@ -394,6 +394,9 @@ class Service(object):
             if not build and item.get('type', 'runtime') == 'build':
                 continue
 
+            if build and item.get('type', 'runtime') != 'build':
+                continue
+
             if "args" in item:
                 if isinstance(item['args'], dict):
                     hrddata = {}
@@ -520,6 +523,7 @@ class Service(object):
         for dep in self.getDependencies(build=True):
             if dep.name not in processed.get('build', []):
                 processed.setdefault('build', [])
+                dep.install()
                 processed['build'].append(dep.name)
 
         for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
