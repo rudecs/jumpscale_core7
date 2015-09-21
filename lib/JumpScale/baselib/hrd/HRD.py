@@ -251,8 +251,11 @@ class HRD(HRDBase):
             out=str(self)
 
         if self.path != '' and self.path is not None:
+            if not j.system.fs.exists(self.path):
+                j.system.fs.writeFile(self.path,out)
+            elif j.tools.hash.md5(self.path) != j.tools.hash.md5_string(out):
+                j.system.fs.writeFile(self.path,out)
 
-            j.system.fs.writeFile(self.path,out)
 
     def getHrd(self,key):
         #to keep common functions working
@@ -286,7 +289,6 @@ class HRD(HRDBase):
                 out+=line+"\n"
 
         out = out.strip('\n') + '\n'
-
         j.system.fs.writeFile(self.path,out)
 
     def read(self):
@@ -358,8 +360,6 @@ class HRD(HRDBase):
         for key in self.args:
             self.set(key,self.args[key])
 
-        # if templates<>[]:
-        #     if change:
         self.save()
 
 
