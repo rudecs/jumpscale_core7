@@ -152,6 +152,21 @@ def getTarget(args):
     return j.atyourservice.get(name=(args.targettype or ''), instance=(args.targetname or ''),
                                parent=getParent(args, precise=args.immediate))
 
+def getTemplates(args, filterRemote=False, onlyRemote=False):
+    res = []
+    templates = j.atyourservice.findTemplates(args.domain, args.name)
+    if filterRemote:
+        for template in templates:
+            if len(template.hrd.getDictFromPrefix('producer.node')) == 0:
+                res.append(template)
+    elif onlyRemote:
+        for template in template:
+            if template.hrd.get('service.category', '') == 'node':
+                res.append(template)
+    else:
+        res = templates
+    return res
+
 
 def getServices(args, filterRemote=False, parent=None, precise=False, onlyRemote=False):
     res = []
@@ -315,7 +330,9 @@ else:
             service.execute(deps=args.deps)
 
     elif args.action == 'build':
-        for service in sorted(services, cmp=sorter):
+        templates = getTemplates(args, filterRemote=args.local)
+        templates.extend(services)
+        for service in sorted(templates, cmp=sorter):
             service.build(deps=args.deps)
 
     elif args.action == 'uninstall':

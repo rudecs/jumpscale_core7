@@ -211,7 +211,7 @@ class RedisFactory:
         j.system.fs.createDir(dpath)
         self.startInstance(name)
 
-    def configureInstance(self, name, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None,unixsocket=False):
+    def configureInstance(self, name, ip, port, maxram=200, appendonly=True,snapshot=False,slave=(),ismaster=False,passwd=None,unixsocket=False):
         """
         @param maxram = MB of ram
         slave example: (192.168.10.10,8888,asecret)   (ip,port,secret)
@@ -223,7 +223,7 @@ class RedisFactory:
 daemonize no
 pidfile $vardir/redis/$name/redis.pid
 $port
-bind 127.0.0.1
+bind $bind
 # unixsocket $vardir/redis/$name/redis.sock
 # unixsocketperm 755
 timeout 0
@@ -783,7 +783,7 @@ aof-rewrite-incremental-fsync yes
              port = "port %s" % port
         C = C.replace("$port", str(port))
         C = C.replace("$vardir", j.dirs.varDir)
-
+        C = C.replace("$bind", ip)
         if ismaster:
             slave=False
 

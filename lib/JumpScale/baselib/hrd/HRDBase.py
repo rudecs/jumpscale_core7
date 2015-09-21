@@ -263,9 +263,10 @@ class HRDBase():
         """
 
         j.core.hrd.log("hrd:%s apply on file:%s"%(self.path,path),category="apply")
-        content=j.system.fs.fileGetContents(path)
-        content=self._replaceVarsInText(content,additionalArgs=additionalArgs)
-        j.system.fs.writeFile(path,content)
+        content = j.system.fs.fileGetContents(path)
+        newcontent = self._replaceVarsInText(content,additionalArgs=additionalArgs)
+        if content != newcontent:
+            j.system.fs.writeFile(path, newcontent)
 
     def applyOnContent(self,content,additionalArgs=OrderedDict()):
         """

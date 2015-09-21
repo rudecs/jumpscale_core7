@@ -394,6 +394,9 @@ class Service(object):
             if not build and item.get('type', 'runtime') == 'build':
                 continue
 
+            if build and item.get('type', 'runtime') != 'build':
+                continue
+
             if "args" in item:
                 if isinstance(item['args'], dict):
                     hrddata = {}
@@ -518,9 +521,10 @@ class Service(object):
     def build(self, deps=True, processed={}):
         self.log("build instance")
         for dep in self.getDependencies(build=True):
-            if dep.name not in j.atyourservice._justinstalled:
+            if dep.name not in processed.get('build', []):
+                processed.setdefault('build', [])
                 dep.install()
-                j.atyourservice._justinstalled.append(dep.name)
+                processed['build'].append(dep.name)
 
         for recipeitem in self.hrd.getListFromPrefix("service.git.export"):
             # pull the required repo
@@ -532,7 +536,7 @@ class Service(object):
                 "https://", "").replace("http://", "").replace(".git", "")
             self._getRepo(
                 recipeitem['url'], recipeitem=recipeitem, dest="/opt/build/%s" % name)
-            self.actions.build(self)
+        self.actions.build(self)
 
     @deps
     def start(self, deps=True, processed={}):

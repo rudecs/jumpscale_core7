@@ -38,9 +38,9 @@ class ServiceTemplate(object):
             service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent, hrdSeed=hrdSeed)
         return service
 
-    def getHRD(self):
+    def getHRD(self, prefix=False):
         if self.hrd ==None:
-            self.hrd=j.core.hrd.get(j.system.fs.joinPaths(self.metapath,"service.hrd"))
+            self.hrd=j.core.hrd.get(j.system.fs.joinPaths(self.metapath,"service.hrd"), prefixWithName=prefix)
         return self.hrd
 
     def getInstanceHRD(self):
@@ -115,6 +115,42 @@ class ServiceTemplate(object):
         service.args.update(args)
         service.noremote = noremote
         service.install(start=start, deps=deps, reinstall=reinstall)
+
+
+    def build(self, deps=False, args={}, noremote=False, hrdSeed=None):
+        """
+        Build Service.
+
+        Keyword arguments:
+        args      -- arguments to be used when building
+        """
+
+        path = j.system.fs.joinPaths('/tmp', j.base.idgenerator.generateGUID(), '')
+
+        j.system.fs.createDir(path)
+        j.system.fs.copyFile(j.system.fs.joinPaths(self.metapath, 'service.hrd'), path)
+        j.system.fs.copyFile(j.system.fs.joinPaths(self.metapath, 'actions.py'), path)
+
+        hrd = j.core.hrd.get(path, prefixWithName=True)
+        
+        #check if this platform is supported
+        support = False
+        myplatforms = j.system.platformtype.getMyRelevantPlatforms()
+        supported = hrd.getList("platform.supported",default=[])
+        if supported == []:
+            support = True
+        for supportcheck in supported:
+            if supportcheck in myplatforms:
+                support = True
+
+        if support == False:
+            j.events.opserror_critical("Cannot build %s__%s because unsupported platform." % (self.domain, self.name))
+
+        service = Service(args=args, hrd=hrd, hrdSeed=hrdSeed)
+        service.path = path
+        service.build(deps=deps)
+
+        j.system.fs.removeDirTree(path)
 
     def __repr__(self):
         return "%-15s:%s" % (self.domain, self.name)
