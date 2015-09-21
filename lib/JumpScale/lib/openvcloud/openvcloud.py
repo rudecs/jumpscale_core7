@@ -45,7 +45,7 @@ class Openvclcoud(object):
         key = "%s__%s" % (gitlaburl,actionname)
         self.db.set("", key, args)
 
-    def initAYSGitVM(self, gitlaburl, gitlablogin,gitlabpasswd,recoverypasswd,delete=False):
+    def initAYSGitVM(self, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, delete=False):
         """
 
         gitlaburl example
@@ -176,7 +176,7 @@ metadata.openvcloud            =
                 cl.run('cd %s; git pull --rebase' % repopath)
                 
             self.actionDone(gitlaburl, "gitlabclone")
-
+        
         if self.actionCheck(gitlaburl, 'copyKeys') is False:
             keys = {
                 '/root/.ssh/id_rsa': j.system.fs.joinPaths(repopath, 'keys', 'git_root'),
@@ -202,6 +202,25 @@ metadata.openvcloud            =
             args = 'instance.gitlab.client.url:%s instance.gitlab.client.login:%s instance.gitlab.client.passwd:%s' % (url, gitlablogin, gitlabpasswd)
             cl.run('cd %s; ays install -n gitlab_client --data "%s"' % (repopath, args))
             self.actionDone(gitlaburl, "gitlab_client")
+        
+        if self.actionCheck(gitlaburl, "ovc_setup") is False:
+            vmachine = self.api.getMachineObject(self._spacesecret, 'ovc_git')
+            vspace = self.api.getCloudspaceObj(self._spacesecret)
+        
+            # create ovc_setup instance to save settings
+            args  = 'instance.ovc.environment:%s ' % gitlabReponame
+            args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
+            args += 'instance.ovc.ms1.instance:main '
+            args += 'instance.ovc.gitlab_client.instance:main ' 
+            args += 'instance.ovc.password:rooter '
+            args += 'instance.ovc.bootstrap.port:5000 '
+            args += 'instance.ovc.bootstrap.host:%s ' % vmachine['interfaces'][0]['ipAddress']
+            args += 'instance.ovc.cloudip:%s ' % vspace['publicipaddress']
+            args += 'instance.ovc.gitip:%s ' % vmachine['interfaces'][0]['ipAddress']
+            
+            cl.run('cd %s; ays install -n ovc_setup --data "%s"' % (repopath, args))
+            self.actionDone(gitlaburl, "ovc_setup")
+
 
         if self.actionCheck(gitlaburl, "rememberssh") is False:
             # create ms1_client to save ms1 connection info
@@ -213,9 +232,11 @@ metadata.openvcloud            =
         
         print "[+] setup completed"
 
-    def connectAYSGitVM(self, gitlaburl, gitlablogin,gitlabpasswd):
+    def connectAYSGitVM(self, gitlaburl, gitlablogin, gitlabpasswd, setup=False):
         """
         @param gitlaburl= 'https://git.aydo.com/openvcloudEnvironments/scaleout1'
+        @param setup: if True, will launch the script to resume setup of the openvcloud
+                      if False, you will just have a prompt
 
         """
         keypath='/root/.ssh/id_rsa'
@@ -224,8 +245,8 @@ metadata.openvcloud            =
             ip, port = self.actionCheck(gitlaburl, "machinecreate")
             cl = j.ssh.connect(ip, 22, keypath=keypath, verbose=True)
         else:
-            cl=j.clients.gitlab.get("https://git.aydo.com",gitlablogin,gitlabpasswd)
-            hrd=cl.getHRD("openvcloudEnvironments","scaleout1","services/openvcloud__git_vm__main/service.hrd")
+            cl = j.clients.gitlab.get("https://git.aydo.com", gitlablogin, gitlabpasswd)
+            hrd = cl.getHRD("openvcloudEnvironments", "scaleout1", "services/openvcloud__git_vm__main/service.hrd")
             from IPython import embed
             print "DEBUG NOW ooo"
             embed()
@@ -242,6 +263,16 @@ metadata.openvcloud            =
             cl.run('git config --global user.name "%s"' % infos['name'] if infos['name'] != '' else gitlablogin)
 
         cl.run('ays mdupdate')
+        
+        if setup:
+            gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
+            temp = gitlaburl.split("/")
+            repopath = '/opt/code/git/%s/%s' % (temp[3], temp[4])
+            
+            print '[+] resuming setup'
+            # FIXME
+            cl.run('cd %s; wget http://arya.maxux.net/temp/gig/aio.py -O aio.py' % repopath)
+            # cl.run('cd %s; jspython setup.py' % (repopath, args))
 
         cl.fabric.api.open_shell()
 
