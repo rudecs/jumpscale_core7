@@ -9,7 +9,7 @@ name = 'check_disks'
 author = "zains@codescalers.com"
 license = "bsd"
 version = "1.0"
-category = "system.disks"
+category = "monitor.healthcheck"
 
 async = True
 queue = 'process'

@@ -75,8 +75,8 @@ def action():
         for key, value in results.iteritems():
             pipe.gauge("%s_%s_disk_%s_%s" % (j.application.whoAmI.gid, j.application.whoAmI.nid, path, key), value)
 
-    pipe.send()
-
+    result = pipe.send()
+    return {'results': result, 'errors': []}
 
 if __name__ == '__main__':
     import JumpScale.grid.osis

@@ -140,6 +140,73 @@ class GridHealthChecker(object):
             self.pingAllNodesSync(clean=True)
             self._checkRunningNIDsFromPing()
 
+    def runOnAllNodesByCategory(self):
+        self._clean()
+        self.getNodes()
+        self._clean()
+        self.checkHeartbeatsAllNodes(clean=False)
+        self.checkProcessManagerAllNodes(clean=False)
+        results = list()
+        errors = list()
+        errormessage = list()
+        greens = list()
+
+        print(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
+        nodes = self._runningnids
+        for nid in nodes:
+            greenlet = gevent.Greenlet(self.runOnNodeByCategory, nid)
+            greenlet.start()
+            greens.append(greenlet)
+            gevent.joinall(greens)
+            for green in greens:
+                green.nid =nid
+                result = green.value
+                print result
+                if not result:
+                    results = list()
+                    errors = [(green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, 'Running all healtchecks on node %s' % nid)]
+                    self._returnResults(results, errors)
+                results.append((green.nid, result, 'ON NODE'))
+
+        self._returnResults(results, errors)
+        return results, errors
+
+    def runOnNodeByCategory(self, nid):
+        results = list()
+        errors = list()
+        errormessage = list()
+        greens = list()
+        for _, domain, name, roles  in self._client.listJumpscripts(cat='monitor.healthcheck'):
+            role = roles[0] if roles else None
+            greenlet = gevent.Greenlet(self.runOneTest, domain, name, role, nid)
+            greenlet.nid = nid
+            greenlet.name = name
+            greenlet.start()
+            greens.append(greenlet)
+        gevent.joinall(greens)
+        for green in greens:
+            result = green.value
+            if not result:
+                errors.append((green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, green.name))
+                continue
+            print green.name
+            print result
+            print
+            if isinstance(result, dict):
+                errors.append((green.nid, result.get('errors', []), green.name))
+                results.append((green.nid, result.get('results', []), green.name))
+
+        self._returnResults(results, errors)
+        
+        if self._tostdout:
+            self._printResults()
+        return self._status, self._errors
+
+
+    def runOneTest(self, domain, name, role, nid):
+        returnedresult = self._client.executeJumpscript(domain, name, role=role, timeout=30, gid=self._nodegids[nid], nid=nid)
+        return returnedresult['result']
+
     def runAll(self):
         self._clean()
         self.getNodes()

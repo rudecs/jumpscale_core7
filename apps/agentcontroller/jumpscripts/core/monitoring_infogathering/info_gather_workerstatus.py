@@ -10,7 +10,7 @@ name = 'workerstatus'
 author = "khamisr@codescalers.com"
 license = "bsd"
 version = "1.0"
-category = "system.workerstatus"
+category = "monitor.healthcheck"
 
 async = False
 roles = []
@@ -20,16 +20,17 @@ log=False
 def action():
     rediscl = j.clients.redis.getByInstance('system')
     timemap = {'default': '-2m', 'io': '-2h', 'hypervisor': '-10m','process':'-1m'}
-    result = dict()
+    result = {'results':[], 'errors': []}
     for queue in ('io', 'hypervisor', 'default', 'process'):
         lastactive = rediscl.hget('workers:heartbeat', queue) or 0
         timeout = timemap.get(queue)
-        stats = {'lastactive': lastactive}
+        stats = {'lastactive': lastactive, 'queue':queue}
         if j.base.time.getEpochAgo(timeout) < lastactive:
             stats['state'] = 'RUNNING'
+            result['results'].append(stats)
         else:
             stats['state'] = 'HALTED'
-        result[queue] = stats
+            result['errors'].append(stats)
     return result
 
 if __name__ == "__main__":

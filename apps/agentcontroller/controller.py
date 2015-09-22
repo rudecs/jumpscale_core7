@@ -409,7 +409,7 @@ class ControllerCMDS():
 
     def listJumpscripts(self, organization=None, cat=None, session=None):
         """
-        @return [[org,name,category,descr],...]
+        @return [[org,name,category,descr, roles],...]
         """
         if session<>None:
             self._adminAuth(session.user,session.passwd)
@@ -417,10 +417,12 @@ class ControllerCMDS():
         def myfilter(entry):
             if organization and entry.organization != organization:
                 return False
+            if not hasattr(entry, 'category'):
+                return False
             if cat and entry.category != cat:
                 return False
             return True
-        return [[t.id,t.organization, t.name] for t in filter(myfilter, self.jumpscripts.values()) ]
+        return [[t.id,t.organization, t.name, (t.roles)] for t in filter(myfilter, self.jumpscripts.values()) ]
 
     def executeJumpscript(self, organization, name, nid=None, role=None, args={},all=False, \
         timeout=600,wait=True,queue="", gid=None,errorreport=True, session=None):

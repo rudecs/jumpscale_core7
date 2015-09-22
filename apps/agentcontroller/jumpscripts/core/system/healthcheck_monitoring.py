@@ -29,7 +29,7 @@ def action(nid=None):
 
     rediscl = j.clients.redis.getByInstance('system')
     if nid is None:
-        results, errors = j.core.grid.healthchecker.runAll()
+        results, errors = j.core.grid.healthchecker.runOnAllNodesByCategory()
         rediscl.hset('healthcheck:monitoring', 'results', json.dumps(results))
         rediscl.hset('healthcheck:monitoring', 'errors', json.dumps(errors))
         rediscl.hset('healthcheck:monitoring', 'lastcheck', time.time())
