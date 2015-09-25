@@ -5,7 +5,7 @@ JumpScale 7
 
 
 documentation see
-https://www.gitbook.com/book/gig/jumpscale/details
+https://gig.gitbooks.io/jumpscale/content/
 
 api doc (generated out of code)
-https://www.gitbook.com/book/gig/jumpscaleapi/details
+- https://gig.gitbooks.io/jumpscaleapi/content/
