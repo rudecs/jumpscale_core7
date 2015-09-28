@@ -14,12 +14,13 @@ class Tags():
     label is e.g. important (no value attached)
     tag is with value attached e.g. customer:kristof
     """    
-    def __init__(self, tagstring='',setFunction4Tagstring=None):
+    def __init__(self, tagstring='',setFunction4Tagstring=None, casesensitive=False):
         """
         @param tagstring:  example "labelexample customer:newco"
         @type tagstring: string
         @param setFunction4Tagstring is a function which will set the paramstring somewhere when changed by this class
         """
+        self._casesensitive = casesensitive
         self.tags = dict()
         self.labels = set()
         self.tagstring=tagstring or ''
@@ -48,7 +49,8 @@ class Tags():
                 value = tag.split(':',1)[1]
                 key=unquote(key)
                 value = unquote(str(j.tools.text.machinetext2val(value)))
-                self.tags[key.lower()] = value
+                if not self._casesensitive:
+                    self.tags[key.lower()] = value
                 self.tags[key] = value
             else:
                 self.labels.add(unquote(str(j.tools.text.machinetext2val(tag))))
