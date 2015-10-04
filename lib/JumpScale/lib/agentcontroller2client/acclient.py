@@ -52,13 +52,14 @@ class RunArgs(object):
 
     This job will not get executed until no other commands running on the same queue.
     """
-    def __init__(self, domain=None, name=None, max_time=0, max_restart=0,
+    def __init__(self, domain=None, name=None, max_time=0, max_restart=0, working_dir=None,
                  recurring_period=0, stats_interval=0, args=None, loglevels='*',
                  loglevels_db=None, loglevels_ac=None, queue=None):
         self._domain = domain
         self._name = name
         self._max_time = max_time
         self._max_restart = max_restart
+        self._working_dir = working_dir
         self._recurring_period = recurring_period
         self._stats_interval = stats_interval
         self._args = args
@@ -94,6 +95,10 @@ class RunArgs(object):
         Max number of restarts before agent gives up
         """
         return self._max_restart
+
+    @property
+    def working_dir(self):
+        return self._working_dir
 
     @property
     def recurring_period(self):
@@ -151,7 +156,7 @@ class RunArgs(object):
         :rtype: dict
         """
         dump = {}
-        for key in ('domain', 'name', 'max_time', 'max_restart', 'recurring_period',
+        for key in ('domain', 'name', 'max_time', 'max_restart', 'recurring_period', 'working_dir',
                     'stats_interval', 'args', 'loglevels', 'loglevels_db', 'loglevels_ac', 'queue'):
             value = getattr(self, key)
             if value:
@@ -241,7 +246,7 @@ class Job(Base):
 
     def _update(self):
         state = self._jobdata['state']
-        if state is None or state == 'RUNNING':
+        if state is None or state in ('RUNNING', 'QUEUED'):
             job = self._client.get_cmd_jobs(self.id)[(self.gid, self.nid)]
             self._jobdata = job._jobdata
 
@@ -278,6 +283,11 @@ class Job(Base):
         """
         self._update()
         return self._jobdata['time']
+
+    @property
+    def streams(self):
+        self._update()
+        return self._jobdata.get('streams', ['', ''])
 
     @property
     def data(self):
