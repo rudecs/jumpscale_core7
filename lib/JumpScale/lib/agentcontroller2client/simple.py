@@ -1,52 +1,126 @@
-import os
 import shlex
 from StringIO import StringIO
 
 import acclient
 
 
+STATE_UNKNOWN = 'UNKNOWN'
+STATE_SUCCESS = 'SUCCESS'
+STATE_TIMEDOUT = 'TIMEDOUT'
+
+
+class Agent(object):
+    def __init__(self, client, gid, nid, roles):
+        self._client = client
+        self._gid = gid
+        self._nid = nid
+        self._roles = roles
+        self._os_info = None
+        self._nic_info = None
+
+    def _get_os_info(self):
+        if self._os_info is None:
+            self._os_info = self._client.get_os_info(self.gid, self.nid)
+
+        return self._os_info
+
+    def _get_nic_info(self):
+        if self._nic_info is None:
+            self._nic_info = self._client.get_nic_info(self.gid, self.nid)
+
+        return self._nic_info
+
+    @property
+    def gid(self):
+        return self._gid
+
+    @property
+    def nid(self):
+        return self._nid
+
+    @property
+    def roles(self):
+        return self._roles
+
+    @property
+    def hostname(self):
+        return self._get_os_info()['hostname']
+
+    @property
+    def macaddr(self):
+        nics = self._get_nic_info()
+        return dict([(nic['name'], nic['hardwareaddr']) for nic in nics])
+
+    def __repr__(self):
+        return '<Agent {this.gid}:{this.nid} {this.roles}>'.format(this=self)
+
+
 class SimpleClient(object):
     def __init__(self, advanced_client):
         self._client = advanced_client
 
-    def _concat_levels(self, msgs, *levels):
-        buffers = {}
-        for l in levels:
-            buffers[l] = StringIO()
+    def getAgents(self):
+        cmd = self._client.cmd(None, None, 'controller', acclient.RunArgs(name='list_agents'), roles=['*'])
+        job = cmd.get_next_result()
 
-        for i in xrange(len(msgs) - 1, -1, -1):
-            msg = msgs[i]
-            if msg['level'] not in levels:
-                continue
+        agents = self._client._load_json_or_die(job)
+        results = []
+        for key, roles in agents.iteritems():
+            gid, _, nid = key.partition(':')
+            results.append(Agent(self._client, int(gid), int(nid), roles))
 
-            buff = buffers[msg['level']]
-            buff.write(msg['data'])
-            buff.write(os.linesep)
+        return results
 
-        return map(lambda l: buffers[l].getvalue(), levels)
+    def _build_result(self, results):
+        buff = StringIO()
+        for gid, nid, state, stdout, stderr in results:
+            buff.write('$agent (%d,%d)\n' % (gid, nid))
+            buff.write(stdout)
+            buff.write('\n')
+            if state != STATE_SUCCESS:
+                buff.write('##RC: %s\n' % state)
+                buff.write('##ERROR:\n%s\n' % stderr)
 
-    def execute(self, cmd, path=None, gid=None, nid=None, roles=['*'], fanout=False, die=True, timeout=5, data=None):
+            buff.write('#######################################################\n\n')
+        return buff.getvalue()
+
+    def execute(self, cmd, path=None, gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, data=None):
         parts = shlex.split(cmd)
         assert len(parts) > 0, "Empty command string"
         cmd = parts[0]
         args = parts[1:]
 
+        if nid is None and not roles:
+            roles = ['*']
+
         runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
         cmd = self._client.execute(gid, nid, cmd, cmdargs=args, args=runargs, data=data, roles=roles, fanout=fanout)
 
-        results = []
-        for job in cmd.iter_results(timeout):
+        jobs = []
+        for job in cmd.get_jobs().itervalues():
+            state = STATE_UNKNOWN
+            try:
+                job.wait(timeout)
+                state = job.state
+            except acclient.ResultTimeout:
+                if die:
+                    raise
+                state = STATE_TIMEDOUT
+
             stdout, stderr = job.streams
-            if job.state != 'SUCCESS' and die:
-                error = job.data or stderr
+            error = stderr or job.data
+            if job.state != STATE_SUCCESS and die:
                 raise acclient.AgentException(
-                    'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(job=job, error=error)
+                    'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
+                        job=job, error=error)
                 )
 
-            results.append((job.state, stdout, stderr))
+            jobs.append((job.gid, job.nid, state, stdout, error))
 
         if fanout:
             # potential multiple results.
-            return results
+            return self._build_result(jobs)
         else:
-            return results.pop()
+            # single job
+            _, _, state, stdout, stderr = jobs.pop()
+            return state, stdout, stderr

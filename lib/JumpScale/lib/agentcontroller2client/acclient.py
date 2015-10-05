@@ -313,7 +313,7 @@ class Job(Base):
             raise ResultTimeout('Timedout while waiting for job')
 
         if result is None:
-            raise ResultTimeout('Timedout while waiting for job')
+            raise ResultTimeout('Timedout while waiting for job %s' % self)
 
         return self._set_job(json.loads(result))
 
@@ -621,7 +621,9 @@ class Client(object):
                 raise AgentException("Expected json data got response level '%d'" % result.level)
             return json.loads(result.data)
         else:
-            raise AgentException(result.data)
+            raise AgentException(
+                'Job {job} failed with state: {job.state} and message: "{job.data}"'.format(job=result)
+            )
 
     def get_cpu_info(self, gid, nid):
         """
@@ -670,7 +672,9 @@ class Client(object):
 
         # wait until we make sure all jobs were queued
         jqueue = 'cmd.%s.queued' % id
-        self._redis.brpoplpush(jqueue, jqueue, timeout)
+        event = self._redis.brpoplpush(jqueue, jqueue, timeout)
+        if event == '' or event is None:
+            raise ResultTimeout('Timedout while waiting for job to get queued')
 
         results = self._redis.hgetall('jobresult:%s' % id)
         return dict(map(wrap_jobs, results.values()))
