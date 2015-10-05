@@ -1,5 +1,7 @@
 import shlex
 import json
+import re
+import inspect
 from StringIO import StringIO
 
 import acclient
@@ -115,7 +117,9 @@ class Result(object):
     @property
     def error(self):
         if self.state != STATE_SUCCESS:
-            return self._job.data
+            return self._job.streams[1] or self._job.data
+
+    # def get_losg(self):
 
     def __repr__(self):
         return '<Result {this.state} from {this.gid}:{this.nid}>'.format(this=self)
@@ -203,16 +207,24 @@ class SimpleClient(object):
 
         return self._process_exec_jobs(command, die, timeout, fanout)
 
+    def _getFuncCode(self, func):
+        if not inspect.isfunction(func):
+            raise ValueError('method must be function (not class method)')
+
+        source = inspect.getsource(func)
+        if func.func_name != 'action':
+            source = re.sub('^def\s+%s\(' % func.func_name, 'def action(', source, 1)
+        return source
+
     def executeJumpscript(self, domain=None, name=None, content=None, path=None, method=None,
                           gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, args={}):
-
         if nid is None and not roles:
             roles = ['*']
 
         if domain is not None:
             assert name is not None, "name is required in case 'domain' is given"
         else:
-            if not content and not path:
+            if not content and not path and not method:
                 raise ValueError('domain/name, content, or path must be supplied')
 
         runargs = acclient.RunArgs(max_time=timeout)
@@ -220,7 +232,16 @@ class SimpleClient(object):
             command = self._client.execute_jumpscript(gid=gid, nid=nid, domain=domain, name=name,
                                                       args=args, runargs=runargs, roles=roles, fanout=fanout)
         else:
-            raise NotImplemented()
+            # call the unexposed jumpscript_content extension manually
+            runargs = runargs.update({'name': path})
+            if method:
+                content = self._getFuncCode(method)
+            data = {
+                'content': content,
+                'args': args
+            }
+            command = self._client.cmd(gid=gid, nid=nid, cmd='jumpscript_content', args=runargs,
+                                       data=json.dumps(data), roles=roles, fanout=fanout)
 
         jobs = []
         for job in command.get_jobs().itervalues():
@@ -234,9 +255,11 @@ class SimpleClient(object):
                 state = STATE_TIMEDOUT
 
             if state != STATE_SUCCESS and die:
+                stderr = job.streams[1]
+                error = stderr or job.data
                 raise acclient.AgentException(
                     'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
-                        job=job, error=job.data)
+                        job=job, error=error)
                 )
 
             jobs.append(Result(job))
