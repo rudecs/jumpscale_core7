@@ -17,6 +17,7 @@ class Agent(object):
         self._roles = roles
         self._os_info = None
         self._nic_info = None
+        self._aggr_stats = None
 
     def _get_os_info(self):
         if self._os_info is None:
@@ -29,6 +30,12 @@ class Agent(object):
             self._nic_info = self._client.get_nic_info(self.gid, self.nid)
 
         return self._nic_info
+
+    def _get_aggregated_stats(self, update=False):
+        if self._aggr_stats is None or update:
+            self._aggr_stats = self._client.get_aggregated_stats(self.gid, self.nid)
+
+        return self._aggr_stats
 
     @property
     def gid(self):
@@ -47,9 +54,33 @@ class Agent(object):
         return self._get_os_info()['hostname']
 
     @property
+    def cpu(self):
+        """
+        Gets CPU percentage of agent (with sub processes)
+        """
+        return self._get_aggregated_stats(True)['cpu']
+
+    @property
+    def mem(self):
+        """
+        Gets the agent VMS (with sub processes)
+        """
+        return self._get_aggregated_stats(True)['vms']
+
+    @property
     def macaddr(self):
         nics = self._get_nic_info()
         return dict([(nic['name'], nic['hardwareaddr']) for nic in nics])
+
+    @property
+    def ipaddr(self):
+        nics = self._get_nic_info()
+        addrr = {}
+        for nic in nics:
+            nic_addr = map(lambda a: a['addr'], nic['addrs'])
+            addrr[nic['name']] = nic_addr
+
+        return addrr
 
     def __repr__(self):
         return '<Agent {this.gid}:{this.nid} {this.roles}>'.format(this=self)

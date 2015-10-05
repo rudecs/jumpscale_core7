@@ -11,6 +11,7 @@ CMD_EXECUTE_LEGACY_JUMPSCRIPT = 'legacy'
 CMD_GET_CPU_INFO = 'get_cpu_info'
 CMD_GET_NIC_INFO = 'get_nic_info'
 CMD_GET_OS_INFO = 'get_os_info'
+CMD_GET_AGGREGATED_STATS = 'get_aggregated_stats'
 CMD_GET_DISK_INFO = 'get_disk_info'
 CMD_GET_MEM_INFO = 'get_mem_info'
 CMD_GET_PROCESSES_STATS = 'get_processes_stats'
@@ -659,6 +660,15 @@ class Client(object):
         """
         result = self.cmd(gid, nid, CMD_GET_OS_INFO, RunArgs()).get_next_result(GET_INFO_TIMEOUT)
         return self._load_json_or_die(result)
+
+    def get_aggregated_stats(self, gid, nid):
+        """
+        Get OS info of the agent node
+        """
+        result = self.cmd(gid, nid, CMD_GET_AGGREGATED_STATS, RunArgs()).get_next_result(GET_INFO_TIMEOUT)
+        stats = self._load_json_or_die(result)
+        stats.pop('cmd', None)
+        return stats
 
     def get_cmd_jobs(self, id, timeout=5):
         """
