@@ -384,13 +384,13 @@ class Cmd(BaseCmd):
             raise ValueError('Invalid arguments')
 
         if not (bool(roles) ^ bool(nid)):
-            raise ValueError('Nid and Role are mutual exclusive')
+            raise ValueError('Nid and Roles are mutual exclusive')
 
         if not bool(gid) and not bool(roles):
             raise ValueError('Gid or Roles are required')
 
         if fanout and roles is None:
-            raise ValueError('Fanout only effective if role is set')
+            raise ValueError('Fanout only effective if roles is set')
 
         super(Cmd, self).__init__(client, id, gid, nid)
         self._cmd = cmd
@@ -453,7 +453,7 @@ class Cmd(BaseCmd):
     @property
     def roles(self):
         """
-        Command role
+        Command roles
         """
         return self._roles
 
@@ -512,7 +512,7 @@ class Client(object):
         :param data: Raw data to send to the command standard input. Passed as objecte and will be dumped as json on
                    wire
         :param id: id of command for retrieve later, if None a random GUID will be generated.
-        :param roles: Optional role, only agents that satisfy this role can process this job. This is mutual exclusive
+        :param roles: Optional rolse, only agents that satisfy this role can process this job. This is mutual exclusive
                     with gid/nid compo in that case, the gid/nid values must be None or a ValueError will be raised.
                     There is a special role '*' which means ANY.
         :type roles: list
@@ -563,7 +563,7 @@ class Client(object):
 
         return self.cmd(gid, nid, CMD_EXECUTE, args, data, id, roles, fanout)
 
-    def execute_jumpscript(self, gid, nid, domain, name, data=None, args=None, roles=None, fanout=False):
+    def execute_jumpscript(self, gid, nid, domain, name, args={}, runargs=None, roles=None, fanout=False):
         """
         Executes jumpscale script (py) on agent. The execute_js_py extension must be
         enabled and configured correctly on the agent.
@@ -572,8 +572,8 @@ class Client(object):
         :param nid: Node id
         :param domain: Domain of script
         :param name: Name of script
-        :param data: Data object (any json serializabl struct) that will be sent to the script.
-        :param args: Optional run arguments
+        :param args: dict object (any json serializabl struct) that will be used as jumpscript kwargs
+        :param runargs: Optional run arguments
         :type args: :class:`acclient.RunArgs`
         :param roles: Optional role, only agents that satisfy this role can process this job. This is mutual exclusive
                     with gid/nid compo in that case, the gid/nid values must be None or a ValueError will be raised.
@@ -581,32 +581,8 @@ class Client(object):
         :type roles: list
         :param fanout: Fanout job to all agents with given role (only effective if role is set)
         """
-        args = RunArgs().update(args).update({'domain': domain, 'name': name})
-        return self.cmd(gid, nid, CMD_EXECUTE_JUMPSCRIPT, args, data, role=roles, fanout=fanout)
-
-    def execute_legacy_jumpscript(self, gid, nid, domain, name, data=None, args=None, roles=None, fanout=False):
-        """
-        Executes jumpscale script (py) on agent. The execute_js_py extension must be
-        enabled and configured correctly on the agent.
-
-        The only way this is different from the 'execute_jumpscript' is how the data to the script is handled and
-        how it's passed to the script. Also this finds the script to execute under the /legacy folder of the agent.
-
-        :param gid: Grid id
-        :param nid: Node id
-        :param domain: Domain of script
-        :param name: Name of script
-        :param data: Data object (any json serializabl struct) that will be sent to the script.
-        :param args: Optional run arguments
-        :type args: :class:`acclient.RunArgs`
-        :param roles: Optional role, only agents that satisfy this role can process this job. This is mutual exclusive
-                    with gid/nid compo in that case, the gid/nid values must be None or a ValueError will be raised.
-                    There is a special role '*' which means ANY.
-        :type roles: list
-        :param fanout: Fanout job to all agents with given role (only effective if role is set)
-        """
-        args = RunArgs().update(args).update({'domain': domain, 'name': name})
-        return self.cmd(gid, nid, CMD_EXECUTE_LEGACY_JUMPSCRIPT, args, data, role=roles, fanout=fanout)
+        runargs = RunArgs().update(runargs).update({'domain': domain, 'name': name})
+        return self.cmd(gid, nid, CMD_EXECUTE_JUMPSCRIPT, runargs, json.dumps(args), roles=roles, fanout=fanout)
 
     def get_by_id(self, gid, nid, id):
         """

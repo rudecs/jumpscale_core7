@@ -1,4 +1,5 @@
 import shlex
+import json
 from StringIO import StringIO
 
 import acclient
@@ -7,6 +8,8 @@ import acclient
 STATE_UNKNOWN = 'UNKNOWN'
 STATE_SUCCESS = 'SUCCESS'
 STATE_TIMEDOUT = 'TIMEDOUT'
+
+RESULT_JSON = 20
 
 
 class Agent(object):
@@ -86,6 +89,38 @@ class Agent(object):
         return '<Agent {this.gid}:{this.nid} {this.roles}>'.format(this=self)
 
 
+class Result(object):
+    def __init__(self, job):
+        self._job = job
+
+    @property
+    def state(self):
+        return self._job.state
+
+    @property
+    def gid(self):
+        return self._job.gid
+
+    @property
+    def nid(self):
+        return self._job.nid
+
+    @property
+    def result(self):
+        if self.state != STATE_SUCCESS:
+            raise ValueError("Job in %s" % self.state)
+        if self._job.level == RESULT_JSON:
+            return json.loads(self._job.data)
+
+    @property
+    def error(self):
+        if self.state != STATE_SUCCESS:
+            return self._job.data
+
+    def __repr__(self):
+        return '<Result {this.state} from {this.gid}:{this.nid}>'.format(this=self)
+
+
 class SimpleClient(object):
     def __init__(self, advanced_client):
         self._client = advanced_client
@@ -129,7 +164,7 @@ class SimpleClient(object):
 
             stdout, stderr = job.streams
             error = stderr or job.data
-            if job.state != STATE_SUCCESS and die:
+            if state != STATE_SUCCESS and die:
                 raise acclient.AgentException(
                     'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
                         job=job, error=error)
@@ -167,3 +202,43 @@ class SimpleClient(object):
         command = self._client.cmd(gid, nid, 'bash', args=runargs, data=cmds, roles=roles, fanout=fanout)
 
         return self._process_exec_jobs(command, die, timeout, fanout)
+
+    def executeJumpscript(self, domain=None, name=None, content=None, path=None, method=None,
+                          gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, args={}):
+
+        if nid is None and not roles:
+            roles = ['*']
+
+        if domain is not None:
+            assert name is not None, "name is required in case 'domain' is given"
+        else:
+            if not content and not path:
+                raise ValueError('domain/name, content, or path must be supplied')
+
+        runargs = acclient.RunArgs(max_time=timeout)
+        if domain is not None:
+            command = self._client.execute_jumpscript(gid=gid, nid=nid, domain=domain, name=name,
+                                                      args=args, runargs=runargs, roles=roles, fanout=fanout)
+        else:
+            raise NotImplemented()
+
+        jobs = []
+        for job in command.get_jobs().itervalues():
+            state = STATE_UNKNOWN
+            try:
+                job.wait(timeout)
+                state = job.state
+            except acclient.ResultTimeout:
+                if die:
+                    raise
+                state = STATE_TIMEDOUT
+
+            if state != STATE_SUCCESS and die:
+                raise acclient.AgentException(
+                    'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
+                        job=job, error=job.data)
+                )
+
+            jobs.append(Result(job))
+
+        return jobs
