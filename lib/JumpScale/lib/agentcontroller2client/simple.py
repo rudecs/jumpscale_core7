@@ -115,18 +115,7 @@ class SimpleClient(object):
             buff.write('#######################################################\n\n')
         return buff.getvalue()
 
-    def execute(self, cmd, path=None, gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, data=None):
-        parts = shlex.split(cmd)
-        assert len(parts) > 0, "Empty command string"
-        cmd = parts[0]
-        args = parts[1:]
-
-        if nid is None and not roles:
-            roles = ['*']
-
-        runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
-        cmd = self._client.execute(gid, nid, cmd, cmdargs=args, args=runargs, data=data, roles=roles, fanout=fanout)
-
+    def _process_exec_jobs(self, cmd, die, timeout, fanout):
         jobs = []
         for job in cmd.get_jobs().itervalues():
             state = STATE_UNKNOWN
@@ -155,3 +144,26 @@ class SimpleClient(object):
             # single job
             _, _, state, stdout, stderr = jobs.pop()
             return state, stdout, stderr
+
+    def execute(self, cmd, path=None, gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, data=None):
+        parts = shlex.split(cmd)
+        assert len(parts) > 0, "Empty command string"
+        cmd = parts[0]
+        args = parts[1:]
+
+        if nid is None and not roles:
+            roles = ['*']
+
+        runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
+        command = self._client.execute(gid, nid, cmd, cmdargs=args, args=runargs, data=data, roles=roles, fanout=fanout)
+
+        return self._process_exec_jobs(command, die, timeout, fanout)
+
+    def executeBash(self, cmds, path=None, gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5):
+        if nid is None and not roles:
+            roles = ['*']
+
+        runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
+        command = self._client.cmd(gid, nid, 'bash', args=runargs, data=cmds, roles=roles, fanout=fanout)
+
+        return self._process_exec_jobs(command, die, timeout, fanout)
