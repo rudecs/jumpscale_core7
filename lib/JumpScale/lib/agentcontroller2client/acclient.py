@@ -425,7 +425,7 @@ class Cmd(BaseCmd):
         :rtype: dict
         """
         if self._result_iter is None:
-            self._result_iter = self.iter_results()
+            self._result_iter = self.iter_results(timeout)
 
         return self._result_iter.next()
 
@@ -598,8 +598,9 @@ class Client(object):
                 raise AgentException("Expected json data got response level '%d'" % result.level)
             return json.loads(result.data)
         else:
+            error = result.data or result.streams[1]
             raise AgentException(
-                'Job {job} failed with state: {job.state} and message: "{job.data}"'.format(job=result)
+                'Job {job} failed with state: {job.state} and message: "{error}"'.format(job=result, error=error)
             )
 
     def get_cpu_info(self, gid, nid):
