@@ -218,6 +218,36 @@ class SimpleClient(object):
 
     def executeJumpscript(self, domain=None, name=None, content=None, path=None, method=None,
                           gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, args={}):
+        jobs = self.executeJumpscriptAsync(
+            domain=domain, name=name, content=content, path=path, method=method,
+            gid=gid, nid=nid, roles=roles, fanout=fanout, die=die, timeout=timeout, args=args
+        )
+
+        results = []
+        for job in jobs:
+            state = STATE_UNKNOWN
+            try:
+                job.wait(timeout)
+                state = job.state
+            except acclient.ResultTimeout:
+                if die:
+                    raise
+                state = STATE_TIMEDOUT
+
+            if state != STATE_SUCCESS and die:
+                stderr = job.streams[1]
+                error = stderr or job.data
+                raise acclient.AgentException(
+                    'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
+                        job=job, error=error)
+                )
+
+            results.append(Result(job))
+
+        return results
+
+    def executeJumpscriptAsync(self, domain=None, name=None, content=None, path=None, method=None,
+                               gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, args={}):
         if nid is None and not roles:
             roles = ['*']
 
@@ -243,25 +273,54 @@ class SimpleClient(object):
             command = self._client.cmd(gid=gid, nid=nid, cmd='jumpscript_content', args=runargs,
                                        data=json.dumps(data), roles=roles, fanout=fanout)
 
-        jobs = []
-        for job in command.get_jobs().itervalues():
-            state = STATE_UNKNOWN
-            try:
-                job.wait(timeout)
-                state = job.state
-            except acclient.ResultTimeout:
-                if die:
-                    raise
-                state = STATE_TIMEDOUT
+        return command.get_jobs().values()
 
-            if state != STATE_SUCCESS and die:
-                stderr = job.streams[1]
-                error = stderr or job.data
-                raise acclient.AgentException(
-                    'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
-                        job=job, error=error)
-                )
+    def tunnel_create(self, gid, nid, local, remote_gid, remote_nid, ip, remote):
+        """
+        Opens a tunnel that accepts connection at the agent's local port `local`
+        and forwards the received connections to remote agent `gateway` which will
+        forward the tunnel connection to `ip:remote`
 
-            jobs.append(Result(job))
+        Note: The agent will proxy the connection over the agent-controller it recieved this open command from.
 
-        return jobs
+        :param gid: Grid id
+        :param nid: Node id
+        :param local: Agent's local listening port for the tunnel. 0 for dynamic allocation
+        :param gateway: The other endpoint `agent` which the connection will be redirected to.
+                      This should be the name of the hubble agent.
+                      NOTE: if the endpoint is another superangent, it automatically names itself as '<gid>.<nid>'
+        :param ip: The endpoint ip address on the remote agent network. Note that IP must be a real ip not a host name
+                 dns names lookup is not supported.
+        :param remote: The endpoint port on the remote agent network
+        """
+
+        agents = self.getAgents()
+        found = False
+        for agent in agents:
+            if agent.nid == remote_nid and agent.gid == remote_gid:
+                found = True
+                break
+
+        if not found:
+            raise acclient.AgentException('Remote end %s:%s is not alive!' % (remote_gid, remote_nid))
+
+        gateway = '%s.%s' % (remote_gid, remote_nid)
+        return self._client.tunnel_open(gid, nid, local, gateway, ip, remote)
+
+    def tunnel_close(self, gid, nid, local, remote_gid, remote_nid, ip, remote):
+        """
+        Closes a tunnel previously opened by tunnel_open. The `local` port MUST match the
+        real open port returned by the tunnel_open function. Otherwise the agent will not match the tunnel and return
+        ignore your call.
+
+        Closing a non-existing tunnel is not an error.
+        """
+        gateway = '%s.%s' % (remote_gid, remote_nid)
+        return self._client.tunnel_close(gid, nid, local, gateway, ip, remote)
+
+    def tunnel_list(self, gid, nid):
+        """
+        Return all opened connection that are open from the agent over the agent-controller it
+        received this command from
+        """
+        return self._client.tunnel_list(gid, nid)

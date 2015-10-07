@@ -352,7 +352,7 @@ class Job(Base):
         return self._client.get_msgs(self._gid, self._nid, jobid=self._id, levels=levels, limit=limit)
 
     def __repr__(self):
-        return "<Job at 0x%x <<%s:%s %s>>" % (id(self), self.gid, self.nid, self.id)
+        return '<Job at {this.gid}:{this.nid} id={this.id}>'.format(this=self)
 
 
 class BaseCmd(Base):
@@ -702,7 +702,7 @@ class Client(object):
         result = self.cmd(gid, nid, CMD_GET_MSGS, RunArgs(), json.dumps(query)).get_next_result()
         return self._load_json_or_die(result)
 
-    def tunnel_open(self, gid, nid, local, gateway, ip, remote, validate=False):
+    def tunnel_open(self, gid, nid, local, gateway, ip, remote):
         """
         Opens a secure tunnel that accepts connection at the agent's local port `local`
         and forwards the received connections to remote agent `gateway` which will
@@ -725,8 +725,7 @@ class Client(object):
             'local': int(local),
             'gateway': gateway,
             'ip': ip,
-            'remote': int(remote),
-            'validate': validate
+            'remote': int(remote)
         }
 
         result = self.cmd(gid, nid, CMD_TUNNEL_OPEN, RunArgs(), json.dumps(request)).get_next_result(GET_INFO_TIMEOUT)
