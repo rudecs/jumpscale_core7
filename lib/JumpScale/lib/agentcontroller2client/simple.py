@@ -15,6 +15,9 @@ RESULT_JSON = 20
 
 
 class Agent(object):
+    """
+    Represents an active agent (alive)
+    """
     def __init__(self, client, gid, nid, roles):
         self._client = client
         self._gid = gid
@@ -44,18 +47,30 @@ class Agent(object):
 
     @property
     def gid(self):
+        """
+        Agent GID
+        """
         return self._gid
 
     @property
     def nid(self):
+        """
+        Agent NID
+        """
         return self._nid
 
     @property
     def roles(self):
-        return self._roles
+        """
+        List of agent roles
+        """
+        return self._roles or []
 
     @property
     def hostname(self):
+        """
+        Gets agent hostname
+        """
         return self._get_os_info()['hostname']
 
     @property
@@ -74,11 +89,17 @@ class Agent(object):
 
     @property
     def macaddr(self):
+        """
+        Gets a dict of interfaces and its hardware addresses
+        """
         nics = self._get_nic_info()
         return dict([(nic['name'], nic['hardwareaddr']) for nic in nics])
 
     @property
     def ipaddr(self):
+        """
+        Gets a dict of interfaces and its ip addresses
+        """
         nics = self._get_nic_info()
         addrr = {}
         for nic in nics:
@@ -92,30 +113,49 @@ class Agent(object):
 
 
 class Result(object):
+    """
+    Represents a job result
+    """
     def __init__(self, job):
         self._job = job
 
     @property
     def state(self):
+        """
+        Gets the job exit status (SUCCESS, ERROR, TIMEDOUT)
+        """
         return self._job.state
 
     @property
     def gid(self):
+        """
+        GID of the agent who returned this result
+        """
         return self._job.gid
 
     @property
     def nid(self):
+        """
+        NID of the agent who returned this result
+        """
         return self._job.nid
 
     @property
     def result(self):
+        """
+        The returned object or data (only if state=SUCCESS)
+        """
         if self.state != STATE_SUCCESS:
             raise ValueError("Job in %s" % self.state)
         if self._job.level == RESULT_JSON:
             return json.loads(self._job.data)
+        return self._job.data
 
     @property
     def error(self):
+        """
+        The error message or the process stderr
+        """
         if self.state != STATE_SUCCESS:
             return self._job.streams[1] or self._job.data
 
@@ -126,6 +166,9 @@ class Result(object):
 
 
 class Peer(object):
+    """
+    Represents a peer on a share
+    """
     def __init__(self, gid, nid, peer, share):
         self._gid = gid
         self._nid = nid
@@ -135,25 +178,46 @@ class Peer(object):
 
     @property
     def gid(self):
+        """
+        GID of that peer
+        """
         return self._gid
 
     @property
     def nid(self):
+        """
+        NID of that peer
+        """
         return self._nid
 
     @property
     def insync(self):
+        """
+        Tries to find if this peer is insync with the share. This is not 100%
+        reliable because syncthing only detect changes every rescan cycle which
+        cat take up to a minute.
+        """
         need = self._sync_client._get_need(self.gid, self.nid, self._share.name)
         if need['progress'] or need['queued'] or need['rest']:
             return False
         else:
             return True
 
+    @property
+    def share(self):
+        """
+        Represents the share object on the peer side
+        """
+        return self._sync_client.get_share(self.gid, self.nid, self._share.name)
+
     def __repr__(self):
         return '<Peer {this.gid}:{this.nid}>'.format(this=self)
 
 
 class Share(object):
+    """
+    Represents a shared folder over syncthing
+    """
     def __init__(self, gid, nid, folder, sync_client):
         self._gid = gid
         self._nid = nid
@@ -163,22 +227,37 @@ class Share(object):
 
     @property
     def gid(self):
+        """
+        GID of the node
+        """
         return self._gid
 
     @property
     def nid(self):
+        """
+        NID of the node
+        """
         return self._nid
 
     @property
     def name(self):
+        """
+        Name (id) of the share
+        """
         return self._folder['id']
 
     @property
     def path(self):
+        """
+        Path of the local share folder on the node
+        """
         return self._folder['path']
 
     @property
     def peers(self):
+        """
+        List of peers that are connected to this share.
+        """
         peers = self._sync_client._get_devices(self.gid, self.nid)
         share_peers = []
         for share_peer in self._folder['devices']:
@@ -203,6 +282,9 @@ class Share(object):
 
     @property
     def insync(self):
+        """
+        Trys to detect if all peers are in sync with this share.
+        """
         for peer in self.peers:
             if not peer.insync:
                 return False
@@ -210,12 +292,18 @@ class Share(object):
 
     @property
     def ignore(self):
+        """
+        Gets the list of ignored patterns on this share.
+        """
         if self._ignore is None:
             self._ignore = self._sync_client._get_ingore(self.gid, self.nid, self.path)
 
         return self._ignore
 
     def attach(self, gid, nid, path):
+        """
+        Attach a peer to this share.
+        """
         remote_id = self._sync_client._get_id(gid, nid)
         self._sync_client._add_device(self.gid, self.nid, '%d-%d' % (gid, nid), remote_id)
         self._sync_client._add_device_to_share(self.gid, self.nid, remote_id, self.name)
@@ -224,8 +312,12 @@ class Share(object):
         local_id = self._sync_client._get_id(self.gid, self.nid)
 
         self._sync_client._add_device(gid, nid, '%d-%d' % (self.gid, self.nid), local_id)
-        # TODO: the next call for some reason causes syncthing to exit.
+        # TODO: the next call for some reason causes syncthing to exit. But fortunately it's not
+        # needed and syncthing attach this automatically.
         # self._sync_client._add_device_to_share(gid, nid, local_id, self.name)
+
+        share = self._sync_client.get_share(self.gid, self.nid, self.name)
+        self._folder = share._folder
 
     def __repr__(self):
         return '<Share on {this.gid}:{this.nid} {this.path}>'.format(this=self)
@@ -293,6 +385,18 @@ class SyncClient(object):
         return self._client._load_json_or_die(job)
 
     def create_share(self, gid, nid, name, path, readonly=True, ignore=[]):
+        """
+        Creates a share
+
+        :param gid: Grid id
+        :param nid: Node id
+        :param name: Share name
+        :param path: Share full path on node
+        :param readonly: If true this share is master and other peers can't upload to it.
+        :param ignore: A list of patterns (files names) to ignore (ex ['**.pyc'])
+
+        :return: a share object
+        """
         data = {
             'path': path,
             'readonly': readonly,
@@ -307,10 +411,23 @@ class SyncClient(object):
         return Share(gid, nid, folder, self)
 
     def list_shares(self, gid, nid):
+        """
+        List all shares on the node
+        """
         runargs = acclient.RunArgs(name='list_shares', max_time=SyncClient.API_TIMEOUT)
         command = self._client.cmd(gid, nid, 'sync', args=runargs)
         job = command.get_next_result(SyncClient.API_TIMEOUT)
         return map(lambda folder: Share(gid, nid, folder, self), self._client._load_json_or_die(job))
+
+    def get_share(self, gid, nid, name):
+        """
+        Gets a share by name
+        """
+        shares = self.list_shares(gid, nid)
+        for share in shares:
+            if share.name == name:
+                return share
+        raise ValueError('No share with name "%s" found' % name)
 
 
 class SimpleClient(object):
@@ -323,6 +440,9 @@ class SimpleClient(object):
         return self._sync
 
     def getAgents(self):
+        """
+        Gets a list of all active agents
+        """
         cmd = self._client.cmd(None, None, 'controller', acclient.RunArgs(name='list_agents'), roles=['*'])
         job = cmd.get_next_result()
 
@@ -377,7 +497,23 @@ class SimpleClient(object):
             _, _, state, stdout, stderr = jobs.pop()
             return state, stdout, stderr
 
-    def execute(self, cmd, path=None, gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, data=None):
+    def execute(self, cmd, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, data=None):
+        """
+        Executes a command on node(s)
+
+        :param cmd: Command to execute ex('ls -l /opt')
+        :param path: CWD of commnad (where to execute)
+        :param gid: GID of node
+        :param nid: NID of node
+        :param roles: List of agent roles to match (only agent that satisfies all the given roles will execue this)
+        :param allnodes: Execute on ALL agents that matches the roles (default True), if False only one agent will
+                       execute
+        :param die: If True raises an exception when error occure, otherwise return results with error state.
+        :param timeout: Process timeout, if took more than `timeout` the process will get killed and error is returned.
+        :param data: raw data that will be feed to command stdin.
+        """
+
+        fanout = allnodes
         parts = shlex.split(cmd)
         assert len(parts) > 0, "Empty command string"
         cmd = parts[0]
@@ -385,16 +521,24 @@ class SimpleClient(object):
 
         if nid is None and not roles:
             roles = ['*']
+        elif nid is not None:
+            fanout = False
 
         runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
         command = self._client.execute(gid, nid, cmd, cmdargs=args, args=runargs, data=data, roles=roles, fanout=fanout)
 
         return self._process_exec_jobs(command, die, timeout, fanout)
 
-    def executeBash(self, cmds, path=None, gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5):
+    def executeBash(self, cmds, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5):
+        """
+        Same as execute but cmds can be a bash script
+        """
+        fanout = allnodes
         if nid is None and not roles:
             roles = ['*']
 
+        if nid is not None:
+            fanout = False
         runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
         command = self._client.cmd(gid, nid, 'bash', args=runargs, data=cmds, roles=roles, fanout=fanout)
 
@@ -410,10 +554,28 @@ class SimpleClient(object):
         return source
 
     def executeJumpscript(self, domain=None, name=None, content=None, path=None, method=None,
-                          gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, args={}):
+                          gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, args={}):
+        """
+        Executes jumpscript synchronusly and immediately get resutls
+
+        :param domain: jumpscript domain name
+        :param name: jumpscript name. Note when using domain/name to execute jumpscript the script
+                   is loaded from the node jumpscritps folder.
+        :param content: Optional jumpscript content (as code) to execute.
+        :param path: Optional full path to jumpscript on node to execute
+        :param method: A python function to execute.
+        :param gid: GID of node
+        :param nid: NID of node
+        :param roles: List of agent roles to match (only agent that satisfies all the given roles will execue this)
+        :param allnodes: Execute on ALL agents that matches the roles (default True), if False only one agent will
+                       execute
+        :param die: If True raises an exception when error occure, otherwise return results with error state.
+        :param timeout: Process timeout, if took more than `timeout` the process will get killed and error is returned.
+        :param args: Arguments to jumpscript
+        """
         jobs = self.executeJumpscriptAsync(
             domain=domain, name=name, content=content, path=path, method=method,
-            gid=gid, nid=nid, roles=roles, fanout=fanout, die=die, timeout=timeout, args=args
+            gid=gid, nid=nid, roles=roles, allnodes=allnodes, die=die, timeout=timeout, args=args
         )
 
         results = []
@@ -440,9 +602,30 @@ class SimpleClient(object):
         return results
 
     def executeJumpscriptAsync(self, domain=None, name=None, content=None, path=None, method=None,
-                               gid=None, nid=None, roles=[], fanout=False, die=True, timeout=5, args={}):
+                               gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, args={}):
+        """
+        Executes jumpscript asynchronusly and immediately return jobs
+
+        :param domain: jumpscript domain name
+        :param name: jumpscript name. Note when using domain/name to execute jumpscript the script
+                   is loaded from the node jumpscritps folder.
+        :param content: Optional jumpscript content (as code) to execute.
+        :param path: Optional full path to jumpscript on node to execute
+        :param method: A python function to execute.
+        :param gid: GID of node
+        :param nid: NID of node
+        :param roles: List of agent roles to match (only agent that satisfies all the given roles will execue this)
+        :param allnodes: Execute on ALL agents that matches the roles (default True), if False only one agent will
+                       execute
+        :param die: If True raises an exception when error occure, otherwise return results with error state.
+        :param timeout: Process timeout, if took more than `timeout` the process will get killed and error is returned.
+        :param args: Arguments to jumpscript
+        """
+        fanout = allnodes
         if nid is None and not roles:
             roles = ['*']
+        elif nid is not None:
+            fanout = False
 
         if domain is not None:
             assert name is not None, "name is required in case 'domain' is given"
@@ -479,9 +662,8 @@ class SimpleClient(object):
         :param gid: Grid id
         :param nid: Node id
         :param local: Agent's local listening port for the tunnel. 0 for dynamic allocation
-        :param gateway: The other endpoint `agent` which the connection will be redirected to.
-                      This should be the name of the hubble agent.
-                      NOTE: if the endpoint is another superangent, it automatically names itself as '<gid>.<nid>'
+        :param remote_gid: Grid id of remote node
+        :param remote_nid: Node id of remote node
         :param ip: The endpoint ip address on the remote agent network. Note that IP must be a real ip not a host name
                  dns names lookup is not supported.
         :param remote: The endpoint port on the remote agent network
