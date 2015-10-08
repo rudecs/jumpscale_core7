@@ -312,9 +312,7 @@ class Share(object):
         local_id = self._sync_client._get_id(self.gid, self.nid)
 
         self._sync_client._add_device(gid, nid, '%d-%d' % (self.gid, self.nid), local_id)
-        # TODO: the next call for some reason causes syncthing to exit. But fortunately it's not
-        # needed and syncthing attach this automatically.
-        # self._sync_client._add_device_to_share(gid, nid, local_id, self.name)
+        self._sync_client._add_device_to_share(gid, nid, local_id, self.name)
 
         share = self._sync_client.get_share(self.gid, self.nid, self.name)
         self._folder = share._folder
