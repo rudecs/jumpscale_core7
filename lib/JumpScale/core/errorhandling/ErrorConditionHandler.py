@@ -577,7 +577,7 @@ class ErrorConditionHandler():
             #j.console.echo( "Tracefile in %s" % tracefile)
             j.application.stop(1)
 
-    def halt(self,msg, eco):
+    def halt(self,msg, eco=None):
         if eco != None:
             eco = eco.__dict__
         raise HaltException(msg, eco)

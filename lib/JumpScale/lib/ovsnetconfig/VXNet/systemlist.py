@@ -43,7 +43,7 @@ def get_nic_params():
         for l in lines:
             if not 'state' in l: continue
             entry = l.strip().split()
-            intf = entry[1].rstrip(':')
+            intf = entry[1].rstrip(':').split('@', 1)[0]
             if intf == 'lo' : continue
             nictypes[intf] = {}
             if 'vxlan' in entry :
