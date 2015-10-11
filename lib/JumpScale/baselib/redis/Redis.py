@@ -162,8 +162,8 @@ class RedisFactory:
         raise RuntimeError("Could not find redis port in config file %s" % cpath)
 
     def isRunning(self, name):
-        tmpl = j.atyourservice.findTemplates('','redis')[0]
-        if name not in tmpl.listInstances():
+        services = j.atyourservice.findServices(name='redis', instance=name)
+        if not services:
             return False
         try:
             ins = self.getByInstance('system')

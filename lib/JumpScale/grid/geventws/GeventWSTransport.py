@@ -70,12 +70,12 @@ class GeventWSTransport(Transport):
         if rcv==None:
             eco=j.errorconditionhandler.getErrorConditionObject(msg='timeout on request to %s'%self.url, msgpub='', \
                 category='gevent.transport')
-            return "4","m",j.db.serializers.msgpack.dumps(eco.__dict__)
+            return "4","m",j.db.serializers.getMessagePack().dumps(eco.__dict__)
                     
         if rcv.ok==False:
             eco=j.errorconditionhandler.getErrorConditionObject(msg='error 500 from webserver on %s'%self.url, msgpub='', \
                 category='gevent.transport')
-            return "6","m",j.db.serializers.msgpack.dumps(eco.__dict__)
+            return "6","m",j.db.serializers.getMessagePack().dumps(eco.__dict__)
 
         return j.servers.base._unserializeBinReturn(rcv.content)
 

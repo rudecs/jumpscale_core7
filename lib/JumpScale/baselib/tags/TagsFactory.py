@@ -9,14 +9,14 @@ class TagsFactory(object):
     Factory Class of dealing with TAGS     
     """
     
-    def getObject(self,tagstring="",setFunction4Tagstring=None):
+    def getObject(self,tagstring="",setFunction4Tagstring=None, casesensitive=False):
         """
         check whether labelname exists in the labels 
         
         @param tagstring:  example "important customer:kristof"
         @type tagstring: string           
         """
-        return Tags(tagstring,setFunction4Tagstring)
+        return Tags(tagstring,setFunction4Tagstring, casesensitive)
     
     def getTagString(self, labels=None, tags=None):
         """

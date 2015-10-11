@@ -832,7 +832,7 @@ class Service(object):
         """
         if cmd is None:
             cmd = self.cmd
-        self.actions.execute(self, cmd=cmd)
+        return self.actions.execute(self, cmd=cmd)
 
     @deps
     def uninstall(self, deps=True, processed={}):
