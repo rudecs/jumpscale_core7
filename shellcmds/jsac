@@ -28,7 +28,10 @@ if opts.action == 'reload':
 elif opts.action == 'listsessions':
     import yaml
     sessions = ac.listSessions()
-    print('Sessions:\n\n %s' % yaml.dump(sessions))
+    print('Sessions:\n')
+    for key, timeroles in sessions.iteritems():
+        print "%s @ %s" % (key, time.ctime(timeroles[0]))
+        print "  Roles: %s" % (', '.join(timeroles[1:]))
 elif opts.action == 'exec':
     import yaml
     args = dict()
