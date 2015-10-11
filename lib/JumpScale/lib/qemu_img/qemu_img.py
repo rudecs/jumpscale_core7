@@ -71,7 +71,7 @@ class QemuImg(object):
         if not exitCode == 0:
             raise RuntimeError('Command %s exited with code %s, output %s' % (command, exitCode, output))
 
-    def convert(self, fileName, diskImageFormat, outputFileName, outputFormat, compressTargetImage=False, encryptTargetImage=False, useCompatibilityLevel6=False, isTargetImageTypeSCSI=False, logger=None):
+    def convert(self, fileName, diskImageFormat, outputFileName, outputFormat, compressTargetImage=False, encryptTargetImage=False, useCompatibilityLevel6=False, isTargetImageTypeSCSI=False, logger=None, createTarget=True):
         """
         Convert the disk image <fileName> to disk image <outputFileName> using format <outputFormat>.
         It can be optionally encrypted ("-e" option) or compressed ("-c" option).
@@ -115,6 +115,9 @@ class QemuImg(object):
                 raise ValueError('isTargetImageTypeSCSI property is only supported for vmdk diskImageFormat')
             args.append('-s')
 
+        if not createTarget:
+            args.append('-n')
+
         args.extend(['-f', str(diskImageFormat)])
         args.extend(['-O', str(outputFormat)])
         if logger:
@@ -145,6 +148,7 @@ class QemuImg(object):
                     break
                 line += char
             output += prc.stdout.read()
+            output += prc.stderr.read()
             prc.communicate()
             exitCode = prc.returncode
 

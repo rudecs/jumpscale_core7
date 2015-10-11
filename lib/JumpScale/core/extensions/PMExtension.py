@@ -110,11 +110,6 @@ class BasePMExtension(object):
             j.application.stop()
 
     def _handleLoadClassModuleException(self, t, v, tb):
-        #Send to logserver
-        if j.application.shellconfig.ipython:
-            j.application.shellconfig.interactive=True
-
-
         #Display
         msg='An error occured while loading the %s extension\n' % self.moduleName
         msg+= 'Extension path: %s\n' % self.extensionPath
