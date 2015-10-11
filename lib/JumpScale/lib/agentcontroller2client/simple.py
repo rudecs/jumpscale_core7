@@ -3,6 +3,7 @@ import json
 import re
 import inspect
 from StringIO import StringIO
+from JumpScale import j
 
 import acclient
 
@@ -640,6 +641,9 @@ class SimpleClient(object):
             runargs = runargs.update({'name': path})
             if method:
                 content = self._getFuncCode(method)
+            elif path:
+                content = j.system.fs.fileGetContents(path)
+
             data = {
                 'content': content,
                 'args': args
