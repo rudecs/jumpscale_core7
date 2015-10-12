@@ -11,7 +11,7 @@ import acclient
 
 STATE_UNKNOWN = 'UNKNOWN'
 STATE_SUCCESS = 'SUCCESS'
-STATE_TIMEDOUT = 'TIMEDOUT'
+STATE_TIMEDOUT = 'TIMEOUT'
 
 RESULT_JSON = 20
 
@@ -164,6 +164,8 @@ class Result(object):
         if critical:
             d = json.loads(critical)
             return j.errorconditionhandler.getErrorConditionObject(d)
+        elif self.state == STATE_TIMEDOUT:
+            return j.errorconditionhandler.getErrorConditionObject(msg='Timedout waiting for job')
         elif self.state != STATE_SUCCESS:
             return j.errorconditionhandler.getErrorConditionObject(msg=self._error)
         return None
@@ -598,11 +600,12 @@ class SimpleClient(object):
             state = STATE_UNKNOWN
             try:
                 job.wait(timeout)
-                state = job.state
             except acclient.ResultTimeout:
                 if die:
                     raise
-                state = STATE_TIMEDOUT
+                job._jobdata['state'] = STATE_TIMEDOUT
+
+            state = job.state
 
             if state != STATE_SUCCESS and die:
                 r = Result(job)

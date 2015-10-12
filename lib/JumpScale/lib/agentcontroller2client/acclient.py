@@ -315,7 +315,7 @@ class Job(Base):
             rqueue = self._get_result_queue()
             result = self._redis.brpoplpush(rqueue, rqueue, timeout)
         except TypeError:
-            raise ResultTimeout('Timedout while waiting for job')
+            raise ResultTimeout('Timedout while waiting for job %s' % self)
 
         if result is None:
             raise ResultTimeout('Timedout while waiting for job %s' % self)
