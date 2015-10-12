@@ -70,16 +70,13 @@ class GridHealthChecker(object):
         for green in greens:
             result = green.value
             if not result:
-                results = list()
-                errors = [(green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, category)]
-                self._returnResults(results, errors)
+                results = [(green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, category)]
+                self._returnResults(results)
 
-    def _returnResults(self, results, errors):
+    def _returnResults(self, results):
         for nid, result, category in results:
             self._addResult(nid, result, category)
-        for nid, result, category in errors:
-            self._addError(nid, result, category)
-        return self._status, self._errors
+        return self._status
 
     def _checkRunningNIDs(self):
         print('CHECKING HEARTBEATS...')
@@ -147,8 +144,6 @@ class GridHealthChecker(object):
         self.checkHeartbeatsAllNodes(clean=False)
         self.checkProcessManagerAllNodes(clean=False)
         results = list()
-        errors = list()
-        errormessage = list()
         greens = list()
 
         print(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
@@ -163,18 +158,12 @@ class GridHealthChecker(object):
                 result = green.value
                 print result
                 if not result:
-                    results = list()
-                    errors = [(green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, 'Running all healtchecks on node %s' % nid)]
-                    self._returnResults(results, errors)
-                results.append((green.nid, result, 'ON NODE'))
-
-        self._returnResults(results, errors)
-        return results, errors
+                    results.append((green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, 'Running all healtchecks on node %s' % nid))
+                    self._returnResults(results)
+        return self._status
 
     def runOnNodeByCategory(self, nid):
         results = list()
-        errors = list()
-        errormessage = list()
         greens = list()
         for _, domain, name, roles  in self._client.listJumpscripts(cat='monitor.healthcheck'):
             role = roles[0] if roles else None
@@ -185,22 +174,21 @@ class GridHealthChecker(object):
             greens.append(greenlet)
         gevent.joinall(greens)
         for green in greens:
-            result = green.value
-            if not result:
-                errors.append((green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, green.name))
+            greenresults = green.value
+            if not greenresults:
+                result = (green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, green.name)
+                results.append(result)
                 continue
-            print green.name
-            print result
-            print
-            if isinstance(result, dict):
-                errors.append((green.nid, result.get('errors', []), green.name))
-                results.append((green.nid, result.get('results', []), green.name))
 
-        self._returnResults(results, errors)
+            if isinstance(greenresults, list):
+                for result in greenresults:
+                    results.append((green.nid, {'message': result.get('message', ''), 'state': result.get('state', '')}, result.get('category', green.name)))
+
+        self._returnResults(results)
         
         if self._tostdout:
             self._printResults()
-        return self._status, self._errors
+        return self._status
 
 
     def runOneTest(self, domain, name, role, nid):
@@ -418,11 +406,11 @@ class GridHealthChecker(object):
         print("CHECKING PROCESSMANAGERS...")
         haltednodes = set(self._nids)-set(self._runningnids)
         for nid in haltednodes:
-            self._addError(nid, {'state': 'HALTED'}, 'processmanager')
+            self._addResult(nid, {'state': 'ERROR'}, 'Processmanager')
         for nid in self._runningnids:
-            self._addResult(nid, {'state': 'RUNNING'}, 'processmanager')
+            self._addResult(nid, {'state': 'OK'}, 'Processmanager')
         if clean:
-            return self._status, self._errors
+            return self._status
 
 
     def checkHeartbeatsAllNodes(self, clean=True, nid=None):
@@ -439,7 +427,9 @@ class GridHealthChecker(object):
         heartbeats = self._heartbeatcl.simpleSearch(query)
         for heartbeat in heartbeats:
             if heartbeat['nid'] not in self._nids and  heartbeat['nid']  not in self._nidsNonActive:
-                self._addError(heartbeat['nid'], "found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'],"heartbeat")
+                self._addResult(heartbeat['nid'], {'message': "Found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'], 
+                                'state': 'ERROR'}, "Heartbeat")
+                # self._addError(heartbeat['nid'], "found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'],"heartbeat")
 
         nid2hb = dict([(x['nid'], x['lastcheck']) for x in heartbeats])
         for nid in self._nids:
@@ -448,13 +438,14 @@ class GridHealthChecker(object):
                     lastchecked = nid2hb[nid]
                     hago = j.base.time.getSecondsInHR(j.base.time.getTimeEpoch()-lastchecked)
                     if not j.base.time.getEpochAgo('-2m') < lastchecked:
-                        self._addError(nid, "Last heartbeat %s ago" % hago,"heartbeat")
+                        state = 'ERROR'
                     else:
-                        self._addResult(nid, "Last heartbeat %s ago" % hago,"heartbeat")
+                        state = 'OK'
+                    self._addResult(nid, {'message': "*Last heartbeat* %s ago" % hago, 'state': state}, "Heartbeat")
                 else:
-                    self._addError(nid, "found heartbeat node when not in grid nodes.","heartbeat")
+                    self._addResult(nid, {'message': "Found heartbeat node when not in grid nodes.", 'state':'ERROR'}, "Heartbeat")
         if clean:
-            return self._status, self._errors
+            return self._status
 
     def checkProcessManager(self, nid, clean=True):
         """
@@ -491,7 +482,7 @@ class GridHealthChecker(object):
             self.getNodes()
         print(("PROCESS MANAGER PING TO ALL (%s) NODES..." % len(self._nids)))
         self._parallelize(self.ping, False, 'processmanagerping')
-        return self._status, self._errors
+        return self._status
 
     def pingAllNodesAsync(self, clean=True):
         if self._nids==[]:
@@ -509,9 +500,8 @@ class GridHealthChecker(object):
         errors = list()
         result = self._client.executeJumpscript('jumpscale', 'echo_sync', args={"msg":"ping"}, nid=nid, gid=self._nodegids[nid], timeout=5)
         if not result["result"]=="ping":
-            errors.append((nid, {'ping': 'down'}, 'processmanagerping'))
-            errors.append((nid, 'cannot ping processmanager', 'processmanagerping'))
-        self._returnResults(results, errors)
+            results.append((nid, {'state': 'ERROR', 'message': 'cannot ping processmanager'}, 'processmanagerping'))
+        self._returnResults(results)
         return results, errors
 
     def pingasync(self,nid,clean=True):

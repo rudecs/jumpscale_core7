@@ -21,7 +21,6 @@ log=False
 def action():
     import JumpScale.baselib.redis
     ports = {}
-    errors = list()
     results = list()
     
     for instance in j.atyourservice.findServices(name='redis'):
@@ -33,27 +32,33 @@ def action():
             if redisport:
                 ports[instance.instance] = ports.get(instance.instance, [])
                 ports[instance.instance].append(int(redisport))
-    result = dict()
+
+    result = {'category': 'Redis'}
     for instance, ports_val in ports.iteritems():
         for port in ports_val:
             pids = j.system.process.getPidsByPort(port)
             if not pids:
-                errors.append({'port': port, 'state': 'HALTED', 'memory_usage': 0, 'memory_max': 0})
+                state = 'ERROR'
+                used_memory = 0
+                maxmemory = 0
             else:
                 rcl = j.clients.redis.getByInstance(instance)
-                state = 'RUNNING' if rcl.ping() else 'BROKEN'
+                state = 'OK' if rcl.ping() else 'ERROR'
                 maxmemory = float(rcl.config_get('maxmemory').get('maxmemory', 0))
                 used_memory = rcl.info()['used_memory']
                 if (used_memory / maxmemory) * 100 > 90:
                     state = 'WARNING'
-                result = {'port': port, 'state': state, 'memory_usage': used_memory, 'memory_max': maxmemory}
 
-                if rcl.ping():
-                    results.append(result)
-                else:
-                    errors.append(result)
+            size, unit = j.tools.units.bytes.converToBestUnit(used_memory)
+            msize, munit = j.tools.units.bytes.converToBestUnit(maxmemory)
+            used_memory = '%.2f %sB' % (size, unit)
+            maxmemory = '%.2f %sB' % (msize, munit)
+            result['message'] = '*Port*: %s. *Memory usage*: %s/ %s' % (port, used_memory, maxmemory)
+            result['state'] = state
 
-    return {'results': results, 'errors': errors}
+            results.append(result)
+
+    return results
 
 if __name__ == "__main__":
     print action()

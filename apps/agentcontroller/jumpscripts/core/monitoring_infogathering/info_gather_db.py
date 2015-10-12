@@ -22,7 +22,10 @@ def action():
     import JumpScale.grid.osis
     osiscl = j.clients.osis.getByInstance('main')
     status = osiscl.getStatus()
-    return {'results': status, 'errors':[]}
+    results = list()
+    for db, state in status.items():
+        results.append({'message':'*%s*' % db.capitalize(), 'state':'OK' if state else 'ERROR', 'category': 'Databases'})
+    return results
 
 if __name__ == "__main__":
     print action()

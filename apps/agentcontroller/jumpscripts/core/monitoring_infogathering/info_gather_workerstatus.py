@@ -6,7 +6,6 @@ Monitor CPU and mem of worker
 """
 
 organization = "jumpscale"
-name = 'workerstatus'
 author = "khamisr@codescalers.com"
 license = "bsd"
 version = "1.0"
@@ -15,23 +14,27 @@ category = "monitor.healthcheck"
 async = False
 roles = []
 
-log=False
+log = False
+
 
 def action():
     rediscl = j.clients.redis.getByInstance('system')
-    timemap = {'default': '-2m', 'io': '-2h', 'hypervisor': '-10m','process':'-1m'}
-    result = {'results':[], 'errors': []}
+    timemap = {'default': '-2m', 'io': '-2h', 'hypervisor': '-10m', 'process': '-1m'}
+    results = list()
+
     for queue in ('io', 'hypervisor', 'default', 'process'):
+        result = {'category': 'Workers'}
         lastactive = rediscl.hget('workers:heartbeat', queue) or 0
         timeout = timemap.get(queue)
-        stats = {'lastactive': lastactive, 'queue':queue}
         if j.base.time.getEpochAgo(timeout) < lastactive:
-            stats['state'] = 'RUNNING'
-            result['results'].append(stats)
+            result['state'] = 'OK'
         else:
-            stats['state'] = 'HALTED'
-            result['errors'].append(stats)
-    return result
+            result['state'] = 'ERROR'
+
+        lastactive = j.base.time.epoch2HRDateTime(lastactive) if lastactive else 'never'
+        result['message'] = '*%s last active*: %s.' % (queue.upper(), lastactive)
+        results.append(result)
+    return results
 
 if __name__ == "__main__":
     print action()
