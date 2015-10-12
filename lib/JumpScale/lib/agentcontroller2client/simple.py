@@ -3,6 +3,7 @@ import json
 import re
 import inspect
 from StringIO import StringIO
+import collections
 from JumpScale import j
 
 import acclient
@@ -13,6 +14,8 @@ STATE_SUCCESS = 'SUCCESS'
 STATE_TIMEDOUT = 'TIMEDOUT'
 
 RESULT_JSON = 20
+
+ResultTuple = collections.namedtuple('ResultTuple', 'status stdout stderr')
 
 
 class Agent(object):
@@ -507,7 +510,7 @@ class SimpleClient(object):
         else:
             # single job
             _, _, state, stdout, stderr = jobs.pop()
-            return state, stdout, stderr
+            return ResultTuple(state, stdout, stderr)
 
     def execute(self, cmd, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, data=None):
         """
