@@ -153,7 +153,20 @@ class Result(object):
         return self._job.data
 
     @property
-    def error(self):
+    def eco(self):
+        """
+        Any error condition object attached to this job
+        """
+        critical = self._job.critical
+        if critical:
+            d = json.loads(critical)
+            return j.errorconditionhandler.getErrorConditionObject(d)
+        elif self.state != STATE_SUCCESS:
+            return j.errorconditionhandler.getErrorConditionObject(msg=self._error)
+        return None
+
+    @property
+    def _error(self):
         """
         The error message or the process stderr
         """
@@ -589,12 +602,8 @@ class SimpleClient(object):
                 state = STATE_TIMEDOUT
 
             if state != STATE_SUCCESS and die:
-                stderr = job.streams[1]
-                error = stderr or job.data
-                raise acclient.AgentException(
-                    'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
-                        job=job, error=error)
-                )
+                r = Result(job)
+                raise r.eco
 
             results.append(Result(job))
 
@@ -638,18 +647,14 @@ class SimpleClient(object):
                                                       args=args, runargs=runargs, roles=roles, fanout=fanout)
         else:
             # call the unexposed jumpscript_content extension manually
-            runargs = runargs.update({'name': path})
             if method:
                 content = self._getFuncCode(method)
             elif path:
                 content = j.system.fs.fileGetContents(path)
 
-            data = {
-                'content': content,
-                'args': args
-            }
-            command = self._client.cmd(gid=gid, nid=nid, cmd='jumpscript_content', args=runargs,
-                                       data=json.dumps(data), roles=roles, fanout=fanout)
+            command = self._client.execute_jumpscript_content(
+                gid, nid, content, args=args, runargs=runargs, roles=roles, fanout=fanout
+            )
 
         return command.get_jobs().values()
 

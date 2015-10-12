@@ -291,6 +291,10 @@ class Job(Base):
         return self._jobdata.get('streams', ['', ''])
 
     @property
+    def critical(self):
+        return self._jobdata.get('critical', '')
+
+    @property
     def data(self):
         """
         Job data
@@ -583,6 +587,15 @@ class Client(object):
         """
         runargs = RunArgs().update(runargs).update({'domain': domain, 'name': name})
         return self.cmd(gid, nid, CMD_EXECUTE_JUMPSCRIPT, runargs, json.dumps(args), roles=roles, fanout=fanout)
+
+    def execute_jumpscript_content(self, gid, nid, content, args={}, runargs=None, roles=None, fanout=False):
+        data = {
+            'content': content,
+            'args': args
+        }
+        runargs = RunArgs().update(runargs)
+        return self.cmd(gid=gid, nid=nid, cmd='jumpscript_content', args=runargs,
+                        data=json.dumps(data), roles=roles, fanout=fanout)
 
     def get_by_id(self, gid, nid, id):
         """
