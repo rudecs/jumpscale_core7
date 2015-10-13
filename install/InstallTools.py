@@ -1482,7 +1482,7 @@ class InstallTools():
             
             # warning: workaround for jumpscale setup
             # needt to be fixed, but no idea how
-            if not self.isDir(dest) and repository_account.lower() != "jumpscale":
+            if not self.isDir(dest):
                 newdest = '%(codedir)s/%(type)s/%(account)s/%(repo_name)s' % {
                     'codedir': self.CODEDIR,
                     'type': repository_type.lower(),
@@ -1490,7 +1490,7 @@ class InstallTools():
                     'repo_name': repository_name[:-4].lower(),  # Remove the trailling '.git'
                 }
                 
-                if self.isDir(newdest):
+                if self.isDir(newdest) or repository_account.lower() == "jumpscale":
                     dest = newdest
 
         if reset:
