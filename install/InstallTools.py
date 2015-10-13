@@ -1476,7 +1476,7 @@ class InstallTools():
             dest = '%(codedir)s/%(type)s/%(account)s/%(repo_name)s' % {
                 'codedir': self.CODEDIR,
                 'type': repository_type.lower(),
-                'account': repository_account,
+                'account': repository_account.lower(),
                 'repo_name': repository_name[:-4].lower(),  # Remove the trailling '.git'
             }
 
