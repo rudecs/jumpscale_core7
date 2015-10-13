@@ -1467,6 +1467,11 @@ class InstallTools():
         protocol, repository_host, repository_account, repository_name, repository_url = self.rewriteGitRepoUrl(url=url,login=login,passwd=passwd)
 
         repository_type = repository_host.split('.')[0] if '.' in repository_host else repository_host
+        
+        # strip username/password on type if exists
+        if "@" in repository_type and ":"in  repository_type:
+            repository_type = repository_type.rsplit('@', 1)[1]
+
 
         if not dest:
             dest = '%(codedir)s/%(type)s/%(account)s/%(repo_name)s' % {
