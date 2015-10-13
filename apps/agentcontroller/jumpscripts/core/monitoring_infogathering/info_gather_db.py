@@ -9,7 +9,7 @@ name = 'info_gather_db'
 author = "zains@codescalers.com"
 license = "bsd"
 version = "1.0"
-category = "monitor.healthcheck"
+category = "system.dbstatus"
 
 async = False
 roles = []
@@ -22,10 +22,7 @@ def action():
     import JumpScale.grid.osis
     osiscl = j.clients.osis.getByInstance('main')
     status = osiscl.getStatus()
-    results = list()
-    for db, state in status.items():
-        results.append({'message':'*%s*' % db.capitalize(), 'state':'OK' if state else 'ERROR', 'category': 'Databases'})
-    return results
+    return status
 
 if __name__ == "__main__":
     print action()
