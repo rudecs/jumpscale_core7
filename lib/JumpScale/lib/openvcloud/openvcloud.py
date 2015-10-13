@@ -138,7 +138,6 @@ class Openvclcoud(object):
             # install Jumpscale
             print "[+] installing jumpscale"
             cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
-
             # print "jumpscale installed"
 
             print "[+] adding openvcloud domain to atyourservice"
@@ -192,7 +191,7 @@ metadata.openvcloud            =
         if self.actionCheck(gitlaburl, "ms1client") is False:
             # create ms1_client to save ms1 connection info
             args = 'instance.param.location:%s instance.param.login:%s instance.param.passwd:%s instance.param.cloudspace:%s' % (self.location, self.login, self.passwd, self.cloudspace)
-            cl.run('cd %s; ays install -n ms1_client --data "%s"' % (repopath, args))
+            cl.run('cd %s; ays install -n ms1_client --data "%s" -r' % (repopath, args))
             self.actionDone(gitlaburl, "ms1client")
 
         if self.actionCheck(gitlaburl, "gitlab_client") is False:
@@ -200,7 +199,7 @@ metadata.openvcloud            =
             scheme, host, _, _, _ = j.do.rewriteGitRepoUrl(gitlaburl)
             url = scheme+host
             args = 'instance.gitlab.client.url:%s instance.gitlab.client.login:%s instance.gitlab.client.passwd:%s' % (url, gitlablogin, gitlabpasswd)
-            cl.run('cd %s; ays install -n gitlab_client --data "%s"' % (repopath, args))
+            cl.run('cd %s; ays install -n gitlab_client --data "%s" -r' % (repopath, args))
             self.actionDone(gitlaburl, "gitlab_client")
         
         if self.actionCheck(gitlaburl, "ovc_setup") is False:
@@ -218,14 +217,14 @@ metadata.openvcloud            =
             args += 'instance.ovc.cloudip:%s ' % vspace['publicipaddress']
             args += 'instance.ovc.gitip:%s ' % vmachine['interfaces'][0]['ipAddress']
             
-            cl.run('cd %s; ays install -n ovc_setup --data "%s"' % (repopath, args))
+            cl.run('cd %s; ays install -n ovc_setup --data "%s" -r' % (repopath, args))
             self.actionDone(gitlaburl, "ovc_setup")
 
 
         if self.actionCheck(gitlaburl, "rememberssh") is False:
             # create ms1_client to save ms1 connection info
             args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, ip)
-            cl.run('cd %s; ays install -n git_vm --data "%s"' % (repopath, args))
+            cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
             cl.run('git config --global push.default simple')
             cl.run('cd %s;jscode push' % repopath)
             self.actionDone(gitlaburl, "rememberssh")
@@ -274,7 +273,7 @@ metadata.openvcloud            =
             cl.run('cd %s; wget http://arya.maxux.net/temp/gig/aio.py -O aio.py' % repopath)
             # cl.run('cd %s; jspython setup.py' % (repopath, args))
 
-        cl.fabric.api.open_shell()
+        # cl.fabric.api.open_shell()
 
     def initVnasCloudSpace(self, gitlablogin, gitlabpasswd, delete=False):
         print "get secret key for cloud api"
@@ -330,7 +329,7 @@ metadata.openvcloud            =
         if self.actionCheck(spacesecret, "vnas_ovc_client") is False:
             # create ovc_client to save ovc connection info
             args = 'instance.param.location:%s instance.param.login:%s instance.param.passwd:%s instance.param.cloudspace:%s instance.param.apiurl:%s' % (self.location, self.login, self.passwd, self.cloudspace, self.apiURL)
-            cl.run('ays install -n ovc_client --data "%s"' % args)
+            cl.run('ays install -n ovc_client --data "%s" -r' % args)
             self.actionDone(spacesecret, "vnas_ovc_client")
 
         ss = cl.host().split(':')
