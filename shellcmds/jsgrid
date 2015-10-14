@@ -52,7 +52,7 @@ if opts.action =='resetlocks':
 if opts.action == 'healthcheck':
     import JumpScale.grid.gridhealthchecker
     if not opts.nid:
-        j.core.grid.healthchecker.runAll()
+        j.core.grid.healthchecker.runOnAllNodes()
     else:
         j.core.grid.healthchecker.runAllOnNode(opts.nid)
 
