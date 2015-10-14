@@ -58,7 +58,7 @@ class AgentCmds():
                     self.log("check if work")
                     job = client.getWork(transporttimeout=65)
                     if job is not None:
-                        self.log("WORK FOUND: jobid:%s" % job["id"])
+                        self.log("WORK FOUND: jobid:%(id)s cmd:%(cmd)s" % job)
                     else:
                         continue
                 except Exception, e:
@@ -100,17 +100,17 @@ class AgentCmds():
                 if (jscript.async or job['queue']) and jscript.debug == False:
                     j.clients.redisworker.execJobAsync(job)
                 else:
-                    def run():
-                        timeout = gevent.Timeout(job['timeout'])
+                    def run(localjob):
+                        timeout = gevent.Timeout(localjob['timeout'])
                         timeout.start()
                         try:
-                            status, result = jscript.execute(**job['args'])
-                            job['state'] = 'OK' if status else 'ERROR'
-                            job['result'] = result
-                            client.notifyWorkCompleted(job)
+                            status, result = jscript.execute(**localjob['args'])
+                            localjob['state'] = 'OK' if status else 'ERROR'
+                            localjob['result'] = result
+                            client.notifyWorkCompleted(localjob)
                         finally:
                             timeout.cancel()
-                    gevent.spawn(run)
+                    gevent.spawn(run, job)
             except Exception, e:
                 j.errorconditionhandler.processPythonExceptionObject(e)
 
