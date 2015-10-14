@@ -16,8 +16,8 @@ roles = []
 period = 600
 log = True
 
-def action(msg=""):
-    return [{'message': msg, 'state': 'OK'}]
+def action(msg=[{'category': 'JSAgent', 'message': 'Async test', 'state': 'OK'}]):
+    return msg
 
 if __name__ == "__main__":
     print action("It works")

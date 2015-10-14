@@ -79,7 +79,7 @@ class GridHealthChecker(object):
         heartbeats = self._heartbeatcl.simpleSearch({})
         print("OK")
         for heartbeat in heartbeats:
-            if heartbeat['nid'] not in self._nids and  heartbeat['nid']  not in self._nidsNonActive:
+            if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:
                 self._addError(heartbeat['nid'],"found heartbeat node '%s' which is not in grid nodes."%(heartbeat['nid']),"heartbeat")
 
         nid2hb = dict([(x['nid'], x['lastcheck']) for x in heartbeats])
@@ -128,7 +128,6 @@ class GridHealthChecker(object):
             else:
                 self._nidsNonActive.append(node['id'])
         if activecheck:
-            self.pingAllNodesSync(clean=True)
             self._checkRunningNIDsFromPing()
 
     def mapJumpscriptsToJobs(self):
@@ -162,9 +161,11 @@ class GridHealthChecker(object):
     def runAllOnNode(self, nid):
         results = list()
         greens = list()
-        for _, domain, name, roles  in self._client.listJumpscripts(cat='monitor.healthcheck'):
-            role = roles[0] if roles else None
-            greenlet = gevent.Greenlet(self.runOneTest, domain, name, role, nid)
+        node = self._nodecl.get(nid)
+        for _, domain, name, roles in self._client.listJumpscripts(cat='monitor.healthcheck'):
+            if not set(node.roles).issuperset(set(roles)):
+                continue
+            greenlet = gevent.Greenlet(self.runOneTest, domain, name, nid)
             greenlet.nid = nid
             greenlet.name = name
             greenlet.start()
@@ -187,14 +188,13 @@ class GridHealthChecker(object):
             self._printResults()
         return self._status
 
-    def runOneTest(self, domain, name, role, nid):
-        returnedresult = self._client.executeJumpscript(domain, name, role=role, timeout=30, gid=self._nodegids[nid], nid=nid)
+    def runOneTest(self, domain, name, nid):
+        returnedresult = self._client.executeJumpscript(domain, name, timeout=30, gid=self._nodegids[nid], nid=nid)
         return returnedresult['result']
 
     def fetchMonitoringOnAllNodes(self):
         self._clean()
-        if self._nids==[]:
-            self.getNodes()
+        self.getNodes()
         for nid in self._nids:
             self.fetchMonitoringOnNode(nid, clean=False)
         return self._status
@@ -204,11 +204,10 @@ class GridHealthChecker(object):
         if clean:
             self._clean()
         self.checkHeartbeat(nid=nid, clean=False)
-        self.ping(nid=nid, clean=False)
 
         maps = self.mapJumpscriptsToJobs()
-        domains = [domain for domain, _ in maps]
-        names = [name for _, name in maps]
+        domains = list({domain for domain, _ in maps})
+        names = list({name for _, name in maps})
         query = [{'$match': {'nid': nid, 'cmd': {'$in': names}, 'category': {'$in': domains}}},
                  {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 
                                             'jobstatus': {'$last': '$state'},
@@ -281,7 +280,6 @@ class GridHealthChecker(object):
         if clean:
             return self._status
 
-
     def checkHeartbeat(self, clean=True, nid=None):
         if clean:
             self._clean()
@@ -295,12 +293,13 @@ class GridHealthChecker(object):
             query['nid'] = nid
         heartbeats = self._heartbeatcl.simpleSearch(query)
         for heartbeat in heartbeats:
-            if heartbeat['nid'] not in self._nids and  heartbeat['nid']  not in self._nidsNonActive:
+            if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:
                 self._addResult(heartbeat['nid'], {'message': "Found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'], 
                                 'state': 'ERROR'}, "Heartbeat")
 
         nid2hb = dict([(x['nid'], x['lastcheck']) for x in heartbeats])
-        for nid in self._nids:
+        nids = [nid] if nid else self._nids
+        for nid in nids:
             if nid not in self._nidsNonActive:
                 if nid in nid2hb:
                     lastchecked = nid2hb[nid]
@@ -333,27 +332,6 @@ class GridHealthChecker(object):
             self._addError(nid, {'state': 'UNKNOWN'}, 'processmanager')
         return self._status, self._errors
 
-    def pingAllNodesSync(self, clean=True):
-        if clean:
-            self._clean()
-        if self._nids==[]:
-            self.getNodes()
-        print(("PROCESS MANAGER PING TO ALL (%s) NODES..." % len(self._nids)))
-        self._parallelize(self.ping, False, 'processmanagerping')
-        return self._status  
-
-    def ping(self,nid,clean=True):
-        if clean:
-            self._clean()
-        results = list()
-        result = self._client.executeJumpscript('jumpscale', 'echo_sync', args={"msg":"ping"}, nid=nid, gid=self._nodegids[nid], timeout=5)
-        if not result["result"]=="ping":
-            results.append((nid, {'state': 'ERROR', 'message': 'Cannot ping processmanager'}, 'Processmanager'))
-        else:
-            results.append((nid, {'state': 'OK', 'message': 'Pinging processmanager was successfull'}, 'Processmanager'))
-        self._returnResults(results)
-        return results
-
     def checkDBs(self, clean=True):
         if self._nids==[]:
             self.getNodes()
@@ -365,14 +343,14 @@ class GridHealthChecker(object):
         dbhealth = dbhealth['result']
         if dbhealth == None:
             errormessage = 'Database statuses UNKNOWN'
-            self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'databases')
+            self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'Databases')
         else:
             for dbname, status in list(dbhealth.items()):
                 if status:
-                    self._addResult(nid, {'message': '%s is alive' % dbname, 'state': 'OK', 'lastchecked': j.base.time.getTimeEpoch()}, 'databases')
+                    self._addResult(nid, {'message': '%s is alive' % dbname.capitalize(), 'state': 'OK', 'lastchecked': j.base.time.getTimeEpoch()}, 'Databases')
                 else:
                     errormessage = '%s status UNKNOWN' % dbname.capitalize()
-                    self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'databases')
+                    self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'Databases')
         if errormessage:
             self._addResult(nid, {'message': errormessage, 'state': 'ERROR'}, 'databases')
         if clean:

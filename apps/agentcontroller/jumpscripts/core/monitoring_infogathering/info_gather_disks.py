@@ -54,6 +54,9 @@ def action():
             result['state'] = 'OK'
         results.append(result)
 
+    if not results:
+        results.append({'message': 'No disks available', 'state': 'OK', 'category': 'Disks'})
+
     return results
 
 if __name__ == "__main__":

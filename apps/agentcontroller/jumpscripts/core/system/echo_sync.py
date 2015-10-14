@@ -9,12 +9,13 @@ name = "echo_sync"
 author = "kristof@incubaid.com"
 license = "bsd"
 version = "1.0"
-category = "echo.sync"
+category = "monitor.healthcheck"
 async=False
 roles = []
-log=False
+log=True
+period=600
 
-def action(msg=""):
+def action(msg=[{'category': 'JSAgent', 'message': 'Sync test', 'state': 'OK'}]):
     return msg
 
 if __name__ == "__main__":
