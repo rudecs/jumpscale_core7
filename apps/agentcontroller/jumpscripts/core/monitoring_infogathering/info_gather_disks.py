@@ -15,9 +15,9 @@ async = True
 queue = 'process'
 roles = []
 enable = True
-period = 0
+period = 600
 
-log = False
+log = True
 
 
 def action():

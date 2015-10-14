@@ -14,9 +14,9 @@ category = "monitor.healthcheck"
 async = False
 roles = []
 
-period=0
+period = 600
 
-log=False
+log = True
 
 def action():
     import JumpScale.baselib.redis

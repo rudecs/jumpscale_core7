@@ -9,13 +9,15 @@ name = "echo_async"
 author = "kristof@incubaid.com"
 license = "bsd"
 version = "1.0"
-category = "echo.async"
-async=True
+category = "monitor.healthcheck"
+async = True
 roles = []
-log=False
+
+period = 600
+log = True
 
 def action(msg=""):
-    return msg
+    return [{'message': msg, 'state': 'OK'}]
 
 if __name__ == "__main__":
     print action("It works")

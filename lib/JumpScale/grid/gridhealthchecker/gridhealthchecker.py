@@ -3,6 +3,7 @@ import JumpScale.grid.agentcontroller
 import JumpScale.grid.osis
 import JumpScale.baselib.units
 import gevent
+import json
 
 class GridHealthChecker(object):
 
@@ -12,6 +13,7 @@ class GridHealthChecker(object):
             self._osiscl = j.clients.osis.getByInstance('main')
         self._heartbeatcl = j.clients.osis.getCategory(self._osiscl, 'system', 'heartbeat')
         self._nodecl = j.clients.osis.getCategory(self._osiscl, 'system', 'node')
+        self._jobcl = j.clients.osis.getCategory(self._osiscl, 'system', 'job')
         self._runningnids = list()
         self._nids = list()
         self._nodenames = dict()
@@ -162,6 +164,9 @@ class GridHealthChecker(object):
                     self._returnResults(results)
         return self._status
 
+    def mapJumpscriptsToJobs(self):
+        return [(domain, name) for _, domain, name, _  in self._client.listJumpscripts(cat='monitor.healthcheck')]
+
     def runOnNodeByCategory(self, nid):
         results = list()
         greens = list()
@@ -214,17 +219,36 @@ class GridHealthChecker(object):
         return self._status, self._errors
 
     def runAllOnNode(self, nid):
+        results = list()
         self._clean()
-        self._nids = [nid]
-        self.checkHeartbeatsAllNodes(clean=False, nid=nid)
+        self.checkHeartbeatsAllNodes(nid=nid, clean=False)
         self.ping(nid=nid, clean=False)
-        self.checkRedis(nid, clean=False)
-        self.pingasync(nid=nid, clean=False)
-        self.checkWorkers(nid, clean=False)
-        self.checkDisks(nid, clean=False)
+
+        maps = self.mapJumpscriptsToJobs()
+        domains = [domain for domain, _ in maps]
+        names = [name for _, name in maps]
+        query = [{'$match': {'nid': nid, 'cmd': {'$in': names}, 'category': {'$in': domains}}},
+                 {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 'jobstatus': {'$last': '$state'}}}]
+
+        jobsresults = self._jobcl.aggregate(query)
+
+        if isinstance(jobsresults, list):
+            for jobresult in jobsresults:
+                jobstate = jobresult.get('jobstatus', 'ERROR')
+                result = json.loads(jobresult.get('result', '[{"message":""}]')) or {}
+                if jobstate == 'OK':
+                    for data in result:
+                        results.append((nid, {'message': data.get('message', ''), 'state': data.get('state', '')}, data.get('category', jobresult.get('_id'))))
+                    if not result:
+                        results.append((nid, {'message': '', 'state': 'UNKNOWN'}, jobresult.get('_id')))
+                else:
+                    results.append((nid, {'message': '', 'state': 'UNKNOWN'}, jobresult.get('_id')))
+
+        self._returnResults(results)
+
         if self._tostdout:
             self._printResults()
-        return self._status, self._errors
+        return self._status
 
     def _printResults(self):
         form = '%(gid)-8s %(nid)-8s %(name)-10s %(status)-8s %(issues)s'
@@ -327,7 +351,7 @@ class GridHealthChecker(object):
             return self._status, self._errors
 
     def getWikiStatus(self, status):
-        colormap = {'RUNNING': 'green', 'HALTED': 'red', 'UNKNOWN': 'orange',
+        colormap = {'RUNNING': 'green', 'HALTED': 'red', 'UNKNOWN': 'orange', 'ERROR': 'red',
                 'BROKEN': 'red', 'OK': 'green', 'NOT OK': 'red', 'WARNING': 'orange'}
         return '{color:%s}*%s*{color}' % (colormap.get(status, 'orange'), status)
 
@@ -396,7 +420,6 @@ class GridHealthChecker(object):
             errors.append((nid, ','.join(errormessage), 'workers'))
         self._returnResults(results, errors)
         return results, errors
-
 
     def checkProcessManagerAllNodes(self, clean=True):
         if clean:
@@ -497,12 +520,13 @@ class GridHealthChecker(object):
         if clean:
             self._clean()
         results = list()
-        errors = list()
         result = self._client.executeJumpscript('jumpscale', 'echo_sync', args={"msg":"ping"}, nid=nid, gid=self._nodegids[nid], timeout=5)
         if not result["result"]=="ping":
-            results.append((nid, {'state': 'ERROR', 'message': 'cannot ping processmanager'}, 'processmanagerping'))
+            results.append((nid, {'state': 'ERROR', 'message': 'Cannot ping processmanager'}, 'Processmanager'))
+        else:
+            results.append((nid, {'state': 'OK', 'message': 'Pinging processmanager was successfull'}, 'Processmanager'))
         self._returnResults(results)
-        return results, errors
+        return results
 
     def pingasync(self,nid,clean=True):
         if clean:

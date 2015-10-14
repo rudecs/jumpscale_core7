@@ -14,7 +14,9 @@ category = "monitor.healthcheck"
 async = False
 roles = []
 
-log = False
+period = 600
+
+log = True
 
 
 def action():
