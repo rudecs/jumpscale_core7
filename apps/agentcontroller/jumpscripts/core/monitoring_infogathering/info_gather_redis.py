@@ -22,7 +22,7 @@ def action():
     import JumpScale.baselib.redis
     ports = {}
     results = list()
-    
+
     for instance in j.atyourservice.findServices(name='redis'):
         
         if not instance.isInstalled():
@@ -33,9 +33,9 @@ def action():
                 ports[instance.instance] = ports.get(instance.instance, [])
                 ports[instance.instance].append(int(redisport))
 
-    result = {'category': 'Redis'}
     for instance, ports_val in ports.iteritems():
         for port in ports_val:
+            result = {'category': 'Redis'}
             pids = j.system.process.getPidsByPort(port)
             if not pids:
                 state = 'ERROR'
@@ -55,8 +55,8 @@ def action():
             maxmemory = '%.2f %sB' % (msize, munit)
             result['message'] = '*Port*: %s. *Memory usage*: %s/ %s' % (port, used_memory, maxmemory)
             result['state'] = state
-
             results.append(result)
+            print results
 
     return results
 

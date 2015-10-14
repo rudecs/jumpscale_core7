@@ -28,14 +28,6 @@ class GridHealthChecker(object):
         self._errors = dict()
         self._status = dict()
 
-    def _addError(self, nid, result, category=""):
-        self._errors.setdefault(nid, {})
-        self._errors[nid].setdefault(category, list())
-        if isinstance(result, basestring):
-            self._errors[nid][category].append({'errormessage': result})
-        else:
-            self._errors[nid][category].append(result)
-
     def getName(self, id):
         id = int(id)
         if id in self._nodenames:
@@ -139,11 +131,14 @@ class GridHealthChecker(object):
             self.pingAllNodesSync(clean=True)
             self._checkRunningNIDsFromPing()
 
-    def runOnAllNodesByCategory(self):
+    def mapJumpscriptsToJobs(self):
+        return [(domain, name) for _, domain, name, _ in self._client.listJumpscripts(cat='monitor.healthcheck')]
+
+    def runOnAllNodes(self):
         self._clean()
         self.getNodes()
         self._clean()
-        self.checkHeartbeatsAllNodes(clean=False)
+        self.checkHeartbeat(clean=False)
         self.checkProcessManagerAllNodes(clean=False)
         results = list()
         greens = list()
@@ -151,7 +146,7 @@ class GridHealthChecker(object):
         print(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
         nodes = self._runningnids
         for nid in nodes:
-            greenlet = gevent.Greenlet(self.runOnNodeByCategory, nid)
+            greenlet = gevent.Greenlet(self.runAllOnNode, nid)
             greenlet.start()
             greens.append(greenlet)
             gevent.joinall(greens)
@@ -164,10 +159,7 @@ class GridHealthChecker(object):
                     self._returnResults(results)
         return self._status
 
-    def mapJumpscriptsToJobs(self):
-        return [(domain, name) for _, domain, name, _  in self._client.listJumpscripts(cat='monitor.healthcheck')]
-
-    def runOnNodeByCategory(self, nid):
+    def runAllOnNode(self, nid):
         results = list()
         greens = list()
         for _, domain, name, roles  in self._client.listJumpscripts(cat='monitor.healthcheck'):
@@ -195,54 +187,51 @@ class GridHealthChecker(object):
             self._printResults()
         return self._status
 
-
     def runOneTest(self, domain, name, role, nid):
         returnedresult = self._client.executeJumpscript(domain, name, role=role, timeout=30, gid=self._nodegids[nid], nid=nid)
         return returnedresult['result']
 
-    def runAll(self):
+    def fetchMonitoringOnAllNodes(self):
         self._clean()
-        self.getNodes()
-        self._clean()
-        self.checkHeartbeatsAllNodes(clean=False)
-        self.checkProcessManagerAllNodes(clean=False)
-        print(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
-        self.checkDBs(clean=False)
-        if self._runningnids:
-            self.pingAllNodesAsync(clean=False)
-            self.checkElasticSearch(clean=False)
-            self.checkRedisAllNodes(clean=False)
-            self.checkWorkersAllNodes(clean=False)
-            self.checkDisksAllNodes(clean=False)
-        if self._tostdout:
-            self._printResults()
-        return self._status, self._errors
+        if self._nids==[]:
+            self.getNodes()
+        for nid in self._nids:
+            self.fetchMonitoringOnNode(nid, clean=False)
+        return self._status
 
-    def runAllOnNode(self, nid):
+    def fetchMonitoringOnNode(self, nid, clean=True):
         results = list()
-        self._clean()
-        self.checkHeartbeatsAllNodes(nid=nid, clean=False)
+        if clean:
+            self._clean()
+        self.checkHeartbeat(nid=nid, clean=False)
         self.ping(nid=nid, clean=False)
 
         maps = self.mapJumpscriptsToJobs()
         domains = [domain for domain, _ in maps]
         names = [name for _, name in maps]
         query = [{'$match': {'nid': nid, 'cmd': {'$in': names}, 'category': {'$in': domains}}},
-                 {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 'jobstatus': {'$last': '$state'}}}]
+                 {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 
+                                            'jobstatus': {'$last': '$state'},
+                                            'lastchecked':{'$last': '$timeStop'},
+                                            'started':{'$last': '$timeStart'}}}]
 
         jobsresults = self._jobcl.aggregate(query)
 
         if isinstance(jobsresults, list):
             for jobresult in jobsresults:
                 jobstate = jobresult.get('jobstatus', 'ERROR')
+                lastchecked = jobresult.get('lastchecked', 0)
+                lastchecked = int(lastchecked) if lastchecked and int(lastchecked) else jobresult.get('started', 0)
                 result = json.loads(jobresult.get('result', '[{"message":""}]')) or {}
                 if jobstate == 'OK':
+
                     for data in result:
-                        results.append((nid, {'message': data.get('message', ''), 'state': data.get('state', '')}, data.get('category', jobresult.get('_id'))))
+                        results.append((nid, {'message': data.get('message', ''), 'state': data.get('state', ''), 'lastchecked': lastchecked},
+                                        data.get('category', jobresult.get('_id'))))
                     if not result:
-                        results.append((nid, {'message': '', 'state': 'UNKNOWN'}, jobresult.get('_id')))
+                        results.append((nid, {'message': '', 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
                 else:
-                    results.append((nid, {'message': '', 'state': 'UNKNOWN'}, jobresult.get('_id')))
+                    results.append((nid, {'message': '', 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
 
         self._returnResults(results)
 
@@ -273,153 +262,10 @@ class GridHealthChecker(object):
                         nodedata={'gid': '', 'nid': '', 'name': '', 'status': '', 'issues': '- %s' % message}
                         print((form % nodedata))
 
-
-    def checkElasticSearch(self, clean=True):
-        return True
-        if self._nids==[]:
-            self.getNodes()
-        if clean:
-            self._clean()
-
-        errormessage = ''
-        if self.masternid not in self._runningnids:
-            self._addError(self.masternid, {'state': 'UNKNOWN'}, 'elasticsearch')
-            errormessage = 'ElasticSearch status UNKNOWN'
-        else:
-            eshealth = self._client.executeJumpscript('jumpscale', 'info_gather_elasticsearch', nid=self.masternid, timeout=5)
-            if eshealth['state'] == 'TIMEOUT':
-                self._addError(self.masternid, {'state': 'TIMEOUT'}, 'elasticsearch')
-                errormessage = 'ElasticSearch status TIMEOUT'
-            elif eshealth['state'] != 'OK':
-                self._addError(self.masternid, {'state': 'UNKNOWN'}, 'elasticsearch')
-                errormessage = 'ElasticSearch status UNKNOWN'
-            else:
-                eshealth = eshealth['result']
-                if eshealth==None:
-                    self._addError(self.masternid,"elasticsearch did not return info for healthcheck","elasticsearch")
-                    return self._status, self._errors
-                size, unit = j.tools.units.bytes.converToBestUnit(eshealth['size'])
-                eshealth['size'] = '%.2f %sB' % (size, unit)
-                size, unit = j.tools.units.bytes.converToBestUnit(eshealth['memory_usage'])
-                eshealth['memory_usage'] = '%.2f %sB' % (size, unit)
-
-                if eshealth['health']['status'] in ['red']:
-                    self._addError(self.masternid, eshealth, 'elasticsearch')
-                    errormessage = 'ElasticSearch status is RED'
-                else:
-                    self._addResult(self.masternid, eshealth, 'elasticsearch')
-        if errormessage:
-            self._addError(self.masternid, errormessage, 'elasticsearch')
-        if clean:
-            return self._status, self._errors
-
-    def checkDBs(self, clean=True):
-        if self._nids==[]:
-            self.getNodes()
-        if clean:
-            self._clean()
-        errormessage = ''
-        nid = j.application.whoAmI.nid
-        dbhealth = self._client.executeJumpscript('jumpscale', 'info_gather_db', nid=nid, gid=self._nodegids[nid], timeout=5)
-        dbhealth = dbhealth['result']
-        if dbhealth == None:
-            self._addError(nid, {'state': 'UNKNOWN'}, 'databases')
-            errormessage = 'Database statuses UNKNOWN'
-        else:
-            for dbname, status in list(dbhealth.items()):
-                if status:
-                    self._addResult(nid, status, dbname)
-                else:
-                    self._addError(nid, {'state': 'UNKNOWN'}, dbname)
-                    errormessage = '%s status UNKNOWN' % dbname.capitalize()
-        if errormessage:
-            self._addError(nid, errormessage, 'databases')
-        if clean:
-            return self._status, self._errors
-
-
-    def checkRedisAllNodes(self, clean=True):
-        if clean:
-            self._clean()
-        if self._nids==[]:
-            self.getNodes()
-        print(("CHECKING REDIS ON %s NODE(S)..." % len(self._runningnids)))
-        if clean:
-            self._clean()
-        self._parallelize(self.checkRedis, False, 'redis')
-        if clean:
-            return self._status, self._errors
-
     def getWikiStatus(self, status):
         colormap = {'RUNNING': 'green', 'HALTED': 'red', 'UNKNOWN': 'orange', 'ERROR': 'red',
                 'BROKEN': 'red', 'OK': 'green', 'NOT OK': 'red', 'WARNING': 'orange'}
         return '{color:%s}*%s*{color}' % (colormap.get(status, 'orange'), status)
-
-    def checkRedis(self, nid, clean=True):
-        if clean:
-            self._clean()
-        results = list()
-        errors = list()
-        errormessage = list()
-        result = self._client.executeJumpscript('jumpscale', 'info_gather_redis', nid=nid, gid=self._nodegids[nid], timeout=5)
-        redis = result['result']
-        if result['state'] != 'OK' or not redis:
-            errors.append((nid, {'state': 'UNKNOWN'}, 'redis'))
-            errormessage.append('Redis state UNKNOWN')
-            redis = dict()
-
-        for port, result in list(redis.items()):
-            size, unit = j.tools.units.bytes.converToBestUnit(result['memory_usage'])
-            msize, munit = j.tools.units.bytes.converToBestUnit(result['memory_max'])
-            result['memory_usage'] = '%.2f %sB' % (size, unit)
-            result['memory_max'] = '%.2f %sB' % (msize, munit)
-            result['port'] = port
-            if result['state'] == 'RUNNING':
-                results.append((nid, result, 'redis'))
-            else:
-                errormessage.append('Redis port "%(port)s" is %(state)s. Memory usage = %(memory_usage)s/ %(memory_max)s' % result)
-                errors.append((nid, result, 'redis'))
-        if errormessage:
-            errors.append((nid, ','.join(errormessage), 'redis'))
-        self._returnResults(results, errors)
-        return results, errors
-
-    def checkWorkersAllNodes(self,clean=True):
-        if self._nids==[]:
-            self.getNodes()
-        if clean:
-            self._clean()
-        print(("CHECKING WORKERS ON %s NODE(S)..." % len(self._runningnids)))
-        self._parallelize(self.checkWorkers, False, 'workers')
-        if clean:
-            return self._status, self._errors
-
-    def checkWorkers(self, nid, clean=True):
-        if clean:
-            self._clean()
-        results = list()
-        errors = list()
-        errormessage = list()
-        result = self._client.executeJumpscript('jumpscale', 'workerstatus', nid=nid, gid=self._nodegids[nid], timeout=30)
-        workers = result['result']
-        if result['state'] != 'OK' or not workers:
-            errors.append((nid, {'state':'UNKNOWN', 'mem': '0 B'}, 'workers'))
-            errormessage.append('Workers status UNKNOWN')
-            workers = dict()
-
-        for worker, stats in list(workers.items()):
-            stats['name'] = worker
-            if stats['state'] == 'RUNNING':
-                results.append((nid, stats, 'workers'))
-            else:
-                statsmod = stats.copy()
-                statsmod['lastactive'] = j.base.time.epoch2HRDateTime(stats['lastactive']) if stats['lastactive'] else 'never'
-                errormessage.append('%(name)s is %(state)s. Last active: %(lastactive)s.' % statsmod)
-                errors.append((nid, stats, 'workers'))
-        if errormessage:
-            errors.append((nid, ','.join(errormessage), 'workers'))
-        self._returnResults(results, errors)
-        return results, errors
 
     def checkProcessManagerAllNodes(self, clean=True):
         if clean:
@@ -436,7 +282,7 @@ class GridHealthChecker(object):
             return self._status
 
 
-    def checkHeartbeatsAllNodes(self, clean=True, nid=None):
+    def checkHeartbeat(self, clean=True, nid=None):
         if clean:
             self._clean()
         if self._nids==[]:
@@ -452,7 +298,6 @@ class GridHealthChecker(object):
             if heartbeat['nid'] not in self._nids and  heartbeat['nid']  not in self._nidsNonActive:
                 self._addResult(heartbeat['nid'], {'message': "Found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'], 
                                 'state': 'ERROR'}, "Heartbeat")
-                # self._addError(heartbeat['nid'], "found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'],"heartbeat")
 
         nid2hb = dict([(x['nid'], x['lastcheck']) for x in heartbeats])
         for nid in self._nids:
@@ -488,16 +333,6 @@ class GridHealthChecker(object):
             self._addError(nid, {'state': 'UNKNOWN'}, 'processmanager')
         return self._status, self._errors
 
-    def checkDisksAllNodes(self, clean=True):
-        if clean:
-            self._clean()
-        if self._nids==[]:
-            self.getNodes()
-        print(("CHECKING DISKS ON %s NODE(S)..." % len(self._runningnids)))
-        self._parallelize(self.checkDisks, False, 'disks')
-        if clean:
-            return self._status, self._errors
-
     def pingAllNodesSync(self, clean=True):
         if clean:
             self._clean()
@@ -505,16 +340,7 @@ class GridHealthChecker(object):
             self.getNodes()
         print(("PROCESS MANAGER PING TO ALL (%s) NODES..." % len(self._nids)))
         self._parallelize(self.ping, False, 'processmanagerping')
-        return self._status
-
-    def pingAllNodesAsync(self, clean=True):
-        if self._nids==[]:
-            self.getNodes()
-        if clean:
-            self._clean()
-        print(("WORKER PING TO %s NODE(S)..." % len(self._runningnids)))
-        self._parallelize(self.pingasync, False, 'workerping')
-        return self._status, self._errors        
+        return self._status  
 
     def ping(self,nid,clean=True):
         if clean:
@@ -528,50 +354,26 @@ class GridHealthChecker(object):
         self._returnResults(results)
         return results
 
-    def pingasync(self,nid,clean=True):
+    def checkDBs(self, clean=True):
+        if self._nids==[]:
+            self.getNodes()
         if clean:
             self._clean()
-        results = list()
-        errors = list()
-        result = self._client.executeJumpscript('jumpscale', 'echo_async', args={"msg":"ping"}, nid=nid, gid=self._nodegids[nid], timeout=5)
-        if not result["result"]=="ping":
-            errors.append((nid, {'ping': 'down'}, 'workerping'))
-            errors.append((nid, 'cannot ping workers', 'workerping'))
-        self._returnResults(results, errors)
-        return results, errors
-
-    def checkDisks(self, nid, clean=True):
-        if clean:
-            self._clean()
-        results = list()
-        errors = list()
-        errormessage = list()
-        result = self._client.executeJumpscript('jumpscale', 'check_disks', nid=nid, gid=self._nodegids[nid], timeout=30)
-        disks = result['result']
-        if result['state'] != 'OK':
-            errors.append((nid, {'state': 'UNKNOWN'}, 'disks'))
-            errormessage.append('Disks status UNKNOWN.')
-            disks = dict()
+        errormessage = ''
+        nid = j.application.whoAmI.nid
+        dbhealth = self._client.executeJumpscript('jumpscale', 'info_gather_db', nid=nid, gid=self._nodegids[nid], timeout=5)
+        dbhealth = dbhealth['result']
+        if dbhealth == None:
+            errormessage = 'Database statuses UNKNOWN'
+            self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'databases')
         else:
-            if not disks:
-                disks = dict()
-        for path, disk in list(disks.items()):
-            disk['path'] = path
-            if (disk['free'] and disk['size']) and (disk['free'] / float(disk['size'])) * 100 < 10:
-                disk['message'] = 'FREE SPACE LESS THAN 10%% on disk %s' % path
-                disk['state'] = 'NOT OK'
-                errors.append((nid, {path: disk}, 'disks'))
-                errormessage.append('Disk %(path)s is %(state)s. %(message)s.' % disk)
-            else:
-                if disk['free']:
-                    size, unit = j.tools.units.bytes.converToBestUnit(disk['free'], 'M')
-                    disk['message'] = '%.2f %siB free space available' % (size, unit)
-
+            for dbname, status in list(dbhealth.items()):
+                if status:
+                    self._addResult(nid, {'message': '%s is alive' % dbname, 'state': 'OK', 'lastchecked': j.base.time.getTimeEpoch()}, 'databases')
                 else:
-                    disk['message'] = 'Disk is not mounted, Info is not available'
-                disk['state'] = 'OK'
-                results.append((nid, disk, 'disks'))
+                    errormessage = '%s status UNKNOWN' % dbname.capitalize()
+                    self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'databases')
         if errormessage:
-            errors.append((nid, ','.join(errormessage), 'disks'))
-        self._returnResults(results, errors)
-        return results, errors
+            self._addResult(nid, {'message': errormessage, 'state': 'ERROR'}, 'databases')
+        if clean:
+            return self._status
