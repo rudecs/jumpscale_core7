@@ -93,7 +93,9 @@ class RemoteService(Service):
         """
         execute cmd on service
         """
-        self.actions.executeaction(self, actionname="cmd", cmd=self.cmd)
+        if cmd is None:
+            cmd = self.cmd
+        return self.actions.execute(self, cmd=cmd)
 
     def uninstall(self, deps=True, processed={}):
         self.actions.executeaction(self, actionname="uninstall")
