@@ -21,14 +21,14 @@ class NodeMonitor(NodeBase):
         if j.tools.perftesttools.monitorNodeIp is None:
             raise RuntimeError("please do j.tools.perftesttools.init() before calling this")
 
-        env["redishost"]=j.tools.perftesttools.monitorNodeIp
-        env["redisport"]=9999
-        env["idbhost"]="localhost" #influxdb
-        env["idbport"]=8086
-        env["idblogin"]="root"
-        env["idbpasswd"]="root"
-        env["testname"]=j.tools.perftesttools.testname
-        #this remotely let the influx pump work: brings data from redis to influx
+        env["redishost"] = j.tools.perftesttools.monitorNodeIp
+        env["redisport"] = 9999
+        env["idbhost"] = j.tools.perftesttools.monitorNodeIp  # influxdb
+        env["idbport"] = 8086
+        env["idblogin"] = "root"
+        env["idbpasswd"] = "root"
+        env["testname"] = j.tools.perftesttools.testname
+        # this remotely let the influx pump work: brings data from redis to influx
 
         self.prepareTmux("mgmt", ["influxpump", "mgmt"])
         self.executeInScreen("influxpump", "js 'j.tools.perftesttools.influxpump()'", env=env, session="mgmt")
