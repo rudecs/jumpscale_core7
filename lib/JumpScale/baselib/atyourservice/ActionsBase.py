@@ -1,6 +1,7 @@
 from JumpScale import j
 import JumpScale.baselib.screen
 import os
+import time
 import signal
 
 CATEGORY = "atyourserviceAction"
@@ -187,9 +188,12 @@ class ActionsBase():
 
         def stop_process(process, nbr=None):
             currentpids = (os.getpid(), os.getppid())
-            for pid in self.get_pids(serviceobj,[process]):
-                if pid not in currentpids :
+            pids = set(self.get_pids(serviceobj,[process])) - set(currentpids)
+            now = time.time()
+            while pids and now + 60 > time.time():
+                for pid in pids:
                     j.system.process.kill(pid, signal.SIGTERM)
+                pids = set(self.get_pids(serviceobj, [process])) - set(currentpids)
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(serviceobj, process)

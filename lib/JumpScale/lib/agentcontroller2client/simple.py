@@ -3,6 +3,7 @@ import json
 import re
 import inspect
 from StringIO import StringIO
+import collections
 from JumpScale import j
 
 import acclient
@@ -10,9 +11,11 @@ import acclient
 
 STATE_UNKNOWN = 'UNKNOWN'
 STATE_SUCCESS = 'SUCCESS'
-STATE_TIMEDOUT = 'TIMEDOUT'
+STATE_TIMEDOUT = 'TIMEOUT'
 
 RESULT_JSON = 20
+
+ResultTuple = collections.namedtuple('ResultTuple', 'status stdout stderr')
 
 
 class Agent(object):
@@ -153,7 +156,22 @@ class Result(object):
         return self._job.data
 
     @property
-    def error(self):
+    def eco(self):
+        """
+        Any error condition object attached to this job
+        """
+        critical = self._job.critical
+        if critical:
+            d = json.loads(critical)
+            return j.errorconditionhandler.getErrorConditionObject(d)
+        elif self.state == STATE_TIMEDOUT:
+            return j.errorconditionhandler.getErrorConditionObject(msg='Timedout waiting for job')
+        elif self.state != STATE_SUCCESS:
+            return j.errorconditionhandler.getErrorConditionObject(msg=self._error)
+        return None
+
+    @property
+    def _error(self):
         """
         The error message or the process stderr
         """
@@ -196,7 +214,7 @@ class Peer(object):
         """
         Tries to find if this peer is insync with the share. This is not 100%
         reliable because syncthing only detect changes every rescan cycle which
-        cat take up to a minute.
+        can take up to a minute.
         """
         need = self._sync_client._get_need(self.gid, self.nid, self._share.name)
         if need['progress'] or need['queued'] or need['rest']:
@@ -284,12 +302,20 @@ class Share(object):
     @property
     def insync(self):
         """
-        Trys to detect if all peers are in sync with this share.
+        Tries to find if this peer is insync with the share. This is not 100%
+        reliable because syncthing only detect changes every rescan cycle which
+        can take up to a minute.
         """
         for peer in self.peers:
             if not peer.insync:
                 return False
         return True
+
+    def scan(self, sub=None):
+        """"
+        Force rescan of share
+        """""
+        self._sync_client.scan(self.gid, self.nid, self.name, sub)
 
     @property
     def ignore(self):
@@ -382,6 +408,26 @@ class SyncClient(object):
         command = self._client.cmd(gid, nid, 'sync', args=runargs, data=json.dumps(data))
         job = command.get_next_result(SyncClient.API_TIMEOUT)
         return self._client._load_json_or_die(job)
+
+    def scan(self, gid, nid, name, sub=None):
+        """
+        Rescan folder
+
+        :param gid: Grid id
+        :param nid: Node id
+        :param name: Share name
+        :param sub: Subfolder to scan in
+        :return:
+        """
+        data = {
+            'name': name,
+            'sub': sub,
+        }
+
+        runargs = acclient.RunArgs(name='scan_share', max_time=SyncClient.API_TIMEOUT)
+        command = self._client.cmd(gid, nid, 'sync', args=runargs, data=json.dumps(data))
+        job = command.get_next_result(SyncClient.API_TIMEOUT)
+        self._client._load_json_or_die(job)
 
     def create_share(self, gid, nid, name, path, readonly=True, ignore=[]):
         """
@@ -494,7 +540,7 @@ class SimpleClient(object):
         else:
             # single job
             _, _, state, stdout, stderr = jobs.pop()
-            return state, stdout, stderr
+            return ResultTuple(state, stdout, stderr)
 
     def execute(self, cmd, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, data=None):
         """
@@ -582,19 +628,16 @@ class SimpleClient(object):
             state = STATE_UNKNOWN
             try:
                 job.wait(timeout)
-                state = job.state
             except acclient.ResultTimeout:
                 if die:
                     raise
-                state = STATE_TIMEDOUT
+                job._jobdata['state'] = STATE_TIMEDOUT
+
+            state = job.state
 
             if state != STATE_SUCCESS and die:
-                stderr = job.streams[1]
-                error = stderr or job.data
-                raise acclient.AgentException(
-                    'Job on agent {job.gid}.{job.nid} failed with status: "{job.state}" and message: "{error}"'.format(
-                        job=job, error=error)
-                )
+                r = Result(job)
+                raise r.eco
 
             results.append(Result(job))
 
@@ -638,18 +681,14 @@ class SimpleClient(object):
                                                       args=args, runargs=runargs, roles=roles, fanout=fanout)
         else:
             # call the unexposed jumpscript_content extension manually
-            runargs = runargs.update({'name': path})
             if method:
                 content = self._getFuncCode(method)
             elif path:
                 content = j.system.fs.fileGetContents(path)
 
-            data = {
-                'content': content,
-                'args': args
-            }
-            command = self._client.cmd(gid=gid, nid=nid, cmd='jumpscript_content', args=runargs,
-                                       data=json.dumps(data), roles=roles, fanout=fanout)
+            command = self._client.execute_jumpscript_content(
+                gid, nid, content, args=args, runargs=runargs, roles=roles, fanout=fanout
+            )
 
         return command.get_jobs().values()
 

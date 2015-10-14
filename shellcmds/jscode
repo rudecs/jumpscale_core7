@@ -8,21 +8,6 @@ from JumpScale.baselib import cmdutils
 # import sys
 # import time
 
-SSH_AGENT_SCRIPT = """
-ssh-add -l &>/dev/null
-if [ "$?" == 2 ]; then
-  test -r ~/.ssh-agent && \
-    eval "$(<~/.ssh-agent)" >/dev/null
-
-  ssh-add -l &>/dev/null
-  if [ "$?" == 2 ]; then
-    (umask 066; ssh-agent > ~/.ssh-agent)
-    eval "$(<~/.ssh-agent)" >/dev/null
-    ssh-add
-  fi
-fi
-"""
-
 j.application.start("jscode2")
 
 parser = cmdutils.ArgumentParser()
@@ -65,27 +50,39 @@ if opts.branch is not None and opts.action in ['status']:
     raise RuntimeError("Cannot specify branch when asking status")
 
 
-repos = j.clients.git.find(opts.accounts, opts.name, interactive=True, returnGitClient=True)
-
-
-repos = [(r.type, r.account, r.name, r.branchName, r, r.baseDir) for r in repos]
-
 if opts.action == 'init':
-    key_path = os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
-    if not os.path.exists(key_path):
-        os.system('ssh-keygen -f %s' % key_path)
+    # key_path = os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
+    # if not os.path.exists(key_path):
+    #     os.system('ssh-keygen -f %s' % key_path)
 
     username = raw_input('Git Username: ')
     email = raw_input('Git Email: ')
+    j.do.loadSSHAgent(createkeys=False,keyname=username)
     os.system('git config --global user.name "%s"' % username)
     os.system('git config --global user.email "%s"' % email)
 
-    with open('/etc/profile.d/ssh-agent.sh', 'w') as script:
-        script.write(SSH_AGENT_SCRIPT)
-        print 'Please logout and relogin for your ssh keys to be loaded'
+    # with open('/etc/profile.d/ssh-agent.sh', 'w') as script:
+    #     script.write(SSH_AGENT_SCRIPT)
+    print 'Please logout and relogin for your ssh keys to be loaded'
 
     sys.exit(0)
 
+# from IPython import embed;embed()
+repos = j.clients.git.find(opts.accounts, opts.name, interactive=True, returnGitClient=True)
+
+repos = [(r.type, r.account, r.name, r.branchName, r, r.baseDir) for r in repos]
+
+
+C="""
+Host *
+   StrictHostKeyChecking no
+   UserKnownHostsFile=/dev/null
+"""
+
+if j.system.platformtype.isLinux():
+    path=j.system.fs.joinPaths(os.environ["HOME"],".ssh","config")
+    if not j.do.exists(path):
+        j.do.writeFile(path,C)
 
 if opts.action == "status":
     print ("\n\nSTATUS: account reponame                  " +
@@ -112,14 +109,16 @@ for provider, account, reponame, branch, client, path in repos:
 
     if opts.action == "update" and opts.deletechanges:
         print(("force update %s/%s/%s" % (provider, account, reponame)))
-        client.pull()
-        client.update(force=True)
+        cmd = 'cd %s; git checkout .' % path
+        j.do.execute(cmd)
+        j.do.pullGitRepo(url=client.remoteUrl)
+        # client.update(force=True)
         continue
 
     if opts.action == "get":
-        cmd = "git config --global push.default matching"
-        j.do.execute(cmd)
-        j.do.pullGitRepo(opts.url, dest=None, depth=None,
+        # cmd = "git config --global push.default matching"
+        # j.do.execute(cmd)
+        j.do.pullGitRepo(client.remoteUrl, dest=None, depth=None,
                          ignorelocalchanges=opts.deletechanges, reset=False, branch=opts.branch)
         continue
 
@@ -183,7 +182,6 @@ for provider, account, reponame, branch, client, path in repos:
                     print(("    - %s" % (subitem)))
 
     if opts.action in ['commit', 'update']:
-
         if nrmods > 0:
             if opts.message is None:
                 message = j.console.askString("commit message")
@@ -195,7 +193,8 @@ for provider, account, reponame, branch, client, path in repos:
 
     if opts.update or opts.action == 'update':
         print("PULL")
-        client.pull()
+        j.do.pullGitRepo(url=client.remoteUrl)
+        # client.pull()
 
 
 j.application.stop()

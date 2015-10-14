@@ -12,22 +12,22 @@ from MonitorTools import *
 from Disk import *
 
 class NodeNas(NodeBase):
-    def __init__(self,ipaddr,sshport=22,nrdisks=0,fstype="xfs",debugdisk="",name=""): 
+    def __init__(self,ipaddr,sshport=22,nrdisks=0,fstype="xfs",debugdisk="",name="", mount_path='/tmp/dummyperftest'):
         NodeBase.__init__(self,ipaddr=ipaddr,sshport=sshport,role="nas",name=name)
-        
+
         self.debugdisk=debugdisk
         if self.debugdisk!="":
             self.debug=True
         self.disks=[]
         self.nrdisks=int(nrdisks)
         self.fstype=fstype
+        self.mount_path = mount_path
 
         self.initDisks()
 
+        self.perftester = PerfTestTools(self)
 
-        self.perftester=PerfTestTools(self)
-
-        disks=[item.devnameshort for item in self.disks]
+        disks = [item.devnameshort for item in self.disks]
         self.startMonitor(disks=disks)
 
         self.initTest()
@@ -45,7 +45,7 @@ class NodeNas(NodeBase):
             for i in range(self.nrdisks):
                 diskname="/dev/vd%s"%diskids[i]
                 disk=Disk(diskname,node=self,disknr=i+1,screenname="ptest%s"%(i))
-                self.disks.append(disk)            
+                self.disks.append(disk)
 
             #check mounts
             print "check disks are mounted and we find them all"
@@ -69,17 +69,19 @@ class NodeNas(NodeBase):
                     # raise RuntimeError("Could not find all disks mounted, disk %s not mounted on %s"%(disk,self))
 
 
-            print "all disks mounted"                    
+            print "all disks mounted"
 
-        else:            
-            i=0
-            disk=Disk(self.debugdisk)
-            self.disks.append(disk)            
-            disk.screenname="ptest%s"%i
-            disk.disknr=i+1
-            disk.mountpath="/tmp/dummyperftest/%s"%i
-            j.system.fs.createDir(disk.mountpath)
-            disk.node=self
+        else:
+            i = 0
+            disk = Disk(self.debugdisk)
+            self.disks.append(disk)
+            disk.screenname = "ptest%s"%i
+            disk.disknr = i+1
+            if self.mount_path != "":
+                disk.mountpath = self.mount_path
+            else:
+                disk.mountpath = j.system.fs.joinPaths(self.mount_path, i)
+            disk.node = self
 
     def findDisk(self,devname):
         for disk in self.disks:

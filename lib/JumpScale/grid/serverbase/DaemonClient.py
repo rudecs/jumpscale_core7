@@ -133,7 +133,7 @@ class DaemonClient(object):
         #print("registered session")
 
     def sendMsgOverCMDChannel(self, cmd, data,sendformat=None, returnformat=None, retry=0, maxretry=2, \
-        category=None,transporttimeout=5):
+        category=None,transporttimeout=None):
         """
         cmd is command on server (is asci text)
         data is any to be serialized data
@@ -257,7 +257,7 @@ class Klass(object):
                     params_spec[-cnt] += "=%r" % default
             args.append("_agentid=_agentid")
             params = ', '.join(params_spec)
-            params += ",transporttimeout=5"
+            params += ",transporttimeout=None"
             params += ",_agentid=0"
             strmethod = strmethod % (params, spec['doc'], key, ", ".join(args), )
             # try:
@@ -270,7 +270,7 @@ class Klass(object):
                 # print strmethod
         return client
 
-    def sendcmd(self, cmd, sendformat=None, returnformat=None, category=None,transporttimeout=5,**args):
+    def sendcmd(self, cmd, sendformat=None, returnformat=None, category=None,transporttimeout=None,**args):
         """
         formatstring is right order of formats e.g. mc means messagepack & then compress
         formats see: j.db.serializers.get(?
