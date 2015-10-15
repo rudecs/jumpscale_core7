@@ -18,7 +18,7 @@ class NodeNas(NodeBase):
         self.nrdisks = int(nrdisks)
         self.fstype = fstype
 
-        self.initDisks()
+        # self.initDisks()
 
         self.perftester = PerfTestTools(self)
 
@@ -64,7 +64,6 @@ class NodeNas(NodeBase):
 
                     # raise RuntimeError("Could not find all disks mounted, disk %s not mounted on %s"%(disk,self))
 
-
             print "all disks mounted"
 
         else:
@@ -73,10 +72,8 @@ class NodeNas(NodeBase):
             self.disks.append(disk)
             disk.screenname = "ptest%s"%i
             disk.disknr = i+1
-            if self.mount_path != "":
-                disk.mountpath = self.mount_path
-            else:
-                disk.mountpath = j.system.fs.joinPaths(self.mount_path, i)
+            disk.mountpath = "/tmp/dummyperftest/%s" % i
+            j.system.fs.createDir(disk.mountpath)
             disk.node = self
 
     def createLoopDev(self, size, backend_file):
@@ -99,16 +96,14 @@ class NodeNas(NodeBase):
         if dev == '':
             raise RuntimeError("fail to create loop dev on %s" % backend_file)
 
-        # mount new loop device to a directory
-
-        cmd = 'mkdir -p /mnt/perftest'
-
         # add new dev to known disks
         diskNr = len(self.disks)
         disk = Disk(dev, node=self, disknr=diskNr, screenname="ptest%s" % diskNr)
         disk.mountpath = dev
         self.disks.append(disk)
         self.nrdisks += 1
+
+        disk.initDiskXFS()
 
         # make sure tmux sessions exists
         self.initTest()

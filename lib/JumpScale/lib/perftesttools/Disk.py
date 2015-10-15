@@ -37,8 +37,7 @@ class Disk():
 
     def mount(self):
         print "mount:%s mounting %s on %s " % (self, self.devname, self.disknr
-        mountpath = 
-        self.node.ssh.execute("mkdir -p /storage/%s" % self.mountpath)
+        self.node.ssh.execute("mkdir -p /storage/%s" % self.disknr)
         self.node.ssh.execute("mount %s /storage/%s" % (self.devname,self.disknr), dieOnError=False)
 
 
