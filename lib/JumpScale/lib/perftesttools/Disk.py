@@ -36,8 +36,10 @@ class Disk():
         print "initxfs:%s done"%self
 
     def mount(self):
-        print "mount:%s mounting %s on %s " % (self, self.devname, self.disknr
-        self.node.ssh.execute("mkdir -p /storage/%s" % self.disknr)
+        print "mount:%s mounting %s on %s " % (self, self.devname, self.disknr)
+        if self.mountpath is None:
+            self.mountpath = '/storage/%s' % self.disknr
+	self.node.ssh.execute("mkdir -p /storage/%s" % self.disknr)
         self.node.ssh.execute("mount %s /storage/%s" % (self.devname,self.disknr), dieOnError=False)
 
 
