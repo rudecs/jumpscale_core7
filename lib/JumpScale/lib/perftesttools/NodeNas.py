@@ -80,26 +80,35 @@ class NodeNas(NodeBase):
         """
         size : size of the disk to create in MB
         """
-        # create backend file
-        count = int(size) * 1000
-        cmd = 'dd if=/dev/zero of=%s bs=1kB count=%d' % (backend_file, int(count))
-        self.execute(cmd, env={}, dieOnError=False, report=True)
+        def checkLoopExists(lines):
+            dev = ""
+            for line in lines.splitlines():
+                if line.find(backend_file):
+                    dev = line.split(':')[0]
+                    break
+            return dev
 
-        # create loop device
-        cmd = 'losetup -f %s;losetup -a' % backend_file
-        rc, out, err = self.execute(cmd, env={}, dieOnError=True, report=True)
-        dev = ""
-        for line in out.splitlines():
-            if line.find(backend_file):
-                dev = line.split(':')[0]
-                break
-        if dev == '':
-            raise RuntimeError("fail to create loop dev on %s" % backend_file)
+        # test if loop device existe already
+        cmd = "losetup -a"
+        rc, out, err = self.execute(cmd, env={}, dieOnError=False, report=True)
+        dev = checkLoopExists(out)
+        if dev == "":
+            # dont' exists yet
+            # create backend file
+            count = int(size) * 1000
+            cmd = 'dd if=/dev/zero of=%s bs=1kB count=%d' % (backend_file, int(count))
+            self.execute(cmd, env={}, dieOnError=False, report=True)
+
+            # create loop device
+            cmd = 'losetup -f %s;losetup -a' % backend_file
+            rc, out, err = self.execute(cmd, env={}, dieOnError=True, report=True)
+            dev = checkLoopExists(out)
+            if dev == '':
+                raise RuntimeError("fail to create loop dev on %s" % backend_file)
 
         # add new dev to known disks
         diskNr = len(self.disks)
         disk = Disk(dev, node=self, disknr=diskNr, screenname="ptest%s" % diskNr)
-        disk.mountpath = dev
         self.disks.append(disk)
         self.nrdisks += 1
 
