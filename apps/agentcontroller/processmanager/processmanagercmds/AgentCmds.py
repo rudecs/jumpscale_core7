@@ -10,7 +10,6 @@ class AgentCmds():
 
     def __init__(self,daemon=None):
         self._name="agent"
-        self._timeout = Timeout(65)
 
         if daemon==None:
             return
@@ -57,18 +56,16 @@ class AgentCmds():
             try:
                 try:
                     self.log("check if work")
-                    self._timeout.start()
-                    job = client.getWork()
+                    job = client.getWork(transporttimeout=65)
                     if job is not None:
                         self.log("WORK FOUND: jobid:%s" % job["id"])
                     else:
                         continue
                 except Exception, e:
+                    self.log('In exception %s' % e)
                     j.errorconditionhandler.processPythonExceptionObject(e)
                     client = self.reconnect(acip, config)
                     continue
-                finally:
-                    self._timeout.cancel()
 
                 job['achost'] = client.ipaddr
                 job['nid'] = j.application.whoAmI.nid

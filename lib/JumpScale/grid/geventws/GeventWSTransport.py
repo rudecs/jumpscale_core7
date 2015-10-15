@@ -29,7 +29,7 @@ class GeventWSTransport(Transport):
         """
         pass
 
-    def sendMsg(self, category, cmd, data, sendformat="", returnformat="",retry=True,timeout=60):
+    def sendMsg(self, category, cmd, data, sendformat="", returnformat="",retry=True,timeout=None):
         """
         overwrite this class in implementation to send & retrieve info from the server (implement the transport layer)
 
@@ -45,7 +45,7 @@ class GeventWSTransport(Transport):
         headers = {'content-type': 'application/raw'}
         data2 = j.servers.base._serializeBinSend(category, cmd, data, sendformat, returnformat, self._id)
         start=j.base.time.getTimeEpoch()
-        if self.timeout:
+        if timeout is None:
             timeout = self.timeout
         if retry:
             rcv=None
@@ -54,7 +54,7 @@ class GeventWSTransport(Transport):
                 if now>start+timeout:
                     break
                 try:
-                    rcv = requests.post(self.url, data=data2, headers=headers) #, timeout=timeout)
+                    rcv = requests.post(self.url, data=data2, headers=headers, timeout=timeout)
                 except Exception as e:
                     if str(e).find("Connection refused")!=-1:
                         print(("retry connection to %s"%self.url))
