@@ -47,11 +47,11 @@ class PerfTestToolsFactory(object):
 
 
 
-    def getNodeNAS(self, ipaddr,sshport=22,nrdisks=0,fstype="xfs", role='',debugdisk="",name="", mount_path=""):
+    def getNodeNAS(self, ipaddr,sshport=22,nrdisks=0,fstype="xfs", role='',debugdisk="",name=""):
         """
         @param debug when True it means we will use this for development purposes & not init & mount local disks
         """
-        n=NodeNas(ipaddr=ipaddr, sshport=sshport, nrdisks=nrdisks, fstype=fstype,debugdisk=debugdisk,name=name, mount_path=mount_path)
+        n=NodeNas(ipaddr=ipaddr, sshport=sshport, nrdisks=nrdisks, fstype=fstype,debugdisk=debugdisk,name=name)
         self.nodes.append(n)
         return n
 
