@@ -268,10 +268,8 @@ metadata.openvcloud            =
             temp = gitlaburl.split("/")
             repopath = '/opt/code/git/%s/%s' % (temp[3], temp[4])
             
-            print '[+] resuming setup'
             # FIXME
-            cl.run('cd %s; wget http://arya.maxux.net/temp/gig/aio.py -O aio.py' % repopath)
-            # cl.run('cd %s; jspython setup.py' % (repopath, args))
+            print '[+] resuming setup'
 
         # cl.fabric.api.open_shell()
 
