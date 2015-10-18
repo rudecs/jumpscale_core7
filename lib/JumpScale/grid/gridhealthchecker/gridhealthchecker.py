@@ -4,6 +4,7 @@ import JumpScale.grid.osis
 import JumpScale.baselib.units
 import gevent
 import json
+import time
 
 class GridHealthChecker(object):
 
@@ -13,6 +14,7 @@ class GridHealthChecker(object):
             self._osiscl = j.clients.osis.getByInstance('main')
         self._nodecl = j.clients.osis.getCategory(self._osiscl, 'system', 'node')
         self._jobcl = j.clients.osis.getCategory(self._osiscl, 'system', 'job')
+        self._jumpscriptcl = j.clients.osis.getCategory(self._osiscl, 'system', 'jumpscript')
         self._runningnids = list()
         self._nids = list()
         self._nodenames = dict()
@@ -140,8 +142,8 @@ class GridHealthChecker(object):
         if activecheck:
             self._checkRunningNIDsFromPing()
 
-    def mapJumpscriptsToJobs(self):
-        return [(domain, name) for _, domain, name, _ in self._client.listJumpscripts(cat='monitor.healthcheck')]
+    def getHealthCheckJumpScripts(self):
+        return [self._jumpscriptcl.get(jsid) for jsid, _, _, _ in self._client.listJumpscripts(cat='monitor.healthcheck')]
 
     def runOnAllNodes(self):
         self._clean()
@@ -211,16 +213,23 @@ class GridHealthChecker(object):
 
     def fetchMonitoringOnNode(self, nid, clean=True):
         results = list()
+        now = time.time()
         if clean:
             self._clean()
         self.checkHeartbeat(nid=nid, clean=False)
+        jumpscripts = self.getHealthCheckJumpScripts()
 
-        maps = self.mapJumpscriptsToJobs()
-        domains = list({domain for domain, _ in maps})
-        names = list({name for _, name in maps})
+        def getJumpScript(organization, name):
+            for js in jumpscripts:
+                if js.name == name and js.organization == organization:
+                    return js
+
+        domains = list({js.organization for js in jumpscripts})
+        names = list({js.name for js in jumpscripts})
         query = [{'$match': {'nid': nid, 'cmd': {'$in': names}, 'category': {'$in': domains}}},
                  {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 
                                             'jobstatus': {'$last': '$state'},
+                                            'category': {'$last': '$category'},
                                             'lastchecked': {'$last': '$timeStop'},
                                             'started': {'$last': '$timeStart'}}}]
 
@@ -228,15 +237,21 @@ class GridHealthChecker(object):
 
         if isinstance(jobsresults, list):
             for jobresult in jobsresults:
+                jumpscript = getJumpScript(jobresult['category'], jobresult['_id'])
                 jobstate = jobresult.get('jobstatus', 'ERROR')
                 lastchecked = jobresult.get('lastchecked', 0)
                 lastchecked = int(lastchecked) if lastchecked and int(lastchecked) else jobresult.get('started', 0)
                 result = json.loads(jobresult.get('result', '[{"message":""}]')) or {}
                 if jobstate == 'OK':
-
                     for data in result:
-                        results.append((nid, {'message': data.get('message', ''), 'state': data.get('state', ''), 'lastchecked': lastchecked},
-                                        data.get('category', jobresult.get('_id'))))
+                        state = data.get('state', '')
+                        if jumpscript.period and now - lastchecked > (jumpscript.period * 1.1):
+                            if state != 'ERROR':
+                                state = 'EXPIRED'
+                        resdata = {'message': data.get('message', ''),
+                                   'state': state,
+                                   'lastchecked': lastchecked}
+                        results.append((nid, resdata, data.get('category', jobresult.get('_id'))))
                     if not result:
                         results.append((nid, {'message': '', 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
                 else:
@@ -273,7 +288,8 @@ class GridHealthChecker(object):
 
     def getWikiStatus(self, status):
         colormap = {'RUNNING': 'green', 'HALTED': 'red', 'UNKNOWN': 'orange', 'ERROR': 'red',
-                'BROKEN': 'red', 'OK': 'green', 'NOT OK': 'red', 'WARNING': 'orange'}
+                    'BROKEN': 'red', 'OK': 'green', 'NOT OK': 'red', 'WARNING': 'orange',
+                    'EXPIRED': 'orange'}
         return '{color:%s}*%s*{color}' % (colormap.get(status, 'orange'), status)
 
     def checkProcessManagerAllNodes(self, clean=True):
@@ -333,24 +349,6 @@ class GridHealthChecker(object):
                     self._addResult(nid, {'message': "Found heartbeat node when not in grid nodes.", 'state':'ERROR'}, "JSAgent")
         if clean:
             return self._status
-
-    def checkProcessManager(self, nid, clean=True):
-        """
-        Check heartbeat on specified node, see if result came in osis
-        """
-        if clean:
-            self._clean()
-        gid = self.getGID(nid)
-        if self._heartbeatcl.exists('%s_%s' % (gid, nid)):
-            heartbeat = self._heartbeatcl.get('%s_%s' % (gid, nid))
-            lastchecked = heartbeat.lastcheck
-            if  j.base.time.getEpochAgo('-2m') < lastchecked:
-                self._addResult(nid, {'state': 'RUNNING'}, 'processmanager')
-            else:
-                self._addError(nid, {'state': 'HALTED'}, 'processmanager')
-        else:
-            self._addError(nid, {'state': 'UNKNOWN'}, 'processmanager')
-        return self._status, self._errors
 
     def checkDBs(self, clean=True):
         if self._nids==[]:
