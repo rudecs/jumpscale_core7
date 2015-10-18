@@ -27,12 +27,21 @@ class Disk():
         elif res.find("xfs")==-1:
             #did find but no xfs
             self.node.ssh.execute("mkfs.xfs -f /dev/%s"%self.devnameshort)
-        self.node.ssh.execute("mkdir -p /storage/%s"%self.disknr)
-        self.node.ssh.execute("mount %s /storage/%s"%(self.devname,self.disknr), dieOnError=False)
+
+        self.mount()
+
         print "initxfs:%s check mount"%self
         if not self.checkMount():
             raise RuntimeError("could not mount %s"%self)
         print "initxfs:%s done"%self
+
+    def mount(self):
+        print "mount:%s mounting %s on %s " % (self, self.devname, self.disknr)
+        if self.mountpath is None:
+            self.mountpath = '/storage/%s' % self.disknr
+        self.node.ssh.execute("mkdir -p /storage/%s" % self.disknr)
+        self.node.ssh.execute("mount %s /storage/%s" % (self.devname,self.disknr), dieOnError=False)
+
 
     def checkMount(self):
         rc,result,err=self.node.ssh.execute("mount")

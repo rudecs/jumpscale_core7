@@ -226,6 +226,12 @@ if args.action == 'console':
     j.remote.cuisine.fabric.env['remote_interrupt'] = True
     target.execute(deps=False)
 
+elif args.action == 'execute':
+    target = getTarget(args)
+    if not target:
+        raise RuntimeError('No target with targettype "%s" and targetname "%s" was found' % (args.targettype, args.targetname))
+    target.execute(cmd=args.cmd, deps=args.deps)
+
 elif args.action == 'hrdpath':
     print j.dirs.getHrdDir()
 
@@ -324,10 +330,6 @@ else:
             except:
                 continue
 
-    elif args.action == 'execute':
-        for service in sorted(services, cmp=sorter):
-            service.args['cmd'] = args.cmd
-            service.execute(deps=args.deps)
 
     elif args.action == 'build':
         templates = getTemplates(args, filterRemote=args.local)

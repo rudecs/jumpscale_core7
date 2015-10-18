@@ -28,7 +28,7 @@ def action():
         import json
 
     rediscl = j.clients.credis.getRedisClient('127.0.0.1', 9999)
-    results, errors = j.core.grid.healthchecker.runAll()
+    results, errors = j.core.grid.healthchecker.runOnAllNodesByCategory()
     rediscl.hset('healthcheck:monitoring', 'results', json.dumps(results))
     rediscl.hset('healthcheck:monitoring', 'errors', json.dumps(errors))
     rediscl.hset('healthcheck:monitoring', 'lastcheck', time.time())

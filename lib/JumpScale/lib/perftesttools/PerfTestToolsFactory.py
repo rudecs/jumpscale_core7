@@ -26,7 +26,7 @@ class PerfTestToolsFactory(object):
         self.nodes=[]
         self.sshkey=None
 
-    def init(self,testname,monitorNodeIp, sshPort, redispasswd="",sshkey=None):
+    def init(self, testname, monitorNodeIp, sshPort, redispasswd="", sshkey=None):
         """
         sshkey can be path to key or the private key itself
         the goal is you use ssh-agent & your keys pre-loaded, best not to manually work with keys !!!
@@ -54,7 +54,7 @@ class PerfTestToolsFactory(object):
         n=NodeNas(ipaddr=ipaddr, sshport=sshport, nrdisks=nrdisks, fstype=fstype,debugdisk=debugdisk,name=name)
         self.nodes.append(n)
         return n
-        
+
     def getNodeHost(self, ipaddr,sshport=22,name=""):
         n=NodeHost(ipaddr,sshport,name=name)
         self.nodes.append(n)
@@ -81,19 +81,19 @@ class PerfTestToolsFactory(object):
     def monitor(self):
         """
         will do monitoring & send results to redis, env is used to get config parameters from
-        """        
+        """
         nodename=os.environ["nodename"]
         if nodename=="":
             nodename=j.do.execute("hostname")[1].strip()
-            
+
         net=os.environ["net"]=='1'
         disks=[item.strip() for item in os.environ["disks"].split(",") if item.strip()!=""]
-        
+
         cpu=os.environ["cpu"]=='1'
         redis=j.clients.redis.getRedisClient(os.environ["redishost"], os.environ["redisport"])
 
         m=MonitorTools(redis,nodename)
-        m.startMonitorLocal(disks,cpu,net)        
+        m.startMonitorLocal(disks,cpu,net)
 
     def influxpump(self):
         """
@@ -103,4 +103,4 @@ class PerfTestToolsFactory(object):
         redis=j.clients.redis.getRedisClient(os.environ["redishost"], os.environ["redisport"])
         d=InfluxDumper(os.environ["testname"],redis)
         d.start()
-        
+

@@ -1467,14 +1467,31 @@ class InstallTools():
         protocol, repository_host, repository_account, repository_name, repository_url = self.rewriteGitRepoUrl(url=url,login=login,passwd=passwd)
 
         repository_type = repository_host.split('.')[0] if '.' in repository_host else repository_host
+        
+        # strip username/password on type if exists
+        if "@" in repository_type and ":"in  repository_type:
+            repository_type = repository_type.rsplit('@', 1)[1]
 
         if not dest:
             dest = '%(codedir)s/%(type)s/%(account)s/%(repo_name)s' % {
                 'codedir': self.CODEDIR,
                 'type': repository_type.lower(),
-                'account': repository_account.lower(),
+                'account': repository_account,
                 'repo_name': repository_name[:-4].lower(),  # Remove the trailling '.git'
             }
+            
+            # warning: workaround for jumpscale setup
+            # needt to be fixed, but no idea how
+            if not self.isDir(dest):
+                newdest = '%(codedir)s/%(type)s/%(account)s/%(repo_name)s' % {
+                    'codedir': self.CODEDIR,
+                    'type': repository_type.lower(),
+                    'account': repository_account.lower(),
+                    'repo_name': repository_name[:-4].lower(),  # Remove the trailling '.git'
+                }
+                
+                if self.isDir(newdest) or repository_account.lower() == "jumpscale":
+                    dest = newdest
 
         if reset:
             self.delete(dest)

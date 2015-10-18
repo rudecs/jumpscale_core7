@@ -21,7 +21,7 @@ class NodeBase(MonitorTools):
         - host
 
         """
-        
+
         if  j.tools.perftesttools.monitorNodeIp==None:
             raise RuntimeError("please do j.tools.perftesttools.init() before calling this")
         print "connect redis: %s:%s"%(j.tools.perftesttools.monitorNodeIp, 9999)
@@ -44,11 +44,9 @@ class NodeBase(MonitorTools):
 
         self.role=role
 
-
-
     def startMonitor(self,cpu=1,disks=[],net=1):
-        disks=[str(disk) for disk in disks]
-        self.prepareTmux("mon%s"%self.role,["monitor"])      
+        disks = [str(disk) for disk in disks]
+        self.prepareTmux("mon%s"%self.role,["monitor"])
         env={}
         if  j.tools.perftesttools.monitorNodeIp==None:
             raise RuntimeError("please do j.tools.perftesttools.init() before calling this")
@@ -58,12 +56,12 @@ class NodeBase(MonitorTools):
         env["disks"]=",".join(disks)
         env["net"]=net
         env["nodename"]=self.name
-        self.executeInScreen("monitor","js 'j.tools.perftesttools.monitor()'",env=env)    
+        self.executeInScreen("monitor","js 'j.tools.perftesttools.monitor()'",env=env)
 
     def execute(self,cmd, env={},dieOnError=True,report=True):
         if report:
             print cmd
-        
+
         return self.ssh.execute(cmd, dieOnError=dieOnError)
         # if dieOnError:
         #     self.fabric.env['warn_only'] = True
@@ -109,7 +107,7 @@ class NodeBase(MonitorTools):
 
     def _initFabriclient(self):
         c = j.remote.cuisine
-        self.fabric = c.fabric        
+        self.fabric = c.fabric
 
         if self.key:
             self.fabric.env["key"] = self.key

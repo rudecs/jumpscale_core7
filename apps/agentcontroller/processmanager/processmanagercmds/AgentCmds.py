@@ -10,7 +10,6 @@ class AgentCmds():
 
     def __init__(self,daemon=None):
         self._name="agent"
-        self._timeout = Timeout(65)
 
         if daemon==None:
             return
@@ -57,18 +56,16 @@ class AgentCmds():
             try:
                 try:
                     self.log("check if work")
-                    self._timeout.start()
-                    job = client.getWork()
+                    job = client.getWork(transporttimeout=65)
                     if job is not None:
-                        self.log("WORK FOUND: jobid:%s" % job["id"])
+                        self.log("WORK FOUND: jobid:%(id)s cmd:%(cmd)s" % job)
                     else:
                         continue
                 except Exception, e:
+                    self.log('In exception %s' % e)
                     j.errorconditionhandler.processPythonExceptionObject(e)
                     client = self.reconnect(acip, config)
                     continue
-                finally:
-                    self._timeout.cancel()
 
                 job['achost'] = client.ipaddr
                 job['nid'] = j.application.whoAmI.nid
@@ -103,17 +100,17 @@ class AgentCmds():
                 if (jscript.async or job['queue']) and jscript.debug == False:
                     j.clients.redisworker.execJobAsync(job)
                 else:
-                    def run():
-                        timeout = gevent.Timeout(job['timeout'])
+                    def run(localjob):
+                        timeout = gevent.Timeout(localjob['timeout'])
                         timeout.start()
                         try:
-                            status, result = jscript.execute(**job['args'])
-                            job['state'] = 'OK' if status else 'ERROR'
-                            job['result'] = result
-                            client.notifyWorkCompleted(job)
+                            status, result = jscript.execute(**localjob['args'])
+                            localjob['state'] = 'OK' if status else 'ERROR'
+                            localjob['result'] = result
+                            client.notifyWorkCompleted(localjob)
                         finally:
                             timeout.cancel()
-                    gevent.spawn(run)
+                    gevent.spawn(run, job)
             except Exception, e:
                 j.errorconditionhandler.processPythonExceptionObject(e)
 

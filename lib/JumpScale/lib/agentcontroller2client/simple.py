@@ -242,7 +242,7 @@ class Peer(object):
         """
         Tries to find if this peer is insync with the share. This is not 100%
         reliable because syncthing only detect changes every rescan cycle which
-        cat take up to a minute.
+        can take up to a minute.
         """
         need = self._sync_client._get_need(self.gid, self.nid, self._share.name)
         if need['progress'] or need['queued'] or need['rest']:
@@ -330,12 +330,20 @@ class Share(object):
     @property
     def insync(self):
         """
-        Trys to detect if all peers are in sync with this share.
+        Tries to find if this peer is insync with the share. This is not 100%
+        reliable because syncthing only detect changes every rescan cycle which
+        can take up to a minute.
         """
         for peer in self.peers:
             if not peer.insync:
                 return False
         return True
+
+    def scan(self, sub=None):
+        """"
+        Force rescan of share
+        """""
+        self._sync_client.scan(self.gid, self.nid, self.name, sub)
 
     @property
     def ignore(self):
@@ -428,6 +436,26 @@ class SyncClient(object):
         command = self._client.cmd(gid, nid, 'sync', args=runargs, data=json.dumps(data))
         job = command.get_next_result(SyncClient.API_TIMEOUT)
         return self._client._load_json_or_die(job)
+
+    def scan(self, gid, nid, name, sub=None):
+        """
+        Rescan folder
+
+        :param gid: Grid id
+        :param nid: Node id
+        :param name: Share name
+        :param sub: Subfolder to scan in
+        :return:
+        """
+        data = {
+            'name': name,
+            'sub': sub,
+        }
+
+        runargs = acclient.RunArgs(name='scan_share', max_time=SyncClient.API_TIMEOUT)
+        command = self._client.cmd(gid, nid, 'sync', args=runargs, data=json.dumps(data))
+        job = command.get_next_result(SyncClient.API_TIMEOUT)
+        self._client._load_json_or_die(job)
 
     def create_share(self, gid, nid, name, path, readonly=True, ignore=[]):
         """
