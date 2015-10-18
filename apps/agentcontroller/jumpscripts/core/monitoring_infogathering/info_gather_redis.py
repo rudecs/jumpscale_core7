@@ -9,19 +9,20 @@ name = 'info_gather_redis'
 author = "zains@codescalers.com"
 license = "bsd"
 version = "1.0"
-category = "system.redisstatus"
+category = "monitor.healthcheck"
 
-async = False
+async = True
 roles = []
 
-period=0
+period = 600
 
-log=False
+log = True
 
 def action():
     import JumpScale.baselib.redis
     ports = {}
-    
+    results = list()
+
     for instance in j.atyourservice.findServices(name='redis'):
         
         if not instance.isInstalled():
@@ -31,22 +32,33 @@ def action():
             if redisport:
                 ports[instance.instance] = ports.get(instance.instance, [])
                 ports[instance.instance].append(int(redisport))
-    result = dict()
+
     for instance, ports_val in ports.iteritems():
         for port in ports_val:
+            result = {'category': 'Redis'}
             pids = j.system.process.getPidsByPort(port)
             if not pids:
-                result[port] = {'state': 'HALTED', 'memory_usage': 0, 'memory_max': 0}
+                state = 'ERROR'
+                used_memory = 0
+                maxmemory = 0
             else:
                 rcl = j.clients.redis.getByInstance(instance)
-                state = 'RUNNING' if rcl.ping() else 'BROKEN'
+                state = 'OK' if rcl.ping() else 'ERROR'
                 maxmemory = float(rcl.config_get('maxmemory').get('maxmemory', 0))
                 used_memory = rcl.info()['used_memory']
                 if (used_memory / maxmemory) * 100 > 90:
                     state = 'WARNING'
-                result[port] = {'state': state, 'memory_usage': used_memory, 'memory_max': maxmemory}
 
-    return result
+            size, unit = j.tools.units.bytes.converToBestUnit(used_memory)
+            msize, munit = j.tools.units.bytes.converToBestUnit(maxmemory)
+            used_memory = '%.2f %sB' % (size, unit)
+            maxmemory = '%.2f %sB' % (msize, munit)
+            result['message'] = '*Port*: %s. *Memory usage*: %s/ %s' % (port, used_memory, maxmemory)
+            result['state'] = state
+            results.append(result)
+            print results
+
+    return results
 
 if __name__ == "__main__":
     print action()

@@ -15,4 +15,6 @@ roles = []
 log=False
 
 def action(msg=""):
+	if not msg:
+		msg = 'PING!'
     return msg

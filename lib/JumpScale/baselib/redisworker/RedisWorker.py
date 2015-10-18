@@ -244,8 +244,8 @@ class RedisWorkerFactory(object):
         if self.checkJumpscriptQueue(js,_queue):
             return None
         job=self._getJob(js.id,args=args,timeout=_timeout,log=_log,queue=_queue, internal=True)
-        job.cmd="%s/%s"%(js.organization,js.name)
-        job.category="jumpscript"
+        job.cmd = js.name
+        job.category = js.organization
         job.log=js.log
         self.redis.hset("workers:inqueuetest",js.getKey(),int(time.time()))
         self._scheduleJob(job)

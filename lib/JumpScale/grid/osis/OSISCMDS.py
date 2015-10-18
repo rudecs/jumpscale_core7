@@ -80,6 +80,11 @@ class OSISCMDS(object):
         result = oi.find(query, start, size, session)
         return result
 
+    def aggregate(self, namespace, categoryname, query, session=None):
+        oi = self._doAuth(namespace, categoryname, session)
+        result = oi.aggregate(query, session)
+        return result
+
     def deleteSearch(self,namespace, categoryname,query, session=None):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.deleteSearch(query=query, session=session)

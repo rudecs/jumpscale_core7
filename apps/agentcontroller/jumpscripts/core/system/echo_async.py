@@ -9,12 +9,14 @@ name = "echo_async"
 author = "kristof@incubaid.com"
 license = "bsd"
 version = "1.0"
-category = "tools.echo.async"
-async=True
+category = "monitor.healthcheck"
+async = True
 roles = []
-log=False
 
-def action(msg=""):
+period = 600
+log = True
+
+def action(msg=[{'category': 'JSAgent', 'message': 'Async test', 'state': 'OK'}]):
     return msg
 
 if __name__ == "__main__":

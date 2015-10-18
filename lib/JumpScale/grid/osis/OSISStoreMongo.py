@@ -245,7 +245,7 @@ class OSISStoreMongo(OSISStore):
 
 
 
-        """      
+        """   
         db, counter = self._getMongoDB(session)
         fields = None
         sorting = None
@@ -365,6 +365,10 @@ class OSISStoreMongo(OSISStore):
                 item.pop("_ttl", None)
                 result.append(item)
             return result
+
+    def aggregate(self, query, session=None):
+        db, counter = self._getMongoDB(session)
+        return db.aggregate(query)['result']
 
     def destroyindex(self, session=None):
         db, counter = self._getMongoDB(session)
