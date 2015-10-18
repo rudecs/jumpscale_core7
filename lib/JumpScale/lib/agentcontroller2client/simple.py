@@ -18,6 +18,30 @@ RESULT_JSON = 20
 ResultTuple = collections.namedtuple('ResultTuple', 'status stdout stderr')
 
 
+class ProcessInfo(object):
+    def __init__(self, info):
+        self._info = info
+
+    @property
+    def id(self):
+        return self._info['id']
+
+    @property
+    def cmd(self):
+        return self._info['cmd']
+
+    @property
+    def cpu(self):
+        return self._info['cpu']
+
+    @property
+    def mem(self):
+        return self._info['vms']
+
+    def __repr__(self):
+        return '<ProcessInfo ID:{this.cmd[id]} CMD:{this.cmd[cmd]}>'.format(this=self)
+
+
 class Agent(object):
     """
     Represents an active agent (alive)
@@ -111,6 +135,10 @@ class Agent(object):
             addrr[nic['name']] = nic_addr
 
         return addrr
+
+    @property
+    def processes(self):
+        return map(ProcessInfo, self._client.get_processes(self.gid, self.nid))
 
     def __repr__(self):
         return '<Agent {this.gid}:{this.nid} {this.roles}>'.format(this=self)
@@ -448,6 +476,9 @@ class SyncClient(object):
 
 
 class SimpleClient(object):
+    """
+    Simple client
+    """
     def __init__(self, advanced_client):
         self._client = advanced_client
         self._sync = SyncClient(advanced_client)
