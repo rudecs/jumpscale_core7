@@ -227,6 +227,7 @@ class GridHealthChecker(object):
         domains = list({js.organization for js in jumpscripts})
         names = list({js.name for js in jumpscripts})
         query = [{'$match': {'nid': nid, 'cmd': {'$in': names}, 'category': {'$in': domains}}},
+                 {'$sort': {'timeStop': 1}},
                  {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 
                                             'jobstatus': {'$last': '$state'},
                                             'category': {'$last': '$category'},
