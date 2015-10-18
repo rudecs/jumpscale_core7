@@ -11,7 +11,6 @@ class GridHealthChecker(object):
         with j.logger.nostdout():
             self._client = j.clients.agentcontroller.get()
             self._osiscl = j.clients.osis.getByInstance('main')
-        self._heartbeatcl = j.clients.osis.getCategory(self._osiscl, 'system', 'heartbeat')
         self._nodecl = j.clients.osis.getCategory(self._osiscl, 'system', 'node')
         self._jobcl = j.clients.osis.getCategory(self._osiscl, 'system', 'job')
         self._runningnids = list()
@@ -72,11 +71,22 @@ class GridHealthChecker(object):
             self._addResult(nid, result, category)
         return self._status
 
+    def _getHeartBeats(self, get_nid=None):
+        sessions = self._client.listSessions()
+        heartbeats = list()
+        for gidnid, session in sessions.iteritems():
+            gid, nid = gidnid.split('_')
+            gid, nid = int(gid), int(nid)
+            if get_nid and nid != get_nid:
+                continue
+            heartbeats.append({'gid': gid, 'nid': nid, 'lastcheck': session[0]})
+        return heartbeats
+
     def _checkRunningNIDs(self):
         print('CHECKING HEARTBEATS...')
         self._runningnids = list()
         print("\tget all heartbeats (just query from OSIS):")
-        heartbeats = self._heartbeatcl.simpleSearch({})
+        heartbeats = self._getHeartBeats()
         print("OK")
         for heartbeat in heartbeats:
             if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:
@@ -211,8 +221,8 @@ class GridHealthChecker(object):
         query = [{'$match': {'nid': nid, 'cmd': {'$in': names}, 'category': {'$in': domains}}},
                  {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 
                                             'jobstatus': {'$last': '$state'},
-                                            'lastchecked':{'$last': '$timeStop'},
-                                            'started':{'$last': '$timeStart'}}}]
+                                            'lastchecked': {'$last': '$timeStop'},
+                                            'started': {'$last': '$timeStart'}}}]
 
         jobsresults = self._jobcl.aggregate(query)
 
@@ -280,6 +290,20 @@ class GridHealthChecker(object):
         if clean:
             return self._status
 
+    def getErrorsAndCheckTime(self, data):
+        errors = dict()
+        oldestdate = None
+        for nid, result in data.items():
+            for category, categorydata in result.items():
+                for dataitem in categorydata:
+                    if dataitem.get('state') != 'OK':
+                        errors.setdefault(nid, set())
+                        errors[nid].add(category)
+                    checktime = dataitem.get('lastchecked')
+                    if oldestdate is None or (checktime is not None and checktime < oldestdate):
+                        oldestdate = checktime
+        return errors, oldestdate
+
     def checkHeartbeat(self, clean=True, nid=None):
         if clean:
             self._clean()
@@ -288,14 +312,11 @@ class GridHealthChecker(object):
         print('CHECKING HEARTBEATS...')
         print("\tget all heartbeats (just query from OSIS):")
         print("OK")
-        query = {}
-        if nid:
-            query['nid'] = nid
-        heartbeats = self._heartbeatcl.simpleSearch(query)
+        heartbeats = self._getHeartBeats(nid)
         for heartbeat in heartbeats:
             if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:
                 self._addResult(heartbeat['nid'], {'message': "Found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'], 
-                                'state': 'ERROR'}, "Heartbeat")
+                                'state': 'ERROR'}, "JSAgent")
 
         nid2hb = dict([(x['nid'], x['lastcheck']) for x in heartbeats])
         nids = [nid] if nid else self._nids
@@ -303,14 +324,13 @@ class GridHealthChecker(object):
             if nid not in self._nidsNonActive:
                 if nid in nid2hb:
                     lastchecked = nid2hb[nid]
-                    hago = j.base.time.getSecondsInHR(j.base.time.getTimeEpoch()-lastchecked)
                     if not j.base.time.getEpochAgo('-2m') < lastchecked:
                         state = 'ERROR'
                     else:
                         state = 'OK'
-                    self._addResult(nid, {'message': "*Last heartbeat* %s ago" % hago, 'state': state}, "Heartbeat")
+                    self._addResult(nid, {'message': "Heartbeat", 'state': state, 'lastchecked': lastchecked}, "JSAgent")
                 else:
-                    self._addResult(nid, {'message': "Found heartbeat node when not in grid nodes.", 'state':'ERROR'}, "Heartbeat")
+                    self._addResult(nid, {'message': "Found heartbeat node when not in grid nodes.", 'state':'ERROR'}, "JSAgent")
         if clean:
             return self._status
 

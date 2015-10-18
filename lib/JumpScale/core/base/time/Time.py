@@ -34,7 +34,7 @@ class Time:
         day = hour * 24
         week = day * 7
         if seconds < minute:
-            return "%s seconds" % seconds
+            return "%s seconds" % round(seconds, 1)
         elif seconds < hour:
             return "%s minutes" % round((seconds/minute), 1)
         elif seconds < day:

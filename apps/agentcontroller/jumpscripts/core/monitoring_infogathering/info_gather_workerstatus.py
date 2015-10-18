@@ -10,12 +10,9 @@ author = "khamisr@codescalers.com"
 license = "bsd"
 version = "1.0"
 category = "monitor.healthcheck"
-
-async = False
+async = True
 roles = []
-
 period = 600
-
 log = True
 
 
@@ -26,15 +23,15 @@ def action():
 
     for queue in ('io', 'hypervisor', 'default', 'process'):
         result = {'category': 'Workers'}
-        lastactive = rediscl.hget('workers:heartbeat', queue) or 0
+        lastactive = float(rediscl.hget('workers:heartbeat', queue) or 0)
         timeout = timemap.get(queue)
         if j.base.time.getEpochAgo(timeout) < lastactive:
             result['state'] = 'OK'
         else:
             result['state'] = 'ERROR'
 
-        lastactive = j.base.time.epoch2HRDateTime(lastactive) if lastactive else 'never'
-        result['message'] = '*%s last active*: %s.' % (queue.upper(), lastactive)
+        lastactive = '{{ts:%s}}' % lastactive if lastactive else 'never'
+        result['message'] = '*%s last active*: %s' % (queue.upper(), lastactive)
         results.append(result)
     return results
 

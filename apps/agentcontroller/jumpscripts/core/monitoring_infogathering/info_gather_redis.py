@@ -11,7 +11,7 @@ license = "bsd"
 version = "1.0"
 category = "monitor.healthcheck"
 
-async = False
+async = True
 roles = []
 
 period = 600

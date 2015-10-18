@@ -213,29 +213,28 @@ class Worker(object):
             self.redisw.redis.set("workers:jobs:%s" % job.id, json.dumps(job.__dict__), ex=60)
             self.redisw.redis.rpush("workers:return:%s"%job.id,time.time())
             self.redisw.redis.expire("workers:return:%s"%job.id, 60)
-        else:
+        try:
+            acclient = self.getClient(job)
+        except Exception as e:
+            j.events.opserror("could not report job in error to agentcontroller", category='workers.errorreporting', e=e)
+            return
+
+        def reportJob():
             try:
-                acclient = self.getClient(job)
+                acclient.notifyWorkCompleted(job.__dict__)
             except Exception as e:
                 j.events.opserror("could not report job in error to agentcontroller", category='workers.errorreporting', e=e)
                 return
-            #jumpscripts coming from AC
-            if job.state!="OK":
-                self.redisw.redis.expire("workers:jobs:%s" % job.id, 60)
-                try:
-                    acclient.notifyWorkCompleted(job.__dict__)
-                except Exception as e:
-                    j.events.opserror("could not report job in error to agentcontroller", category='workers.errorreporting', e=e)
-                    return
-            else:
-                if job.log or job.wait:
-                    try:
-                        acclient.notifyWorkCompleted(job.__dict__)
-                    except Exception as e:
-                        j.events.opserror("could not report job result to agentcontroller", category='workers.jobreporting', e=e)
-                        return
-                    # job.state=="OKR" #means ok reported
-                    #we don't have to keep status of local job result, has been forwarded to AC
+
+        #jumpscripts coming from AC
+        if job.state!="OK":
+            self.redisw.redis.expire("workers:jobs:%s" % job.id, 60)
+            reportJob()
+        else:
+            if job.log or job.wait:
+                reportJob()
+            #we don't have to keep status of local job result, has been forwarded to AC
+            if not job.internal:
                 self.redisw.redis.delete("workers:jobs:%s" % job.id)
 
 
