@@ -230,6 +230,7 @@ class GridHealthChecker(object):
                  {'$sort': {'timeStop': 1}},
                  {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 
                                             'jobstatus': {'$last': '$state'},
+                                            'guid': {'$last': '$guid'},
                                             'category': {'$last': '$category'},
                                             'lastchecked': {'$last': '$timeStop'},
                                             'started': {'$last': '$timeStart'}}}]
@@ -251,12 +252,13 @@ class GridHealthChecker(object):
                                 state = 'EXPIRED'
                         resdata = {'message': data.get('message', ''),
                                    'state': state,
+                                   'guid': jobresult['guid'],
                                    'lastchecked': lastchecked}
                         results.append((nid, resdata, data.get('category', jobresult.get('_id'))))
                     if not result:
                         results.append((nid, {'message': '', 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
                 else:
-                    results.append((nid, {'message': '', 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
+                    results.append((nid, {'message': 'Error in Monitor', 'state': 'UNKNOWN', 'lastchecked': lastchecked, 'guid': jobresult['guid']}, jobresult.get('_id')))
 
         self._returnResults(results)
 
