@@ -34,23 +34,25 @@ def action():
         if pattern and j.codetools.regex.match(pattern, disk.path) == True:
             # pattern is a blacklist, continue if match
             continue
-        result[disk.path] = {'free': disk.free, 'size': disk.size}
+        result[disk.path] = {'free': disk.free, 'size': disk.size, 'mountpoint': disk.mountpoint}
 
     results = list()
 
     for path, disk in list(result.items()):
         result = {'category': 'Disks'}
         result['path'] = path
-        if (disk['free'] and disk['size']) and (disk['free'] / float(disk['size'])) * 100 < 10:
-            result['message'] = 'FREE SPACE LESS THAN 10%% on disk %s' % path
+        checkusage = not (disk['mountpoint'] and j.system.fs.exists(j.system.fs.joinPaths(disk['mountpoint'], '.dontreportusage')))
+
+        if checkusage and ((disk['free'] and disk['size']) and (disk['free'] / float(disk['size'])) * 100 < 10):
+            result['message'] = 'FREE SPACE LESS THAN 10%% on disk %s %s' % (path, disk['mountpoint'])
             result['state'] = 'ERROR'
         else:
             if disk['free']:
                 size, unit = j.tools.units.bytes.converToBestUnit(disk['free'], 'M')
-                result['message'] = '%.2f %siB free space available' % (size, unit)
+                result['message'] = '%.2f %siB free space available on %s' % (size, unit, path)
 
             else:
-                result['message'] = 'Disk is not mounted, Info is not available'
+                result['message'] = 'Disk %(path)s is not mounted, Info is not available' % result
             result['state'] = 'OK'
         results.append(result)
 
