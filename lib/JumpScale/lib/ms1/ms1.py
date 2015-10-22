@@ -176,7 +176,7 @@ class MS1(object):
         return sizes
 
     def createMachine(self, spacesecret, name, memsize=1, ssdsize=40, vsansize=0, description='',
-                      imagename="ubuntu.14.04.x64",delete=False, sshkey=None, hostname="", stackId=None,**args):
+                      imagename="ubuntu.14.04.x64",delete=False, sshkey=None, hostname="", stackId=None, disks=None,**args):
         """
         memsize  #size is 0.5,1,2,4,8,16 in GB
         ssdsize  #10,20,30,40,100 in GB
@@ -270,13 +270,13 @@ class MS1(object):
 
             if valid():
                 try:
-                    machine_id = machine_cb_actor.createOnStack(cloudspaceId=cloudspace_id, name=name, description=description, sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2), stackid=stackId)
+                    machine_id = machine_cb_actor.createOnStack(cloudspaceId=cloudspace_id, name=name, description=description, sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2), stackid=stackId, datadisks=disks)
                 except Exception as e:
                     j.events.opserror_critical("Could not create machine on stack %s, unknown error : %s." % (stackId, e.message), "ms1.createmachine.exists")
         else:
             try:
                 machine_id = machines_actor.create(cloudspaceId=cloudspace_id, name=name, description=description, \
-                    sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2))
+                    sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2), datadisks=disks)
             except Exception as e:
                 if str(e).find("Selected name already exists") != -1:
                    j.events.inputerror_critical("Could not create machine it does already exist.","ms1.createmachine.exists")
