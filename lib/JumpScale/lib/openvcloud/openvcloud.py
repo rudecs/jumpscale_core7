@@ -178,13 +178,14 @@ metadata.openvcloud            =
         
         if self.actionCheck(gitlaburl, 'copyKeys') is False:
             keys = {
-                '/root/.ssh/id_rsa': j.system.fs.joinPaths(repopath, 'keys', 'git_root'),
-                '/root/.ssh/id_rsa.pub': j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'),
+                '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
+                '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
             }
 
-            for source, dest in keys.iteritems():
+            for source, dests in keys.iteritems():
                 content = cl.file_read(source)
-                cl.file_write(dest, content)
+                for dest in dests:
+                    cl.file_write(dest, content)
 
             self.actionDone(gitlaburl, 'copyKeys')
 
