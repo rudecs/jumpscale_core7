@@ -107,7 +107,7 @@ class AgentControllerClient():
         if wait==True:
             errorReportOnServer=False
         result = self.executeJumpscript(organization,name,gid=gid,nid=nid,role=role,args=args,timeout=timeout,\
-            wait=wait,queue=queue,transporttimeout=timeout,errorreport=errorReportOnServer)
+            wait=wait,queue=queue,errorreport=errorReportOnServer)
         if wait and result['state'] != 'OK':
             if result['state'] == 'NOWORK' and dieOnFailure:
                 raise RuntimeError('Could not find agent with role:%s' %  role)
