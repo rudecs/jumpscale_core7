@@ -145,7 +145,7 @@ class GridHealthChecker(object):
     def getHealthCheckJumpScripts(self):
         return [self._jumpscriptcl.get(jsid) for jsid, _, _, _ in self._client.listJumpscripts(cat='monitor.healthcheck')]
 
-    def runOnAllNodes(self):
+    def runOnAllNodes(self, sync=True):
         self._clean()
         self.getNodes()
         self._clean()
@@ -157,7 +157,7 @@ class GridHealthChecker(object):
         print(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
         nodes = self._runningnids
         for nid in nodes:
-            greenlet = gevent.Greenlet(self.runAllOnNode, nid)
+            greenlet = gevent.Greenlet(self.runAllOnNode, nid, sync)
             greenlet.start()
             greens.append(greenlet)
             gevent.joinall(greens)
@@ -170,14 +170,14 @@ class GridHealthChecker(object):
                     self._returnResults(results)
         return self._status
 
-    def runAllOnNode(self, nid):
+    def runAllOnNode(self, nid, sync=True):
         results = list()
         greens = list()
         node = self._nodecl.get(nid)
         for _, domain, name, roles in self._client.listJumpscripts(cat='monitor.healthcheck'):
             if not set(node.roles).issuperset(set(roles)):
                 continue
-            greenlet = gevent.Greenlet(self.runOneTest, domain, name, nid)
+            greenlet = gevent.Greenlet(self.runOneTest, domain, name, nid, sync)
             greenlet.nid = nid
             greenlet.name = name
             greenlet.start()
@@ -200,8 +200,8 @@ class GridHealthChecker(object):
             self._printResults()
         return self._status
 
-    def runOneTest(self, domain, name, nid):
-        returnedresult = self._client.executeJumpscript(domain, name, timeout=30, gid=self._nodegids[nid], nid=nid)
+    def runOneTest(self, domain, name, nid, sync=True):
+        returnedresult = self._client.executeJumpscript(domain, name, timeout=30, gid=self._nodegids[nid], nid=nid, wait=sync)
         return returnedresult['result']
 
     def fetchMonitoringOnAllNodes(self):
