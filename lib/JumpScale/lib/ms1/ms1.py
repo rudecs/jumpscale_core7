@@ -275,8 +275,13 @@ class MS1(object):
                     j.events.opserror_critical("Could not create machine on stack %s, unknown error : %s." % (stackId, e.message), "ms1.createmachine.exists")
         else:
             try:
-                machine_id = machines_actor.create(cloudspaceId=cloudspace_id, name=name, description=description, \
-                    sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2), datadisks=disks)
+                if disks == None:
+                    machine_id = machines_actor.create(cloudspaceId=cloudspace_id, name=name, description=description, \
+                        sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2))
+                else:
+                    machine_id = machines_actor.create(cloudspaceId=cloudspace_id, name=name, description=description, \
+                        sizeId=size_ids[0], imageId=templateid, disksize=int(ssdsize2), datadisks=disks)
+
             except Exception as e:
                 if str(e).find("Selected name already exists") != -1:
                    j.events.inputerror_critical("Could not create machine it does already exist.","ms1.createmachine.exists")
