@@ -26,6 +26,10 @@ try:
 except:
     enable=False
 
+def getContentKey(obj):
+    dd=j.code.object2json(obj, True, ignoreKeys=["guid","id","sguid","moddate", 'lastcheck'], ignoreUnderscoreKeys=True)
+    return j.tools.hash.md5_string(str(dd))
+
 def action():
     syscl = j.clients.osis.getNamespace('system')
     rediscl = j.clients.redis.getByInstance('system')
@@ -35,17 +39,21 @@ def action():
                 libvirt.VIR_DOMAIN_NOSTATE: 'NOSTATE',
                 libvirt.VIR_DOMAIN_PAUSED: 'PAUSED'}
 
-    allmachines = syscl.machine.search({'nid': j.application.whoAmI.nid, 'gid': j.application.whoAmI.gid})[1:]
+    allmachines = syscl.machine.search({'nid': j.application.whoAmI.nid, 
+                                        'gid': j.application.whoAmI.gid, 
+                                        'state': {'$ne': 'DELETED'}
+                                        })[1:]
     allmachines = { machine['guid']: machine for machine in allmachines }
     domainmachines = list()
     try:
         domains = con.listAllDomains()
         for domain in domains:
-            domainmachines.append(domain.UUIDString())
             machine = syscl.machine.new()
             machine.id = domain.ID()
             machine.guid = domain.UUIDString().replace('-', '')
+            domainmachines.append(machine.guid)
             machine.name = domain.name()
+            print 'Processing', machine.name
             machine.nid = j.application.whoAmI.nid
             machine.gid = j.application.whoAmI.gid
             machine.type = 'KVM'
@@ -66,9 +74,11 @@ def action():
             machine.state = stateMap.get(domain.state()[0], 'STOPPED')
             machine.cpucore = int(xml.find('vcpu').text)
 
-            ckeyOld = rediscl.hget('machines', domain.ID())
-            if ckeyOld != machine.getContentKey():
-                rediscl.hset('machines', domain.ID(), machine.getContentKey())
+            ckeyOld = rediscl.hget('machines', machine.guid)
+            ckey = getContentKey(machine)
+            if ckeyOld != ckey:
+                rediscl.hset('machines', machine.guid, ckey)
+                print 'Saving', machine.name
                 syscl.machine.set(machine)
 
             for disk in xml.findall('devices/disk'):
@@ -103,6 +113,8 @@ def action():
         deletedmachines = set(allmachines.keys()) - set(domainmachines)
         for deletedmachine in deletedmachines:
             machine = allmachines[deletedmachine]
+            print 'Deleting', machine.name
+            rediscl.hdel('machines', deletedmachine)
             machine['state'] = 'DELETED'
             syscl.machine.set(machine)
         con.close()
