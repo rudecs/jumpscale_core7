@@ -166,7 +166,7 @@ iface $iname inet manual
         ed=j.codetools.getTextFileEditor("/etc/network/interfaces")
         ed.setSection(backplanename,C)
 
-    def configureStaticAddress(self,interfacename="eth0",ipaddr="192.168.10.10/24",gw=None):
+    def configureStaticAddress(self,interfacename="eth0",ipaddr="192.168.10.10/24",gw=None, mtu=None):
         """
         Configure a static address
         """
@@ -177,6 +177,7 @@ iface $interface inet static
  address $ipbase
  netmask $mask
  $gw
+ $mtu
 """
         n=netaddr.IPNetwork(ipaddr)
 
@@ -188,6 +189,11 @@ iface $interface inet static
         else:
             C=C.replace("$gw", "")
 
+        if mtu:
+            C=C.replace("$mtu", "post-up ip l set %s mtu %d" % (interfacename, mtu))
+        else:
+            C=C.replace("$mtu", "")
+        
         ed=j.codetools.getTextFileEditor("/etc/network/interfaces")
         ed.setSection(interfacename,C)
         ed.save()
