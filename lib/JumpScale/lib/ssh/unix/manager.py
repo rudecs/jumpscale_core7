@@ -163,6 +163,7 @@ class UnixManager(object):
 
         #only allow root & recovery user (make sure it exists)
         sed -i -e '/.*AllowUsers.*/d' /etc/ssh/sshd_config
+        echo '' >> /etc/ssh/sshd_config
         echo 'AllowUsers root' >> /etc/ssh/sshd_config
         echo 'AllowUsers recovery' >> /etc/ssh/sshd_config
 
