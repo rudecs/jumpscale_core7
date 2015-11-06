@@ -179,7 +179,8 @@ metadata.openvcloud            =
         if self.actionCheck(gitlaburl, 'copyKeys') is False:
             keys = {
                 '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
-                '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
+                # '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
+                '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), ),
             }
 
             for source, dests in keys.iteritems():
@@ -187,6 +188,9 @@ metadata.openvcloud            =
                 for dest in dests:
                     cl.file_write(dest, content)
 
+            # append key to authorized hosts
+            cl.run("cat %s >> /root/.ssh/authorized_keys" % keys['/root/.ssh/id_rsa.pub'])
+            
             self.actionDone(gitlaburl, 'copyKeys')
 
         if self.actionCheck(gitlaburl, "ms1client") is False:
@@ -229,8 +233,24 @@ metadata.openvcloud            =
             cl.run('git config --global push.default simple')
             cl.run('cd %s;jscode push' % repopath)
             self.actionDone(gitlaburl, "rememberssh")
-
-        print "[+] setup completed"
+        
+        print '[+] setup completed'
+        # cl.run('cd %s; git add .; git commit -m "ovcgit deployed"; git push' % repopath)
+        
+        # ensure that ssh agent is running and add the new key
+        j.do.execute('eval $(ssh-agent -s)')
+        
+        """
+        sshkey = '%s/keys/git_root.pub' % repopath
+        
+        if j.system.fs.exists(sshkey):
+            j.do.execute('ssh-add %s' % sshkey)
+            
+        else:
+            print '[-] ssh key (%s) not found, cannot add it to ssh-agent' % sshkey
+        """
+        
+        print "[+] environment is ready to be deployed"
 
     def connectAYSGitVM(self, gitlaburl, gitlablogin, gitlabpasswd, setup=False):
         """
