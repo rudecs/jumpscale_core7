@@ -234,21 +234,14 @@ metadata.openvcloud            =
             cl.run('cd %s;jscode push' % repopath)
             self.actionDone(gitlaburl, "rememberssh")
         
+        if self.actionCheck(gitlaburl, "applyname") is False:
+            cl.run('cd %s; ays install -n ovc_namer -r' % repopath)
+            cl.run('cd %s; jscode push' % repopath)
+        
         print '[+] setup completed'
-        # cl.run('cd %s; git add .; git commit -m "ovcgit deployed"; git push' % repopath)
         
         # ensure that ssh agent is running and add the new key
         j.do.execute('eval $(ssh-agent -s)')
-        
-        """
-        sshkey = '%s/keys/git_root.pub' % repopath
-        
-        if j.system.fs.exists(sshkey):
-            j.do.execute('ssh-add %s' % sshkey)
-            
-        else:
-            print '[-] ssh key (%s) not found, cannot add it to ssh-agent' % sshkey
-        """
         
         print "[+] environment is ready to be deployed"
 
