@@ -143,9 +143,9 @@ class OSISCMDS(object):
         else:
             self._rebuildindex(namespace, categoryname, session)
 
-    def export(self, namespace, categoryname, outputpath, session=None):
-        oi = self._doAuth(namespace, categoryname, session)
-        return oi.export(outputpath, session)
+    def export(self, namespace, categoryname, outputpath, session=None, **kwargs):
+        oi = self._doAuth(namespace, categoryname, session=session)
+        return oi.export(outputpath, session=session)
 
     def importFromPath(self, namespace, categoryname, path, session=None):
         oi = self._doAuth(namespace, categoryname, session)
@@ -253,7 +253,6 @@ class OSISCMDS(object):
             result[ttype]=obj.obj2dict()
         return result
         
-
     def listNamespaces(self, prefix="",session=None):
         ddirs = j.system.fs.listDirsInDir(self.path, dirNameOnly=True)
 
