@@ -16,31 +16,21 @@
     <on_reboot>restart</on_reboot>
     <on_crash>restart</on_crash>
     <devices>
-        <emulator>/opt/jumpscale7/apps/kvm/bin/qemu-system-x86_64</emulator>
+        <emulator>/usr/bin/qemu-system-x86_64</emulator>
         <disk type='block' device='disk'>
             <driver name='qemu' type='qcow2' cache='none' io='native'/>
             <source dev='{{poolpath}}/{{diskname}}'/>
             <target dev='vda' bus='virtio'/>
             <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
         </disk>
-        <interface type='network'>
-            <source network='brmgmt'/>
-            <mac address='{{macaddress1}}'/>
-            <guest dev='mgmt'/>
+    {% for bridge in bridges %}
+         <interface type='network'>
+            <source network='{{bridge}}'/>
+            <mac address='{{macaddresses[loop.index -1]}}'/>
+            <guest dev='{{bridge}}'/>
             <model type='virtio'/>
         </interface>
-        <interface type='network'>
-            <source network='brpub'/>
-            <mac address='{{macaddress2}}'/>
-            <guest dev='pub'/>
-            <model type='virtio'/>
-        </interface>
-        <interface type='network'>
-            <source network='brtmp'/>
-            <mac address='{{macaddress3}}'/>
-            <guest dev='tmp'/>
-            <model type='virtio'/>
-        </interface>
+    {% endfor %}
         <graphics type='vnc' autoport='yes' listen='0.0.0.0'>
             <listen type='address' address='0.0.0.0'/>
         </graphics>
