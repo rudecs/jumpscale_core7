@@ -113,7 +113,7 @@ def action():
         deletedmachines = set(allmachines.keys()) - set(domainmachines)
         for deletedmachine in deletedmachines:
             machine = allmachines[deletedmachine]
-            print 'Deleting', machine.name
+            print 'Deleting', machine['name']
             rediscl.hdel('machines', deletedmachine)
             machine['state'] = 'DELETED'
             syscl.machine.set(machine)
