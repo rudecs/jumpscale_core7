@@ -951,38 +951,34 @@ class InstallTools():
         p=Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, \
                     shell=useShell, env=os.environ,universal_newlines=True,cwd=cwd,bufsize=0,**popenargs)
 
-        sout = io.open(p.stdout.fileno(), 'rb', closefd=False)
-        serr = io.open(p.stderr.fileno(), 'rb', closefd=False)
-        def Pump(sout,serr):
-            queue = Queue.Queue()
-            def stdout1():
-                while True:
-                    # buf = sout.read1(8192)
-                    buf = sout.readline()
+        class StreamReader(threading.Thread):
+            def __init__(self, stream, queue, flag):
+                super(StreamReader, self).__init__()
+                self.stream = stream
+                self.queue = queue
+                self.flag = flag
+                self._stopped = False
+                self.setDaemon(True)
+                
+            def run(self):
+                while not self.stream.closed and not self._stopped:
+                    buf = ''    
+                    buf = self.stream.readline()
                     if len(buf)>0:
-                        queue.put( ("O",buf) )
+                        self.queue.put((self.flag, buf))
                     else:
-                        queue.put( (None,None) )
-                        return
-            def strerr1():
-                while True:
-                    # buf = serr.read1(8192)
-                    buf = serr.readline()
-                    if len(buf)>0:
-                        queue.put( ("E",buf) )
-                    else:
-                        queue.put((None, None) )
-                        return
+                        break
+                self.queue.put(('T', self.flag))
 
-            t1 = Thread(target=stdout1)
-            t1.setDaemon(True)
-            t1.start()
-            t2 = Thread(target=strerr1)
-            t2.setDaemon(True)
-            t2.start()
-            return queue,t1,t2
-
-        inp,t1,t2=Pump(sout,serr)
+        serr = p.stderr
+        sout = p.stdout
+        inp = Queue.Queue()
+        
+        outReader = StreamReader(sout, inp, 'O')
+        errReader = StreamReader(serr, inp, 'E')
+        
+        outReader.start()
+        errReader.start()
 
         start=time.time()
 
@@ -990,33 +986,34 @@ class InstallTools():
         out=""
         rc=1000
 
-
-        while p.poll() is None or inp.empty()==False:
+        out_eof = False
+        err_eof = False
+        
+        while not out_eof or not err_eof:
             # App still working
-            # print p.poll()
             try:
-                chan,line = inp.get(timeout = 1.0)
+                chan,line = inp.get(block=True, timeout = 1.0)
+                #print chan, line
+                if chan == 'T':
+                    if line == 'O':
+                        out_eof = True
+                    elif line == 'E':
+                        err_eof = True
+                    continue
+                        
                 if ok<>[]:
                     for item in ok:
                         if line.find(item)!=-1:
                             rc=0
                             break
                 if errors<>[]:
-                    # if captureout==False:
-                    #     out=line
                     for item in errors:
                         if line.find(item)!=-1:
                             rc=997
                             break
-                        # if err.find(item)!=-1:
-                        #     rc=1
-                        #     break
                     if rc==997 or rc==0:
                         break
-
-                if line==None:
-                    break
-
+                
                 if chan=='O':
                     if outputStdout:
                         print (line.strip())
@@ -1027,6 +1024,7 @@ class InstallTools():
                         print ("E:%s"%line.strip())
                     if captureout:
                         err+=line
+                
             except Queue.Empty:
                 pass
             if timeout>0:
@@ -1036,14 +1034,14 @@ class InstallTools():
                     p.kill()
 
                     break
+
         if rc<>999:
-            (output2,error2) = p.communicate()
-            out+=output2
-            err==error2
+            outReader.join()
+            errReader.join()
+            p.wait()
         if rc==1000:
             rc = p.returncode
-            # if rc==0 and err<>"":
-            #     rc=998
+          
 
         if rc>0 and dieOnNonZeroExitCode:
             if err<>"":
