@@ -17,6 +17,7 @@ import signal
 from sys import argv
 from subprocess import Popen, PIPE
 import os, io
+import threading
 from threading import Thread
 import Queue
 import os
