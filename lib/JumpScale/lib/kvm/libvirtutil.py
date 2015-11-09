@@ -507,19 +507,19 @@ class LibvirtUtil(object):
         rand_mac_addr = [0x52, 0x54, 0x00, random.randint(0x00, 0x7f), random.randint(0x00, 0xff), random.randint(0x00, 0xff)]
         return ':'.join(map(lambda x: "%02x" % x, rand_mac_addr))
 
-    def create_node(self, name, image, size=10, memory=512, cpu_count=1):
+    def create_node(self, name, image, bridges=[], size=10, memory=512, cpu_count=1):
         diskname = self._create_disk(name, image, size)
         if not diskname or diskname == -1:
             #not enough free capcity to create a disk on this node
             return -1
-        return self._create_node(name, diskname, size, memory, cpu_count)
+        return self._create_node(name, diskname, bridges, size, memory, cpu_count)
 
-    def _create_node(self, name, diskname, size, memory, cpucount):
+    def _create_node(self, name, diskname, bridges, size, memory, cpucount):
         machinetemplate = self.env.get_template("machine.xml")
-        macaddress1, macaddress2, macaddress3 = self._generateRandomMacAddress(), self._generateRandomMacAddress(), self._generateRandomMacAddress()
+        macaddresses = [self._generateRandomMacAddress() for bridge in bridges]
         POOLPATH = '%s/%s' % (self.basepath, name)
         machinexml = machinetemplate.render({'machinename': name, 'diskname': diskname, 'memory': memory, 'nrcpu': cpucount, 'poolpath': POOLPATH,
-                    'macaddress1': macaddress1, 'macaddress2': macaddress2, 'macaddress3': macaddress3})
+                    'macaddresses': macaddresses, 'bridges': bridges})
         self.create_machine(machinexml)
         #dnsmasq = DNSMasq()
         #nsid = '%04d' % networkid

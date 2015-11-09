@@ -190,6 +190,9 @@ class RouterOS(object):
                  return lease
         return None
 
+    def removeLease(self, mac):
+        self.executeScript('/ip dhcp-server lease remove [find mac-address="%s"]' % mac)
+
     def getIpaddress(self, macaddress):
         lease = self.getLease(macaddress)
         if lease and 'address' in list(lease.keys()):

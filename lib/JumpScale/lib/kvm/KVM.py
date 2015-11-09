@@ -89,8 +89,10 @@ class KVM(object):
         """
         print 'Creating physical bridges brpub, brmgmt and brtmp on the host...'
         j.system.net.setBasicNetConfigurationBridgePub() #failsave method to introduce bridge to pub interface
+        self.initManagementBridge()
+
+    def initManagementBridge(self):
         j.system.netconfig.enableInterfaceBridgeStatic('brmgmt', ipaddr='192.168.66.254/24', start=True)
-        j.system.netconfig.enableInterfaceBridgeStatic('brtmp', start=True)
 
         # j.system.net.setBasicNetConfigurationBridgePub()
         if j.system.net.bridgeExists("brmgmt")==False:
@@ -103,37 +105,32 @@ class KVM(object):
         if br.is_up()==False:
             br.up()
 
-        #tmp bridge
-        if j.system.net.bridgeExists("brtmp")==False:
-            pynetlinux.brctl.addbr("brtmp")
-        br=pynetlinux.brctl.findbridge("brtmp")
-        if br.is_up()==False:
-            br.up()
 
-    def initLibvirtNetwork(self):
-        for brname in ("brmgmt", "brtmp", "brpub"):
+    def initLibvirtNetwork(self, bridges=["brmgmt", "brtmp", "brpub"]):
+        for brname in bridges:
             br=pynetlinux.brctl.findbridge(brname)
-            if br.is_up()==False:
+            if br and br.is_up()==False:
                 br.up()
+            elif brname in ['brmgmt']:
+                self.initManagementBridge()
 
-        print 'Creating libvirt networks brpub, brmgmt and brtmp...'
-        networks = ('brmgmt', 'brpub', 'brtmp')
-        for network in networks:
+        print 'Creating libvirt networks...'
+        for network in bridges:
             if not self.LibvirtUtil.checkNetwork(network):
                 j.system.platform.kvm.LibvirtUtil.createNetwork(network, network)
             else:
                 print 'Virtual network "%s" is already there' % network
 
-        for brname in ("brmgmt", "brtmp", "brpub"):
+        for brname in bridges:
             br=pynetlinux.brctl.findbridge(brname)
-            if br.is_up()==False:
+            if br and br.is_up()==False:
                 br.up()
 
-    def initNattingRules(self):
-        print('Initializing natting rule on the host on "brpub"...')
-        cmd = "iptables -t nat -I POSTROUTING --out-interface brpub -j MASQUERADE"
+    def initNattingRules(self, brpub='brpub'):
+        print('Initializing natting rule on the host on "%s"...' % brpub)
+        cmd = "iptables -t nat -I POSTROUTING --out-interface %s -j MASQUERADE" % brpub
         j.system.process.execute(cmd)
-        cmd = "iptables -I FORWARD --in-interface brpub -j ACCEPT"
+        cmd = "iptables -I FORWARD --in-interface %s -j ACCEPT" % brpub
         j.system.process.execute(cmd)
 
     def list(self):
@@ -205,7 +202,7 @@ class KVM(object):
         j.events.opserror_critical("could not find free ip addr for KVM in 192.168.66.0/24 range","kvm.ipaddr.find")
 
 
-    def create(self, name, baseimage, replace=True, description='', size=10, memory=512, cpu_count=1):
+    def create(self, name, baseimage, replace=True, description='', size=10, memory=512, cpu_count=1, bridges=None):
         """
         create a KVM machine which inherits from a qcow2 image (so no COPY)
 
@@ -234,7 +231,9 @@ class KVM(object):
 
         when replace then remove original image
         """
-        self.initLibvirtNetwork()
+        bridges = bridges or ["brtmp", "brpub"]
+        bridges.insert(0, "brmgmt")
+        self.initLibvirtNetwork(bridges)
 
         if replace:
             if j.system.fs.exists(self._getRootPath(name)):
@@ -248,7 +247,7 @@ class KVM(object):
         j.system.fs.createDir(self._getRootPath(name))
         print 'Creating machine %s...' % name
         try:
-            self.LibvirtUtil.create_node(name, baseimage, size=size, memory=memory, cpu_count=cpu_count)
+            self.LibvirtUtil.create_node(name, baseimage, bridges=bridges, size=size, memory=memory, cpu_count=cpu_count)
         except:
             print 'Error creating machine "%s"' % name
             print 'Rolling back machine creation...'
