@@ -2,6 +2,7 @@ import shlex
 import json
 import re
 import inspect
+import textwrap
 from StringIO import StringIO
 import collections
 from JumpScale import j
@@ -182,6 +183,10 @@ class Result(object):
         if self._job.level == RESULT_JSON:
             return json.loads(self._job.data)
         return self._job.data
+
+    @property
+    def tags(self):
+        return self._job.tags
 
     @property
     def eco(self):
@@ -379,8 +384,8 @@ class Share(object):
 class SyncClient(object):
     API_TIMEOUT = 10
 
-    def __init__(self, advanced_client):
-        self._client = advanced_client
+    def __init__(self, client):
+        self._client = client._client
         self._ids_cache = {}
 
     def _get_id(self, gid, nid):
@@ -503,17 +508,163 @@ class SyncClient(object):
         raise ValueError('No share with name "%s" found' % name)
 
 
+# TODO: Currently scheduler has to rebuild command structure for scheduling which is redoing
+# work of most of the 'shortcut' methods. We need to restructure this for better code reuse.
+class SchedulerClient(object):
+    """
+    Scheduler interface
+    """
+    def __init__(self, client):
+        self._simple = client
+        self._client = client._client
+
+    def list(self):
+        """
+        Lists all scheduled tasks.
+        """
+        table = dict()
+        for key, entrystr in self._client.schedule_list().iteritems():
+            entry = json.loads(entrystr)
+            table[key] = entry['cron']
+        return table
+
+    def execute(self, id, cron, cmd, path=None, gid=None, nid=None, roles=[], allnodes=True, timeout=5,
+                data=None, tags=None):
+        """
+        Schedule execution of command according to cron
+
+        Cron expression represents a set of times, using 6 space-separated fields.
+
+        +--------------+------------+-----------------+----------------------------+
+        | Field name   | Mandatory? | Allowed values  | Allowed special characters |
+        +==============+============+=================+============================+
+        | Seconds      | Yes        | 0-59            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Minutes      | Yes        | 0-59            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Hours        | Yes        | 0-23            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Day of month | Yes        | 1-31            | * / , - ?                  |
+        +--------------+------------+-----------------+----------------------------+
+        | Month        | Yes        | 1-12 or JAN-DEC | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Day of week  | Yes        | 0-6 or SUN-SAT  | * / , - ?                  |
+        +--------------+------------+-----------------+----------------------------+
+
+        Note: Month and Day-of-week field values are case insensitive. "SUN", "Sun", and "sun" are equally accepted.
+
+        :param id: Cron job id, must be unique globally and can be used later to stop the schedule
+        :param cron: Cron string to run the task
+        """
+        parts = shlex.split(cmd)
+        assert len(parts) > 0, "Empty command string"
+        cmd = parts[0]
+        args = parts[1:]
+
+        nid, roles, fanout = self._simple._get_route(nid, roles, allnodes)
+
+        runargs = acclient.RunArgs(max_time=timeout, working_dir=path, name=cmd, args=args)
+        return self._client.schedule_add(id=id, cron=cron, gid=gid, nid=nid, cmd=acclient.CMD_EXECUTE,
+                                         args=runargs, roles=roles, fanout=fanout, data=data, tags=tags)
+
+    def executeBash(self, id, cron, cmds, path=None, gid=None, nid=None, roles=[], allnodes=True, timeout=5, tags=None):
+        """
+        Schedule bash script execution according to given cron.
+
+        Cron expression represents a set of times, using 6 space-separated fields.
+
+        +--------------+------------+-----------------+----------------------------+
+        | Field name   | Mandatory? | Allowed values  | Allowed special characters |
+        +==============+============+=================+============================+
+        | Seconds      | Yes        | 0-59            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Minutes      | Yes        | 0-59            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Hours        | Yes        | 0-23            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Day of month | Yes        | 1-31            | * / , - ?                  |
+        +--------------+------------+-----------------+----------------------------+
+        | Month        | Yes        | 1-12 or JAN-DEC | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Day of week  | Yes        | 0-6 or SUN-SAT  | * / , - ?                  |
+        +--------------+------------+-----------------+----------------------------+
+
+        Note: Month and Day-of-week field values are case insensitive. "SUN", "Sun", and "sun" are equally accepted.
+
+        :param id: Cron job id, must be unique globally and can be used later to stop the schedule
+        :param cron: Cron string to run the task
+        """
+        nid, roles, fanout = self._simple._get_route(nid, roles, allnodes)
+
+        runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
+        return self._client.schedule_add(id, cron, gid=gid, nid=nid, cmd='bash',
+                                         args=runargs, roles=roles, fanout=fanout, data=cmds, tags=tags)
+
+    def executeJumpscript(self, id, cron, domain=None, name=None, content=None, path=None, method=None,
+                          gid=None, nid=None, roles=[], allnodes=True, timeout=5, args={}, tags=None):
+        nid, roles, fanout = self._simple._get_route(nid, roles, allnodes)
+
+        if domain is not None:
+            assert name is not None, "name is required in case 'domain' is given"
+        else:
+            if not content and not path and not method:
+                raise ValueError('domain/name, content, or path must be supplied')
+
+        runargs = acclient.RunArgs(max_time=timeout)
+        if domain is not None:
+            runargs = runargs.update({'domain': domain, 'name': name})
+            return self._client.schedule_add(id, cron, gid=gid, nid=nid, cmd=acclient.CMD_EXECUTE_JUMPSCRIPT,
+                                             args=runargs, data=json.dumps(args), roles=roles, fanout=fanout, tags=tags)
+        else:
+            # call the unexposed jumpscript_content extension manually
+            if method:
+                content = self._simple._getFuncCode(method)
+            elif path:
+                content = j.system.fs.fileGetContents(path)
+
+            data = {
+                'content': content,
+                'args': args,
+            }
+
+            return self._client.schedule_add(id, cron, gid=gid, nid=nid, cmd=acclient.CMD_EXECUTE_JUMPSCRIPT_CONTENT,
+                                             args=runargs, data=json.dumps(data), roles=roles, fanout=fanout, tags=tags)
+
+    def unschedule(self, id):
+        """
+        Unschedule a task given it's ID
+
+        You can get a list of all scheduled ID's using the :func:`simple.SchedulerClient.list` method.
+        :param id: id of the job to unschedule
+        """
+        return self._client.schedule_remove(id)
+
+    def unschedule_prefix(self, prefix):
+        """
+        Unschedule all tasks that its ID is starting with prefix
+
+        You can get a list of all scheduled ID's using the :func:`simple.SchedulerClient.list` method.
+        :param prefix: prefix of the cron ID to unschedule
+        """
+        return self._client.schedule_remove_prefix(prefix)
+
+
 class SimpleClient(object):
     """
     Simple client
     """
     def __init__(self, advanced_client):
         self._client = advanced_client
-        self._sync = SyncClient(advanced_client)
+        self._sync = SyncClient(self)
+        self._scheduler = SchedulerClient(self)
 
     @property
     def sync(self):
         return self._sync
+
+    @property
+    def scheduler(self):
+        return self._scheduler
 
     def getAgents(self):
         """
@@ -543,9 +694,9 @@ class SimpleClient(object):
             buff.write('#######################################################\n\n')
         return buff.getvalue()
 
-    def _process_exec_jobs(self, cmd, die, timeout, fanout):
+    def _process_exec_jobs(self, execjobs, die, timeout, fanout):
         jobs = []
-        for job in cmd.get_jobs().itervalues():
+        for job in execjobs:
             state = STATE_UNKNOWN
             try:
                 job.wait(timeout)
@@ -573,7 +724,47 @@ class SimpleClient(object):
             _, _, state, stdout, stderr = jobs.pop()
             return ResultTuple(state, stdout, stderr)
 
-    def execute(self, cmd, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, data=None):
+    def _get_route(self, nid, roles, fanout):
+        if nid is None and not roles:
+            roles = ['*']
+        elif nid is not None:
+            fanout = False
+
+        return nid, roles, fanout
+
+    def executeAsync(self, cmd, path=None, gid=None, nid=None, roles=[], allnodes=True, timeout=5,
+                     data=None, tags=None):
+        """
+        Executes a command on node(s)
+
+        :param cmd: Command to execute ex('ls -l /opt')
+        :param path: CWD of commnad (where to execute)
+        :param gid: GID of node
+        :param nid: NID of node
+        :param roles: List of agent roles to match (only agent that satisfies all the given roles will execue this)
+        :param allnodes: Execute on ALL agents that matches the roles (default True), if False only one agent will
+                       execute
+        :param timeout: Process timeout, if took more than `timeout` the process will get killed and error is returned.
+        :param data: raw data that will be feed to command stdin.
+        :param tags: Tags string that will be attached to the command and return with the results as is. Usefule to
+                   attach meta data to the command for analysis
+        """
+
+        parts = shlex.split(cmd)
+        assert len(parts) > 0, "Empty command string"
+        cmd = parts[0]
+        args = parts[1:]
+
+        nid, roles, fanout = self._get_route(nid, roles, allnodes)
+
+        runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
+        command = self._client.execute(gid, nid, cmd, cmdargs=args, args=runargs, data=data,
+                                       roles=roles, fanout=fanout, tags=tags)
+
+        return command.get_jobs().values()
+
+    def execute(self, cmd, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5,
+                data=None, tags=None):
         """
         Executes a command on node(s)
 
@@ -587,50 +778,45 @@ class SimpleClient(object):
         :param die: If True raises an exception when error occure, otherwise return results with error state.
         :param timeout: Process timeout, if took more than `timeout` the process will get killed and error is returned.
         :param data: raw data that will be feed to command stdin.
+        :param tags: Tags string that will be attached to the command and return with the results as is. Usefule to
+                   attach meta data to the command for analysis
         """
+        nid, roles, fanout = self._get_route(nid, roles, allnodes)
 
-        fanout = allnodes
-        parts = shlex.split(cmd)
-        assert len(parts) > 0, "Empty command string"
-        cmd = parts[0]
-        args = parts[1:]
+        jobs = self.executeAsync(cmd, path=path, gid=gid, nid=nid, roles=roles,
+                                 allnodes=fanout, timeout=timeout, data=data, tags=tags)
+        return self._process_exec_jobs(jobs, die, timeout, fanout)
 
-        if nid is None and not roles:
-            roles = ['*']
-        elif nid is not None:
-            fanout = False
-
-        runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
-        command = self._client.execute(gid, nid, cmd, cmdargs=args, args=runargs, data=data, roles=roles, fanout=fanout)
-
-        return self._process_exec_jobs(command, die, timeout, fanout)
-
-    def executeBash(self, cmds, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5):
+    def executeBashAsync(self, cmds, path=None, gid=None, nid=None, roles=[], allnodes=True, timeout=5, tags=None):
         """
         Same as execute but cmds can be a bash script
         """
-        fanout = allnodes
-        if nid is None and not roles:
-            roles = ['*']
+        nid, roles, fanout = self._get_route(nid, roles, allnodes)
 
-        if nid is not None:
-            fanout = False
         runargs = acclient.RunArgs(max_time=timeout, working_dir=path)
-        command = self._client.cmd(gid, nid, 'bash', args=runargs, data=cmds, roles=roles, fanout=fanout)
+        command = self._client.cmd(gid, nid, 'bash', args=runargs, data=cmds, roles=roles, fanout=fanout, tags=tags)
 
-        return self._process_exec_jobs(command, die, timeout, fanout)
+        return command.get_jobs().values()
+
+    def executeBash(self, cmds, path=None, gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, tags=None):
+        nid, roles, fanout = self._get_route(nid, roles, allnodes)
+
+        jobs = self.executeBashAsync(cmds=cmds, path=path, gid=gid, nid=nid, roles=roles,
+                                     allnodes=fanout, timeout=timeout, tags=tags)
+        return self._process_exec_jobs(jobs, die, timeout, fanout)
 
     def _getFuncCode(self, func):
         if not inspect.isfunction(func):
             raise ValueError('method must be function (not class method)')
 
         source = inspect.getsource(func)
+        source = textwrap.dedent(source)
         if func.func_name != 'action':
-            source = re.sub('^def\s+%s\(' % func.func_name, 'def action(', source, 1)
+            source = re.sub('^def\s+%s\s*\(' % func.func_name, 'def action(', source, 1)
         return source
 
     def executeJumpscript(self, domain=None, name=None, content=None, path=None, method=None,
-                          gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, args={}):
+                          gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, args={}, tags=None):
         """
         Executes jumpscript synchronusly and immediately get resutls
 
@@ -648,10 +834,12 @@ class SimpleClient(object):
         :param die: If True raises an exception when error occure, otherwise return results with error state.
         :param timeout: Process timeout, if took more than `timeout` the process will get killed and error is returned.
         :param args: Arguments to jumpscript
+        :param tags: Tags string that will be attached to the command and return with the results as is. Usefule to
+                   attach meta data to the command for analysis
         """
         jobs = self.executeJumpscriptAsync(
             domain=domain, name=name, content=content, path=path, method=method,
-            gid=gid, nid=nid, roles=roles, allnodes=allnodes, die=die, timeout=timeout, args=args
+            gid=gid, nid=nid, roles=roles, allnodes=allnodes, timeout=timeout, args=args, tags=tags
         )
 
         results = []
@@ -675,7 +863,7 @@ class SimpleClient(object):
         return results
 
     def executeJumpscriptAsync(self, domain=None, name=None, content=None, path=None, method=None,
-                               gid=None, nid=None, roles=[], allnodes=True, die=True, timeout=5, args={}):
+                               gid=None, nid=None, roles=[], allnodes=True, timeout=5, args={}, tags=None):
         """
         Executes jumpscript asynchronusly and immediately return jobs
 
@@ -690,15 +878,12 @@ class SimpleClient(object):
         :param roles: List of agent roles to match (only agent that satisfies all the given roles will execue this)
         :param allnodes: Execute on ALL agents that matches the roles (default True), if False only one agent will
                        execute
-        :param die: If True raises an exception when error occure, otherwise return results with error state.
         :param timeout: Process timeout, if took more than `timeout` the process will get killed and error is returned.
         :param args: Arguments to jumpscript
+        :param tags: Tags string that will be attached to the command and return with the results as is. Usefule to
+                   attach meta data to the command for analysis
         """
-        fanout = allnodes
-        if nid is None and not roles:
-            roles = ['*']
-        elif nid is not None:
-            fanout = False
+        nid, roles, fanout = self._get_route(nid, roles, allnodes)
 
         if domain is not None:
             assert name is not None, "name is required in case 'domain' is given"
@@ -709,7 +894,7 @@ class SimpleClient(object):
         runargs = acclient.RunArgs(max_time=timeout)
         if domain is not None:
             command = self._client.execute_jumpscript(gid=gid, nid=nid, domain=domain, name=name,
-                                                      args=args, runargs=runargs, roles=roles, fanout=fanout)
+                                                      args=args, runargs=runargs, roles=roles, fanout=fanout, tags=tags)
         else:
             # call the unexposed jumpscript_content extension manually
             if method:
@@ -718,7 +903,7 @@ class SimpleClient(object):
                 content = j.system.fs.fileGetContents(path)
 
             command = self._client.execute_jumpscript_content(
-                gid, nid, content, args=args, runargs=runargs, roles=roles, fanout=fanout
+                gid, nid, content, args=args, runargs=runargs, roles=roles, fanout=fanout, tags=tags
             )
 
         return command.get_jobs().values()

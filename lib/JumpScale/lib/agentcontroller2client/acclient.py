@@ -7,7 +7,7 @@ GET_INFO_TIMEOUT = 5
 
 CMD_EXECUTE = 'execute'
 CMD_EXECUTE_JUMPSCRIPT = 'jumpscript'
-CMD_EXECUTE_LEGACY_JUMPSCRIPT = 'legacy'
+CMD_EXECUTE_JUMPSCRIPT_CONTENT = 'jumpscript_content'
 CMD_GET_CPU_INFO = 'get_cpu_info'
 CMD_GET_NIC_INFO = 'get_nic_info'
 CMD_GET_OS_INFO = 'get_os_info'
@@ -302,6 +302,10 @@ class Job(Base):
         self._update()
         return self._jobdata['data']
 
+    @property
+    def tags(self):
+        return self._jobdata.get('tags')
+
     def _get_result_queue(self):
         return 'cmd.%s.%d.%d' % (self.id, self.gid, self.nid)
 
@@ -326,7 +330,7 @@ class Job(Base):
         """
         Kills this command on agent (if it's running)
         """
-        return self._client.cmd(self._gid, self._nid, 'kill', RunArgs(), {'id': self._id})
+        return self._client.cmd(self._gid, self._nid, 'kill', RunArgs(), data=json.dumps({'id': self._id}))
 
     def get_stats(self):
         """
@@ -336,7 +340,7 @@ class Job(Base):
         if self.state != 'RUNNING':
             raise AgentException('Can only get stats on running jobs')
         stats = self._client.cmd(self._gid, self._nid, 'get_process_stats',
-                                 RunArgs(), {'id': self._id}).get_next_result(GET_INFO_TIMEOUT)
+                                 RunArgs(), data=json.dumps({'id': self._id})).get_next_result(GET_INFO_TIMEOUT)
         if stats.state != 'SUCCESS':
             raise AgentException(stats.data)
 
@@ -383,7 +387,7 @@ class Cmd(BaseCmd):
     You probably don't need to make an instance of this class manually. Alway use :func:`acclient.Client.cmd` or
     ony of the client shortcuts.
     """
-    def __init__(self, client, id, gid, nid, cmd, args, data, roles, fanout):
+    def __init__(self, client, id, gid, nid, cmd, args, data, roles, fanout, tags):
         if not isinstance(args, RunArgs):
             raise ValueError('Invalid arguments')
 
@@ -402,6 +406,7 @@ class Cmd(BaseCmd):
         self._data = data
         self._roles = roles
         self._fanout = fanout
+        self._tags = tags
         self._result_iter = None
 
     def iter_results(self, timeout=GENERIC_TIMEOUT):
@@ -468,6 +473,10 @@ class Cmd(BaseCmd):
         """
         return self._fanout
 
+    @property
+    def tags(self):
+        return self._tags
+
     def dump(self):
         """
         Gets the command as a dict
@@ -478,6 +487,7 @@ class Cmd(BaseCmd):
             'id': self.id,
             'gid': self.gid,
             'nid': self.nid,
+            'tags': self.tags,
             'roles': self.roles,
             'fanout': self.fanout,
             'cmd': self.cmd,
@@ -505,7 +515,14 @@ class Client(object):
         # Check the connectivity
         self._redis.ping()
 
-    def cmd(self, gid, nid, cmd, args, data=None, id=None, roles=None, fanout=False):
+    getRunArgs = RunArgs
+
+    def _build_cmd(self, gid, nid, cmd, args, data=None, id=None, roles=None, fanout=False, tags=None):
+        cmd_id = id or str(uuid.uuid4())
+        return Cmd(self, id=cmd_id, gid=gid, nid=nid, cmd=cmd, args=args,
+                   data=data, roles=roles, fanout=fanout, tags=tags)
+
+    def cmd(self, gid, nid, cmd, args, data=None, id=None, roles=None, fanout=False, tags=None):
         """
         Executes a command, return a cmd descriptor
 
@@ -521,7 +538,8 @@ class Client(object):
                     There is a special role '*' which means ANY.
         :type roles: list
         :param fanout: Send job to ALL agents that satisfy the given role. Only effective is role is set.
-
+        :param tags: Tags string that will be attached to the command and return with the results as is. Usefule to
+                   attach meta data to the command for analysis
         Allowed compinations:
 
         +-----+-----+------+---------------------------------------+
@@ -536,14 +554,89 @@ class Client(object):
 
         :rtype: :class:`acclient.Cmd`
         """
-        cmd_id = id or str(uuid.uuid4())
-        cmd = Cmd(self, cmd_id, gid, nid, cmd, args, data, roles, fanout)
+        cmd = self._build_cmd(gid=gid, nid=nid, cmd=cmd, args=args, data=data,
+                              id=id, roles=roles, fanout=fanout, tags=tags)
 
         payload = json.dumps(cmd.dump())
         self._redis.rpush(QUEUE_CMDS_MAIN, payload)
         return cmd
 
-    def execute(self, gid, nid, executable, cmdargs=None, args=None, data=None, id=None, roles=None, fanout=False):
+    def schedule_add(self, id, cron, gid, nid, cmd, args, data=None, roles=None, fanout=False, tags=None,
+                     validate_queued=False):
+        """
+        Schedule a command to run on the given cron expression.
+
+        Cron expression represents a set of times, using 6 space-separated fields.
+
+        +--------------+------------+-----------------+----------------------------+
+        | Field name   | Mandatory? | Allowed values  | Allowed special characters |
+        +==============+============+=================+============================+
+        | Seconds      | Yes        | 0-59            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Minutes      | Yes        | 0-59            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Hours        | Yes        | 0-23            | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Day of month | Yes        | 1-31            | * / , - ?                  |
+        +--------------+------------+-----------------+----------------------------+
+        | Month        | Yes        | 1-12 or JAN-DEC | * / , -                    |
+        +--------------+------------+-----------------+----------------------------+
+        | Day of week  | Yes        | 0-6 or SUN-SAT  | * / , - ?                  |
+        +--------------+------------+-----------------+----------------------------+
+
+        Note: Month and Day-of-week field values are case insensitive. "SUN", "Sun", and "sun" are equally accepted.
+
+        :param id: Cron job id, must be unique globally and can be used later to stop the schedule
+        :param cron: Cron string to run the task
+        :param validate_queued: If False (default), the schedule_add will not validated that the schedule_add command
+                              has been picked up by the controller. This is usefule when you want to schedule tasks
+                              while the agent controller is not up yet. So client will just push this command to queue
+                              and will not care about it.
+
+        Note: Other params are exeactly as :func:`acclient.Client.cmd`
+        """
+        cmd = self._build_cmd(gid=gid, nid=nid, cmd=cmd, args=args,
+                              data=data, id='-', roles=roles, fanout=fanout, tags=tags).dump()
+
+        data = {
+            'cron': cron,
+            'cmd': cmd
+        }
+
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_add'),
+                       data=json.dumps(data), id=id, roles=['*'])
+        if validate_queued:
+            result = cmd.get_next_result(GET_INFO_TIMEOUT)
+            return self._load_json_or_die(result)
+
+    def schedule_list(self):
+        """
+        List all scheduled jobs
+        """
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_list'), roles=['*'])
+        result = cmd.get_next_result(GET_INFO_TIMEOUT)
+        return self._load_json_or_die(result)
+
+    def schedule_remove(self, id, validate_queued=False):
+        """
+        Remove a scheduled job by ID
+        """
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove'), id=id, roles=['*'])
+        if validate_queued:
+            result = cmd.get_next_result(GET_INFO_TIMEOUT)
+            return self._load_json_or_die(result)
+
+    def schedule_remove_prefix(self, prefix, validate_queued=False):
+        """
+        Remove a scheduled job by ID
+        """
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove_prefix'), id=prefix, roles=['*'])
+        if validate_queued:
+            result = cmd.get_next_result(GET_INFO_TIMEOUT)
+            return self._load_json_or_die(result)
+
+    def execute(self, gid, nid, executable, cmdargs=None, args=None, data=None, id=None, roles=None,
+                fanout=False, tags=None):
         """
         Short cut for cmd.execute
 
@@ -559,15 +652,18 @@ class Client(object):
                     There is a special role '*' which means ANY.
         :type roles: list
         :param fanout: Fanout job to all agents with given role (only effective if role is set)
+        :param tags: Tags string that will be attached to the command and return with the results as is. Usefule to
+                   attach meta data to the command for analysis
         """
         if cmdargs is not None and not isinstance(cmdargs, list):
             raise ValueError('cmdargs must be a list')
 
         args = RunArgs().update(args).update({'name': executable, 'args': cmdargs})
 
-        return self.cmd(gid, nid, CMD_EXECUTE, args, data, id, roles, fanout)
+        return self.cmd(gid=gid, nid=nid, cmd=CMD_EXECUTE, args=args, data=data, id=id, roles=roles,
+                        fanout=fanout, tags=tags)
 
-    def execute_jumpscript(self, gid, nid, domain, name, args={}, runargs=None, roles=None, fanout=False):
+    def execute_jumpscript(self, gid, nid, domain, name, args={}, runargs=None, roles=None, fanout=False, tags=None):
         """
         Executes jumpscale script (py) on agent. The execute_js_py extension must be
         enabled and configured correctly on the agent.
@@ -586,16 +682,17 @@ class Client(object):
         :param fanout: Fanout job to all agents with given role (only effective if role is set)
         """
         runargs = RunArgs().update(runargs).update({'domain': domain, 'name': name})
-        return self.cmd(gid, nid, CMD_EXECUTE_JUMPSCRIPT, runargs, json.dumps(args), roles=roles, fanout=fanout)
+        return self.cmd(gid, nid, CMD_EXECUTE_JUMPSCRIPT, runargs, json.dumps(args), roles=roles,
+                        fanout=fanout, tags=tags)
 
-    def execute_jumpscript_content(self, gid, nid, content, args={}, runargs=None, roles=None, fanout=False):
+    def execute_jumpscript_content(self, gid, nid, content, args={}, runargs=None, roles=None, fanout=False, tags=None):
         data = {
             'content': content,
             'args': args
         }
         runargs = RunArgs().update(runargs)
-        return self.cmd(gid=gid, nid=nid, cmd='jumpscript_content', args=runargs,
-                        data=json.dumps(data), roles=roles, fanout=fanout)
+        return self.cmd(gid=gid, nid=nid, cmd=CMD_EXECUTE_JUMPSCRIPT_CONTENT, args=runargs,
+                        data=json.dumps(data), roles=roles, fanout=fanout, tags=tags)
 
     def get_by_id(self, gid, nid, id):
         """
@@ -674,7 +771,7 @@ class Client(object):
         jqueue = 'cmd.%s.queued' % id
         event = self._redis.brpoplpush(jqueue, jqueue, timeout)
         if event == '' or event is None:
-            raise ResultTimeout('Timedout while waiting for job to get queued')
+            raise ResultTimeout('Timedout while waiting for jobs to get queued, is agent controller working?')
 
         results = self._redis.hgetall('jobresult:%s' % id)
         return dict(map(wrap_jobs, results.values()))
