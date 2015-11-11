@@ -30,30 +30,29 @@ def action():
 
     disks = j.system.platform.diskmanager.partitionsFind(
         mounted=True, prefix='', minsize=0, maxsize=None)
-    for disk in disks:
-        if pattern and j.codetools.regex.match(pattern, disk.path) == True:
-            # pattern is a blacklist, continue if match
-            continue
-        result[disk.path] = {'free': disk.free, 'size': disk.size, 'mountpoint': disk.mountpoint}
+
+    def diskfilter(disk):
+        return not (pattern and j.codetools.regex.match(pattern, disk.path))
+
+    def disktoStr(disk):
+        if disk.mountpoint:
+            freesize, freeunits = j.tools.units.bytes.converToBestUnit(disk.free, 'M')
+            size = j.tools.units.bytes.toSize(disk.size, 'M', freeunits)
+            return "%s on %s %.02f/%.02f %siB free" % (disk.path, disk.mountpoint, freesize, size, freeunits)
+        else:
+            return '%s %s' % (disk.path, disk.model)
 
     results = list()
-
-    for path, disk in list(result.items()):
+    for disk in filter(diskfilter, disks):
         result = {'category': 'Disks'}
-        result['path'] = path
-        checkusage = not (disk['mountpoint'] and j.system.fs.exists(j.system.fs.joinPaths(disk['mountpoint'], '.dontreportusage')))
-
-        if checkusage and ((disk['free'] and disk['size']) and (disk['free'] / float(disk['size'])) * 100 < 10):
-            result['message'] = 'FREE SPACE LESS THAN 10%% on disk %s %s' % (path, disk['mountpoint'])
-            result['state'] = 'ERROR'
-        else:
-            if disk['free']:
-                size, unit = j.tools.units.bytes.converToBestUnit(disk['free'], 'M')
-                result['message'] = '%.2f %siB free space available on %s' % (size, unit, path)
-
-            else:
-                result['message'] = 'Disk %(path)s is not mounted, Info is not available' % result
-            result['state'] = 'OK'
+        result['path'] = disk.path
+        checkusage = not (disk.mountpoint and j.system.fs.exists(j.system.fs.joinPaths(disk.mountpoint, '.dontreportusage')))
+        result['state'] = 'OK'
+        result['message'] = disktoStr(disk)
+        if disk.free and disk.size:
+            freepercent = (disk.free / float(disk.size)) * 100
+            if checkusage and (freepercent < 10):
+                result['state'] = 'ERROR'
         results.append(result)
 
     if not results:
