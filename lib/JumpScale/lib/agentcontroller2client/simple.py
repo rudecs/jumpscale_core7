@@ -194,14 +194,21 @@ class Result(object):
         Any error condition object attached to this job
         """
         critical = self._job.critical
+        eco = None
+
         if critical:
             d = json.loads(critical)
-            return j.errorconditionhandler.getErrorConditionObject(d)
+            eco = j.errorconditionhandler.getErrorConditionObject(d)
         elif self.state == STATE_TIMEDOUT:
-            return j.errorconditionhandler.getErrorConditionObject(msg='Timedout waiting for job')
+            eco = j.errorconditionhandler.getErrorConditionObject(msg='Timedout waiting for job')
         elif self.state != STATE_SUCCESS:
-            return j.errorconditionhandler.getErrorConditionObject(msg=self._error)
-        return None
+            eco = j.errorconditionhandler.getErrorConditionObject(msg=self._error)
+
+        if eco is not None:
+            eco.gid = self.gid
+            eco.nid = self.nid
+
+        return eco
 
     @property
     def _error(self):
