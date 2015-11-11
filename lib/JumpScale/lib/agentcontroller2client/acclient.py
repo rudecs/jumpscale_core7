@@ -288,7 +288,7 @@ class Job(Base):
     @property
     def streams(self):
         self._update()
-        return self._jobdata.get('streams', ['', ''])
+        return self._jobdata.get('streams') or ['', '']
 
     @property
     def critical(self):
