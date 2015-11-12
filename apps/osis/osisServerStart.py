@@ -37,7 +37,7 @@ if __name__ == '__main__':
                 client.create_database(database_name)
             else:
                 client.switch_database(database_name)
-            client.query('ALTER RETENTION POLICY "default" on main DURATION 1w default')
+            client.query('ALTER RETENTION POLICY "default" on main DURATION 3d default')
 
         connections["%s_%s"%(dbname,instancename)]=client
 
