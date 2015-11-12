@@ -8,27 +8,23 @@ from sambaparser import SambaConfigParser
 
 CONFIG_FILE = '/etc/samba/smb.conf'
 EXCEPT_SHARES = ['global', 'printers', 'homes']
+BASEPATH = '/VNASSHARE/'
+
 
 class SMBUser(object):
-    def __init__(self, verbose=False):
+    def __init__(self, con, verbose=False):
         # self._smb = cmd_sambatool(self._stdout, self._stderr)
+        self.con = con
         self._verbose = verbose
 
     def _smbrun(self, args):
-        output = j.system.process.run("samba-tool user " + args, False, True, 10, False)
+        output = self.con.run('samba-tool user %s ' % args, warn_only=True)
+        lines = output.splitlines()
 
-        # if stdout is empty, we return the first line of stderr
-        if output[1] == '':
-            lines = output[2].split('\n')
-            lines = [lines[0], 0]
-        else:
-            lines = output[1].split('\n')
-
-        lines.pop()
         return lines
 
     def _format(self, output):
-        if output[0].startswith("ERROR("):
+        if output[0].startswith("Warning:"):
             if self._verbose:
                 print output[0]
 
@@ -42,23 +38,47 @@ class SMBUser(object):
 
     def remove(self, username):
         output = self._smbrun("delete " + username)
+        with self.con.fabric.api.settings(warn_only=True):
+            self.con.user_remove(username)
         return self._format(output)
 
     def add(self, username, password):
         output = self._smbrun("add " + username + " " + password)
-        j.system.process.run("bash /etc/samba/update-uid.sh", True, False)
+        with self.con.fabric.api.settings(warn_only=True):
+            self.con.run("bash /etc/samba/update-uid.sh", True, False)
+            self.con.user_create(username)
         return self._format(output)
 
+    def grantaccess(self, username, sharename, sharepath, readonly=True):
+        sharepath = j.system.fs.joinPaths(BASEPATH, sharepath, sharename)
+        if not self.con.dir_exists(sharepath):
+            return False
+        group = '%s%s' % (sharename, 'r' if readonly else 'rw')
+        with self.con.fabric.api.settings(warn_only=True):
+            self.con.group_user_add(group, username)
+        return True
+
+    def revokeaccess(self, username, sharename, sharepath, readonly=True):
+        sharepath = j.system.fs.joinPaths(BASEPATH, sharepath, sharename)
+        with self.con.fabric.api.settings(warn_only=True):
+            if self.con.dir_exists(sharepath):
+                group = '%s%s' % (sharename, 'r' if readonly else 'rw')
+                self.con.group_user_del(username, group)
+        return True
+
+
 class SMBShare(object):
-    def __init__(self):
+    def __init__(self, con):
+        self.con = con
         self._config = SambaConfigParser()
         self._load()
 
     def _load(self):
-        if not j.system.fs.exists(path=CONFIG_FILE):
-            j.system.fs.createDir(j.system.fs.getParent(CONFIG_FILE))
-            j.system.fs.createEmptyFile(CONFIG_FILE)
-        data = StringIO('\n'.join(line.strip() for line in open(CONFIG_FILE)))
+        if not self.con.file_exists(CONFIG_FILE):
+            self.con.dir_ensure(j.system.fs.getParent(CONFIG_FILE))
+            self.con.file_ensure(CONFIG_FILE)
+        cfg = self.con.file_read(CONFIG_FILE)
+        data = StringIO('\n'.join(line.strip() for line in cfg.splitlines()))
         self._config.readfp(data)
 
     def get(self, sharename):
@@ -71,6 +91,16 @@ class SMBShare(object):
             return False
 
         return self._config.items(sharename)
+
+    def list(self):
+
+        shares = self._config.sections()
+        # special share which we don't handle
+        for sharename in shares[:]:
+            if sharename in EXCEPT_SHARES:
+                shares.remove(sharename)
+
+        return shares
 
     def remove(self, sharename):
         # don't touch special shares (global, ...)
@@ -102,8 +132,9 @@ class SMBShare(object):
         return True
 
     def commit(self):
-        with open(CONFIG_FILE, 'wb') as configfile:
-            self._config.write(configfile)
+        sio = StringIO()
+        self._config.write(sio)
+        self.con.file_write(CONFIG_FILE, sio.getvalue())
 
         # reload config
         j.system.process.killProcessByName('smbd', signal.SIGHUP)
@@ -111,14 +142,85 @@ class SMBShare(object):
 
         return True
 
+    def list(self):
+        shares = self._config.sections()
+        result = dict()
+        for sharename in shares:
+            if sharename in EXCEPT_SHARES:
+                # special share which we don't handle
+                continue
+            shareinfo = self._config.items(sharename)
+            result[sharename] = {info[0]: info[1] for info in shareinfo}
+
+        return result
+
+
+class SMBSubShare(object):
+    def __init__(self, con):
+        self.con = con
+        self.con.dir_ensure(BASEPATH)
+
+    def get(self, sharename, sharepath):
+        sharepath = j.system.fs.joinPaths(BASEPATH, sharepath, sharename)
+        if not self.con.dir_exists(sharepath):
+            return False
+
+        acls = dict()
+        for access in ['r', 'rw']:
+            groupname = '%s%s' % (sharename, access)
+            users = self.con.group_check(groupname).get('members', [])
+            acls[access] = users
+
+        return {sharename: acls}
+
+    def remove(self, sharename, sharepath):
+        sharepath = j.system.fs.joinPaths(BASEPATH, sharepath, sharename)
+        self.con.dir_remove(sharepath)
+        with self.con.fabric.api.settings(warn_only=True):
+            for access in ['r', 'rw']:
+                self.con.group_remove('%s%s' % (sharename, access))
+
+        return True
+
+    def add(self, sharename, sharepath):
+        # Create dir under BASEPATH
+        # Create two groups for access: one readonly and one rw
+        sharepath = j.system.fs.joinPaths(BASEPATH, sharepath, sharename)
+        self.con.dir_ensure(sharepath, recursive=True)
+
+        with self.con.fabric.api.settings(warn_only=True):
+            for access in ['r', 'rw']:
+                groupname = '%s%s' % (sharename, access)
+                self.con.group_create(groupname)
+                self.con.run('setfacl -m g:%s:%s %s' % (groupname, access, sharepath))
+
+        return True
+
+    def list(self, path=''):
+        sharepath = j.system.fs.joinPaths(BASEPATH, path)
+        subshares = self.con.run('find %s -maxdepth 1 -type d -exec basename {} \;' % sharepath).splitlines()
+        result = list()
+        for subshare in subshares:
+            if subshare == j.system.fs.getBaseName(path):
+                continue
+            result.append(self.get(subshare, sharepath))
+        return result
+
+
 class Samba:
-    def __init__(self, con=None):
-        self._users = SMBUser(True)
-        self._shares = SMBShare()
-        self._con = con;
+    def __init__(self, con):
+        if not con:
+            # make sure key is generated and in authorized keys
+            con = j.ssh.connect(keypath='/root/.ssh/id_rsa')
+        self._users = SMBUser(con, True)
+        self._shares = SMBShare(con)
+        self._subshares = SMBSubShare(con)
 
     def getShare(self, sharename):
         return self._shares.get(sharename)
+
+    def listShares(self):
+        return self._shares.list()
 
     def removeShare(self, sharename):
         return self._shares.remove(sharename)
@@ -129,6 +231,18 @@ class Samba:
     def commitShare(self):
         return self._shares.commit()
 
+    def getSubShare(self, sharename, sharepath):
+        return self._subshares.get(sharename)
+
+    def removeSubShare(self, sharename, sharepath):
+        return self._subshares.remove(sharename, sharepath)
+
+    def addSubShare(self, sharename, sharepath):
+        return self._subshares.add(sharename, sharepath)
+
+    def listSubShares(self, path):
+        return self._subshares.list(path)
+
     def listUsers(self):
         return self._users.list()
 
@@ -138,10 +252,18 @@ class Samba:
     def addUser(self, username, password):
         return self._users.add(username, password)
 
+    def grantaccess(self, username, sharename, sharepath, readonly=True):
+        return self._users.grantaccess(username, sharename, sharepath, readonly)
+
+    def revokeaccess(self, username, sharename, sharepath, readonly=True):
+        return self._users.revokeaccess(username, sharename, sharepath, readonly)
+
+
 class SambaFactory(object):
 
     def _getFactoryEnabledClasses(self):
-        return (("","Samba",Samba()),("Samba","SMBUser",SMBUser()),("Samba","SMBShare",SMBShare()),("Samba","SambaConfigParser",SambaConfigParser()))
+        return (("", "Samba", Samba()), ("Samba", "SMBUser", SMBUser()), ("Samba", "SMBShare", SMBShare()),
+                ("Samba", "SMBSubShare", SMBSubShare()), ("Samba", "SambaConfigParser", SambaConfigParser()))
 
     def get(self, con):
         return Samba(con)
