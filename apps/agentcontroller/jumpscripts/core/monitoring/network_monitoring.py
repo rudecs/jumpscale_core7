@@ -30,7 +30,8 @@ def action():
     for nic, stat in counters.iteritems():
         if pattern and j.codetools.regex.match(pattern,nic) == False:
             continue
-
+        if j.system.net.getNicType(nic) == 'VIRTUAL' and not 'pub' in nic:
+            continue
         result = dict()
         bytes_sent, bytes_recv, packets_sent, packets_recv, errin, errout, dropin, dropout = stat
         result['kbytes_sent'] = int(round(bytes_sent/1024.0,0))
