@@ -3,6 +3,7 @@ import JumpScale.grid.agentcontroller
 import JumpScale.grid.osis
 import JumpScale.baselib.units
 import gevent
+import crontab
 import json
 import time
 
@@ -247,9 +248,15 @@ class GridHealthChecker(object):
                 if jobstate == 'OK':
                     for data in result:
                         state = data.get('state', '')
-                        if jumpscript.period and now - lastchecked > (jumpscript.period * 1.1):
-                            if state != 'ERROR':
-                                state = 'EXPIRED'
+                        if jumpscript.period:
+                            if isinstance(jumpscript.period, int):
+                                interval = jumpscript.period
+                            else:
+                                cron = crontab.CronTab(jumpscript.period)
+                                interval = cron.next() - cron.previous()
+                            if now - lastchecked > (interval * 1.1):
+                                if state != 'ERROR':
+                                    state = 'EXPIRED'
                         resdata = {'message': data.get('message', ''),
                                    'state': state,
                                    'guid': jobresult['guid'],
