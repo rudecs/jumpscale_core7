@@ -19,9 +19,9 @@ def retry(func):
     return wrapper
 
 class TCPHATransport(Transport):
-    def __init__(self, connections, clientclass, *args, **kwargs):
+    def __init__(self, connections, clientclass, timeout=None, *args, **kwargs):
         self._connections = [ [ip, port, 0] for ip, port in connections ]
-        self._timeout = 60
+        self._timeout = timeout
         self._args = args
         self._kwargs = kwargs
         self._clientclass = clientclass
