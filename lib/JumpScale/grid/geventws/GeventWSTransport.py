@@ -51,7 +51,7 @@ class GeventWSTransport(Transport):
             rcv=None
             while rcv==None:
                 now=j.base.time.getTimeEpoch()
-                if now>start+timeout:
+                if timeout and now>start+timeout:
                     break
                 try:
                     rcv = requests.post(self.url, data=data2, headers=headers, timeout=timeout)
