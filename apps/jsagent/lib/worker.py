@@ -99,34 +99,26 @@ class Worker(object):
                 self.processAction(job)
                 continue
             if job:
-                
+
                 j.application.jid=job.guid
+                jskey = job.category, job.cmd
                 try:
-                    if job.jscriptid in self.actions:
-                        jscript=self.actions[job.jscriptid]
-                    else:
+                    jscript = self.actions.get(jskey)
+                    if jscript is None:
                         self.log("JSCRIPT CACHEMISS")
                         try:
-                            jscript=self.redisw.getJumpscriptFromId(job.jscriptid)
+                            jscript=self.redisw.getJumpscriptFromName(job.category, job.cmd)
                             if jscript==None:
-                                msg="cannot find jumpscript with id:%s"%job.jscriptid
+                                msg="cannot find jumpscript with id:%s" % jskey
                                 self.log("ERROR:%s"%msg)
                                 j.events.bug_warning(msg,category="worker.jscript.notfound")
                                 job.result=msg
                                 job.state="ERROR"
                                 self.notifyWorkCompleted(job)
                                 continue
-
-                            if jscript.organization!="" and jscript.name!="" and jscript.id<1000000:
-                                #this is to make sure when there is a new version of script since we launched this original script we take the newest one
-                                jscript=self.redisw.getJumpscriptFromName(jscript.organization,jscript.name)
-                                job.jscriptid=jscript.id
-                                #result is method action
-
                             jscript.write()
                             jscript.load()
-
-                            self.actions[job.jscriptid]=jscript
+                            self.actions[jskey] = jscript
 
                         except Exception as e:                
                             agentid=j.application.getAgentId()

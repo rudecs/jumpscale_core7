@@ -161,7 +161,7 @@ from JumpScale import j
         else:
             #make sure this gets executed by worker
             queue = getattr(self, 'queue', 'default') #fall back to default queue if none specified
-            result=redisw.execJumpscript(self.id,_timeout=self.timeout,_queue=queue,_log=self.log,_sync=False)
+            result=redisw.execJumpscript(jumpscript=self,_timeout=self.timeout,_queue=queue,_log=self.log,_sync=False)
 
         self.lastrun = time.time()
         if result!=None:
