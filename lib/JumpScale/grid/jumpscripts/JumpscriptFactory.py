@@ -213,6 +213,7 @@ class JumpscriptFactory:
         self.loadFromTar(tar, 'bz2')
 
     def loadFromTar(self, tarcontent, type):
+        j.system.fs.removeDirTree(self.basedir)
         import tarfile
         fp = StringIO.StringIO()
         fp.write(tarcontent)
