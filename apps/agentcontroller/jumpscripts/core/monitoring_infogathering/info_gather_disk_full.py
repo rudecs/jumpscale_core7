@@ -7,6 +7,7 @@ Check on disk fullness
 
 organization = "jumpscale"
 author = "deboeckj@codescalers.com"
+category = "monitor.healthcheck"
 license = "bsd"
 version = "1.0"
 period = 5 * 60  # always in sec
@@ -23,14 +24,22 @@ roles = []
 def action():
     import psutil
     mounteddisks = psutil.disk_partitions()
+    results = list()
     for disk in mounteddisks:
+        result = dict()
         if disk.mountpoint:
             usage = psutil.disk_usage(disk.mountpoint)
             message = "Disk %s mounted at %s on node %s:%s reached %s%%" % (disk.device, disk.mountpoint, j.application.whoAmI.gid, j.application.whoAmI.nid, usage.percent)
+            result ['message'] = message
+            result ['category'] = 'Disks'
             if usage.percent > 90:
                 j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
+                result ['state'] = 'WARNING'
             elif usage.percent > 95:
                 j.errorconditionhandler.raiseOperationalCritical(message, 'monitoring', die=False)
-
+                result ['state'] = 'ERROR'
+        results.append(result)
+    return results
+    
 if __name__ == '__main__':
     action()

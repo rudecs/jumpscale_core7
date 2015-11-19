@@ -161,6 +161,7 @@ class OSISCMDS(object):
                 status['mongodb'] = conn.alive()
             elif conntype.startswith('influxdb'):
                 try:
+                    con.get_list_databases()
                     status['influxdb'] = True
                 except Exception:
                     status['influxdb'] = False

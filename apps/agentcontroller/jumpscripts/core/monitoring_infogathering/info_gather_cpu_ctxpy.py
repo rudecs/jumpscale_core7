@@ -7,6 +7,7 @@ Check on average cpu
 
 organization = "jumpscale"
 author = "deboeckj@codescalers.com"
+category = "monitor.healthcheck"
 license = "bsd"
 version = "1.0"
 period = 15*60  # always in sec
@@ -22,29 +23,39 @@ roles = ['master']
 
 def action():
     osis = j.core.osis.client
-    results = osis.search('system', 'stats', 'select mean(value) from /\d+_\d+_(cpu.percent|memory.percent).gauge/ where time > now() - 1h;')
+    results = osis.search('system', 'stats', 'select derivative(value) from /\d+_\d+_cpu.num_ctx_switches.*/ where time > now() - 1h group by time(1h)  limit 1')
+    res=list()
     for noderesult in results['raw'].get('series', []):
         parts = noderesult['name'].split('.')[0]
-        value = noderesult['values'][0][-1]
+        avgctx = abs(noderesult['values'][0][-1] / 3600.) #thresholds or per second
         gid, nid, type = parts.split('_')
         gid = int(gid)
         nid = int(nid)
-
         level = None
-        if value > 95:
+        print avgctx
+        result = dict()
+        result ['state'] = 'OK'
+        result ['message'] = 'CPU contextswitch value is  %s' % avgctx
+        result ['category'] = 'CPU'
+        if avgctx > 100000:
             level = 1
-        elif value > 80:
+            result ['state'] = 'ERROR'
+
+        elif avgctx > 600000:
             level = 2
+            result ['state'] = 'WARNING'
+
         if level:
-            #500_6_cpu.promile
-            msg = '%s load above treshhold value last hour avergage is %s' % (type.upper(), value)
+            msg = 'CPU contextswitch is to high current value %s' % avgctx
             eco = j.errorconditionhandler.getErrorConditionObject(msg=msg, category='monitoring', level=level, type='OPERATIONS')
             eco.nid = nid
             eco.gid = gid
             eco.process()
 
+        res.append(result)
+    return res
+
 if __name__ == '__main__':
     import JumpScale.grid.osis
     j.core.osis.client = j.clients.osis.getByInstance('main')
-    action()
-
+    print  action()
