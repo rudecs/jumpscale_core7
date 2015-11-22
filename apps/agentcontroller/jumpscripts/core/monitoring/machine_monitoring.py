@@ -48,16 +48,19 @@ def action():
     try:
         domains = con.listAllDomains()
         for domain in domains:
-            machine = syscl.machine.new()
-            machine.id = domain.ID()
-            machine.guid = domain.UUIDString().replace('-', '')
-            domainmachines.append(machine.guid)
-            machine.name = domain.name()
-            print 'Processing', machine.name
-            machine.nid = j.application.whoAmI.nid
-            machine.gid = j.application.whoAmI.gid
-            machine.type = 'KVM'
-            xml = ElementTree.fromstring(domain.XMLDesc())
+            try:
+                machine = syscl.machine.new()
+                machine.id = domain.ID()
+                machine.guid = domain.UUIDString().replace('-', '')
+                domainmachines.append(machine.guid)
+                machine.name = domain.name()
+                print 'Processing', machine.name
+                machine.nid = j.application.whoAmI.nid
+                machine.gid = j.application.whoAmI.gid
+                machine.type = 'KVM'
+                xml = ElementTree.fromstring(domain.XMLDesc())
+            except:
+                continue  # machine was destroyed during inspection
             netaddr = dict()
             for interface in xml.findall('devices/interface'):
                 mac = interface.find('mac').attrib['address']
