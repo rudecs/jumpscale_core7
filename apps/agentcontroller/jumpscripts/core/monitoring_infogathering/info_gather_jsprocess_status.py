@@ -22,21 +22,20 @@ roles = []
 
 def action():
     results =list()
-    for ays in j.atyourservice.findTemplates():
-        instances = ays.listInstances()
-        for instance in instances:
-            aysinstance = ays.getInstance(instance)
-            result = dict()
-            result['state'] = 'OK'
-            result['message'] = "Process %s:%s:%s is running" % (aysinstance.domain, aysinstance.name, instance)
+    for ays in j.atyourservice.findServices():
+        if not ays.getProcessDicts():
+                continue
+        result = dict()
+        result['state'] = 'OK'
+        result['message'] = "Process %s:%s:%s is running" % (ays.domain, ays.name, ays.instance)
+        result['category'] = 'AYS Process'
+        if not ays.actions.check_up_local(ays, wait=False):
+            message = "Process %s:%s:%s is not running" % (ays.domain, ays.name, ays.instance)
+            j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
+            result['state'] = 'WARNING'
+            result['message'] = message
             result['category'] = 'AYS Process'
-            if not aysinstance.actions.check_up_local(aysinstance, wait=False):
-                message = "Process %s:%s:%s is not running" % (aysinstance.domain, aysinstance.name, instance)
-                j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
-                result['state'] = 'WARNING'
-                result['message'] = message
-                result['category'] = 'AYS Process'
-            results.append(result)
+        results.append(result)
             
     return results
          
