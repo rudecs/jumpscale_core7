@@ -50,7 +50,7 @@ def action():
             result['state'] = 'WARNING'
         if level:
             #500_6_cpu.promile
-            msg = '%s load above treshhold avgvalue last hour avergage is %s' % (type.upper(), avgvalue)
+            msg = '%s load -> above treshhold avgvalue last hour avergage is %s' % (type.upper(), avgvalue)
             result['message'] = msg 
             eco = j.errorconditionhandler.getErrorConditionObject(msg=msg, category='monitoring', level=level, type='OPERATIONS')
             eco.nid = nid

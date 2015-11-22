@@ -17,7 +17,7 @@ roles = []
 enable = True
 period=0
 
-log=False
+log=True
 
 def action():
     import JumpScale.grid.osis

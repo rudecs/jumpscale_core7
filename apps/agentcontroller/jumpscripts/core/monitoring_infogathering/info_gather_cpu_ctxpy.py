@@ -1,4 +1,4 @@
-
+ 
 from JumpScale import j
 
 descr = """
@@ -16,14 +16,14 @@ startatboot = True
 order = 1
 enable = True
 async = True
-log = False
+log = True
 queue ='process'
 roles = ['master']
 
 
 def action():
     osis = j.core.osis.client
-    results = osis.search('system', 'stats', 'select derivative(value) from /\d+_\d+_cpu.num_ctx_switches.*/ where time > now() - 1h group by time(1h)  limit 1')
+    results = osis.search('system', 'stats', 'select value from /\d+_\d+_cpu.num_ctx_switches.*/ where time > now() - 1h ')
     res=list()
     for noderesult in results['raw'].get('series', []):
         parts = noderesult['name'].split('.')[0]
@@ -31,6 +31,15 @@ def action():
         gid, nid, type = parts.split('_')
         gid = int(gid)
         nid = int(nid)
+        diff = list()
+        for  i, val in enumerate(noderesult['values']):
+            if i == len(noderesult['values'])-1:
+                break 
+            diff.append(noderesult['values'][i+1][1]-val[1])
+        if diff:
+            avgctx = sum(diff)/float(len(diff))
+        else:
+            avgctx = 0.0
         level = None
         print avgctx
         result = dict()

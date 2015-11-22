@@ -15,7 +15,7 @@ timeout = period * 0.2
 order = 1
 enable = True
 async = True
-log = False
+log = True
 queue ='process'
 roles = []
 
@@ -29,13 +29,13 @@ def action():
             result = dict()
             result['state'] = 'OK'
             result['message'] = "Process %s:%s:%s is running" % (aysinstance.domain, aysinstance.name, instance)
-            result['category'] = 'CPU'
+            result['category'] = 'AYS Process'
             if not aysinstance.actions.check_up_local(aysinstance, wait=False):
                 message = "Process %s:%s:%s is not running" % (aysinstance.domain, aysinstance.name, instance)
                 j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
                 result['state'] = 'WARNING'
                 result['message'] = message
-                result['category'] = 'Proccess'
+                result['category'] = 'AYS Process'
             results.append(result)
             
     return results

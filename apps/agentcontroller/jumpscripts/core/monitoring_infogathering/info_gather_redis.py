@@ -48,12 +48,16 @@ def action():
                 if rcl.ping():
                     state = 'OK'
                 else:
-                    state= 'ERROR'
+                    state = 'ERROR'
                     j.errorconditionhandler.raiseOperationalCritical(errmsg, 'monitoring', die=False)
 
                 maxmemory = float(rcl.config_get('maxmemory').get('maxmemory', 0))
                 used_memory = rcl.info()['used_memory']
-                result['message'] = '*Port*: %s. *Memory usage*: %s/ %s' % (port, used_memory, maxmemory)
+                size, unit = j.tools.units.bytes.converToBestUnit(used_memory)
+                msize, munit = j.tools.units.bytes.converToBestUnit(maxmemory)
+                used_memorymsg = '%.2f %sB' % (size, unit)
+                maxmemorymsg = '%.2f %sB' % (msize, munit)               
+                result['message'] = '*Port*: %s. *Memory usage*: %s/ %s' % (port, used_memorymsg, maxmemorymsg)
 
                 if (used_memory / maxmemory) * 100 > 90:
                     state = 'WARNING'

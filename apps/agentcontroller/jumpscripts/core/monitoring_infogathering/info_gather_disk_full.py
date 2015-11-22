@@ -16,7 +16,7 @@ startatboot = True
 order = 1
 enable = True
 async = True
-log = False
+log = True
 queue ='process'
 roles = []
 
@@ -30,16 +30,18 @@ def action():
         if disk.mountpoint:
             usage = psutil.disk_usage(disk.mountpoint)
             message = "Disk %s mounted at %s on node %s:%s reached %s%%" % (disk.device, disk.mountpoint, j.application.whoAmI.gid, j.application.whoAmI.nid, usage.percent)
-            result ['message'] = message
-            result ['category'] = 'Disks'
-            if usage.percent > 90:
-                j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
-                result ['state'] = 'WARNING'
-            elif usage.percent > 95:
+            result['message'] = message
+            result['category'] = 'Disks'
+            result['state'] = 'OK'
+            if usage.percent > 95:
                 j.errorconditionhandler.raiseOperationalCritical(message, 'monitoring', die=False)
-                result ['state'] = 'ERROR'
+                result['state'] = 'ERROR'
+            elif usage.percent > 90:
+                j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
+                result['state'] = 'WARNING'
+            
         results.append(result)
     return results
     
 if __name__ == '__main__':
-    action()
+    print action()
