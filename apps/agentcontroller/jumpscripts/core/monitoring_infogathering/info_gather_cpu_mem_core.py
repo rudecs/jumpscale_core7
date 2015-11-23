@@ -19,28 +19,32 @@ async = True
 log = True
 queue ='process'
 roles = ['master']
+ 
 
 
 def action():
     osiscl = j.clients.osis.getNamespace('system')
-    results = osiscl.stats.search('select value from /\d+_\d+_(cpu.percent|memory.percent).gauge/ where time > now() - 1h;')
+    gid = j.application.whoAmI.gid
+    nid = j.application.whoAmI.nid
+    cpuresults = osiscl.stats.search('select mean(value) from "%s_%s_cpu.percent.gauge" where time > now() - 1h group by time(1h)' % 
+        (gid, nid))
+    memresults = osiscl.stats.search('select mean(value) from "%s_%s_memory.percent.gauge" where time > now() - 1h group by time(1h)' % 
+        (gid, nid))
+    # print get_results(cpuresults['raw']['series'])
+    # print get_results(memresults['raw']['series'])
+    return get_results(cpuresults['raw']['series']) + get_results(memresults['raw']['series'])
+ 
+def get_results(series):
     res = list()
-    for sira in results['raw']['series']:
+    for sira in series:
 
         parts = sira['name'].split('.')[0]
-        gid, nid, type = parts.split('_')
-        gid = int(gid)
-        nid = int(nid)
-        value = 0
-        count = 0 
-        for entry in sira['values']:
-            value += entry[1]
-            count += 1
-        avgvalue = value/count
+        type = parts.split('_')[2]
+        avgvalue = sira['values'][1][1]
         level = None
         result = dict()
         result ['state'] = 'OK'
-        result ['message'] =  '%s load -> last hour avergage is %s' % (type.upper(), avgvalue)
+        result ['message'] =  r'%s load -> last hour avergage is: %s %%' %(type.upper(), avgvalue)
         result ['category'] = 'CPU'
         if avgvalue > 95:
             level = 1
@@ -50,7 +54,7 @@ def action():
             result['state'] = 'WARNING'
         if level:
             #500_6_cpu.promile
-            msg = '%s load -> above treshhold avgvalue last hour avergage is %s' % (type.upper(), avgvalue)
+            msg = '%s load -> above treshhold avgvalue last hour avergage is: %s %%' % (type.upper(), avgvalue)
             result['message'] = msg 
             eco = j.errorconditionhandler.getErrorConditionObject(msg=msg, category='monitoring', level=level, type='OPERATIONS')
             eco.nid = nid

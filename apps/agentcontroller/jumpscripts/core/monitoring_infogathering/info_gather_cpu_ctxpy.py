@@ -18,33 +18,35 @@ enable = True
 async = True
 log = True
 queue ='process'
-roles = ['master']
+
 
 
 def action():
     osis = j.core.osis.client
-    results = osis.search('system', 'stats', 'select value from /\d+_\d+_cpu.num_ctx_switches.*/ where time > now() - 1h ')
+    gid = j.application.whoAmI.gid
+    nid = j.application.whoAmI.nid
+    results = osis.search('system', 'stats', 
+        'select derivative(value,10s) from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h ' % 
+        (gid, nid))
+
     res=list()
     for noderesult in results['raw'].get('series', []):
         parts = noderesult['name'].split('.')[0]
         avgctx = abs(noderesult['values'][0][-1] / 3600.) #thresholds or per second
-        gid, nid, type = parts.split('_')
-        gid = int(gid)
-        nid = int(nid)
+        type = parts.split('_')[2]
         diff = list()
-        for  i, val in enumerate(noderesult['values']):
-            if i == len(noderesult['values'])-1:
-                break 
-            diff.append(noderesult['values'][i+1][1]-val[1])
-        if diff:
-            avgctx = sum(diff)/float(len(diff))
-        else:
-            avgctx = 0.0
+        value = 0 
+        count = 0
+        for  entry in noderesult['values']:
+            if entry[1]:
+                value += entry[1]
+                count += 1
+        avgctx = value/count
         level = None
         print avgctx
         result = dict()
         result ['state'] = 'OK'
-        result ['message'] = 'CPU contextswitch value is  %s' % avgctx
+        result ['message'] = 'CPU contextswitch value is: %s per s' % avgctx
         result ['category'] = 'CPU'
         if avgctx > 100000:
             level = 1
@@ -55,7 +57,7 @@ def action():
             result ['state'] = 'WARNING'
 
         if level:
-            msg = 'CPU contextswitch is to high current value %s' % avgctx
+            msg = 'CPU contextswitch is to high current value: %s per s' % avgctx
             eco = j.errorconditionhandler.getErrorConditionObject(msg=msg, category='monitoring', level=level, type='OPERATIONS')
             eco.nid = nid
             eco.gid = gid

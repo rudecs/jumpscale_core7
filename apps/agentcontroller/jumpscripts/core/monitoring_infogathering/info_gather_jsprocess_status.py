@@ -27,10 +27,10 @@ def action():
                 continue
         result = dict()
         result['state'] = 'OK'
-        result['message'] = "Process %s:%s:%s is running" % (ays.domain, ays.name, ays.instance)
+        result['message'] = "Process %s:%s:%s " % (ays.domain, ays.name, ays.instance)
         result['category'] = 'AYS Process'
         if not ays.actions.check_up_local(ays, wait=False):
-            message = "Process %s:%s:%s is not running" % (ays.domain, ays.name, ays.instance)
+            message = "Process %s:%s:%s is halted" % (ays.domain, ays.name, ays.instance)
             j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
             result['state'] = 'WARNING'
             result['message'] = message
