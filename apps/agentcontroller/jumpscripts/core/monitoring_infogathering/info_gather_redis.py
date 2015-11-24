@@ -37,23 +37,32 @@ def action():
         for port in ports_val:
             result = {'category': 'Redis'}
             pids = j.system.process.getPidsByPort(port)
+            errmsg = 'redis not operational[halted or not installed]'
             if not pids:
                 state = 'ERROR'
+                j.errorconditionhandler.raiseOperationalCritical(errmsg, 'monitoring', die=False)
                 used_memory = 0
                 maxmemory = 0
             else:
                 rcl = j.clients.redis.getByInstance(instance)
-                state = 'OK' if rcl.ping() else 'ERROR'
+                if rcl.ping():
+                    state = 'OK'
+                else:
+                    state = 'ERROR'
+                    j.errorconditionhandler.raiseOperationalCritical(errmsg, 'monitoring', die=False)
+
                 maxmemory = float(rcl.config_get('maxmemory').get('maxmemory', 0))
                 used_memory = rcl.info()['used_memory']
+                size, unit = j.tools.units.bytes.converToBestUnit(used_memory)
+                msize, munit = j.tools.units.bytes.converToBestUnit(maxmemory)
+                used_memorymsg = '%.2f %sB' % (size, unit)
+                maxmemorymsg = '%.2f %sB' % (msize, munit)               
+                result['message'] = '*Port*: %s. *Memory usage*: %s/ %s' % (port, used_memorymsg, maxmemorymsg)
+
                 if (used_memory / maxmemory) * 100 > 90:
                     state = 'WARNING'
-
-            size, unit = j.tools.units.bytes.converToBestUnit(used_memory)
-            msize, munit = j.tools.units.bytes.converToBestUnit(maxmemory)
-            used_memory = '%.2f %sB' % (size, unit)
-            maxmemory = '%.2f %sB' % (msize, munit)
-            result['message'] = '*Port*: %s. *Memory usage*: %s/ %s' % (port, used_memory, maxmemory)
+                    j.errorconditionhandler.raiseOperationalWarning(result['message'], 'monitoring')
+      
             result['state'] = state
             results.append(result)
             print results

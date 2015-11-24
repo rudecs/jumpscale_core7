@@ -360,26 +360,3 @@ class GridHealthChecker(object):
         if clean:
             return self._status
 
-    def checkDBs(self, clean=True):
-        if self._nids==[]:
-            self.getNodes()
-        if clean:
-            self._clean()
-        errormessage = ''
-        nid = j.application.whoAmI.nid
-        dbhealth = self._client.executeJumpscript('jumpscale', 'info_gather_db', nid=nid, gid=self._nodegids[nid], timeout=5)
-        dbhealth = dbhealth['result']
-        if dbhealth == None:
-            errormessage = 'Database statuses UNKNOWN'
-            self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'Databases')
-        else:
-            for dbname, status in list(dbhealth.items()):
-                if status:
-                    self._addResult(nid, {'message': '%s is alive' % dbname.capitalize(), 'state': 'OK', 'lastchecked': j.base.time.getTimeEpoch()}, 'Databases')
-                else:
-                    errormessage = '%s status UNKNOWN' % dbname.capitalize()
-                    self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'Databases')
-        if errormessage:
-            self._addResult(nid, {'message': errormessage, 'state': 'ERROR'}, 'databases')
-        if clean:
-            return self._status

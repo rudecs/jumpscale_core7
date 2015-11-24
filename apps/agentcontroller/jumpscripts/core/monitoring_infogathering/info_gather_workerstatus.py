@@ -25,13 +25,15 @@ def action():
         result = {'category': 'Workers'}
         lastactive = float(rediscl.hget('workers:heartbeat', queue) or 0)
         timeout = timemap.get(queue)
+        lastactiv = '{{ts:%s}}' % lastactive if lastactive else 'never'
+        result['message'] = '*%s last active*: %s' % (queue.upper(), lastactiv)
         if j.base.time.getEpochAgo(timeout) < lastactive:
             result['state'] = 'OK'
         else:
+            j.errorconditionhandler.raiseOperationalCritical(result['message'], 'monitoring', die=False)
             result['state'] = 'ERROR'
 
-        lastactive = '{{ts:%s}}' % lastactive if lastactive else 'never'
-        result['message'] = '*%s last active*: %s' % (queue.upper(), lastactive)
+
         results.append(result)
     return results
 
