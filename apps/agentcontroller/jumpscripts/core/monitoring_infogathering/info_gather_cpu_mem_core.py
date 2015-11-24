@@ -1,4 +1,4 @@
-
+from JumpScale.grid.serverbase.Exceptions import RemoteException
 from JumpScale import j
 
 descr = """
@@ -26,13 +26,16 @@ def action():
     osiscl = j.clients.osis.getNamespace('system')
     gid = j.application.whoAmI.gid
     nid = j.application.whoAmI.nid
-    cpuresults = osiscl.stats.search('select mean(value) from "%s_%s_cpu.percent.gauge" where time > now() - 1h group by time(1h)' % 
-        (gid, nid))
-    memresults = osiscl.stats.search('select mean(value) from "%s_%s_memory.percent.gauge" where time > now() - 1h group by time(1h)' % 
-        (gid, nid))
-    # print get_results(cpuresults['raw']['series'])
-    # print get_results(memresults['raw']['series'])
+    try:
+        cpuresults = osiscl.stats.search('select mean(value) from "%s_%s_cpu.percent.gauge" where time > now() - 1h group by time(1h)' % 
+            (gid, nid))
+        memresults = osiscl.stats.search('select mean(value) from "%s_%s_memory.percent.gauge" where time > now() - 1h group by time(1h)' % 
+            (gid, nid))
+    except RemoteException , e:
+        return [{'category':'CPU', 'state':'ERROR', 'message':'influxdb is halted cannot access data'}]
+
     return get_results(cpuresults['raw']['series']) + get_results(memresults['raw']['series'])
+        
  
 def get_results(series):
     res = list()

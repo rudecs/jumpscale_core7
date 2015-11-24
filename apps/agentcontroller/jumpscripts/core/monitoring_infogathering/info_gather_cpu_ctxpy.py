@@ -1,4 +1,4 @@
- 
+from JumpScale.grid.serverbase.Exceptions import RemoteException
 from JumpScale import j
 
 descr = """
@@ -25,10 +25,14 @@ def action():
     osis = j.core.osis.client
     gid = j.application.whoAmI.gid
     nid = j.application.whoAmI.nid
-    results = osis.search('system', 'stats', 
-        'select derivative(value,10s) from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h ' % 
-        (gid, nid))
 
+    try:
+       results = osis.search('system', 'stats', 
+            'select derivative(value,10s) from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h ' % 
+            (gid, nid))
+    except RemoteException , e:
+        return [{'category':'CPU', 'state':'ERROR', 'message':'influxdb halted cannot access data'}]
+         
     res=list()
     for noderesult in results['raw'].get('series', []):
         parts = noderesult['name'].split('.')[0]
@@ -43,7 +47,6 @@ def action():
                 count += 1
         avgctx = value/count
         level = None
-        print avgctx
         result = dict()
         result ['state'] = 'OK'
         result ['message'] = 'CPU contextswitch value is: %s per s' % avgctx
@@ -65,6 +68,7 @@ def action():
 
         res.append(result)
     return res
+
 
 if __name__ == '__main__':
     import JumpScale.grid.osis

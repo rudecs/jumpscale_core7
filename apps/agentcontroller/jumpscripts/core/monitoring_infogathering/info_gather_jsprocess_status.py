@@ -32,7 +32,7 @@ def action():
         if not ays.actions.check_up_local(ays, wait=False):
             message = "Process %s:%s:%s is halted" % (ays.domain, ays.name, ays.instance)
             j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
-            result['state'] = 'WARNING'
+            result['state'] = 'HALTED'
             result['message'] = message
             result['category'] = 'AYS Process'
         results.append(result)
