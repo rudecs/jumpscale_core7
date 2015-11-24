@@ -18,9 +18,6 @@ enable = True
 async = True
 log = True
 queue ='process'
-roles = ['master']
- 
-
 
 def action():
     osiscl = j.clients.osis.getNamespace('system')
