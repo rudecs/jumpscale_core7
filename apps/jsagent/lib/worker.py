@@ -179,7 +179,7 @@ class Worker(object):
 
                             eco.backtrace=out
 
-                            if job.id<1000000 and job.errorreport==True:
+                            if job.id<1000000:
                                 eco.process()
                             else:
                                 self.log(eco)
