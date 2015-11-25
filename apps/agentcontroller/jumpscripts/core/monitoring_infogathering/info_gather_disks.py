@@ -52,7 +52,10 @@ def action():
         if disk.free and disk.size:
             freepercent = (disk.free / float(disk.size)) * 100
             if checkusage and (freepercent < 10):
-                j.errorconditionhandler.raiseOperationalCritical(result['message'], 'monitoring', die=False)                
+                j.errorconditionhandler.raiseOperationalWarning(result['message'], 'monitoring')
+                result['state'] = 'WARNING'
+            if checkusage and (freepercent < 5):
+                j.errorconditionhandler.raiseOperationalCritical(result['message'], 'monitoring', die=False)
                 result['state'] = 'ERROR'
         results.append(result)
 
