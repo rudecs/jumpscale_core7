@@ -173,7 +173,7 @@ from JumpScale import j
 Metadata about a Lua Jumpscript.
 """
 LuaJumpscript = collections.namedtuple('LuaJumpscript', field_names=(
-    'name', 'path', 'organization', 'queue', 'log', 'id',
+    'name', 'path', 'organization', 'queue', 'log', 'id', 'enable',
 ))
 
 class JumpscriptFactory:
@@ -264,4 +264,5 @@ class JumpscriptFactory:
             queue=None,
             log=True,
             id=None,
+            enable=True
         )
