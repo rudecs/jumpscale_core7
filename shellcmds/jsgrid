@@ -51,8 +51,8 @@ if opts.action =='resetlocks':
 #################HEALTHCHECK
 def printPretty(nodes):
     import prettytable
+    import re 
     import time
-    import re
     for node in nodes.keys():
         print 'Node ID:', node
         print '=' * 10
@@ -68,6 +68,7 @@ def printPretty(nodes):
                     return time.ctime(float(match.group(1)))
                 a = re.sub("\{\{ts:(\d+(\.\d*)?)\}\}", convert, i.get('message') )
                 table.add_row((a, i.get('state')))
+
             print table, '\n'
 
 if opts.action == 'healthcheck':
