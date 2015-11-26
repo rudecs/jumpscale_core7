@@ -196,7 +196,7 @@ class GridHealthChecker(object):
                     results.append((green.nid, {'message': result.get('message', ''), 'state': result.get('state', '')}, result.get('category', green.name)))
 
         self._returnResults(results)
-        
+
         if self._tostdout:
             self._printResults()
         return self._status
