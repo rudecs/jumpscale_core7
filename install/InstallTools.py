@@ -1173,7 +1173,7 @@ class InstallTools():
             }
 
         else:
-            repository_url = '%(protocol)s%(host)s/%(account)s/%(repo)s' % {
+            repository_url = '%(protocol)s://%(host)s/%(account)s/%(repo)s' % {
                 'protocol': protocol,
                 'host': repository_host,
                 'account': repository_account,
