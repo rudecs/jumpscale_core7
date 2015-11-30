@@ -1140,13 +1140,13 @@ class InstallTools():
         parseresult = urlparse.urlparse(url)
         if not parseresult:
             raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
-        pathparts = parseresult.path.split('/')
-        if len(pathparts) != 3:
+        pathparts = parseresult.path.strip('/').split('/')
+        if len(pathparts) != 2:
             raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
 
         protocol = parseresult.scheme
         repository_host = parseresult.hostname
-        _, repository_account, repository_name = pathparts
+        repository_account, repository_name = pathparts
         if login is None:
             login = parseresult.username
         if passwd is None:
