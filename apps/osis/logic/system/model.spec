@@ -127,6 +127,7 @@
     prop:parent int,,
     prop:resultcode str,,
     prop:state str,, SCHEDULED,STARTED,ERROR,OK,NOWORK
+    prop:timeCreate int,,
     prop:timeStart int,,
     prop:timeStop int,,
     prop:log bool,,

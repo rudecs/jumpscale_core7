@@ -99,7 +99,6 @@ class Worker(object):
                 self.processAction(job)
                 continue
             if job:
-
                 j.application.jid=job.guid
                 jskey = job.category, job.cmd
                 try:
@@ -147,6 +146,7 @@ class Worker(object):
 
                     j.logger.enabled = job.log
 
+                    job.timeStart = time.time()
                     status, result=jscript.executeInWorker(**job.args)
                     self.redisw.redis.hdel("workers:inqueuetest",jscript.getKey())
                     j.logger.enabled = True
