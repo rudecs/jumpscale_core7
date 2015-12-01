@@ -13,7 +13,7 @@ version = "1.0"
 
 async = True
 queue = 'process'
-roles = []
+roles = ['master']
 enable = True
 period = 600
 
