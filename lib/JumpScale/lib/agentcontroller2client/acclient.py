@@ -559,7 +559,6 @@ class Client(object):
 
 
         payload = json.dumps(cmd.dump())
-	print('Executing command: %s' % cmd)
         self._redis.rpush(QUEUE_CMDS_MAIN, payload)
         return cmd
 
@@ -598,12 +597,12 @@ class Client(object):
         Note: Other params are exeactly as :func:`acclient.Client.cmd`
         """
         cmd = self._build_cmd(gid=gid, nid=nid, cmd=cmd, args=args,
-                              data=data, id='-', roles=roles, fanout=fanout, tags=tags).dump()
+                              data=data, id='', roles=roles, fanout=fanout, tags=tags).dump()
 
         data = {
             'cron': cron,
             'cmd': cmd,
-            'id': id,
+            'id': str(id),
         }
 
         cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_add'),
@@ -624,7 +623,7 @@ class Client(object):
         """
         Remove a scheduled job by ID
         """
-        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove'), data=str(id), roles=['*'])
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove'), data=json.dumps(str(id)), roles=['*'])
         if validate_queued:
             result = cmd.get_next_result(GET_INFO_TIMEOUT)
             return self._load_json_or_die(result)
@@ -633,7 +632,7 @@ class Client(object):
         """
         Remove a scheduled job by ID
         """
-        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove_prefix'), data=str(id), roles=['*'])
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove_prefix'), data=json.dumps(str(id)), roles=['*'])
         if validate_queued:
             result = cmd.get_next_result(GET_INFO_TIMEOUT)
             return self._load_json_or_die(result)
