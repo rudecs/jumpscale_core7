@@ -245,6 +245,13 @@ class GridHealthChecker(object):
                 lastchecked = jobresult.get('lastchecked', 0)
                 lastchecked = int(lastchecked) if lastchecked and int(lastchecked) else jobresult.get('started', 0)
                 result = json.loads(jobresult.get('result', '[{"message":""}]')) or {}
+                interval = 0
+                if jumpscript.period:
+                    if isinstance(jumpscript.period, int):
+                        interval = jumpscript.period
+                    else:
+                        cron = crontab.CronTab(jumpscript.period)
+                        interval = cron.next() - cron.previous()
                 if jobstate == 'OK':
                     for data in result:
                         state = data.get('state', '')
@@ -254,18 +261,19 @@ class GridHealthChecker(object):
                             else:
                                 cron = crontab.CronTab(jumpscript.period)
                                 interval = cron.next() - cron.previous()
-                            if now - lastchecked > (interval * 1.1):
+                            if interval and now - lastchecked > (interval * 1.1):
                                 if state != 'ERROR':
                                     state = 'EXPIRED'
                         resdata = {'message': data.get('message', ''),
                                    'state': state,
+                                   'interval': interval,
                                    'guid': jobresult['guid'],
                                    'lastchecked': lastchecked}
                         results.append((nid, resdata, data.get('category', jobresult.get('_id'))))
                     if not result:
-                        results.append((nid, {'message': '', 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
+                        results.append((nid, {'message': '', 'interval': interval, 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
                 else:
-                    results.append((nid, {'message': 'Error in Monitor', 'state': 'UNKNOWN', 'lastchecked': lastchecked, 'guid': jobresult['guid']}, jobresult.get('_id')))
+                    results.append((nid, {'message': 'Error in Monitor', 'interval': interval, 'state': 'UNKNOWN', 'lastchecked': lastchecked, 'guid': jobresult['guid']}, jobresult.get('_id')))
 
         self._returnResults(results)
 
