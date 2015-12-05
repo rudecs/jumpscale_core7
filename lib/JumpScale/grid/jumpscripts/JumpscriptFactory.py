@@ -17,6 +17,7 @@ class Jumpscript(object):
         self.name=""
         self.organization=""
         self.period = 0
+        self.category = ""
         self.lastrun = 0
         self.source=""
         self.debug = False
@@ -105,11 +106,11 @@ from JumpScale import j
                     result = self.executeInProcess(*args, **kwargs)
                     pipe.send(result)
                 except Exception as e:
-                    result = "ERROR"
                     try:
                         result = self._getECO(e)
-                    except:
-                        pass
+                    except Exception, e:
+                        msg = 'Failed parsing original exception: %s' % e
+                        result = j.errorconditionhandler.getErrorConditionObject(msg=msg)
                     pipe.send((False, result))
 
             ppipe, cpipe = multiprocessing.Pipe()

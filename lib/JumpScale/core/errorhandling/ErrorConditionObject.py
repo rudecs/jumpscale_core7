@@ -144,10 +144,13 @@ class ErrorConditionObject():
             self.__dict__=res
 
 
-    def toJson(self):
+    def dump(self):
         data = self.__dict__.copy()
         data.pop('tb', None)
-        return json.dumps(data)
+        return data
+
+    def toJson(self):
+        return json.dumps(self.dump())
 
 
     def __str__(self):

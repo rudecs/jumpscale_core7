@@ -107,14 +107,18 @@ class Worker(object):
                         self.log("JSCRIPT CACHEMISS")
                         try:
                             jscript=self.redisw.getJumpscriptFromName(job.category, job.cmd)
-                            if jscript==None:
-                                msg="cannot find jumpscript with id:%s" % jskey
-                                self.log("ERROR:%s"%msg)
-                                j.events.bug_warning(msg,category="worker.jscript.notfound")
-                                job.result=msg
-                                job.state="ERROR"
-                                self.notifyWorkCompleted(job)
-                                continue
+                            if jscript is None:
+                                # try to get it by id
+                                if job.jscriptid:
+                                    jscript = self.redisw.getJumpscriptFromId(job.jscriptid)
+                                if jscript is None:
+                                    msg="cannot find jumpscript with id:%s cat:%s cmd:%s" % (job.jscriptid, job.category, job.cmd)
+                                    self.log("ERROR:%s"%msg)
+                                    eco = j.errorconditionhandler.raiseOperationalCritical(msg, category="worker.jscript.notfound", die=False)
+                                    job.result = eco.dump()
+                                    job.state="ERROR"
+                                    self.notifyWorkCompleted(job)
+                                    continue
                             jscript.write()
                             jscript.load()
                             self.actions[jskey] = jscript

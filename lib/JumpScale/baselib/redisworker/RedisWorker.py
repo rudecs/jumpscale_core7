@@ -168,28 +168,29 @@ class RedisWorkerFactory(object):
         @return job
         """
         source=inspect.getsource(method)
-        first=True
-        for line in source.split("\n"):
-            if first:
-                orglen=len(line)
-                line=line.lstrip()
-                newlen=len(line)
-                removeNrChars=orglen-newlen                
-                methodstr=line.split(" ")[1]                
-                name,remainder=methodstr.split("(",1)
-                name=name.strip()
-                lines=["def action(%s"%(remainder)]
-                first=False
-            else:        
-                line=line[removeNrChars:]
-                lines.append(line)
-        source="\n".join(lines)
+        sourcetmpl = """
+from JumpScale import j
+def action%(argspec)s:
+%(source)s
+    return %(funcname)s(%(args)s)
+"""
+        while True:
+            try:
+                source = j.code.deIndent(source)
+            except:
+                break  # reached maximum dedent
+        spec = inspect.getargspec(method)
+        argspec = inspect.formatargspec(spec.args, spec.varargs, spec.keywords, spec.defaults)
+        source = sourcetmpl % {'argspec': argspec,
+                               'funcname': method.__name__,
+                               'source': j.code.indent(source),
+                               'args': ', '.join(spec.args)}
 
-        js=Jumpscript()
-        js.source=source
-        js.organization=_organization
-        js.name=name
-        key=j.tools.hash.md5_string(source)
+        js = Jumpscript()
+        js.source = source
+        js.organization = _organization
+        js.name = method.__name__
+        key = j.tools.hash.md5_string(source)
 
         if self.redis.hexists("workers:jumpscripthashes",key):
             js.id=self.redis.hget("workers:jumpscripthashes",key)

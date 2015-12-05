@@ -133,7 +133,7 @@ class ErrorConditionHandler():
         
         """
         level = "WARNING"
-        self.raiseBug(message, category, pythonExceptionObject, pythonTraceBack, msgpub, False, tags, level)
+        return self.raiseBug(message, category, pythonExceptionObject, pythonTraceBack, msgpub, False, tags, level)
         
     def raiseOperationalCritical(self, message="", category="",msgpub="",die=True,tags="",eco=None,extra=None):
         """
@@ -166,6 +166,7 @@ class ErrorConditionHandler():
         print("\n#########   Operational Critical Error    #################\n%s\n###########################################################\n"% j.tools.text.toStr(msg))
         if die:
             self.halt(msg,eco)
+        return eco
 
     def raiseRuntimeErrorWithEco(self,eco,tostdout=False):
         message=""
@@ -188,6 +189,7 @@ class ErrorConditionHandler():
             eco.type="OPERATIONS"
             eco.level=3
         eco.process()
+        return eco
         
     def raiseInputError(self, message="", category="input",msgpub="",die=True ,backtrace="",tags=""):
         eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,\
@@ -207,6 +209,7 @@ class ErrorConditionHandler():
 
         if die:
             self.halt(eco.errormessage, eco)
+        return eco
         
     def raiseMonitoringError(self, message, category="",msgpub="",die=False,tags=""):
         eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,\
@@ -215,6 +218,7 @@ class ErrorConditionHandler():
         eco.process()
         if die:
             self.halt(eco.description, eco)
+        return eco
         
     def raisePerformanceError(self, message, category="",msgpub="",tags=""):
         eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,\
@@ -223,6 +227,7 @@ class ErrorConditionHandler():
         eco.process()
         if die:
             self.halt(eco.description, eco)
+        return eco
         
     def getErrorConditionObject(self,ddict={},msg="",msgpub="",category="",level=1,type="UNKNOWN",tb=None):
         """
@@ -252,6 +257,7 @@ class ErrorConditionHandler():
         """        
         eco=self.parsePythonErrorObject(pythonExceptionObject,ttype, tb,level,message)
         eco.process()
+        return eco
         
     def parsePythonErrorObject(self,pythonExceptionObject,ttype=None, tb=None,level=1,message=""):
         
