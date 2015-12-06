@@ -57,8 +57,8 @@ def get_results(series):
             msg = '%s load -> above treshhold avgvalue last hour avergage is: %s %%' % (type.upper(), avgvalue)
             result['message'] = msg 
             eco = j.errorconditionhandler.getErrorConditionObject(msg=msg, category='monitoring', level=level, type='OPERATIONS')
-            eco.nid = nid
-            eco.gid = gid
+            eco.nid = j.application.whoAmI.nid
+            eco.gid = j.application.whoAmI.gid
             eco.process()
         res.append(result)
     return res
