@@ -46,7 +46,7 @@ class InstallTools():
             self.BASE="/opt"
             self.TYPE=platform.linux_distribution(full_distribution_name=0)[0].upper()
             if self.TYPE!="UBUNTU":
-                raise RuntimeError("Jumpscale only supports windows 7+, macosx, ubuntu 12+")    
+                raise RuntimeError("Jumpscale only supports windows 7+, macosx, ubuntu 12+")
         else:
             raise RuntimeError("Jumpscale only supports windows 7+, macosx, ubuntu 12+")
 
@@ -724,7 +724,7 @@ class InstallTools():
 
     def chown(self,path,user):
         from pwd import getpwnam
-        
+
         getpwnam(user)[2]
         uid=getpwnam(user).pw_uid
         gid=getpwnam(user).pw_gid
@@ -817,7 +817,7 @@ class InstallTools():
         print(('Downloading %s ' % (url)))
         if to=="":
             to=self.TMP+"/"+url.replace("\\","/").split("/")[-1]
-        
+
         if overwrite:
             if self.exists(to):
                 self.delete(to)
@@ -960,10 +960,10 @@ class InstallTools():
                 self.flag = flag
                 self._stopped = False
                 self.setDaemon(True)
-                
+
             def run(self):
                 while not self.stream.closed and not self._stopped:
-                    buf = ''    
+                    buf = ''
                     buf = self.stream.readline()
                     if len(buf)>0:
                         self.queue.put((self.flag, buf))
@@ -974,10 +974,10 @@ class InstallTools():
         serr = p.stderr
         sout = p.stdout
         inp = Queue.Queue()
-        
+
         outReader = StreamReader(sout, inp, 'O')
         errReader = StreamReader(serr, inp, 'E')
-        
+
         outReader.start()
         errReader.start()
 
@@ -989,7 +989,7 @@ class InstallTools():
 
         out_eof = False
         err_eof = False
-        
+
         while not out_eof or not err_eof:
             # App still working
             try:
@@ -1001,7 +1001,7 @@ class InstallTools():
                     elif line == 'E':
                         err_eof = True
                     continue
-                        
+
                 if ok<>[]:
                     for item in ok:
                         if line.find(item)!=-1:
@@ -1014,7 +1014,7 @@ class InstallTools():
                             break
                     if rc==997 or rc==0:
                         break
-                
+
                 if chan=='O':
                     if outputStdout:
                         print (line.strip())
@@ -1025,7 +1025,7 @@ class InstallTools():
                         print ("E:%s"%line.strip())
                     if captureout:
                         err+=line
-                
+
             except Queue.Empty:
                 pass
             if timeout>0:
@@ -1042,7 +1042,7 @@ class InstallTools():
             p.wait()
         if rc==1000:
             rc = p.returncode
-          
+
 
         if rc>0 and dieOnNonZeroExitCode:
             if err<>"":
@@ -1176,8 +1176,8 @@ class InstallTools():
         """
         @param repopath is root path of git repo
         @return (giturl,account,reponame,branch,login,passwd)
-        login will be ssh if ssh is used 
-        login & passwd is only for https 
+        login will be ssh if ssh is used
+        login & passwd is only for https
         """
         path=j.system.fs.joinPaths(dest,".git","config")
         if not j.system.fs.exists(path=path):
@@ -1217,9 +1217,9 @@ class InstallTools():
             out=""
             for line in content.split("\n"):
                 if line.find("#JSSSHAGENT")!=-1:
-                    continue 
+                    continue
                 if line.find("SSH_AUTH_SOCK")!=-1:
-                    continue 
+                    continue
 
                 out+="%s\n"%line
 
@@ -1230,9 +1230,9 @@ class InstallTools():
             out=out.replace("\n\n\n","\n\n")
             self.writeFile(path,out)
 
-    def _initSSH_ENV(self,force=False): 
+    def _initSSH_ENV(self,force=False):
         if force or not os.environ.has_key("SSH_AUTH_SOCK"):
-            os.putenv("SSH_AUTH_SOCK",self._getSSHSocketpath())     
+            os.putenv("SSH_AUTH_SOCK",self._getSSHSocketpath())
             os.environ["SSH_AUTH_SOCK"]=self._getSSHSocketpath()
         #prob not needed so disable for now
         # pid=int(self.readFile(self.joinPaths(self.TMP,"ssh-agent-pid")))
@@ -1244,13 +1244,13 @@ class InstallTools():
         # if "root"==self.whoami():
         #     socketpath="/root/sshagent_socket"
         # else:
-        socketpath="%s/sshagent_socket"%os.environ["HOME"]     
-        return socketpath    
+        socketpath="%s/sshagent_socket"%os.environ["HOME"]
+        return socketpath
 
     def loadSSHKeys(self,path=None):
         """
         @param loadedkeys this is to win time, it represents the already loaded keys
-        """        
+        """
 
         if path!=None:
             #specific path so load
@@ -1258,7 +1258,7 @@ class InstallTools():
             #timeout after 10 h
             rc,result,err=self.execute("ssh-add %s -t 36000"%path,dieOnNonZeroExitCode=False,outputStdout=False, outputStderr=False)
             # if rc>0:
-            #     raise RuntimeError("Could not add key to sshagent, something went wrong,\nstdout:%s\nstderr:%s\n"%(result,err))                
+            #     raise RuntimeError("Could not add key to sshagent, something went wrong,\nstdout:%s\nstderr:%s\n"%(result,err))
         else:
             #no path specified need to find key paths
             if "root"==self.whoami():
@@ -1279,8 +1279,8 @@ class InstallTools():
 
         import paramiko
         paramiko.util.log_to_file("/tmp/paramiko.log")
-        ssh = paramiko.SSHClient()        
-        
+        ssh = paramiko.SSHClient()
+
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         print "ssh connect:%s %s"%(remoteipaddr,login)
         # from fabric.api import env
@@ -1318,21 +1318,21 @@ class InstallTools():
 
         else:
             ftp.get(authkeypath,"%s/authorized_keys"%self.TMP)
-            self.readFile("%s/authorized_keys"%self.TMP)    
+            self.readFile("%s/authorized_keys"%self.TMP)
             from IPython import embed
             print "DEBUG NOW authorizeSSHKey on j.do"
             embed()
-            
+
 
     def loadSSHAgent(self,path=None,createkeys=False,keyname="id_rsa"):
         """
         check if ssh-agent is available & there is key loaded
-       
+
         @param path: is path to private ssh key
 
         the primary key is 'id_rsa' and will be used as default e.g. if authorizing another node then this key will be used
 
-        """        
+        """
         if path==None:
             path2=self.joinPaths(os.environ["HOME"],".ssh",keyname)
             if not self.exists(path2):
@@ -1363,33 +1363,33 @@ class InstallTools():
             #ssh agent should be loaded because ssh-agent socket has been found
             # pid=int(self.readFile(self.joinPaths(self.TMP,"ssh-agent-pid")))
             self._initSSH_ENV(True)
-            rc,result,err=self.execute("ssh-add -l",dieOnNonZeroExitCode=False,outputStdout=False, outputStderr=False)            
+            rc,result,err=self.execute("ssh-add -l",dieOnNonZeroExitCode=False,outputStdout=False, outputStderr=False)
             if rc==2:#>0 and err.find("not open a connection")!=-1:
                 #no ssh-agent found
-                raise RuntimeError("Could not connect to ssh-agent, this is bug, ssh-agent should be loaded by now") 
+                raise RuntimeError("Could not connect to ssh-agent, this is bug, ssh-agent should be loaded by now")
             elif rc==1:
                 #no keys but agent loaded
                 result=""
             elif rc>0:
                 raise RuntimeError("Could not start ssh-agent, something went wrong,\nstdout:%s\nstderr:%s\n"%(result,err))
-        
+
         self.loadSSHKeys(path=path)
-        
-            
+
+
 
     # def checkSSHAgentAvailable(self):
 
-        
+
     #     if rc==0:
     #         #sshagent is loaded
     #         pass
-                
+
 
     #     from IPython import embed
     #     print "DEBUG NOW checkSSHAgentKeyAvailable"
     #     embed()
     #     p
-        
+
 
     #     errormsg="Could not find SSH agent, please start by 'eval \"$(ssh-agent -s)\"' before running this cmd,\nand make sure appropriate keys are added with ssh-add ..."
     #     sshkeypubcontent=" ".join(sshkeypub.split(" ")[1:]).strip().split("==")[0]+"=="
@@ -1399,9 +1399,9 @@ class InstallTools():
     #         keys=agent.get_keys()
     #     except Exception,e:
     #         j.events.opserror_critical( errormsg)
-        
+
     #     if keys==():
-    #         j.events.opserror_critical( errormsg)                
+    #         j.events.opserror_critical( errormsg)
 
     #     for key in keys:
     #         if key.get_base64()==sshkeypubcontent:
@@ -1423,7 +1423,7 @@ class InstallTools():
         #### Process for finding authentication credentials:
 
         - first check there is an ssh-agent and there is a key attached to it, if yes then no login & passwd will be used & method will always be git
-        - if not ssh found (we ONLY support by means of ssh-agent) 
+        - if not ssh found (we ONLY support by means of ssh-agent)
             - then we will check if url is github & ENV argument GITHUBUSER & GITHUBPASSWD is set
                 - if env arguments set, we will use those & ignore login/passwd arguments
             - we will check if login/passwd specified in URL, if yes willl use those (so they get priority on login/passwd arguments)
@@ -1452,8 +1452,8 @@ class InstallTools():
         if url=="":
             if not j.system.fs.exists(path=dest):
                 j.events.inputerror_critical("Could not find git repo path:%s, url was not specified so git destination needs to be specified."%(dest))
-            
-        
+
+
 
         if login==None and url.find("github.com/")!=-1:
             #can see if there if login & passwd in OS env
@@ -1466,7 +1466,7 @@ class InstallTools():
         protocol, repository_host, repository_account, repository_name, repository_url = self.rewriteGitRepoUrl(url=url,login=login,passwd=passwd)
 
         repository_type = repository_host.split('.')[0] if '.' in repository_host else repository_host
-        
+
         # strip username/password on type if exists
         if "@" in repository_type and ":"in  repository_type:
             repository_type = repository_type.rsplit('@', 1)[1]
@@ -1478,7 +1478,7 @@ class InstallTools():
                 'account': repository_account,
                 'repo_name': repository_name[:-4].lower(),  # Remove the trailling '.git'
             }
-            
+
             # warning: workaround for jumpscale setup
             # needt to be fixed, but no idea how
             if not self.isDir(dest):
@@ -1488,7 +1488,7 @@ class InstallTools():
                     'account': repository_account.lower(),
                     'repo_name': repository_name[:-4].lower(),  # Remove the trailling '.git'
                 }
-                
+
                 if self.isDir(newdest) or repository_account.lower() == "jumpscale":
                     dest = newdest
 
@@ -1671,7 +1671,7 @@ class InstallTools():
             self.actions[name]=eval("self.module.%s"%name)
 
     def installPackage(self,path):
-        pass        
+        pass
 
 do=InstallTools()
 
@@ -1713,20 +1713,20 @@ class Installer():
             else:
                 #for all linux versions
                 os.environ["JSBASE"]="/opt/jumpscale7"
-        
+
         # if pythonversion==3:
         #     os.environ["JSBASE"]+="3"            #add nr 3 to path when python 3
 
-        base=os.environ["JSBASE"]   
+        base=os.environ["JSBASE"]
 
         if CODEDIR=="":
             if sys.platform.startswith('win'):
-                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")            
+                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")
             elif sys.platform.startswith('darwin'):
                 CODEDIR="/Users/Shared/code"
             else:
                 #for all linux versions
-                CODEDIR="/opt/code"            
+                CODEDIR="/opt/code"
 
         print(("Install Jumpscale in %s"%base))
 
@@ -1768,7 +1768,7 @@ class Installer():
             destjs="/usr/local/lib/python2.7/site-packages/JumpScale"
         elif do.TYPE.startswith("WIN"):
             raise RuntimeError("do")
-        else:            
+        else:
             destjs="/usr/local/lib/python2.7/dist-packages/JumpScale"
             do.delete(destjs)
             do.createDir(destjs)
@@ -1809,7 +1809,7 @@ class Installer():
 
         #it was not logical that the behaviour in the /usr/local was different than the one in the sandbox
         # if insystem or not self.exists(destjs):
-            
+
         #     dest="%s/lib/JumpScale/"%(base)
         #     do.copyTree(src,destjs)
 
@@ -1880,7 +1880,7 @@ class Installer():
         email                   = {EMAIL}
         fullname                = {FULLNAME}
         git.login               = {GITHUBUSER}
-        git.passwd              = {GITHUBPASSWD}     
+        git.passwd              = {GITHUBPASSWD}
         """
 
         for item in ["EMAIL","FULLNAME","GITHUBUSER","GITHUBPASSWD","EMAIL","FULLNAME","AYSGIT","AYSBRANCH"]:
@@ -1916,11 +1916,12 @@ class Installer():
             unset _OLD_LD_LIBRARY_PATH
             export PS1=$_OLD_PS1
             unset _OLD_PS1
+            unset JSBASE
             if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
                     hash -r 2>/dev/null
             fi
         }
-        
+
         if [[ "$JSBASE" == "$base" ]]; then
             return 0
         fi
@@ -1957,7 +1958,7 @@ class Installer():
             #echo sandbox:{base}
             # echo $base/bin/python "$@"
             python "$@"
-            """            
+            """
 
         C2=C2.format(base=basedir, env=envfile)
         C2=C2.replace("$base",basedir)
@@ -2054,7 +2055,7 @@ class Installer():
             brew update
             brew upgrade
             """
-            do.executeCmds(CMDS)            
+            do.executeCmds(CMDS)
 
     def installpip(self):
         if not do.exists(do.joinPaths(do.TMP,"get-pip.py")):
@@ -2086,21 +2087,21 @@ class Installer():
 
         else:
             self.installpip()
-            cmds="""            
+            cmds="""
             pip install ipython
             """
             do.executeCmds(cmds)
 
             if sys.platform.startswith('win'):
-                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")            
+                raise RuntimeError("Cannot find JSBASE, needs to be set as env var")
             elif sys.platform.startswith('darwin'):
-                cmds="""            
+                cmds="""
                 brew install tmux
                 brew install psutil
                 pip install redis
                 """
                 do.executeCmds(cmds)
-      
+
 
     def prepareUbuntu14Development(self,js=True):
         self.cleanSystem()
