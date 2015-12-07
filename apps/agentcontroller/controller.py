@@ -415,6 +415,8 @@ class ControllerCMDS():
             self._adminAuth(session.user,session.passwd)
 
         def myfilter(entry):
+            if not entry.enable:
+                return False
             if organization and entry.organization != organization:
                 return False
             if not hasattr(entry, 'category'):

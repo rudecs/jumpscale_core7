@@ -17,10 +17,7 @@ else:
 
 import urllib2
 
-try:
-    import ujson as json
-except:
-    import json
+import json
 
 HTTP_CREATED = 201 #from practical examples, authorization created returns 201
 HTTP_OK = 200
@@ -47,7 +44,15 @@ class HTTPError(Exception):
         self.httperror = httperror
 
     def __str__(self):
-        return "%s:\n %s" % (self.status_code, self.msg)
+        try:
+            msg = json.loads(self.msg)
+            if 'backtrace' in msg:
+                msg = msg['backtrace']
+            else:
+                msg = json.dumps(msg, sort_keys=True, indent=4, separators=(',', ': '))
+        except:
+            msg = self.msg
+        return "%s:\n %s" % (self.status_code, msg)
 
 class Connection(object):
     

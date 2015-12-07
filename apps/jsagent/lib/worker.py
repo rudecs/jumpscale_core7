@@ -99,7 +99,6 @@ class Worker(object):
                 self.processAction(job)
                 continue
             if job:
-
                 j.application.jid=job.guid
                 jskey = job.category, job.cmd
                 try:
@@ -108,14 +107,18 @@ class Worker(object):
                         self.log("JSCRIPT CACHEMISS")
                         try:
                             jscript=self.redisw.getJumpscriptFromName(job.category, job.cmd)
-                            if jscript==None:
-                                msg="cannot find jumpscript with id:%s" % jskey
-                                self.log("ERROR:%s"%msg)
-                                j.events.bug_warning(msg,category="worker.jscript.notfound")
-                                job.result=msg
-                                job.state="ERROR"
-                                self.notifyWorkCompleted(job)
-                                continue
+                            if jscript is None:
+                                # try to get it by id
+                                if job.jscriptid:
+                                    jscript = self.redisw.getJumpscriptFromId(job.jscriptid)
+                                if jscript is None:
+                                    msg="cannot find jumpscript with id:%s cat:%s cmd:%s" % (job.jscriptid, job.category, job.cmd)
+                                    self.log("ERROR:%s"%msg)
+                                    eco = j.errorconditionhandler.raiseOperationalCritical(msg, category="worker.jscript.notfound", die=False)
+                                    job.result = eco.dump()
+                                    job.state="ERROR"
+                                    self.notifyWorkCompleted(job)
+                                    continue
                             jscript.write()
                             jscript.load()
                             self.actions[jskey] = jscript
@@ -147,6 +150,7 @@ class Worker(object):
 
                     j.logger.enabled = job.log
 
+                    job.timeStart = time.time()
                     status, result=jscript.executeInWorker(**job.args)
                     self.redisw.redis.hdel("workers:inqueuetest",jscript.getKey())
                     j.logger.enabled = True
@@ -179,7 +183,7 @@ class Worker(object):
 
                             eco.backtrace=out
 
-                            if job.id<1000000 and job.errorreport==True:
+                            if job.id<1000000:
                                 eco.process()
                             else:
                                 self.log(eco)

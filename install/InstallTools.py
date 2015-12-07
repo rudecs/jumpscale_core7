@@ -5,6 +5,7 @@ except ImportError:
     from urllib2 import urlopen
 
 import os
+import urlparse
 import tarfile
 import sys
 import shutil
@@ -1136,12 +1137,20 @@ class InstallTools():
         Returns:
             (repository_host, repository_type, repository_account, repository_name, repository_url)
         """
-        url_pattern = re.compile('^(https?://)(.*?)/(.*?)/(.*?)/?$')
-        match = url_pattern.match(url)
-        if not match:
+        parseresult = urlparse.urlparse(url)
+        if not parseresult:
+            raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
+        pathparts = parseresult.path.strip('/').split('/')
+        if len(pathparts) != 2:
             raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
 
-        protocol, repository_host, repository_account, repository_name = match.groups()
+        protocol = parseresult.scheme
+        repository_host = parseresult.hostname
+        repository_account, repository_name = pathparts
+        if login is None:
+            login = parseresult.username
+        if passwd is None:
+            passwd = parseresult.password
 
         if not repository_name.endswith('.git'):
             repository_name += '.git'
@@ -1154,7 +1163,7 @@ class InstallTools():
             }
 
         elif login and login != 'guest':
-            repository_url = '%(protocol)s%(login)s:%(password)s@%(host)s/%(account)s/%(repo)s' % {
+            repository_url = '%(protocol)s://%(login)s:%(password)s@%(host)s/%(account)s/%(repo)s' % {
                 'protocol': protocol,
                 'login': login,
                 'password': passwd,
@@ -1164,7 +1173,7 @@ class InstallTools():
             }
 
         else:
-            repository_url = '%(protocol)s%(host)s/%(account)s/%(repo)s' % {
+            repository_url = '%(protocol)s://%(host)s/%(account)s/%(repo)s' % {
                 'protocol': protocol,
                 'host': repository_host,
                 'account': repository_account,

@@ -2,6 +2,7 @@ from JumpScale import j
 import JumpScale.grid.agentcontroller
 import JumpScale.baselib.redisworker
 import gevent
+import time
 from gevent import Timeout
 from JumpScale.grid.serverbase import returnCodes
 
@@ -104,7 +105,9 @@ class AgentCmds():
                         timeout = gevent.Timeout(localjob['timeout'])
                         timeout.start()
                         try:
+                            localjob['timeStart'] = time.time()
                             status, result = jscript.execute(**localjob['args'])
+                            localjob['timeStop'] = time.time()
                             localjob['state'] = 'OK' if status else 'ERROR'
                             localjob['result'] = result
                             client.notifyWorkCompleted(localjob)

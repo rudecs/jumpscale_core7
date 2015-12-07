@@ -196,7 +196,7 @@ class GridHealthChecker(object):
                     results.append((green.nid, {'message': result.get('message', ''), 'state': result.get('state', '')}, result.get('category', green.name)))
 
         self._returnResults(results)
-        
+
         if self._tostdout:
             self._printResults()
         return self._status
@@ -245,6 +245,13 @@ class GridHealthChecker(object):
                 lastchecked = jobresult.get('lastchecked', 0)
                 lastchecked = int(lastchecked) if lastchecked and int(lastchecked) else jobresult.get('started', 0)
                 result = json.loads(jobresult.get('result', '[{"message":""}]')) or {}
+                interval = 0
+                if jumpscript.period:
+                    if isinstance(jumpscript.period, int):
+                        interval = jumpscript.period
+                    else:
+                        cron = crontab.CronTab(jumpscript.period)
+                        interval = cron.next() - cron.previous()
                 if jobstate == 'OK':
                     for data in result:
                         state = data.get('state', '')
@@ -254,18 +261,19 @@ class GridHealthChecker(object):
                             else:
                                 cron = crontab.CronTab(jumpscript.period)
                                 interval = cron.next() - cron.previous()
-                            if now - lastchecked > (interval * 1.1):
+                            if interval and now - lastchecked > (interval * 1.1):
                                 if state != 'ERROR':
                                     state = 'EXPIRED'
                         resdata = {'message': data.get('message', ''),
                                    'state': state,
+                                   'interval': interval,
                                    'guid': jobresult['guid'],
                                    'lastchecked': lastchecked}
                         results.append((nid, resdata, data.get('category', jobresult.get('_id'))))
                     if not result:
-                        results.append((nid, {'message': '', 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
+                        results.append((nid, {'message': '', 'interval': interval, 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
                 else:
-                    results.append((nid, {'message': 'Error in Monitor', 'state': 'UNKNOWN', 'lastchecked': lastchecked, 'guid': jobresult['guid']}, jobresult.get('_id')))
+                    results.append((nid, {'message': 'Error in Monitor', 'interval': interval, 'state': 'UNKNOWN', 'lastchecked': lastchecked, 'guid': jobresult['guid']}, jobresult.get('_id')))
 
         self._returnResults(results)
 
@@ -360,26 +368,3 @@ class GridHealthChecker(object):
         if clean:
             return self._status
 
-    def checkDBs(self, clean=True):
-        if self._nids==[]:
-            self.getNodes()
-        if clean:
-            self._clean()
-        errormessage = ''
-        nid = j.application.whoAmI.nid
-        dbhealth = self._client.executeJumpscript('jumpscale', 'info_gather_db', nid=nid, gid=self._nodegids[nid], timeout=5)
-        dbhealth = dbhealth['result']
-        if dbhealth == None:
-            errormessage = 'Database statuses UNKNOWN'
-            self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'Databases')
-        else:
-            for dbname, status in list(dbhealth.items()):
-                if status:
-                    self._addResult(nid, {'message': '%s is alive' % dbname.capitalize(), 'state': 'OK', 'lastchecked': j.base.time.getTimeEpoch()}, 'Databases')
-                else:
-                    errormessage = '%s status UNKNOWN' % dbname.capitalize()
-                    self._addResult(nid, {'message': errormessage, 'state': 'UNKNOWN'}, 'Databases')
-        if errormessage:
-            self._addResult(nid, {'message': errormessage, 'state': 'ERROR'}, 'databases')
-        if clean:
-            return self._status

@@ -34,15 +34,15 @@ class Time:
         day = hour * 24
         week = day * 7
         if seconds < minute:
-            return "%s seconds" % round(seconds, 1)
+            return "%ss" % round(seconds, 1)
         elif seconds < hour:
-            return "%s minutes" % round((seconds/minute), 1)
+            return "%sm" % round((seconds/minute), 1)
         elif seconds < day:
-            return "%s hours" % round((seconds/hour), 1)
+            return "%sh" % round((seconds/hour), 1)
         elif seconds < week:
-            return "%s days" % round((seconds/day), 1)
+            return "%sd" % round((seconds/day), 1)
         else:
-            return "%s weeks" % round((seconds/week), 1)
+            return "%sw" % round((seconds/week), 1)
 
 
     def getTimeEpochBin(self):

@@ -187,6 +187,7 @@ metadata.openvcloud            =
                 content = cl.file_read(source)
                 for dest in dests:
                     cl.file_write(dest, content)
+                    cl.run('chmod 600 %s' % dest)
 
             # append key to authorized hosts
             cl.run("cat %s >> /root/.ssh/authorized_keys" % keys['/root/.ssh/id_rsa.pub'])

@@ -49,12 +49,38 @@ if opts.action =='resetlocks':
     print("has set user admin with passwd admin, please change using command 'jsuser' if required.")
 
 #################HEALTHCHECK
+def printPretty(nodes):
+    import prettytable
+    import re 
+    import time
+    for node in nodes.keys():
+        print 'Node ID:', node
+        print '=' * 10
+        n = nodes.get(node)
+        for detail in n.keys():
+            print detail
+            print '=' * len(detail)
+            table = prettytable.PrettyTable(('Message','State'))
+            table.align['Message'] = "l"
+            key = n.get(detail)
+            for i in key:
+                def convert(match):
+                    return time.ctime(float(match.group(1)))
+                a = re.sub("\{\{ts:(\d+(\.\d*)?)\}\}", convert, i.get('message') )
+                table.add_row((a, i.get('state')))
+
+            print table, '\n'
+
 if opts.action == 'healthcheck':
     import JumpScale.grid.gridhealthchecker
     if not opts.nid:
-        j.core.grid.healthchecker.runOnAllNodes()
+        j.core.grid.healthchecker._tostdout = True
+        j.core.grid.healthchecker.fetchMonitoringOnAllNodes()
+
     else:
-        j.core.grid.healthchecker.runAllOnNode(opts.nid)
+        j.core.grid.healthchecker._tostdout = False
+        node = j.core.grid.healthchecker.fetchMonitoringOnNode(opts.nid)
+        printPretty(node)
 
 
 if opts.action == 'restartprocessmgrs':
