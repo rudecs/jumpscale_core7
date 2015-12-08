@@ -60,6 +60,7 @@ class ActionsBaseNode(ActionsBase):
         if login and login != '':
             c.fabric.env['user'] = login
         c.fabric.env['shell'] = serviceObj.hrd.get('instance.ssh.shell', "/bin/bash -l -c")
+        c.fabric.env['forward_agent'] = True
 
         if (password == "" or password is None) and privKey is None:
             raise RuntimeError(
