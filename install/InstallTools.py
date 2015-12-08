@@ -1143,14 +1143,21 @@ class InstallTools():
         pathparts = parseresult.path.strip('/').split('/')
         if len(pathparts) != 2:
             raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
-
-        protocol = parseresult.scheme
-        repository_host = parseresult.hostname
-        repository_account, repository_name = pathparts
-        if login is None:
-            login = parseresult.username
-        if passwd is None:
-            passwd = parseresult.password
+        if parseresult.path == url:
+            # this is git/ssh url
+            login = 'ssh'
+            protocol = 'ssh'
+            userandhost, path = parseresult.path.split(':')
+            repository_account, repository_name = path.split('/')
+            repository_host = userandhost.split('@')[-1]
+        else:
+            protocol = parseresult.scheme
+            repository_host = parseresult.hostname
+            repository_account, repository_name = pathparts
+            if login is None:
+                login = parseresult.username
+            if passwd is None:
+                passwd = parseresult.password
 
         if not repository_name.endswith('.git'):
             repository_name += '.git'
