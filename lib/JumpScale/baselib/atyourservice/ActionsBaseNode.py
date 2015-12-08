@@ -61,6 +61,7 @@ class ActionsBaseNode(ActionsBase):
             c.fabric.env['user'] = login
         c.fabric.env['shell'] = serviceObj.hrd.get('instance.ssh.shell', "/bin/bash -l -c")
         c.fabric.env['forward_agent'] = True
+        c.fabric.env['sudo_prefix'] = "sudo -S -E -p '%(sudo_prompt)s' "
 
         if (password == "" or password is None) and privKey is None:
             raise RuntimeError(
