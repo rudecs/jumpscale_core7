@@ -149,8 +149,8 @@ metadata.openvcloud            =
             self.actionDone(gitlaburl, "jumpscale")
 
         if self.actionCheck(gitlaburl, "gitcredentials") is False:
-            cl.run('jsconfig hrdset -n whoami.git.login -v "%s"' % gitlablogin)
-            cl.run('jsconfig hrdset -n whoami.git.passwd -v "%s"' % urllib.quote_plus(gitlabpasswd))
+            cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
+            cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
             infos = gitlab.getUserInfo(gitlablogin)
 
             email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
