@@ -556,8 +556,14 @@ class Console:
         if not choicearray:
             return None
         if len(choicearray) == 1:
-            self.echo("Found exactly one choice: %s"%(choicearray[0]))
-            return choicearray[0]
+            if isinstance(choicearray, list):
+                self.echo("Found exactly one choice: %s"%(choicearray[0]))
+                return choicearray[0]
+            elif isinstance(choicearray, dict):
+                item = choicearray.items()[0]
+                self.echo("Found exactly one choice: %s"%(item[0]))
+                return item[1]
+
         if j.application.interactive!=True:
             j.events.inputerror_critical ("Cannot ask a choice in an list of items in a non interactive mode.","console.askchoice.noninteractive")
         descr = descr or "\nMake a selection please: "
