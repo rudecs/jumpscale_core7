@@ -624,6 +624,8 @@ class MS1(object):
 
         username, password = machine['accounts'][0]['login'], machine['accounts'][0]['password']
         ssh_connection.fabric.api.env['password'] = password
+        ssh_connection.fabric.api.env['forward_agent'] = True
+        ssh_connection.fabric.api.env['sudo_prefix'] = "sudo -S -E -p '%(sudo_prompt)s' "
         ssh_connection.fabric.api.env['connection_attempts'] = 5
         ssh_connection.connect('%s:%s' % (connectionAddr, connectionPort), username)
 

@@ -557,6 +557,7 @@ class Client(object):
         cmd = self._build_cmd(gid=gid, nid=nid, cmd=cmd, args=args, data=data,
                               id=id, roles=roles, fanout=fanout, tags=tags)
 
+
         payload = json.dumps(cmd.dump())
         self._redis.rpush(QUEUE_CMDS_MAIN, payload)
         return cmd
@@ -596,15 +597,16 @@ class Client(object):
         Note: Other params are exeactly as :func:`acclient.Client.cmd`
         """
         cmd = self._build_cmd(gid=gid, nid=nid, cmd=cmd, args=args,
-                              data=data, id='-', roles=roles, fanout=fanout, tags=tags).dump()
+                              data=data, id='', roles=roles, fanout=fanout, tags=tags).dump()
 
         data = {
             'cron': cron,
-            'cmd': cmd
+            'cmd': cmd,
+            'id': str(id),
         }
 
         cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_add'),
-                       data=json.dumps(data), id=id, roles=['*'])
+                       data=json.dumps(data), roles=['*'])
         if validate_queued:
             result = cmd.get_next_result(GET_INFO_TIMEOUT)
             return self._load_json_or_die(result)
@@ -621,7 +623,7 @@ class Client(object):
         """
         Remove a scheduled job by ID
         """
-        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove'), id=id, roles=['*'])
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove'), data=json.dumps(str(id)), roles=['*'])
         if validate_queued:
             result = cmd.get_next_result(GET_INFO_TIMEOUT)
             return self._load_json_or_die(result)
@@ -630,7 +632,7 @@ class Client(object):
         """
         Remove a scheduled job by ID
         """
-        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove_prefix'), id=prefix, roles=['*'])
+        cmd = self.cmd(0, 0, 'controller', RunArgs(name='scheduler_remove_prefix'), data=json.dumps(str(id)), roles=['*'])
         if validate_queued:
             result = cmd.get_next_result(GET_INFO_TIMEOUT)
             return self._load_json_or_die(result)

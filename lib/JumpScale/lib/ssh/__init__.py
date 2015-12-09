@@ -68,6 +68,8 @@ def connect(addr='localhost', port=22, passwd=None,verbose=True,keypath=None):
         if not j.do.exists(keypath):
             j.events.opserror_critical("cannot find key:%s" % keypath)
     c.fabric.api.env['connection_attempts'] = 5
+    c.fabric.api.env['forward_agent'] = True
+    c.fabric.api.env['sudo_prefix'] = "sudo -S -E -p '%(sudo_prompt)s' "
 
     if not verbose:
         c.fabric.state.output["running"] = False
