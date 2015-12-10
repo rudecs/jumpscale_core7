@@ -159,16 +159,27 @@ metadata.openvcloud            =
             cl.run('git config --global user.email "%s"' % email)
             cl.run('git config --global user.name "%s"' % name)
             self.actionDone(gitlaburl, "gitcredentials")
+            
+            allowhosts = ["github.com", "git.aydo.com"]
+            
+            for host in allowhosts:
+                cl.run('echo "Host %s" >> /root/.ssh/config' % host)
+                cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
+                cl.run('echo "" >> /root/.ssh/config')
 
         repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
 
         if self.actionCheck(gitlaburl, "gitlabclone") is False:
             # clone templates repo and change url
-            _, _, _, _, repoURL = j.do.rewriteGitRepoUrl(gitlaburl, gitlablogin, urllib.quote_plus(gitlabpasswd))
+            # _, _, _, _, repoURL = j.do.rewriteGitRepoUrl(gitlaburl, gitlablogin, urllib.quote_plus(gitlabpasswd))
+            repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
+            # repoURL = 'git@git.aydo.com:openvcloudEnvironments/%s' % gitlabReponame
 
             if not cl.file_exists(repopath):
-                host = 'https://%s:%s@%s' % (gitlablogin, urllib.quote_plus(gitlabpasswd), 'git.aydo.com')
-                cl.run('git clone %s/openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
+                # host = 'https://%s:%s@%s' % (gitlablogin, urllib.quote_plus(gitlabpasswd), 'git.aydo.com')
+                host = 'git@git.aydo.com'
+                
+                cl.run('git clone %s:openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
                 cl.run('cd %s; git remote set-url origin %s' % (repopath, repoURL))
 
                 # Note: rebase prevents for asking to merge local tree with remote
@@ -200,6 +211,7 @@ metadata.openvcloud            =
             cl.run('cd %s; ays install -n ms1_client --data "%s" -r' % (repopath, args))
             self.actionDone(gitlaburl, "ms1client")
 
+        """
         if self.actionCheck(gitlaburl, "gitlab_client") is False:
             # create gitlab_client to save gitlab connection info
             scheme, host, _, _, _ = j.do.rewriteGitRepoUrl(gitlaburl)
@@ -207,6 +219,7 @@ metadata.openvcloud            =
             args = 'instance.gitlab.client.url:%s instance.gitlab.client.login:%s instance.gitlab.client.passwd:%s' % (url, gitlablogin, gitlabpasswd)
             cl.run('cd %s; ays install -n gitlab_client --data "%s" -r' % (repopath, args))
             self.actionDone(gitlaburl, "gitlab_client")
+        """
         
         if self.actionCheck(gitlaburl, "ovc_setup") is False:
             vmachine = self.api.getMachineObject(self._spacesecret, 'ovc_git')
@@ -232,7 +245,7 @@ metadata.openvcloud            =
             args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, ip)
             cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
             cl.run('git config --global push.default simple')
-            cl.run('cd %s;jscode push' % repopath)
+            cl.run('cd %s; jscode push' % repopath)
             self.actionDone(gitlaburl, "rememberssh")
         
         if self.actionCheck(gitlaburl, "applyname") is False:
@@ -270,8 +283,8 @@ metadata.openvcloud            =
             gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
             infos = gitlab.getUserInfo(gitlablogin)
 
-            cl.run('jsconfig hrdset -n whoami.git.login -v "%s"' % gitlablogin)
-            cl.run('jsconfig hrdset -n whoami.git.passwd -v "%s"' % urllib.quote_plus(gitlabpasswd))
+            cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
+            cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
 
             cl.run('git config --global user.email "%s"' % infos['email'])
             cl.run('git config --global user.name "%s"' % infos['name'] if infos['name'] != '' else gitlablogin)
