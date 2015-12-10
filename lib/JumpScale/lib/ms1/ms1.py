@@ -312,7 +312,7 @@ class MS1(object):
 
         self.sendUserMessage("[+] machine is active and reachable")
 
-        self.sendUserMessage("[+] to connect from outise (public) cloudspace, run:")
+        self.sendUserMessage("[+] to connect from outside (public) cloudspace, run:")
         self.sendUserMessage("[+]   ssh %s -p %s" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
         self.sendUserMessage("[+] to connect from inside (private) cloudspace, run:")
         self.sendUserMessage("[+]   ssh %s -p %s" % (self.vars["machine.ip.addr"], 22))
