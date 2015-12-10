@@ -56,7 +56,7 @@ class MS1(object):
         self.stdout.ms1=self
         self.stdout.prevout=sys.stdout
         self.action=None
-        self.cloudspace=None
+        self.cloudspace={'name': '(not set)'}
         self.vars={}
         self.db=j.db.keyvaluestore.getFileSystemStore("/tmp/ms1.db")
 
