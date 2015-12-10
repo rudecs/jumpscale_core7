@@ -120,7 +120,12 @@ from JumpScale import j
             if proc.is_alive():
                 proc.terminate()
                 return False, "TIMEOUT"
-            return ppipe.recv()
+            if proc.exitcode:
+                msg = 'JumpScript died unexpectedly'
+                result = j.errorconditionhandler.getErrorConditionObject(msg=msg)
+                return False, result
+            else:
+                return ppipe.recv()
 
     def _getECO(self, e):
         eco = j.errorconditionhandler.parsePythonErrorObject(e)
