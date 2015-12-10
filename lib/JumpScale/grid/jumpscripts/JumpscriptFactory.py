@@ -116,16 +116,17 @@ from JumpScale import j
             ppipe, cpipe = multiprocessing.Pipe()
             proc = multiprocessing.Process(target=helper, args=(cpipe,))
             proc.start()
+            cpipe.close()
             proc.join(self.timeout)
             if proc.is_alive():
                 proc.terminate()
                 return False, "TIMEOUT"
-            if proc.exitcode:
+            try:
+                return ppipe.recv()
+            except:
                 msg = 'JumpScript died unexpectedly'
                 result = j.errorconditionhandler.getErrorConditionObject(msg=msg)
                 return False, result
-            else:
-                return ppipe.recv()
 
     def _getECO(self, e):
         eco = j.errorconditionhandler.parsePythonErrorObject(e)
