@@ -26,7 +26,7 @@ class OurCuisine():
             # j.events.opserror_critical("Cannot SSH connect to %s:%s, port does not answer on tcp test."%(addr,port))
 
         self.fabric.env['user'] = login
-        self.api.connect('%s:%s' % (addr,port), "root")
+        self.api.connect('%s:%s' % (addr,port), login)
 
         env.password=passwd
         

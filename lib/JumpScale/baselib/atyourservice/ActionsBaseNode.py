@@ -67,9 +67,9 @@ class ActionsBaseNode(ActionsBase):
             raise RuntimeError(
                 "can't connect to the node, should provide or password or a key to connect")
         if password:
-            connection = c.connect(ip, port, passwd=password)
+            connection = c.connect(ip, port, passwd=password, login=login)
         else:
-            connection = c.connect(ip, port)
+            connection = c.connect(ip, port, login=login)
 
         return connection
 
