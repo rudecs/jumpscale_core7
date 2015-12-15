@@ -7,6 +7,22 @@ json=j.db.serializers.getSerializerType("j")
 
 OBJECTCLASSES = dict()
 
+
+class LockWrapper(object):
+    def __init__(self, client, key, timeout):
+        self.client = client
+        self.key = key
+        self.timeout = timeout
+
+    def __enter__(self):
+        if not self.client.set(namespace='system', categoryname='lock', key=self.key, value=self.timeout):
+            from JumpScale.grid.serverbase.Exceptions import LockException
+            raise LockException("Failed to lock %s in %ss" % (self.key, self.timeout))
+        return True
+
+    def __exit__(self, type, value, traceback):
+        self.client.delete(namespace='system', categoryname='lock', key=self.key)
+
 class OSISClientForCat():
 
     def __init__(self, client, namespace, cat):
@@ -119,7 +135,11 @@ class OSISClientForCat():
         return self.client.delete(namespace=self.namespace, categoryname=self.cat, key=key)
 
     def deleteSearch(self,query):
-        return self.client.deleteSearch(namespace=self.namespace, categoryname=self.cat, query=query)  
+        return self.client.deleteSearch(namespace=self.namespace, categoryname=self.cat, query=query)
+
+    def lock(self, timeout=55):
+        key = '%s_%s' % (self.namespace, self.cat)
+        return LockWrapper(self.client, key, timeout)
         
     def updateSearch(self,query,update):
         """
