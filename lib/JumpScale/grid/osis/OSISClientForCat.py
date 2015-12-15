@@ -137,8 +137,16 @@ class OSISClientForCat():
     def deleteSearch(self,query):
         return self.client.deleteSearch(namespace=self.namespace, categoryname=self.cat, query=query)
 
-    def lock(self, timeout=55):
+    def lock(self, lockkey=None, timeout=55):
+        """
+        Lock facility to be use with `with` statement
+        :param lockkey: specify key to lock if ommited entire collection is locked
+        :param timeout: time to wait for lock
+        :return: LockWrapper
+        """
         key = '%s_%s' % (self.namespace, self.cat)
+        if lockkey:
+            key += '_%s' % lockkey
         return LockWrapper(self.client, key, timeout)
         
     def updateSearch(self,query,update):
