@@ -1973,7 +1973,7 @@ class Installer():
             source {env}
             #echo sandbox:{base}
             # echo $base/bin/python "$@"
-            python "$@"
+            exec python "$@"
             """
 
         C2=C2.format(base=basedir, env=envfile)
