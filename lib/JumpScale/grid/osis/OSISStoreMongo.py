@@ -34,9 +34,6 @@ class OSISStoreMongo(OSISStore):
             db = client[self.categoryname]
             counter = client["counter"]
 
-            seq= {"_id": self.categoryname, "seq": 0}
-            if counter.find_one({'_id': self.categoryname}) == None:
-                counter.save(seq)
             if self.TTL != 0:
                 db.ensure_index('_ttl', expireAfterSeconds=self.TTL)
             self._db[session.gid] = db, counter
@@ -63,10 +60,14 @@ class OSISStoreMongo(OSISStore):
     def _getObjectId(self, id):
         return pymongo.mongo_client.helpers.bson.objectid.ObjectId(id)
 
-    def incrId(self, counter):
-        counter.update({'_id': self.categoryname},{"$inc": {"seq": 1}})
-        seq = counter.find_one({'_id': self.categoryname})
-        return seq["seq"]
+    def incrId(self, counter, size=1):
+        seq = counter.find_and_modify({'_id': self.categoryname},
+                                      {"$inc": {"seq": size}},
+                                      upsert=True)
+        if seq:
+            return seq['seq'] + size
+        else:
+            return size
 
     def runTasklet(self, action, value, session):
         if self.te:

@@ -27,3 +27,7 @@ Client BackTrace
 
 """ % (eco['backtrace'], ''.join(backtrace))
         self.eco = eco
+
+
+class LockException(BaseException):
+    pass

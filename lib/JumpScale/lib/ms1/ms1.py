@@ -56,6 +56,7 @@ class MS1(object):
         self.stdout.ms1=self
         self.stdout.prevout=sys.stdout
         self.action=None
+        self.cloudspace={'name': '(not set)'}
         self.vars={}
         self.db=j.db.keyvaluestore.getFileSystemStore("/tmp/ms1.db")
 
@@ -86,6 +87,7 @@ class MS1(object):
         cloudspace = [cs for cs in cloudspaces if cs['name'] == cloudspace_name and cs['location'] == location]
         if cloudspace:
             cloudspace = cloudspace[0]
+            self.cloudspace = cloudspace
         else:
             raise RuntimeError("E:Could not find a matching cloud space with name %s and location %s" % (cloudspace_name, location))
 
@@ -248,7 +250,7 @@ class MS1(object):
 
         templateid=images[imagename][0]
 
-        self.sendUserMessage("create machine: %s"%(name))
+        self.sendUserMessage("[+] creating machine: %s/%s" % (self.cloudspace['name'], name))
 
         if stackId and machine_cb_actor:
             # we want to deploy on a specific stack
@@ -289,8 +291,8 @@ class MS1(object):
 
         self.vars["machine.id"] = machine_id
 
-        self.sendUserMessage("machine created")
-        self.sendUserMessage("find free ipaddr & tcp port")
+        self.sendUserMessage("[+] machine created")
+        self.sendUserMessage("[+] waiting for free ip address and port")
 
         for _ in range(60):
             machine = machines_actor.get(machine_id)
@@ -298,19 +300,22 @@ class MS1(object):
                 break
             else:
                 time.sleep(1)
+                
         if not j.basetype.ipaddress.check(machine['interfaces'][0]['ipAddress']):
             raise RuntimeError('E:Machine was created, but never got an IP address')
 
         self.vars["machine.ip.addr"] = machine['interfaces'][0]['ipAddress']
 
         # push initial key
-        self.sendUserMessage("push initial ssh key")
+        self.sendUserMessage("[+] pushing initial ssh key")
         ssh = self._getSSHConnection(spacesecret, name, sshkey=sshkey, **args)
 
-        self.sendUserMessage("machine active & reachable")
+        self.sendUserMessage("[+] machine is active and reachable")
 
-        self.sendUserMessage("to connect from outise cloudspace do: 'ssh %s -p %s'" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
-        self.sendUserMessage("to connect from inside cloudspace do: 'ssh %s -p %s'" % (self.vars["machine.ip.addr"], 22))
+        self.sendUserMessage("[+] to connect from outside (public) cloudspace, run:")
+        self.sendUserMessage("[+]   ssh %s -p %s" % (self.vars["space.ip.pub"], self.vars["machine.last.tcp.port"]))
+        self.sendUserMessage("[+] to connect from inside (private) cloudspace, run:")
+        self.sendUserMessage("[+]   ssh %s -p %s" % (self.vars["machine.ip.addr"], 22))
 
         ss = ssh.host().split(':')
         return machine_id, ss[0], (ss[1] if ss[1] else 22)
@@ -364,7 +369,7 @@ class MS1(object):
         return (api,actor,machine_id,cloudspace_id)
 
     def deleteMachine(self, spacesecret, name,**args):
-        self.sendUserMessage("delete machine: %s"%(name))
+        self.sendUserMessage("[+] deleting machine: %s/%s" % (self.cloudspace['name'], name))
         try:
             api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
         except Exception as e:
@@ -470,8 +475,8 @@ class MS1(object):
             pubip=cloudspace['publicipaddress']
 
         for item in portforwarding_actor.list(cloudspace_id):
-            if int(item["publicPort"])==int(pubipport) and item['publicIp']==pubip:
-                print(("delete portforward: %s "%item["id"]))
+            if int(item["publicPort"]) == int(pubipport) and item['publicIp'] == pubip:
+                print("[+] deleting portforward: %s (%s:%s)" % (item["id"], pubip, item["publicPort"]))
                 portforwarding_actor.delete(cloudspace_id,item["id"])
 
         return "OK"
@@ -544,7 +549,7 @@ class MS1(object):
             return 'Machine %s does not belong to cloudspace whose secret is given' % name
 
 
-        print("RECREATE SSH CONNECTION")
+        print("[+] rebuilding ssh connection")
         portforwarding_actor = api.getActor('cloudapi', 'portforwarding')
         items=portforwarding_actor.list(cloudspace_id)
 

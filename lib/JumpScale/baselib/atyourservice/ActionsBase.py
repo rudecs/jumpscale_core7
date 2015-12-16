@@ -112,7 +112,7 @@ class ActionsBase():
                     j.do.chmod(path2,0o770)
                     j.do.execute("sv start %s"%name,dieOnNonZeroExitCode=False, outputStdout=False,outputStderr=False, captureout=False)
                 else:
-                    j.system.platform.ubuntu.serviceInstall(name, tcmd, pwd=cwd, env=env)
+                    j.system.platform.ubuntu.serviceInstall(name, tcmd, targs, pwd=cwd, env=env)
                     j.system.platform.ubuntu.startService(name)
 
             elif startupmethod=="tmux":
@@ -273,7 +273,7 @@ class ActionsBase():
                 if j.system.fs.exists(path="/etc/my_init.d/"):
                     _, res, _ = j.do.execute("sv status %s" % name, dieOnNonZeroExitCode=False,
                                              outputStdout=False, outputStderr=False, captureout=True)
-                    if res.startswith('ok'):
+                    if res.startswith('run'):
                         return True
                     else:
                         return False

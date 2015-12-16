@@ -1248,20 +1248,16 @@ class InstallTools():
 
     def _initSSH_ENV(self,force=False):
         if force or not os.environ.has_key("SSH_AUTH_SOCK"):
-            os.putenv("SSH_AUTH_SOCK",self._getSSHSocketpath())
-            os.environ["SSH_AUTH_SOCK"]=self._getSSHSocketpath()
-        #prob not needed so disable for now
-        # pid=int(self.readFile(self.joinPaths(self.TMP,"ssh-agent-pid")))
-        # os.putenv("SSH_AGENT_PID",str(pid))
-        # return pid
+            socketpath = self._getSSHSocketpath()
+            if socketpath:
+                os.putenv("SSH_AUTH_SOCK", socketpath)
+                os.environ["SSH_AUTH_SOCK"] = socketpath
 
     def _getSSHSocketpath(self):
-
-        # if "root"==self.whoami():
-        #     socketpath="/root/sshagent_socket"
-        # else:
-        socketpath="%s/sshagent_socket"%os.environ["HOME"]
-        return socketpath
+        socketpath = "%s/sshagent_socket"%os.environ.get('HOME')
+        if self.exists(socketpath):
+            return socketpath
+        return None
 
     def loadSSHKeys(self,path=None):
         """

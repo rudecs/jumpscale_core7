@@ -31,8 +31,11 @@ def action():
     except RemoteException , e:
         return [{'category':'CPU', 'state':'ERROR', 'message':'influxdb is halted cannot access data'}]
 
-    return get_results(cpuresults['raw']['series']) + get_results(memresults['raw']['series'])
-        
+    try:
+        return get_results(cpuresults['raw']['series']) + get_results(memresults['raw']['series'])
+    except (KeyError,IndexError):
+        return [{'category':'CPU', 'state':'WARNING', 'message':'Not enough data collected'}]
+
  
 def get_results(series):
     res = list()
