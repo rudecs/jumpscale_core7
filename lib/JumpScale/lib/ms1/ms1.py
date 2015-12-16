@@ -52,18 +52,27 @@ class MS1(object):
         self.secret = ''
         self.IMAGE_NAME = 'Ubuntu 14.04'
         # self.redis_cl = j.clients.redis.getByInstance('system')
-        self.stdout=Output()
-        self.stdout.ms1=self
-        self.stdout.prevout=sys.stdout
-        self.action=None
-        self.cloudspace={'name': '(not set)'}
-        self.vars={}
-        self.db=j.db.keyvaluestore.getFileSystemStore("/tmp/ms1.db")
+        self.stdout = Output()
+        self.stdout.ms1 = self
+        self.stdout.prevout = sys.stdout
+        self.action = None
+        self.cloudspace = {'name': '(in cache)'}
+        self.vars = {}
+        self.db = j.db.keyvaluestore.getFileSystemStore("/tmp/ms1.db")
 
+    def setCloudspace(self, space_secret, cloudspace_name, location):
+        params = {'authkey': space_secret}
+        response = requests.post('https://%s/restmachine/cloudapi/cloudspaces/list' % self.apiURL, params)
+        cloudspaces = response.json()
+
+        cloudspace = [cs for cs in cloudspaces if cs['name'] == cloudspace_name and cs['location'] == location]
+        if cloudspace:
+            self.cloudspace = cloudspace[0]
 
     def getCloudspaceObj(self, space_secret,**args):
         if not self.db.exists('cloudrobot:cloudspaces:secrets', space_secret):
             raise RuntimeError("E:Space secret does not exist, cannot continue (END)")
+        
         space=json.loads(self.db.get('cloudrobot:cloudspaces:secrets', space_secret))
         return space
 
@@ -77,8 +86,10 @@ class MS1(object):
         """
         params = {'username': login, 'password': password}
         response = requests.post('https://%s/restmachine/cloudapi/users/authenticate' % self.apiURL, params)
+
         if response.status_code != 200:
             raise RuntimeError("E:Could not authenticate user %s" % login)
+
         auth_key = response.json()
         params = {'authkey': auth_key}
         response = requests.post('https://%s/restmachine/cloudapi/cloudspaces/list' % self.apiURL, params)
