@@ -16,9 +16,12 @@ class Docker():
         self._basepath = "/mnt/vmstor/docker"
         self._prefix=""
         self.client = docker.Client(base_url='unix://var/run/docker.sock')
+        self.remote = {'host': 'localhost', 'port': 0}
 
-    def connectRemote(self, remote):
-        self.client = docker.Client(base_url=remote)
+    def connectRemoteTCP(self, address, port):
+        url = '%s:%s' % (address, port)
+        self.client = docker.Client(base_url=url)
+        self.remote = {'host': address, 'port': port}
             
     def _execute(self, command):
         env = os.environ.copy()
@@ -403,9 +406,8 @@ class Docker():
                 if internalport==22:
                     print(("test docker internal port:22 on ext port:%s"%extport))
                     portfound=extport
-                    if j.system.net.waitConnectionTest("localhost",extport,timeout=2)==False:
-                        cmd="docker logs %s"%name
-                        rc,log=j.system.process.execute(cmd)
+                    if j.system.net.waitConnectionTest(self.remote['host'], extport, timeout=2) == False:
+                        log = self.client.logs(name)
                         j.events.opserror_critical("Could not connect to external port on docker:'%s', docker prob not running.\nStartuplog:\n%s\n"%(extport,log),category="docker.create")
 
             time.sleep(0.5)
@@ -488,7 +490,7 @@ class Docker():
         if ssh_port==None:
             j.events.opserror_critical("cannot find pub port ssh")
 
-        c.connect('%s:%s' % ("localhost", ssh_port), "root")
+        c.connect('%s:%s' % (self.remote['host'], ssh_port), "root")
 
         counter=0
         connect=False
