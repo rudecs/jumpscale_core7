@@ -357,7 +357,7 @@ class Docker():
 
         print '[+] volume map:'
         for src1, dest1 in volsdict.items():
-            print "[+] --  %-30s -> %s" % (src1, dest1)
+            print "[+]   %s -> %s" % (src1, dest1)
 
         binds={}
         volskeys=[] #is location in docker
