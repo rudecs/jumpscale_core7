@@ -289,7 +289,9 @@ class Docker():
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
         """
         name=name.lower().strip()
-        print(("create:%s"%name))
+        
+        print '[+] creating docker: %s' % name
+        
         running=self.list()
         running=list(running.keys())
         if not replace:
@@ -323,7 +325,7 @@ class Docker():
                 for port in range(9022,9190):
                     if not j.system.net.tcpPortConnectionTest(self.remote['host'], port):
                         portsdict[22]=port
-                        print(("SSH PORT WILL BE ON:%s"%port))
+                        print '[+] ssh port autodetected: %s' % port
                         break
 
         volsdict={}
@@ -353,9 +355,9 @@ class Docker():
                 key,val=item.split(":",1)
                 volsdictro[str(key).strip()]=str(val).strip()
 
-        print "MAP:"
+        print '[+] volume map:'
         for src1,dest1 in volsdict.items():
-            print " %-20s %s"%(src1,dest1)
+            print "[+] --  %-30 ->: %s"%(src1,dest1)
 
         binds={}
         volskeys=[] #is location in docker
@@ -373,7 +375,7 @@ class Docker():
         # volskeys=volsdict.keys()+volsdictro.keys()
 
         if base not in self.getImages():
-            print("download docker")
+            print '[+] downloading image'
             cmd="docker pull %s"%base
             j.system.process.executeWithoutPipe(cmd)
 
@@ -386,7 +388,7 @@ class Docker():
             cmd=None
 
         # mem=1000000
-        print(("install docker with name '%s'"%base))
+        print '[+] installing docker %s (from: %s)' % (name, base)
 
         res=self.client.create_container(image=base, command=cmd, hostname=name, user="root", \
                 detach=False, stdin_open=False, tty=True, mem_limit=mem, ports=list(portsdict.keys()), environment=None, volumes=volskeys,  \
@@ -404,7 +406,7 @@ class Docker():
             portfound=0
             for internalport,extport in list(portsdict.items()):
                 if internalport==22:
-                    print(("test docker internal port:22 on ext port:%s"%extport))
+                    print '[+] checking for external ssh access: port %s' % extport
                     portfound=extport
                     if j.system.net.waitConnectionTest(self.remote['host'], extport, timeout=2) == False:
                         log = self.client.logs(name)
@@ -468,16 +470,17 @@ class Docker():
 
     def pushSSHKey(self,name):
         # path=j.system.fs.joinPaths(self._get_rootpath(name),"root",".ssh","authorized_keys")
-        privkeyloc="/root/.ssh/id_dsa"
+        privkeyloc="/root/.ssh/id_rsa"
         keyloc=privkeyloc + ".pub"
+        
         if not j.system.fs.exists(path=keyloc):
-            j.system.process.executeWithoutPipe("ssh-keygen -t dsa -f %s -N ''" % privkeyloc)
+            j.system.process.executeWithoutPipe("ssh-keygen -t rsa -f %s -N ''" % privkeyloc)
             if not j.system.fs.exists(path=keyloc):
                 raise RuntimeError("cannot find path for key %s, was keygen well executed"%keyloc)
         key=j.system.fs.fileGetContents(keyloc)
         # j.system.fs.writeFile(filename=path,contents="%s\n"%content)
 
-        j.system.fs.writeFile(filename="/root/.ssh/known_hosts",contents="")
+        j.system.fs.writeFile(filename="/root/.ssh/known_hosts", contents="")
 
         c=j.remote.cuisine.api
         c.fabric.api.env['password'] = "gig1234"
@@ -498,8 +501,9 @@ class Docker():
         while counter<20 and connect==False:
             try:
                 counter+=1
-                print "connect ssh2"
-                c.ssh_authorize("root",key)
+                print '[+] connecting ssh docker'
+                c.ssh_authorize("root", key)
+                
             except Exception,e:
                 time.sleep(0.1)
                 continue
