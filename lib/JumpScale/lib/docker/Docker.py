@@ -17,6 +17,9 @@ class Docker():
         self._prefix=""
         self.client = docker.Client(base_url='unix://var/run/docker.sock')
 
+    def connectRemote(self, remote):
+        self.client = docker.Client(base_url=remote)
+            
     def _execute(self, command):
         env = os.environ.copy()
         env.pop('PYTHONPATH', None)
