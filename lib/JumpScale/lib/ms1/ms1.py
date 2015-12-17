@@ -444,6 +444,8 @@ class MS1(object):
 
         self.vars["space.ip.pub"]=pubip
         self._deletePortForwardRule(spacesecret, name, pubip, pubipport, 'tcp')
+
+        print("[+] creating portforward: %s/%s -> %s/%s" % (pubip, pubipport, name, machineport))
         portforwarding_actor.create(cloudspace_id, pubip, str(pubipport), machine_id, str(machineport), protocol)
 
         return "OK"
@@ -487,7 +489,7 @@ class MS1(object):
 
         for item in portforwarding_actor.list(cloudspace_id):
             if int(item["publicPort"]) == int(pubipport) and item['publicIp'] == pubip:
-                print("[+] deleting portforward: %s (%s:%s)" % (item["id"], pubip, item["publicPort"]))
+                print("[+] deleting portforward: %s/%s -> %s/%s" % (pubip, item["publicPort"], item["localIp"], item["localPort"]))
                 portforwarding_actor.delete(cloudspace_id,item["id"])
 
         return "OK"
