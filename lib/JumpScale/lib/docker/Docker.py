@@ -282,7 +282,7 @@ class Docker():
         j.system.process.executeWithoutPipe(cmd)
 
     def create(self, name="", ports="", vols="", volsro="", stdout=True, base="despiegk/mc", nameserver=["8.8.8.8"],
-               replace=True, cpu=None, mem=0, jumpscale=False, ssh=True, myinit=True, sharecode=False):
+               replace=True, cpu=None, mem=0, jumpscale=False, ssh=True, myinit=True, sharecode=False, mapping=True):
 
         """
         @param ports in format as follows  "22:8022 80:8080"  the first arg e.g. 22 is the port in the container
@@ -335,14 +335,15 @@ class Docker():
                 key,val=item.split(":",1)
                 volsdict[str(key).strip()]=str(val).strip()
 
-        j.system.fs.createDir("/var/jumpscale")
-        if "/var/jumpscale" not in volsdict:
-            volsdict["/var/jumpscale"]="/var/docker/%s"%name
-        j.system.fs.createDir("/var/docker/%s"%name)
+        if mapping:
+                j.system.fs.createDir("/var/jumpscale")
+                if "/var/jumpscale" not in volsdict:
+                    volsdict["/var/jumpscale"]="/var/docker/%s"%name
+                j.system.fs.createDir("/var/docker/%s"%name)
 
-        tmppath="/tmp/dockertmp/%s"%name
-        j.system.fs.createDir(tmppath)
-        volsdict[tmppath]="/tmp"
+                tmppath="/tmp/dockertmp/%s"%name
+                j.system.fs.createDir(tmppath)
+                volsdict[tmppath]="/tmp"
 
         if sharecode and j.system.fs.exists(path="/opt/code"):
             if "/opt/code" not in volsdict:
