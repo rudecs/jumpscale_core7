@@ -190,6 +190,9 @@ class VirtualMachines(object):
         if self.target == 'ms1':
             return self._ms1_getMachine(hostname)
         
+        if self.target == 'docker':
+            return self._docker_getMachine(hostname)
+        
         raise NameError('Target "%s" is not supported' % self.target)
     
     def createMachine(self, hostname, memsize, ssdsize, delete):
