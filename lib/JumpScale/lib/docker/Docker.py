@@ -98,17 +98,14 @@ class Docker():
             res[str(item["Names"][0].strip("/").strip())]=str(item["Id"].strip())
         return res
 
-    def ps(self):
+    def ps(self, all=False):
         """
         return detailed info
         """
-        return self.client.containers()
+        return self.client.containers(all=all)
 
     def inspect(self,name):
-        cmd="docker inspect %s"%name
-        rc,jsondata=j.system.process.execute(cmd)
-        obj=json.loads(jsondata)
-        return obj[0]
+        return self.client.inspect_container(name)
 
     def getInfo(self,name):
         for item in self.ps():
@@ -573,8 +570,7 @@ class Docker():
         j.system.process.executeWithoutPipe(cmd)
 
     def pull(self,imagename):
-        cmd="docker pull %s"%imagename
-        j.system.process.executeWithoutPipe(cmd)
+        self.client.import_image_from_image(imagename)
 
     def uploadFile(self, name, source, dest):
         """
