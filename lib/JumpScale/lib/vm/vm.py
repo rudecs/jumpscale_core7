@@ -68,6 +68,9 @@ class VirtualMachinesDocker(VirtualMachines):
 
         if settings.get('port'):
             self._docker['port'] = settings['port']
+        
+        if settings.get('image'):
+            self._docker['image'] = settings['image']
 
         self._docker['api'] = j.tools.docker
 
