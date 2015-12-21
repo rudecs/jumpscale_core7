@@ -16,6 +16,7 @@ class GridHealthChecker(object):
         self._nodecl = j.clients.osis.getCategory(self._osiscl, 'system', 'node')
         self._jobcl = j.clients.osis.getCategory(self._osiscl, 'system', 'job')
         self._jumpscriptcl = j.clients.osis.getCategory(self._osiscl, 'system', 'jumpscript')
+        self._rcl = j.clients.redis.getByInstance('system')
         self._runningnids = list()
         self._nids = list()
         self._nodenames = dict()
@@ -210,7 +211,25 @@ class GridHealthChecker(object):
         self.getNodes()
         for nid in self._nids:
             self.fetchMonitoringOnNode(nid, clean=False)
+        self._updateHealthCache()
         return self._status
+
+    def fetchState(self):
+        state = self._rcl.get('health.status')
+        if not state:
+            self.fetchMonitoringOnAllNodes()
+            state = self._rcl.get('health.status')
+        return state
+
+    def _updateHealthCache(self):
+        state = 'OK'
+        for nid, cats in self._status.iteritems():
+            for cat, checks in cats.iteritems():
+                for check in checks:
+                    if check['state'] != 'OK' and state != 'ERROR':
+                        state = check['state']
+        self._rcl.set('health.status', state, ex=300)
+        return state
 
     def fetchMonitoringOnNode(self, nid, clean=True):
         results = list()
