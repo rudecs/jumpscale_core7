@@ -189,9 +189,13 @@ class VirtualMachinesMS1(VirtualMachines):
 
     def createMachine(self, hostname, memsize, ssdsize, delete):
         self.info('initializing: %s (RAM: %s GB, Disk: %s GB)' % (hostname, memsize, ssdsize))
+        
+        memory = str(memsize)
+        disk = str(ssdsize)
+        
         # FIXME: remove this try/catch ?
         try:
-            self._mother['api'].createMachine(self._mother['secret'], hostname, memsize=memsize, ssdsize=ssdsize, imagename=self._mother['image'], sshkey=self._mother['sshkey'], delete=delete)
+            self._mother['api'].createMachine(self._mother['secret'], hostname, memsize=memory, ssdsize=disk, imagename=self._mother['image'], sshkey=self._mother['sshkey'], delete=delete)
 
         except Exception as e:
             if e.message.find('Could not create machine it does already exist') == -1:
