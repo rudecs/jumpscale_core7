@@ -1,83 +1,27 @@
 from JumpScale import j
 import json
 import urllib
-
+import time
 
 class OpenvcloudFactory(object):
-    def get(self, apiurl='www.mothership1.com'):
-        return Openvclcoud(apiurl)
-
+    def get(self):
+        return Openvclcoud()
 
 class Openvclcoud(object):
-    def __init__(self, apiurl):
-        self._spacesecret = None
-        self.apiURL = apiurl
-        self.api = j.tools.ms1.get(apiurl)
-        self.db = j.db.keyvaluestore.getFileSystemStore("aysgit")
+    def __init__(self):
         self.reset = False
-
-    def connect(self, login, passwd, location,cloudspace,reset=False):
-        """
-        example locations on mothership1:  ca1 (canada),us2 (us), eu2 (belgium), eu1 (uk)
-        @param reset if True then will not look at history
-        """
-        self.reset=reset
-        self.login=login
-        self.passwd=passwd
-        self.location=location
-        self.cloudspace=cloudspace
-        self._spacesecret = self.api.getCloudspaceSecret(login, passwd, cloudspace, location)
-        return self._spacesecret
-
-    def actionCheck(self,gitlaburl,actionname):
-        if self.reset:
-            return False
-
-        key="%s__%s" % (gitlaburl, actionname)
-
-        if self.db.exists("", key):
-            print "Action: %s done" % actionname
-            return self.db.get("", key)
-
-        return False
-
-    def actionDone(self,gitlaburl,actionname,args=None):
-        key = "%s__%s" % (gitlaburl,actionname)
-        self.db.set("", key, args)
-
-    def initAYSGitVM(self, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, delete=False):
-        """
-
-        gitlaburl example
-        https://git.aydo.com/openvcloudEnvironments/testkds.git
-        #do not use login:passwd@ in the url
-
-        master git machine is the machine which holds all the configuration for the master environment of an openvcloud
-
-        example:
-        cl.initMasterGitVMovc("despiegk","????","eu2","BE","git.aydo.com",\
-            gitlablogin="despiegk",gitlabpasswd="????",\
-            gitlabAccountname="test",gitlabReponame="testspace",recoverypasswd="9999")
-
-        will do the following
-        - init connection with openvcloud API
-        - create machine which will host the git repo for this openvcloud env
-        - do portforward from internet to git master for ssh (port 22)
-        - create remote ssh key pair
-        - secure the gitvm (give local user sshpair access)
-        - install jumpscale
-        - create the required repo on gitlab
-        - push initial content
-        - pull git repo onto the vmachine
-        - create openvcloud connection ays on vmachine so that future connections to openvcloud can be made
-
-        """
-
-        #check gitlab repo exists or needs to be created
-        # create new git repo
+        self.db = j.db.keyvaluestore.getFileSystemStore("aysgit")
+        
+        self._ms1 = {}
+        self._docker = {}
+        self.bootstrapPort = '5000'
+    
+    def initLocalhost(self, gitlaburl, gitlablogin, gitlabpasswd):
+        self.preprocess()
+        
         print "[+] creating git repository"
 
-        if gitlaburl.find("@")!=-1:
+        if gitlaburl.find("@") != -1:
             j.events.inputerror_critical('[-] do not use "login:passwd@" in the url')
 
         if not gitlaburl.startswith("http"):
@@ -90,55 +34,137 @@ class Openvclcoud(object):
         print '[+] environment: %s' % gitlabReponame
 
         gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
-        if self.actionCheck(gitlaburl, "gitcreate") is False:
-            gitlab.createProject(gitlabAccountname, gitlabReponame, public=False)
-            self.actionDone(gitlaburl, "gitcreate")
+        
+        print '[+] checking for existing project'
+        
+        projects = gitlab.getProjects()
+        for project in projects:
+            if project['name'] == gitlabReponame and project['namespace']['name'] == gitlabAccountname:
+                print '[-] %s/%s: project already exists' % (gitlabAccountname, gitlabReponame)
+                print '[-] if you removed it shortly, this is probably related to cache, please wait'
+                j.application.stop()
 
-        print "[+] get secret key for cloud api"
-
-        if self._spacesecret is None:
-            j.events.inputerror_critical('[-] no spacesecret set, need to call connect() method first')
-        else:
-            spacesecret = self._spacesecret
-
+    def initMothership(self, login, passwd, location, cloudspace, reset=False, apiurl='www.mothership1.com'):
+        print '[+] building mothership1 based environment'
+        
+        api = j.tools.ms1.get(apiurl)
+        secret = api.getCloudspaceSecret(login, passwd, cloudspace, location)
+        
+        self._ms1 = {
+            'username': login,
+            'password': passwd,
+            'cloudspace': cloudspace,
+            'location': location,
+            'secret': secret
+        }
+        
+        vm = j.clients.vm.get('ms1', self._ms1)
+        
+        machine = self.initMachine(vm, 'ms1', self._ms1)
+        
+        return {'remote': machine['publicip'], 'port': machine['publicport'], 'secret': secret, 'public': machine['publicip']}
+    
+    def initDocker(self, host, port, public):
+        print '[+] building docker based environment'
+        
+        print '[+] building the base image'
+        today = time.strftime('%Y-%m-%d')
+        image = 'openvcloud/%s' % today
+        
+        args = {'instance.image.name': image}
+        service = j.atyourservice.new(name='docker_ovc', args=args)
+        service.install(reinstall=True)
+        
+        self._docker = {
+            'remote': host,
+            'port': port,
+            'public': public,
+            'image': image
+        }
+        
+        vm = j.clients.vm.get('docker', self._docker)
+        
+        machine = self.initMachine(vm, 'docker', self._docker)
+        
+        return {'remote': host, 'port': machine['publicport'], 'public': public, 'image': image}
+    
+    def initMachine(self, vm, target, settings):
+        sshport = 22 if target != 'docker' else 2202
+        
+        vm.createMachine('ovc_git', memsize='0.5', ssdsize='10', delete=True)
+        vm.createPortForward('ovc_git', 22, sshport)
+        vm.createPortForward('ovc_git', self.bootstrapPort, self.bootstrapPort)
+        vm.commitMachine('ovc_git')
+        
+        machine = vm.getMachine('ovc_git')
+        
+        return machine
+        
+    def preprocess(self):
         print "[+] checking local ssh key"
-
+        
         keypath = '/root/.ssh/id_rsa'
+        
         if not j.system.fs.exists(path=keypath):
             print "[+] generating local rsa key"
             j.system.platform.ubuntu.generateLocalSSHKeyPair()
+        
+        print '[+] checking for redis'
+        if not j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
+            redis = j.atyourservice.findServices(instance='system', name='redis')
+            
+            if len(redis) == 0:
+                print '[-] cannot continue, redis is not installed'
+                j.application.stop()
+                
+            redis[0].start()
+
+    def actionCheck(self,gitlaburl,actionname):
+        if self.reset:
+            return False
+
+        key = "%s__%s" % (gitlaburl, actionname)
+
+        if self.db.exists("", key):
+            print "[-] action: %s already done" % actionname
+            return self.db.get("", key)
+
+        return False
+
+    def actionDone(self,gitlaburl,actionname,args=None):
+        key = "%s__%s" % (gitlaburl, actionname)
+        self.db.set("", key, args)
+    
+    def jumpscale(self, remote):
+        if remote.file_exists('/opt/jumpscale7/'):
+            print "[+] jumpscale seems already installed, skipping"
+            return
+        
+        print "[+] installing jumpscale"
+        remote.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
+
+    def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, delete=False):
+        keypath = '/root/.ssh/id_rsa'
 
         if len(recoverypasswd) < 6:
             j.events.inputerror_critical("[-] recovery passwd needs to be at least 6 chars")
+        
+        print '[+] creating gitlab project'
+        
+        gitlabAccountname, gitlabReponame = j.clients.gitlab.getAccountnameReponameFromUrl(gitlaburl)
+        gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
+        
+        gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
+        gitlab.createProject(gitlabAccountname, gitlabReponame, public=False)
 
-        if self.actionCheck(gitlaburl, "machinecreate") is False:
-            # create ovc_git vm
-            id, ip, port = self.api.createMachine(spacesecret, 'ovc_git', memsize='0.5', ssdsize='10', imagename='ubuntu.14.04.x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
+        cl = j.ssh.connect(machine['remote'], machine['port'], keypath=keypath, verbose=True)
 
-
-            # portforward 22 to 22 on ovc_git
-            self.api.createTcpPortForwardRule(spacesecret, 'ovc_git', 22, pubipport=22)
-
-            # ssh connetion to the vm
-            cl = j.ssh.connect(ip, port, keypath=keypath, verbose=True)
-
-            # generate key pair on the vm
-            print '[+] generating keypair on the vm'
-            cl.ssh_keygen('root', 'rsa')
-
-            # secure vm and give access to the local machine
-            u = j.ssh.unix.get(cl)
-            u.secureSSH('', recoverypasswd=recoverypasswd)
-            self.actionDone(gitlaburl, "machinecreate", (ip, port))
-        else:
-            ip, port = self.actionCheck(gitlaburl, "machinecreate")
-            cl = j.ssh.connect(ip, 22, keypath=keypath, verbose=True)
+        print '[+] generating keypair on the vm'
+        cl.ssh_keygen('root', 'rsa')
 
         if self.actionCheck(gitlaburl, "jumpscale") is False:
-            # install Jumpscale
-            print "[+] installing jumpscale"
-            cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
-            # print "jumpscale installed"
+            # install jumpscale
+            self.jumpscale(cl)
 
             print "[+] adding openvcloud domain to atyourservice"
             content = """
@@ -170,13 +196,9 @@ metadata.openvcloud            =
         repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
 
         if self.actionCheck(gitlaburl, "gitlabclone") is False:
-            # clone templates repo and change url
-            # _, _, _, _, repoURL = j.do.rewriteGitRepoUrl(gitlaburl, gitlablogin, urllib.quote_plus(gitlabpasswd))
             repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
-            # repoURL = 'git@git.aydo.com:openvcloudEnvironments/%s' % gitlabReponame
 
             if not cl.file_exists(repopath):
-                # host = 'https://%s:%s@%s' % (gitlablogin, urllib.quote_plus(gitlabpasswd), 'git.aydo.com')
                 host = 'git@git.aydo.com'
                 
                 cl.run('git clone %s:openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
@@ -205,36 +227,39 @@ metadata.openvcloud            =
             
             self.actionDone(gitlaburl, 'copyKeys')
 
-        if self.actionCheck(gitlaburl, "ms1client") is False:
+        # saving clients
+        if machine['type'] == 'ms1':
             # create ms1_client to save ms1 connection info
-            args = 'instance.param.location:%s instance.param.login:%s instance.param.passwd:%s instance.param.cloudspace:%s' % (self.location, self.login, self.passwd, self.cloudspace)
+            args  = 'instance.param.location:%s ' % self._ms1['location']
+            args += 'instance.param.login:%s ' % self._ms1['username']
+            args += 'instance.param.passwd:%s ' % self._ms1['password']
+            args += 'instance.param.cloudspace:%s' % self._ms1['cloudspace']
+            
             cl.run('cd %s; ays install -n ms1_client --data "%s" -r' % (repopath, args))
-            self.actionDone(gitlaburl, "ms1client")
-
-        """
-        if self.actionCheck(gitlaburl, "gitlab_client") is False:
-            # create gitlab_client to save gitlab connection info
-            scheme, host, _, _, _ = j.do.rewriteGitRepoUrl(gitlaburl)
-            url = scheme+host
-            args = 'instance.gitlab.client.url:%s instance.gitlab.client.login:%s instance.gitlab.client.passwd:%s' % (url, gitlablogin, gitlabpasswd)
-            cl.run('cd %s; ays install -n gitlab_client --data "%s" -r' % (repopath, args))
-            self.actionDone(gitlaburl, "gitlab_client")
-        """
+        
+        if machine['type'] == 'docker':
+            # create ms1_client to save ms1 connection info
+            args  = 'instance.remote.host:%s ' % self._docker['remote']
+            args += 'instance.remote.port:%s ' % self._docker['port']
+            args += 'instance.public.address:%s ' % self._docker['public']
+            args += 'instance.image.base:%s' % machine['image']
+            
+            cl.run('cd %s; ays install -n docker_client --data "%s" -r' % (repopath, args))
+        
+        # ensure that portal libs are installed
+        cl.run('cd %s; ays install -n portal_lib -r' % (repopath))
         
         if self.actionCheck(gitlaburl, "ovc_setup") is False:
-            vmachine = self.api.getMachineObject(self._spacesecret, 'ovc_git')
-            vspace = self.api.getCloudspaceObj(self._spacesecret)
-        
             # create ovc_setup instance to save settings
             args  = 'instance.ovc.environment:%s ' % gitlabReponame
             args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
-            args += 'instance.ovc.ms1.instance:main '
-            args += 'instance.ovc.gitlab_client.instance:main ' 
-            args += 'instance.ovc.password:rooter '
-            args += 'instance.ovc.bootstrap.port:5000 '
-            args += 'instance.ovc.bootstrap.host:%s ' % vmachine['interfaces'][0]['ipAddress']
-            args += 'instance.ovc.cloudip:%s ' % vspace['publicipaddress']
-            args += 'instance.ovc.gitip:%s ' % vmachine['interfaces'][0]['ipAddress']
+            args += 'instance.ovc.ms1.instance:main '           # FIXME
+            args += 'instance.ovc.gitlab_client.instance:main ' # FIXME
+            args += 'instance.ovc.password:%s ' % recoverypasswd
+            args += 'instance.ovc.bootstrap.port:%s ' % self.bootstrapPort
+            args += 'instance.ovc.bootstrap.host:%s ' % machine['remote']
+            args += 'instance.ovc.cloudip:%s ' % machine['public']
+            args += 'instance.ovc.gitip:%s ' % machine['remote']
             
             cl.run('cd %s; ays install -n ovc_setup --data "%s" -r' % (repopath, args))
             self.actionDone(gitlaburl, "ovc_setup")
@@ -242,7 +267,7 @@ metadata.openvcloud            =
 
         if self.actionCheck(gitlaburl, "rememberssh") is False:
             # create ms1_client to save ms1 connection info
-            args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, ip)
+            args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, machine['remote'])
             cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
             cl.run('git config --global push.default simple')
             cl.run('cd %s; jscode push' % repopath)
@@ -257,49 +282,10 @@ metadata.openvcloud            =
         # ensure that ssh agent is running and add the new key
         j.do.execute('eval $(ssh-agent -s)')
         
-        print "[+] environment is ready to be deployed"
-
-    def connectAYSGitVM(self, gitlaburl, gitlablogin, gitlabpasswd, setup=False):
-        """
-        @param gitlaburl= 'https://git.aydo.com/openvcloudEnvironments/scaleout1'
-        @param setup: if True, will launch the script to resume setup of the openvcloud
-                      if False, you will just have a prompt
-
-        """
-        keypath='/root/.ssh/id_rsa'
-        if self.actionCheck(gitlaburl, "machinecreate"):
-            # means on this machien we have alrady created the machine so we have the credentials
-            ip, port = self.actionCheck(gitlaburl, "machinecreate")
-            cl = j.ssh.connect(ip, 22, keypath=keypath, verbose=True)
-        else:
-            cl = j.clients.gitlab.get("https://git.aydo.com", gitlablogin, gitlabpasswd)
-            hrd = cl.getHRD("openvcloudEnvironments", "scaleout1", "services/openvcloud__git_vm__main/service.hrd")
-            from IPython import embed
-            print "DEBUG NOW ooo"
-            embed()
-
-        if self.actionCheck(gitlaburl, "gitcredentials"):
-            gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
-            gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
-            infos = gitlab.getUserInfo(gitlablogin)
-
-            cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
-            cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
-
-            cl.run('git config --global user.email "%s"' % infos['email'])
-            cl.run('git config --global user.name "%s"' % infos['name'] if infos['name'] != '' else gitlablogin)
-
-        cl.run('ays mdupdate')
-        
-        if setup:
-            gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
-            temp = gitlaburl.split("/")
-            repopath = '/opt/code/git/%s/%s' % (temp[3], temp[4])
-            
-            # FIXME
-            print '[+] resuming setup'
-
-        # cl.fabric.api.open_shell()
+        print ''
+        print '[+] environment is ready to be deployed'
+        print '[+] you can now ssh the ovcgit host to configure the environment'
+        print '[+]   ssh root@%s -p %s -A' % (machine['remote'], machine['port'])
 
     def initVnasCloudSpace(self, gitlablogin, gitlabpasswd, delete=False):
         print "get secret key for cloud api"
