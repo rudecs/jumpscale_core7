@@ -167,10 +167,10 @@ class Openvclcoud(object):
             self.jumpscale(cl)
 
             print "[+] adding openvcloud domain to atyourservice"
-            content = """
-metadata.openvcloud            =
-    url:'https://git.aydo.com/0-complexity/openvcloud_ays',
-"""
+            content  = "metadata.openvcloud            =\n"
+            content += "    branch:'2.0',\n"
+            content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
+
             cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
             self.actionDone(gitlaburl, "jumpscale")
 
