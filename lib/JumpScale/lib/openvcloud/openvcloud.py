@@ -162,70 +162,71 @@ class Openvclcoud(object):
         print '[+] generating keypair on the vm'
         cl.ssh_keygen('root', 'rsa')
 
-        if self.actionCheck(gitlaburl, "jumpscale") is False:
-            # install jumpscale
-            self.jumpscale(cl)
+        # install jumpscale
+        self.jumpscale(cl)
 
-            print "[+] adding openvcloud domain to atyourservice"
-            content  = "metadata.openvcloud            =\n"
-            content += "    branch:'2.0',\n"
-            content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
+        print "[+] adding openvcloud domain to atyourservice"
+        content  = "metadata.openvcloud            =\n"
+        content += "    branch:'2.0',\n"
+        content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
 
-            cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
-            self.actionDone(gitlaburl, "jumpscale")
+        cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
+        
+        
+        
+        # git credentials
+        cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
+        cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
+        infos = gitlab.getUserInfo(gitlablogin)
 
-        if self.actionCheck(gitlaburl, "gitcredentials") is False:
-            cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
-            cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
-            infos = gitlab.getUserInfo(gitlablogin)
+        email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
+        name = infos['name'] if infos['name'] != '' else gitlablogin
 
-            email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
-            name = infos['name'] if infos['name'] != '' else gitlablogin
-
-            cl.run('git config --global user.email "%s"' % email)
-            cl.run('git config --global user.name "%s"' % name)
-            self.actionDone(gitlaburl, "gitcredentials")
-            
-            allowhosts = ["github.com", "git.aydo.com"]
-            
-            for host in allowhosts:
-                cl.run('echo "Host %s" >> /root/.ssh/config' % host)
-                cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
-                cl.run('echo "" >> /root/.ssh/config')
+        cl.run('git config --global user.email "%s"' % email)
+        cl.run('git config --global user.name "%s"' % name)
+        
+        allowhosts = ["github.com", "git.aydo.com"]
+        
+        for host in allowhosts:
+            cl.run('echo "Host %s" >> /root/.ssh/config' % host)
+            cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
+            cl.run('echo "" >> /root/.ssh/config')
 
         repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
 
-        if self.actionCheck(gitlaburl, "gitlabclone") is False:
-            repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
 
-            if not cl.file_exists(repopath):
-                host = 'git@git.aydo.com'
-                
-                cl.run('git clone %s:openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
-                cl.run('cd %s; git remote set-url origin %s' % (repopath, repoURL))
 
-                # Note: rebase prevents for asking to merge local tree with remote
-                cl.run('cd %s; git pull --rebase' % repopath)
+        # git lab clone
+        repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
 
-            self.actionDone(gitlaburl, "gitlabclone")
-        
-        if self.actionCheck(gitlaburl, 'copyKeys') is False:
-            keys = {
-                '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
-                # '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
-                '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), ),
-            }
-
-            for source, dests in keys.iteritems():
-                content = cl.file_read(source)
-                for dest in dests:
-                    cl.file_write(dest, content)
-                    cl.run('chmod 600 %s' % dest)
-
-            # append key to authorized hosts
-            cl.run("cat %s >> /root/.ssh/authorized_keys" % keys['/root/.ssh/id_rsa.pub'])
+        if not cl.file_exists(repopath):
+            host = 'git@git.aydo.com'
             
-            self.actionDone(gitlaburl, 'copyKeys')
+            cl.run('git clone %s:openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
+            cl.run('cd %s; git remote set-url origin %s' % (repopath, repoURL))
+
+            # Note: rebase prevents for asking to merge local tree with remote
+            cl.run('cd %s; git pull --rebase' % repopath)
+        
+        
+        
+        # copy keys
+        keys = {
+            '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
+            # '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
+            '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), ),
+        }
+
+        for source, dests in keys.iteritems():
+            content = cl.file_read(source)
+            for dest in dests:
+                cl.file_write(dest, content)
+                cl.run('chmod 600 %s' % dest)
+
+        # append key to authorized hosts
+        cl.run("cat %s >> /root/.ssh/authorized_keys" % keys['/root/.ssh/id_rsa.pub'])
+
+
 
         # saving clients
         if machine['type'] == 'ms1':
