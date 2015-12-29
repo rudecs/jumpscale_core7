@@ -143,7 +143,7 @@ class Openvclcoud(object):
         print "[+] installing jumpscale"
         remote.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
 
-    def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, delete=False):
+    def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, domain, delete=False):
         keypath = '/root/.ssh/id_rsa'
 
         if len(recoverypasswd) < 6:
@@ -249,33 +249,33 @@ class Openvclcoud(object):
         # ensure that portal libs are installed
         cl.run('cd %s; ays install -n portal_lib -r' % (repopath))
         
-        if self.actionCheck(gitlaburl, "ovc_setup") is False:
-            # create ovc_setup instance to save settings
-            args  = 'instance.ovc.environment:%s ' % gitlabReponame
-            args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
-            args += 'instance.ovc.ms1.instance:main '           # FIXME
-            args += 'instance.ovc.gitlab_client.instance:main ' # FIXME
-            args += 'instance.ovc.password:%s ' % recoverypasswd
-            args += 'instance.ovc.bootstrap.port:%s ' % self.bootstrapPort
-            args += 'instance.ovc.bootstrap.host:%s ' % machine['remote']
-            args += 'instance.ovc.cloudip:%s ' % machine['public']
-            args += 'instance.ovc.gitip:%s ' % machine['remote']
-            
-            cl.run('cd %s; ays install -n ovc_setup --data "%s" -r' % (repopath, args))
-            self.actionDone(gitlaburl, "ovc_setup")
-
-
-        if self.actionCheck(gitlaburl, "rememberssh") is False:
-            # create ms1_client to save ms1 connection info
-            args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, machine['remote'])
-            cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
-            cl.run('git config --global push.default simple')
-            cl.run('cd %s; jscode push' % repopath)
-            self.actionDone(gitlaburl, "rememberssh")
         
-        if self.actionCheck(gitlaburl, "applyname") is False:
-            cl.run('cd %s; ays install -n ovc_namer -r' % repopath)
-            cl.run('cd %s; jscode push' % repopath)
+        
+        # create ovc_setup instance to save settings
+        args  = 'instance.ovc.environment:%s ' % gitlabReponame
+        args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
+        args += 'instance.ovc.ms1.instance:main '           # FIXME, remove me
+        args += 'instance.ovc.gitlab_client.instance:main ' # FIXME, remove me
+        args += 'instance.ovc.password:%s ' % recoverypasswd
+        args += 'instance.ovc.bootstrap.port:%s ' % self.bootstrapPort
+        args += 'instance.ovc.bootstrap.host:%s ' % machine['remote']
+        args += 'instance.ovc.cloudip:%s ' % machine['public']
+        args += 'instance.ovc.gitip:%s ' % machine['remote']
+        args += 'instance.ovc.domain:%s ' % domain
+        
+        cl.run('cd %s; ays install -n ovc_setup --data "%s" -r' % (repopath, args))
+
+        
+        
+        # create ms1_client to save ms1 connection info
+        args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, machine['remote'])
+        cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
+        cl.run('git config --global push.default simple')
+        cl.run('cd %s; jscode push' % repopath)
+        
+        
+        cl.run('cd %s; ays install -n ovc_namer -r' % repopath)
+        cl.run('cd %s; jscode push' % repopath)
         
         print '[+] setup completed'
         
