@@ -67,7 +67,7 @@ class mainclass(parentclass):
         id = self.getgroup(key, session)
         client = self.dbclient[self.dbnamespace]
         client.user.update({"groups":id}, {"$pull":{"groups":id}}, multi =  True)
-        super(parentclass, self).delete(id, session)
+        super(mainclass, self).delete(id, session)
 
         
 
