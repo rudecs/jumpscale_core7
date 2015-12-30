@@ -141,12 +141,14 @@ class Openvclcoud(object):
             return
         
         print "[+] installing jumpscale"
-        branches = {'jsbranch': j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7').branchName,
-                    'aysbranch': j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7').branchName
-                    }
+        branches = {
+            'jsbranch': j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7').branchName,
+            'aysbranch': j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7').branchName
+        }
+        
         remote.run('JSBRANCH="%(jsbranch)s" AYSBRANCH="%(aysbranch)s" curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches)
 
-    def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, delete=False):
+    def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, domain, delete=False):
         keypath = '/root/.ssh/id_rsa'
 
         if len(recoverypasswd) < 6:
@@ -165,70 +167,71 @@ class Openvclcoud(object):
         print '[+] generating keypair on the vm'
         cl.ssh_keygen('root', 'rsa')
 
-        if self.actionCheck(gitlaburl, "jumpscale") is False:
-            # install jumpscale
-            self.jumpscale(cl)
+        # install jumpscale
+        self.jumpscale(cl)
 
-            print "[+] adding openvcloud domain to atyourservice"
-            content  = "metadata.openvcloud            =\n"
-            content += "    branch:'2.0',\n"
-            content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
+        print "[+] adding openvcloud domain to atyourservice"
+        content  = "metadata.openvcloud            =\n"
+        content += "    branch:'2.0',\n"
+        content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
 
-            cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
-            self.actionDone(gitlaburl, "jumpscale")
+        cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
+        
+        
+        
+        # git credentials
+        cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
+        cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
+        infos = gitlab.getUserInfo(gitlablogin)
 
-        if self.actionCheck(gitlaburl, "gitcredentials") is False:
-            cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
-            cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
-            infos = gitlab.getUserInfo(gitlablogin)
+        email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
+        name = infos['name'] if infos['name'] != '' else gitlablogin
 
-            email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
-            name = infos['name'] if infos['name'] != '' else gitlablogin
-
-            cl.run('git config --global user.email "%s"' % email)
-            cl.run('git config --global user.name "%s"' % name)
-            self.actionDone(gitlaburl, "gitcredentials")
-            
-            allowhosts = ["github.com", "git.aydo.com"]
-            
-            for host in allowhosts:
-                cl.run('echo "Host %s" >> /root/.ssh/config' % host)
-                cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
-                cl.run('echo "" >> /root/.ssh/config')
+        cl.run('git config --global user.email "%s"' % email)
+        cl.run('git config --global user.name "%s"' % name)
+        
+        allowhosts = ["github.com", "git.aydo.com"]
+        
+        for host in allowhosts:
+            cl.run('echo "Host %s" >> /root/.ssh/config' % host)
+            cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
+            cl.run('echo "" >> /root/.ssh/config')
 
         repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
 
-        if self.actionCheck(gitlaburl, "gitlabclone") is False:
-            repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
 
-            if not cl.file_exists(repopath):
-                host = 'git@git.aydo.com'
-                
-                cl.run('git clone %s:openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
-                cl.run('cd %s; git remote set-url origin %s' % (repopath, repoURL))
 
-                # Note: rebase prevents for asking to merge local tree with remote
-                cl.run('cd %s; git pull --rebase' % repopath)
+        # git lab clone
+        repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
 
-            self.actionDone(gitlaburl, "gitlabclone")
-        
-        if self.actionCheck(gitlaburl, 'copyKeys') is False:
-            keys = {
-                '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
-                # '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
-                '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), ),
-            }
-
-            for source, dests in keys.iteritems():
-                content = cl.file_read(source)
-                for dest in dests:
-                    cl.file_write(dest, content)
-                    cl.run('chmod 600 %s' % dest)
-
-            # append key to authorized hosts
-            cl.run("cat %s >> /root/.ssh/authorized_keys" % keys['/root/.ssh/id_rsa.pub'])
+        if not cl.file_exists(repopath):
+            host = 'git@git.aydo.com'
             
-            self.actionDone(gitlaburl, 'copyKeys')
+            cl.run('git clone %s:openvcloudEnvironments/OVC_GIT_Tmpl.git %s' % (host, repopath))
+            cl.run('cd %s; git remote set-url origin %s' % (repopath, repoURL))
+
+            # Note: rebase prevents for asking to merge local tree with remote
+            cl.run('cd %s; git pull --rebase' % repopath)
+        
+        
+        
+        # copy keys
+        keys = {
+            '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
+            # '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
+            '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), ),
+        }
+
+        for source, dests in keys.iteritems():
+            content = cl.file_read(source)
+            for dest in dests:
+                cl.file_write(dest, content)
+                cl.run('chmod 600 %s' % dest)
+
+        # append key to authorized hosts
+        cl.run("cat %s >> /root/.ssh/authorized_keys" % keys['/root/.ssh/id_rsa.pub'])
+
+
 
         # saving clients
         if machine['type'] == 'ms1':
@@ -252,33 +255,33 @@ class Openvclcoud(object):
         # ensure that portal libs are installed
         cl.run('cd %s; ays install -n portal_lib -r' % (repopath))
         
-        if self.actionCheck(gitlaburl, "ovc_setup") is False:
-            # create ovc_setup instance to save settings
-            args  = 'instance.ovc.environment:%s ' % gitlabReponame
-            args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
-            args += 'instance.ovc.ms1.instance:main '           # FIXME
-            args += 'instance.ovc.gitlab_client.instance:main ' # FIXME
-            args += 'instance.ovc.password:%s ' % recoverypasswd
-            args += 'instance.ovc.bootstrap.port:%s ' % self.bootstrapPort
-            args += 'instance.ovc.bootstrap.host:%s ' % machine['remote']
-            args += 'instance.ovc.cloudip:%s ' % machine['public']
-            args += 'instance.ovc.gitip:%s ' % machine['remote']
-            
-            cl.run('cd %s; ays install -n ovc_setup --data "%s" -r' % (repopath, args))
-            self.actionDone(gitlaburl, "ovc_setup")
-
-
-        if self.actionCheck(gitlaburl, "rememberssh") is False:
-            # create ms1_client to save ms1 connection info
-            args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, machine['remote'])
-            cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
-            cl.run('git config --global push.default simple')
-            cl.run('cd %s; jscode push' % repopath)
-            self.actionDone(gitlaburl, "rememberssh")
         
-        if self.actionCheck(gitlaburl, "applyname") is False:
-            cl.run('cd %s; ays install -n ovc_namer -r' % repopath)
-            cl.run('cd %s; jscode push' % repopath)
+        
+        # create ovc_setup instance to save settings
+        args  = 'instance.ovc.environment:%s ' % gitlabReponame
+        args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
+        args += 'instance.ovc.ms1.instance:main '           # FIXME, remove me
+        args += 'instance.ovc.gitlab_client.instance:main ' # FIXME, remove me
+        args += 'instance.ovc.password:%s ' % recoverypasswd
+        args += 'instance.ovc.bootstrap.port:%s ' % self.bootstrapPort
+        args += 'instance.ovc.bootstrap.host:%s ' % machine['remote']
+        args += 'instance.ovc.cloudip:%s ' % machine['public']
+        args += 'instance.ovc.gitip:%s ' % machine['remote']
+        args += 'instance.ovc.domain:%s ' % domain
+        
+        cl.run('cd %s; ays install -n ovc_setup --data "%s" -r' % (repopath, args))
+
+        
+        
+        # create ms1_client to save ms1 connection info
+        args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, machine['remote'])
+        cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
+        cl.run('git config --global push.default simple')
+        cl.run('cd %s; jscode push' % repopath)
+        
+        
+        cl.run('cd %s; ays install -n ovc_namer -r' % repopath)
+        cl.run('cd %s; jscode push' % repopath)
         
         print '[+] setup completed'
         
