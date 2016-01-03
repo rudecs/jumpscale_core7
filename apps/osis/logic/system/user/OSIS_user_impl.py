@@ -6,6 +6,15 @@ import bson
 class mainclass(parentclass):
     """
     """
+    def getuser(self, key, session=None):
+        if '_' in key:
+            gid, _, id = key.partition('_')
+            if not gid.isdigit():
+                id = key
+        else:
+            id = key
+        return id
+
 
     def set(self,key,value,waitIndex=False, session=None):
         guid, new, changed = super(parentclass, self).set(key, value, session=session)
@@ -33,22 +42,16 @@ class mainclass(parentclass):
         """
         get dict value
         """
-        gid, _, id = key.partition('_')
+        id = self.getuser(key, session)
         self.runTasklet('exists', key, session)
         db, counter = self._getMongoDB(session)
         return not db.find_one({"id":id})==None
 
     def get(self, key, full=False, session=None):
-        if '_' in key:
-            gid, _, id = key.partition('_')
-            if not gid.isdigit():
-                id = key
-        else:
-            id = key
+        id = self.getuser(key , session)
         self.runTasklet('get', key, session)
         db, counter = self._getMongoDB(session)
         res=db.find_one({"id":id})
-
         # res["guid"]=str(res["_id"])
         if not res:
             j.errorconditionhandler.raiseBug(message="Key %s doesn't exist" % key, level=4)
@@ -57,3 +60,14 @@ class mainclass(parentclass):
             res.pop("_id")
             res.pop("_ttl", None)
         return res
+
+
+    def delete(self, key, session=None):
+        id = self.getuser(key, session)
+        client = self.dbclient[self.dbnamespace]
+        client.group.update({"users":id}, {"$pull":{"users":id}}, multi = True)
+        super(mainclass, self).delete(id, session)
+
+
+
+
