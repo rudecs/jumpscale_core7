@@ -11,6 +11,7 @@ class Openvclcoud(object):
     def __init__(self):
         self.reset = False
         self.db = j.db.keyvaluestore.getFileSystemStore("aysgit")
+        self.masters = ['ovc_master', 'ovc_proxy', 'ovc_reflector', 'ovc_dcpm']
         
         self._ms1 = {}
         self._docker = {}
@@ -292,6 +293,33 @@ class Openvclcoud(object):
         print '[+] environment is ready to be deployed'
         print '[+] you can now ssh the ovcgit host to configure the environment'
         print '[+]   ssh root@%s -p %s -A' % (machine['remote'], machine['port'])
+    
+    
+    def _getNodes(self):
+        sshservices = j.atyourservice.findServices(name='node.ssh')
+        sshservices.sort(key = lambda x: x.instance)
+        return sshservices
+    
+    def getMasterNodes(self):
+        sshservices = self._getNodes()
+        nodes = []
+        
+        for ns in sshservices:
+            if ns.instance not in self.masters:
+                nodes.append(ns)
+        
+        return nodes
+    
+    def getRemoteNodes(self):
+        sshservices = self._getNodes()
+        nodes = []
+        
+        for ns in sshservices:
+            if ns.instance in self.masters:
+                nodes.append(ns)
+        
+        return nodes
+    
 
     def initVnasCloudSpace(self, gitlablogin, gitlabpasswd, delete=False):
         print "get secret key for cloud api"
