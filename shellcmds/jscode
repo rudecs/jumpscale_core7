@@ -22,7 +22,8 @@ parser.add_argument('--url', help='url')
 
 parser.add_argument('-m', '--message', help='commit message', default="new")
 parser.add_argument('-b', '--branch', help='branch')
-parser.add_argument('-r', '--revision', help='revision or tag to checkout')
+parser.add_argument('-r', '--revision', help='revision to checkout')
+parser.add_argument('-t', '--tag', help='tag to checkout')
 
 parser.add_argument(
     '-a', '--accounts', help='comma separated list of accounts, if not specified then will ask, if \'*\' then all.')
@@ -114,6 +115,7 @@ for provider, account, reponame, branch, client, path in repos:
         j.do.pullGitRepo(url=client.remoteUrl,
                          branch=opts.branch,
                          revision=opts.revision,
+                         tag=opts.tag,
                          ignorelocalchanges=True)
         continue
 
@@ -195,7 +197,7 @@ for provider, account, reponame, branch, client, path in repos:
 
     if opts.update or opts.action == 'update':
         print("PULL")
-        j.do.pullGitRepo(url=client.remoteUrl)
+        j.do.pullGitRepo(url=client.remoteUrl, branch=opts.branch, revision=opts.revision, tag=opts.tag)
         # client.pull()
 
 

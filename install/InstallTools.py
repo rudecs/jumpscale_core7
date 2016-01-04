@@ -1511,7 +1511,7 @@ class InstallTools():
 
         return repository_host, repository_type, repository_account, repository_name, dest, repository_url
 
-    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch=None,revision=None):
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch=None,revision=None,tag=None):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
@@ -1530,6 +1530,8 @@ class InstallTools():
                 cmd="cd %s;git fetch"%dest
                 if depth!=None:
                     cmd+=" --depth %s"%depth
+                if tag is not None:
+                    cmd+=" --tags"
                 self.execute(cmd)
                 if branch!=None:
                     self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
@@ -1546,8 +1548,8 @@ class InstallTools():
             extra = ""
             if depth and depth != 0:
                  extra = "--depth=%s" % depth
-            if branch!=None:
-                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch,url,dest)
+            if branch or tag:
+                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch or tag,url,dest)
             else:
                 cmd="cd %s;git -c http.sslVerify=false clone %s  %s %s"%(self.getParent(dest),extra,url,dest)
             print cmd
@@ -1556,8 +1558,8 @@ class InstallTools():
                 cmd+=" --depth %s"%depth
             self.execute(cmd,timeout=600)
 
-        if revision!=None:
-            cmd="cd %s;git checkout %s"%(dest,revision)
+        if revision or tag:
+            cmd="cd %s;git checkout %s"%(dest,revision or tag)
             print cmd
             self.execute(cmd,timeout=600)
 
