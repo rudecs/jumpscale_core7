@@ -1549,7 +1549,7 @@ class InstallTools():
             if depth and depth != 0:
                  extra = "--depth=%s" % depth
             if branch or tag:
-                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch or tag,url,dest)
+                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, tag or branch,url,dest)
             else:
                 cmd="cd %s;git -c http.sslVerify=false clone %s  %s %s"%(self.getParent(dest),extra,url,dest)
             print cmd
