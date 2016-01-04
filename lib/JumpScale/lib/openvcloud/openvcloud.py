@@ -11,6 +11,7 @@ class Openvclcoud(object):
     def __init__(self):
         self.reset = False
         self.db = j.db.keyvaluestore.getFileSystemStore("aysgit")
+        self.masters = ['ovc_master', 'ovc_proxy', 'ovc_reflector', 'ovc_dcpm']
         
         self._ms1 = {}
         self._docker = {}
@@ -141,7 +142,12 @@ class Openvclcoud(object):
             return
         
         print "[+] installing jumpscale"
-        remote.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
+        branches = {
+            'jsbranch': j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7').branchName,
+            'aysbranch': j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7').branchName
+        }
+        
+        remote.run('JSBRANCH="%(jsbranch)s" AYSBRANCH="%(aysbranch)s" curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches)
 
     def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, domain, delete=False):
         keypath = '/root/.ssh/id_rsa'
@@ -208,8 +214,13 @@ class Openvclcoud(object):
             # Note: rebase prevents for asking to merge local tree with remote
             cl.run('cd %s; git pull --rebase' % repopath)
         
+<<<<<<< HEAD
         
         
+=======
+        
+        
+>>>>>>> 7.0
         # copy keys
         keys = {
             '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
@@ -287,6 +298,33 @@ class Openvclcoud(object):
         print '[+] environment is ready to be deployed'
         print '[+] you can now ssh the ovcgit host to configure the environment'
         print '[+]   ssh root@%s -p %s -A' % (machine['remote'], machine['port'])
+    
+    
+    def _getNodes(self):
+        sshservices = j.atyourservice.findServices(name='node.ssh')
+        sshservices.sort(key = lambda x: x.instance)
+        return sshservices
+    
+    def getMasterNodes(self):
+        sshservices = self._getNodes()
+        nodes = []
+        
+        for ns in sshservices:
+            if ns.instance in self.masters:
+                nodes.append(ns)
+        
+        return nodes
+    
+    def getRemoteNodes(self):
+        sshservices = self._getNodes()
+        nodes = []
+        
+        for ns in sshservices:
+            if ns.instance not in self.masters:
+                nodes.append(ns)
+        
+        return nodes
+    
 
     def initVnasCloudSpace(self, gitlablogin, gitlabpasswd, delete=False):
         print "get secret key for cloud api"

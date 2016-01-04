@@ -494,7 +494,7 @@ class Docker():
 
         counter=0
         connect=False
-        time.sleep(0.5)
+        time.sleep(1)
         while counter<20 and connect==False:
             try:
                 counter+=1
@@ -502,7 +502,7 @@ class Docker():
                 c.ssh_authorize("root", key)
                 
             except Exception,e:
-                time.sleep(0.1)
+                time.sleep(1)
                 continue
             connect=True
 

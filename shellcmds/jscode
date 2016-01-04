@@ -22,6 +22,7 @@ parser.add_argument('--url', help='url')
 
 parser.add_argument('-m', '--message', help='commit message', default="new")
 parser.add_argument('-b', '--branch', help='branch')
+parser.add_argument('-r', '--revision', help='revision or tag to checkout')
 
 parser.add_argument(
     '-a', '--accounts', help='comma separated list of accounts, if not specified then will ask, if \'*\' then all.')
@@ -90,7 +91,6 @@ if opts.action == "status":
     print ("==============================================" +
            "===========================================================================")
 
-
 for provider, account, reponame, branch, client, path in repos:
 
     # from IPython import embed;embed()
@@ -111,8 +111,10 @@ for provider, account, reponame, branch, client, path in repos:
         print(("force update %s/%s/%s" % (provider, account, reponame)))
         cmd = 'cd %s; git checkout .' % path
         j.do.execute(cmd)
-        j.do.pullGitRepo(url=client.remoteUrl)
-        # client.update(force=True)
+        j.do.pullGitRepo(url=client.remoteUrl,
+                         branch=opts.branch,
+                         revision=opts.revision,
+                         ignorelocalchanges=True)
         continue
 
     if opts.action == "get":
