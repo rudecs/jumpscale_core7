@@ -214,13 +214,6 @@ class Openvclcoud(object):
             # Note: rebase prevents for asking to merge local tree with remote
             cl.run('cd %s; git pull --rebase' % repopath)
         
-<<<<<<< HEAD
-        
-        
-=======
-        
-        
->>>>>>> 7.0
         # copy keys
         keys = {
             '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
