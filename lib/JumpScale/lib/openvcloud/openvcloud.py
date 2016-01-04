@@ -305,7 +305,7 @@ class Openvclcoud(object):
         nodes = []
         
         for ns in sshservices:
-            if ns.instance not in self.masters:
+            if ns.instance in self.masters:
                 nodes.append(ns)
         
         return nodes
@@ -315,7 +315,7 @@ class Openvclcoud(object):
         nodes = []
         
         for ns in sshservices:
-            if ns.instance in self.masters:
+            if ns.instance not in self.masters:
                 nodes.append(ns)
         
         return nodes
