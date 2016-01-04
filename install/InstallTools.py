@@ -1655,6 +1655,21 @@ class InstallTools():
             self.extra=extra
         self._extratools=True
 
+    def getInstallCommand(self):
+        from JumpScale import j
+
+        def getBranchOrTag(repo):
+            try:
+                return repo.repo.git.describe('--tags')
+            except:
+                return repo.branchName
+        branches = {
+            'jsbranch': getBranchOrTag(j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7')),
+            'aysbranch': getBranchOrTag(j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7'))
+        }
+
+        return 'JSBRANCH="%(jsbranch)s" AYSBRANCH="%(aysbranch)s" curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
+
     def getWalker(self):
         self._initExtra()
         return self.extra.getWalker(self)

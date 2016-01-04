@@ -142,12 +142,8 @@ class Openvclcoud(object):
             return
         
         print "[+] installing jumpscale"
-        branches = {
-            'jsbranch': j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7').branchName,
-            'aysbranch': j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7').branchName
-        }
-        
-        remote.run('JSBRANCH="%(jsbranch)s" AYSBRANCH="%(aysbranch)s" curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches)
+        cmd = j.do.getInstallCommand()
+        remote.run(cmd)
 
     def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, domain, delete=False):
         keypath = '/root/.ssh/id_rsa'
