@@ -53,16 +53,19 @@ class AtYourServiceFactory():
             # always load base domaim
             items=j.application.config.getDictFromPrefix("atyourservice.metadata")
             repos=j.do.getGitReposListLocal()
-            for domain in items.keys():
-                url=items[domain]['url']
-                branch=items[domain].get('branch', 'master')
+            for domain, repo in items.iteritems():
+                url=repo['url']
+                branch = repo.get('branch') or None
+                tag = repo.get('tag') or None
+                if not tag and not branch:
+                    branch = 'master'
                 reponame=url.rpartition("/")[-1]
                 if not reponame in repos.keys():
                     #means git has not been pulled yet
                     if login!="":
-                        dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch=branch)
+                        dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch=branch, tag=tag)
                     else:
-                        dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch=branch)
+                        dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch=branch, tag=tag)
 
                 repos=j.do.getGitReposListLocal()
 
@@ -87,8 +90,11 @@ class AtYourServiceFactory():
             repos = metadata.values()
 
         for repo in repos:
-            branch = repo['branch'] if 'branch' in repo else 'master'
-            j.do.pullGitRepo(url=repo['url'], branch=branch)
+            branch = repo.get('branch') or None
+            tag = repo.get('tag') or None
+            if not tag and not branch:
+                branch = 'master'
+            j.do.pullGitRepo(url=repo['url'], branch=branch, tag=tag)
 
     def updateExternalRepos(self, repos=[]):
         """
@@ -108,9 +114,12 @@ class AtYourServiceFactory():
         for repo in repos:
             type = 'git'
             _, account, reponame = repo.get('url', '/').rstrip('.git').rsplit('/', 2)
-            branch = repo['branch'] if 'branch' in repo else 'master'
+            branch = repo.get('branch') or None
+            tag = repo.get('tag') or None
+            if not tag and not branch:
+                branch = 'master'
             dest = '/tmp/%s/%s/%s/' % (type, account, reponame)
-            j.do.pullGitRepo(url=repo['url'], branch=branch, dest=dest)
+            j.do.pullGitRepo(url=repo['url'], branch=branch, dest=dest, tag=tag)
             destinations[repo.get('name', reponame)] = dest
 
         return destinations

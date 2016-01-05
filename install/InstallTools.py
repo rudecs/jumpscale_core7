@@ -1531,7 +1531,7 @@ class InstallTools():
                 if depth!=None:
                     cmd+=" --depth %s"%depth
                 if tag is not None:
-                    cmd+=" --tags"
+                    cmd+=" origin tag %s" % tag
                 self.execute(cmd)
                 if branch!=None:
                     self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
@@ -1540,6 +1540,8 @@ class InstallTools():
                 print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
+                elif tag is not None:
+                    cmd="cd %s;git -c http.sslVerify=false pull origin tag %s"%(dest,tag)
                 else:
                     cmd="cd %s;git -c http.sslVerify=false pull"%dest
                 self.execute(cmd,timeout=600)
