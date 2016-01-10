@@ -70,7 +70,13 @@ class List(BaseType):
 
     @classmethod
     def fromString(self, obj):
-        value = super(List, self).fromString(obj)
+        try:
+            value = super(List, self).fromString(obj)
+        except ValueError:
+            if isinstance(obj, basestring):
+                value = [obj]
+            else:
+                raise
         if not isinstance(value, list):
             raise ValueError("Invalid value for list")
         return value
