@@ -1531,7 +1531,7 @@ class InstallTools():
                 if depth!=None:
                     cmd+=" --depth %s"%depth
                 if tag is not None:
-                    cmd+=" --tags"
+                    cmd+=" origin tag %s" % tag
                 self.execute(cmd)
                 if branch!=None:
                     self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
@@ -1540,6 +1540,8 @@ class InstallTools():
                 print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
                     cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
+                elif tag is not None:
+                    cmd="cd %s;git -c http.sslVerify=false pull origin tag %s"%(dest,tag)
                 else:
                     cmd="cd %s;git -c http.sslVerify=false pull"%dest
                 self.execute(cmd,timeout=600)
@@ -1549,7 +1551,7 @@ class InstallTools():
             if depth and depth != 0:
                  extra = "--depth=%s" % depth
             if branch or tag:
-                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, branch or tag,url,dest)
+                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, tag or branch,url,dest)
             else:
                 cmd="cd %s;git -c http.sslVerify=false clone %s  %s %s"%(self.getParent(dest),extra,url,dest)
             print cmd
@@ -1654,6 +1656,21 @@ class InstallTools():
             from ExtraTools import extra
             self.extra=extra
         self._extratools=True
+
+    def getInstallCommand(self):
+        from JumpScale import j
+
+        def getBranchOrTag(repo):
+            try:
+                return repo.repo.git.describe('--tags')
+            except:
+                return repo.branchName
+        branches = {
+            'jsbranch': getBranchOrTag(j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7')),
+            'aysbranch': getBranchOrTag(j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7'))
+        }
+
+        return 'JSBRANCH="%(jsbranch)s" AYSBRANCH="%(aysbranch)s" curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
 
     def getWalker(self):
         self._initExtra()

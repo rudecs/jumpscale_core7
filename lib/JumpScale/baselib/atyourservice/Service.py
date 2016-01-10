@@ -350,6 +350,10 @@ class Service(object):
         if recipeitem is not None and "revision" in recipeitem:
             revision = recipeitem["revision"]
 
+        tag = None
+        if recipeitem is not None and "tag" in recipeitem:
+            tag = recipeitem["tag"]
+
         depth = 1
         if recipeitem is not None and "depth" in recipeitem:
             depth = recipeitem["depth"]
@@ -361,8 +365,8 @@ class Service(object):
         login = j.application.config.get("whoami.git.login").strip()
         passwd = j.application.config.getStr("whoami.git.passwd").strip()
 
-        dest = j.do.pullGitRepo(url=url, login=login, passwd=passwd,
-                                depth=depth, branch=branch, revision=revision, dest=dest)
+        dest = j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth,
+                                branch=branch, revision=revision, dest=dest, tag=tag)
         self._reposDone[url] = dest
         return dest
 
