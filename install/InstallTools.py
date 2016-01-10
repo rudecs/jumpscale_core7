@@ -1524,17 +1524,19 @@ class InstallTools():
             branch="master"
 
         checkdir="%s/.git"%(dest)
+        rev = revision or branch or tag or 'HEAD'
         if self.exists(checkdir):
             if ignorelocalchanges:
                 print(("git pull, ignore changes %s -> %s"%(url,dest)))
-                cmd="cd %s;git fetch"%dest
+                cmd="cd %s;git fetch -f -u"%dest
                 if depth!=None:
                     cmd+=" --depth %s"%depth
                 if tag is not None:
                     cmd+=" origin tag %s" % tag
+                if branch is not None:
+                    cmd+=" origin %s:%s" % (branch, branch)
                 self.execute(cmd)
-                if branch!=None:
-                    self.execute("cd %s;git reset --hard origin/%s"%(dest,branch),timeout=600)
+                self.execute("cd %s;git reset --hard %s"%(dest, rev),timeout=600)
             else:
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
@@ -1560,7 +1562,7 @@ class InstallTools():
                 cmd+=" --depth %s"%depth
             self.execute(cmd,timeout=600)
 
-        if revision or tag:
+        if not ignorelocalchanges:
             cmd="cd %s;git checkout %s"%(dest,revision or tag)
             print cmd
             self.execute(cmd,timeout=600)
