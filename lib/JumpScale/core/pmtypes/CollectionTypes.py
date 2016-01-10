@@ -68,6 +68,13 @@ class List(BaseType):
             return list()
         return list(self._default)
 
+    @classmethod
+    def fromString(self, obj):
+        value = super(List, self).fromString(obj)
+        if not isinstance(value, list):
+            raise ValueError("Invalid value for list")
+        return value
+
 class Set(BaseType):
     '''Generic set type'''
     NAME = 'set'
