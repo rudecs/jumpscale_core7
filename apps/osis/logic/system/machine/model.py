@@ -30,13 +30,6 @@ class Machine(OsisBaseObject):
             self.type = "" #KVM,LXC
             self.lastcheck=0 #epoch of last time the info was checked from reality
 
-    def getUniqueKey(self):
-        """
-        return unique key for object, is used to define unique id
-        """
-        C= "%s_%s_%s"%(self.gid,self.nid,self.name)
-        return j.tools.hash.md5_string(C)
-
     def getSetGuid(self):
         """
         use osis to define & set unique guid (sometimes also id)
