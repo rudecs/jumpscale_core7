@@ -59,7 +59,7 @@ class EmailClient(object):
             else:
                 mimetype = 'plain'
 
-        msg = MIMEText(message, mimetype)
+        msg = MIMEText(message, mimetype, 'utf-8')
         
         msg['Subject'] = subject
         msg['From'] = sender
