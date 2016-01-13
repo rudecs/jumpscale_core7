@@ -1,10 +1,5 @@
 from JumpScale import j
-import JumpScale.grid.agentcontroller
-import JumpScale.grid.osis
-import JumpScale.baselib.units
 import gevent
-import crontab
-import json
 import time
 
 class GridHealthChecker(object):
@@ -14,8 +9,7 @@ class GridHealthChecker(object):
             self._client = j.clients.agentcontroller.get()
             self._osiscl = j.clients.osis.getByInstance('main')
         self._nodecl = j.clients.osis.getCategory(self._osiscl, 'system', 'node')
-        self._jobcl = j.clients.osis.getCategory(self._osiscl, 'system', 'job')
-        self._jumpscriptcl = j.clients.osis.getCategory(self._osiscl, 'system', 'jumpscript')
+        self._healthcl = j.clients.osis.getCategory(self._osiscl, 'system', 'health')
         self._rcl = j.clients.redis.getByInstance('system')
         self._runningnids = list()
         self._nids = list()
@@ -23,7 +17,7 @@ class GridHealthChecker(object):
         self._nodegids = dict()
         self._errors = dict()
         self._status = dict()
-        self._tostdout = True
+        self._tostdout = False
         with j.logger.nostdout():
             self.getNodes(activecheck=False)
 
@@ -86,12 +80,16 @@ class GridHealthChecker(object):
             heartbeats.append({'gid': gid, 'nid': nid, 'lastcheck': session[0]})
         return heartbeats
 
+    def printOut(self, msg):
+        if self._tostdout:
+            print(msg)
+
     def _checkRunningNIDs(self):
-        print('CHECKING HEARTBEATS...')
+        self.printOut('CHECKING HEARTBEATS...')
         self._runningnids = list()
-        print("\tget all heartbeats (just query from OSIS):")
+        self.printOut("\tget all heartbeats (just query from OSIS):")
         heartbeats = self._getHeartBeats()
-        print("OK")
+        self.printOut("OK")
         for heartbeat in heartbeats:
             if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:
                 self._addError(heartbeat['nid'],"found heartbeat node '%s' which is not in grid nodes."%(heartbeat['nid']),"heartbeat")
@@ -144,9 +142,6 @@ class GridHealthChecker(object):
         if activecheck:
             self._checkRunningNIDsFromPing()
 
-    def getHealthCheckJumpScripts(self):
-        return [self._jumpscriptcl.get(jsid) for jsid, _, _, _ in self._client.listJumpscripts(cat='monitor.healthcheck')]
-
     def runOnAllNodes(self, sync=True):
         self._clean()
         self.getNodes()
@@ -156,7 +151,7 @@ class GridHealthChecker(object):
         results = list()
         greens = list()
 
-        print(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
+        self.printOut(('\n**Running tests on %s node(s). %s node(s) have not responded to ping**\n' % (len(self._runningnids), len(self._nids)-len(self._runningnids))))
         nodes = self._runningnids
         for nid in nodes:
             greenlet = gevent.Greenlet(self.runAllOnNode, nid, sync)
@@ -166,7 +161,6 @@ class GridHealthChecker(object):
             for green in greens:
                 green.nid =nid
                 result = green.value
-                print result
                 if not result:
                     results.append((green.nid, {'message': str(green.exception), 'state': 'UNKNOWN'}, 'Running all healtchecks on node %s' % nid))
                     self._returnResults(results)
@@ -209,8 +203,7 @@ class GridHealthChecker(object):
     def fetchMonitoringOnAllNodes(self):
         self._clean()
         self.getNodes()
-        for nid in self._nids:
-            self.fetchMonitoringOnNode(nid, clean=False)
+        self.fetchMonitoringOnNode(clean=False)
         self._updateHealthCache()
         return self._status
 
@@ -231,69 +224,22 @@ class GridHealthChecker(object):
         self._rcl.set('health.status', state, ex=300)
         return state
 
-    def fetchMonitoringOnNode(self, nid, clean=True):
+    def fetchMonitoringOnNode(self, nid=None, clean=True):
         results = list()
         now = time.time()
         if clean:
             self._clean()
         self.checkHeartbeat(nid=nid, clean=False)
-        jumpscripts = self.getHealthCheckJumpScripts()
-
-        def getJumpScript(organization, name):
-            for js in jumpscripts:
-                if js.name == name and js.organization == organization:
-                    return js
-
-        domains = list({js.organization for js in jumpscripts})
-        names = list({js.name for js in jumpscripts})
-        query = [{'$match': {'nid': nid, 'cmd': {'$in': names}, 'category': {'$in': domains}}},
-                 {'$sort': {'timeStop': 1}},
-                 {'$group': {'_id': '$cmd', 'result': {'$last': '$result'}, 
-                                            'jobstatus': {'$last': '$state'},
-                                            'guid': {'$last': '$guid'},
-                                            'category': {'$last': '$category'},
-                                            'lastchecked': {'$last': '$timeStop'},
-                                            'started': {'$last': '$timeStart'}}}]
-
-        jobsresults = self._jobcl.aggregate(query)
-
-        if isinstance(jobsresults, list):
-            for jobresult in jobsresults:
-                jumpscript = getJumpScript(jobresult['category'], jobresult['_id'])
-                jobstate = jobresult.get('jobstatus', 'ERROR')
-                lastchecked = jobresult.get('lastchecked', 0)
-                lastchecked = int(lastchecked) if lastchecked and int(lastchecked) else jobresult.get('started', 0)
-                result = json.loads(jobresult.get('result', '[{"message":""}]')) or {}
-                interval = 0
-                if jumpscript.period:
-                    if isinstance(jumpscript.period, int):
-                        interval = jumpscript.period
-                    else:
-                        cron = crontab.CronTab(jumpscript.period)
-                        interval = cron.next() - cron.previous()
-                if jobstate == 'OK':
-                    for data in result:
-                        state = data.get('state', '')
-                        if jumpscript.period:
-                            if isinstance(jumpscript.period, int):
-                                interval = jumpscript.period
-                            else:
-                                cron = crontab.CronTab(jumpscript.period)
-                                interval = cron.next() - cron.previous()
-                            if interval and now - lastchecked > (interval * 1.1):
-                                if state != 'ERROR':
-                                    state = 'EXPIRED'
-                        resdata = {'message': data.get('message', ''),
-                                   'state': state,
-                                   'interval': interval,
-                                   'guid': jobresult['guid'],
-                                   'lastchecked': lastchecked}
-                        results.append((nid, resdata, data.get('category', jobresult.get('_id'))))
-                    if not result:
-                        results.append((nid, {'message': '', 'interval': interval, 'state': 'UNKNOWN', 'lastchecked': lastchecked}, jobresult.get('_id')))
-                else:
-                    results.append((nid, {'message': 'Error in Monitor', 'interval': interval, 'state': 'UNKNOWN', 'lastchecked': lastchecked, 'guid': jobresult['guid']}, jobresult.get('_id')))
-
+        query = {}
+        if nid:
+            query['nid'] = nid
+        healthdata = self._healthcl.search(query)[1:]
+        for health in healthdata:
+            for message in health['messages']:
+                message['guid'] = health['jobguid']
+                message['interval'] = health['interval']
+                message['lastchecked'] = health['lastchecked']
+                results.append((health['nid'], message, message['category']))
         self._returnResults(results)
 
         if self._tostdout:
@@ -334,7 +280,7 @@ class GridHealthChecker(object):
             self._clean()
         if self._nids==[]:
             self.getNodes()
-        print("CHECKING PROCESSMANAGERS...")
+        self.printOut("CHECKING PROCESSMANAGERS...")
         haltednodes = set(self._nids)-set(self._runningnids)
         for nid in haltednodes:
             self._addResult(nid, {'state': 'ERROR'}, 'Processmanager')
@@ -362,9 +308,9 @@ class GridHealthChecker(object):
             self._clean()
         if self._nids==[]:
             self.getNodes()
-        print('CHECKING HEARTBEATS...')
-        print("\tget all heartbeats (just query from OSIS):")
-        print("OK")
+        self.printOut('CHECKING HEARTBEATS...')
+        self.printOut("\tget all heartbeats (just query from OSIS):")
+        self.printOut("OK")
         heartbeats = self._getHeartBeats(nid)
         for heartbeat in heartbeats:
             if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:

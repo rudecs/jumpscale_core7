@@ -7,12 +7,9 @@ monkey.patch_time()
 
 from JumpScale import j
 from JumpScale.baselib.cmdutils import argparse
-import JumpScale.grid.geventws
-import JumpScale.grid.osis
 import importlib
-import sys
 import copy
-import os
+import crontab
 try:
     import ujson as json
 except:
@@ -71,6 +68,7 @@ class ControllerCMDS():
         self.osisclient = j.clients.osis.getByInstance(gevent=True)
         self.jobclient = j.clients.osis.getCategory(self.osisclient, 'system', 'job')
         self.nodeclient = j.clients.osis.getCategory(self.osisclient, 'system', 'node')
+        self.healthclient = j.clients.osis.getCategory(self.osisclient, 'system', 'health')
         self.jumpscriptclient = j.clients.osis.getCategory(self.osisclient, 'system', 'jumpscript')
 
         self.redis = j.clients.redis.getByInstance('system')
@@ -556,13 +554,42 @@ class ControllerCMDS():
             self._log("getwork found for node:%s for jsid:%s"%(session.nid,job["jscriptid"]))
             return job
 
+    def saveHealth(self, job, jumpscript):
+        interval = 0
+        if jumpscript.period:
+            if isinstance(jumpscript.period, int):
+                interval = jumpscript.period
+            else:
+                cron = crontab.CronTab(jumpscript.period)
+                interval = cron.next() - cron.previous()
+        health = {'nid': job['nid'],
+                  'gid': job['gid'],
+                  'interval': interval,
+                  'lastchecked': job['timeStop'],
+                  'cmd': '%(category)s_%(cmd)s' % job,
+                  'messages': []}
+
+        if job['state'] != 'OK':
+            health['jobguid'] = job['guid']
+            health['messages'].append({'state': 'ERROR',
+                                       'message': 'Failed executing job',
+                                       'category': job['cmd']})
+        else:
+            health['jobguid'] = None  # job is not saved so dont store job guid
+            health['messages'] = job['result']
+        self.healthclient.set(health)
+
     def notifyWorkCompleted(self, job,session=None):
         """
         job here is a dict
         """
         self._log("NOTIFY WORK COMPLETED: jobid:%s"%job["id"])
         if not j.basetype.dictionary.check(job):
-            raise RuntimeError("job needs to be dict")            
+            raise RuntimeError("job needs to be dict")
+        jscript = self.getJumpscript(job['category'], job['cmd'])
+        if jscript.category == 'monitor.healthcheck':
+            job['log'] = False
+            self.saveHealth(job, jscript)
         saveinosis = job['log'] or job['state'] != 'OK'
         self._setJob(job, osis=saveinosis)
         if job['wait']:
