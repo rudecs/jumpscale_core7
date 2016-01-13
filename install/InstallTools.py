@@ -1563,7 +1563,7 @@ class InstallTools():
             self.execute(cmd,timeout=600)
 
         if not ignorelocalchanges:
-            cmd="cd %s; git fetch origin %s:%s; git checkout %s" % (dest, rev, rev, rev)
+            cmd="cd %s; git checkout %s || (git fetch origin %s:%s && git checkout %s)" % (dest, rev, rev, rev, rev)
             print cmd
             self.execute(cmd,timeout=600)
 
