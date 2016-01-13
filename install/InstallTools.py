@@ -1672,7 +1672,8 @@ class InstallTools():
             'aysbranch': getBranchOrTag(j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7'))
         }
 
-        return 'JSBRANCH="%(jsbranch)s" AYSBRANCH="%(aysbranch)s" curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
+        return 'export JSBRANCH="%(jsbranch)s"; export AYSBRANCH="%(aysbranch)s"; curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
+
 
     def getWalker(self):
         self._initExtra()

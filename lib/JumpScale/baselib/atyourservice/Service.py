@@ -335,6 +335,8 @@ class Service(object):
 
         login = None
         passwd = None
+        branch = None
+
         if recipeitem is not None and "login" in recipeitem:
             login = recipeitem["login"]
             if login == "anonymous" or login.lower() == "none" or login == "" or login.lower() == "guest":
@@ -342,7 +344,6 @@ class Service(object):
         if recipeitem is not None and "passwd" in recipeitem:
             passwd = recipeitem["passwd"]
 
-        branch = 'master'
         if recipeitem is not None and "branch" in recipeitem:
             branch = recipeitem["branch"]
 
@@ -361,6 +362,9 @@ class Service(object):
                 depth = None
             else:
                 depth = int(depth)
+
+        if not branch and not revision and not tag:
+            branch = 'master'
 
         login = j.application.config.get("whoami.git.login").strip()
         passwd = j.application.config.getStr("whoami.git.passwd").strip()

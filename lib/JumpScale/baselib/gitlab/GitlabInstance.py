@@ -139,10 +139,13 @@ class GitlabInstance():
             j.events.inputerror_warning("cannot find group:%s in gitlab"%name)
             return False
 
-    def getProjects(self):
+    def getProjects(self, cache=True):
         key="projects"
-        result=self._getFromCache(key,renew=False)
-        if result==None:
+        if cache:
+            result = self._getFromCache(key,renew=False)
+        else:
+            result = None
+        if result is None:
             result = self.gitlab.getprojects()
             self.cache.set(key,result)
         return result

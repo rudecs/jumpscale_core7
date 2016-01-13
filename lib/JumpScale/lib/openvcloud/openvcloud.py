@@ -38,11 +38,10 @@ class Openvclcoud(object):
         
         print '[+] checking for existing project'
         
-        projects = gitlab.getProjects()
+        projects = gitlab.getProjects(False)
         for project in projects:
             if project['name'] == gitlabReponame and project['namespace']['name'] == gitlabAccountname:
                 print '[-] %s/%s: project already exists' % (gitlabAccountname, gitlabReponame)
-                print '[-] if you removed it shortly, this is probably related to cache, please wait'
                 j.application.stop()
 
     def initMothership(self, login, passwd, location, cloudspace, reset=False, apiurl='www.mothership1.com'):
@@ -167,9 +166,16 @@ class Openvclcoud(object):
         # install jumpscale
         self.jumpscale(cl)
 
+        def getBranchOrTag(repo):
+            try:
+                return repo.repo.git.describe('--tags')
+            except:
+                return repo.branchName
+        ovcversion = getBranchOrTag(j.clients.git.get('/opt/code/git/0-complexity/openvcloud'))
+
         print "[+] adding openvcloud domain to atyourservice"
         content  = "metadata.openvcloud            =\n"
-        content += "    branch:'2.0',\n"
+        content += "    branch:'%s',\n" % (ovcversion)
         content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
 
         cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
