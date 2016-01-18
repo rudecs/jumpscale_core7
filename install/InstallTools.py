@@ -1668,8 +1668,8 @@ class InstallTools():
             except:
                 return repo.branchName
         branches = {
-            'jsbranch': getBranchOrTag(j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7')),
-            'aysbranch': getBranchOrTag(j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7'))
+            'jsbranch': j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7').getBranchOrTag()[1],
+            'aysbranch': j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7').getBranchOrTag()[1]
         }
 
         return 'export JSBRANCH="%(jsbranch)s"; export AYSBRANCH="%(aysbranch)s"; curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches

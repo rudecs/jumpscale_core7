@@ -40,6 +40,12 @@ class GitClient(object):
     def branchName(self):
         return self.repo.git.rev_parse('HEAD', abbrev_ref=True)
 
+    def getBranchOrTag(self):
+        try:
+            return 'tag', self.repo.git.describe('--tags')
+        except:
+            return 'branch', self.branchName
+
     @property
     def repo(self):
         # Load git when we absolutly need it cause it does not work in gevent mode

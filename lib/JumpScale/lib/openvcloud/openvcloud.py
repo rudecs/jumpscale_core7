@@ -166,12 +166,7 @@ class Openvclcoud(object):
         # install jumpscale
         self.jumpscale(cl)
 
-        def getBranchOrTag(repo):
-            try:
-                return repo.repo.git.describe('--tags')
-            except:
-                return repo.branchName
-        ovcversion = getBranchOrTag(j.clients.git.get('/opt/code/git/0-complexity/openvcloud'))
+        ovcversion = j.clients.git.get('/opt/code/git/0-complexity/openvcloud').getBranchOrTag()[1]
 
         print "[+] adding openvcloud domain to atyourservice"
         content  = "metadata.openvcloud            =\n"
