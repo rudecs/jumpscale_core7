@@ -87,7 +87,8 @@ class VirtualMachinesDocker(VirtualMachines):
 
         # building exposed ports
         ports = ' '.join(self.docking[hostname]['ports'])
-        self._docker['api'].create(name=hostname, ports=ports, base=self._docker['image'], mapping=False)
+        mount = ' # '.join(self.docking[hostname]['volumes'])
+        self._docker['api'].create(name=hostname, ports=ports, base=self._docker['image'], vols=mount, mapping=False)
         return self.getMachine(hostname)
 
 
@@ -111,13 +112,22 @@ class VirtualMachinesDocker(VirtualMachines):
 
         self.docking[hostname]['ports'].append('%s:%s' % (localport, publicport))
         return True
+    
+    def addVolume(self, hostname, host, docker):
+        self.info('directory mapping: %s (%s -> %s)' % (hostname, host, docker))
+        if self.docking.get(hostname) == None:
+            raise NameError('Hostname "%s" seems not ready for docker settings' % hostname)
+
+        self.docking[hostname]['volumes'].append('%s:%s' % (docker, host))
+        return True
 
     def createMachine(self, hostname, memsize, ssdsize, delete):
         self.info('initializing: %s (RAM: %s GB, Disk: %s GB)' % (hostname, memsize, ssdsize))
         self.docking[hostname] = {
             'memsize': memsize,
             'status': 'waiting',
-            'ports': []
+            'ports': [],
+            'volumes': [],
         }
         return self.docking[hostname]
 

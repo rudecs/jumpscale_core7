@@ -362,12 +362,12 @@ class Docker():
 
         for key,path in list(volsdict.items()):
             j.system.fs.createDir(path) #create the path on hostname
-            binds[path]={"bind":key,"ro":False}
+            binds[path]={"bind":key, "mode":"rw"}
             volskeys.append(key)
 
         for key,path in list(volsdictro.items()):
             j.system.fs.createDir(path) #create the path on hostname
-            binds[path]={"bind":key,"ro":True}
+            binds[path]={"bind":key, "mode":"ro"}
             volskeys.append(key)
 
         # volskeys=volsdict.keys()+volsdictro.keys()
