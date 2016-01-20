@@ -91,28 +91,28 @@ class ControllerCMDS():
     def authenticate(self, session):
         return False  # to make sure we dont use it
 
-    def scheduleCmd(self,gid,nid,cmdcategory,cmdname,args={},jscriptid=None,queue="",log=True,timeout=None,roles=[],wait=False,errorreport=False, session=None): 
-        """ 
+    def scheduleCmd(self,gid,nid,cmdcategory,cmdname,args={},jscriptid=None,queue="",log=True,timeout=None,roles=[],wait=False,errorreport=False, session=None):
+        """
         new preferred method for scheduling work
-        @name is name of cmdserver method or name of jumpscript 
+        @name is name of cmdserver method or name of jumpscript
         """
         self._log("schedule cmd:%s_%s %s %s"%(gid,nid,cmdcategory,cmdname))
         if not nid and not roles:
             raise RuntimeError("Either nid or roles should be given")
 
-        if session<>None: 
-            self._adminAuth(session.user,session.passwd) 
+        if session<>None:
+            self._adminAuth(session.user,session.passwd)
             sessionid=session.id
         else:
             sessionid=None
         self._log("getjob osis client")
-        job=self.jobclient.new(sessionid=sessionid,gid=gid,nid=nid,category=cmdcategory,cmd=cmdname,queue=queue,args=args,log=log,timeout=timeout,roles=roles,wait=wait,errorreport=errorreport) 
-        
+        job=self.jobclient.new(sessionid=sessionid,gid=gid,nid=nid,category=cmdcategory,cmd=cmdname,queue=queue,args=args,log=log,timeout=timeout,roles=roles,wait=wait,errorreport=errorreport)
+
         self._log("redis incr for job")
         # if session<>None:
-        #     # jobid=self.redis.hincrby("jobs:last",str(session.gid),1) 
+        #     # jobid=self.redis.hincrby("jobs:last",str(session.gid),1)
         # else:
-        jobid=self.redis.hincrby("jobs:last", str(gid), 1) 
+        jobid=self.redis.hincrby("jobs:last", str(gid), 1)
         self._log("jobid found (incr done):%s"%jobid)
         job.id=int(jobid)
 
@@ -127,7 +127,7 @@ class ControllerCMDS():
         jobdict = job.dump()
         self._setJob(jobdict, osis=saveinosis)
         jobs=json.dumps(jobdict)
-        
+
         self._log("getqueue")
         role = roles[0] if roles else None
         q = self._getCmdQueue(gid=gid, nid=nid, role=role)
@@ -164,14 +164,14 @@ class ControllerCMDS():
     def reloadjumpscripts(self,session=None):
         self.jumpscripts = {}
         self.jumpscriptsFromKeys = {}
-        self.jumpscriptsId={}        
+        self.jumpscriptsId={}
         self.loadJumpscripts()
         self.loadLuaJumpscripts()
         print "want processmanagers to reload js:",
         for item in self.osisclient.list("system","node"):
             gid,nid=item.split("_")
             cmds.scheduleCmd(gid,nid,cmdcategory="pm",jscriptid=0,cmdname="reloadjumpscripts",args={},queue="internal",log=False,timeout=60,roles=[],session=session)
-        print "OK"            
+        print "OK"
 
     def restartWorkers(self,session=None):
         for item in self.osisclient.list("system","node"):
@@ -181,11 +181,11 @@ class ControllerCMDS():
 
     def _setJob(self, job, osis=False):
         if not j.basetype.dictionary.check(job):
-            raise RuntimeError("job needs to be dict")  
+            raise RuntimeError("job needs to be dict")
         # job guid needs to be unique accoress grid, structure $ac_gid _ $ac_nid _ $executor_gid _ $jobenum
         if not job['guid']:
             job["guid"]="%s_%s_%s"%(self.acuniquekey, job["gid"],job["id"])
-        jobs=json.dumps(job)            
+        jobs=json.dumps(job)
         self.redis.hset("jobs:%s"%job["gid"], job["guid"], jobs)
         if osis:
             # we need to make sure that job['result'] is always of the same type hence we serialize
@@ -352,7 +352,7 @@ class ControllerCMDS():
 
             guid,r,r=self.jumpscriptclient.set(t)
             t=self.jumpscriptclient.get(guid)
-            
+
             self._log("found jumpscript:%s " %("id:%s %s_%s" % (t.id,t.organization, t.name)))
 
             key0 = "%s_%s" % (t.gid,t.id)
@@ -375,7 +375,7 @@ class ControllerCMDS():
                 # print "DEBUG NOW getJumpscript reload"
                 # embed()
                 pass
-            else:                
+            else:
                 return self.jumpscripts[key]
         else:
             j.errorconditionhandler.raiseOperationalCritical("Cannot find jumpscript %s:%s" % (organization, name), category="action.notfound", die=False)
@@ -388,7 +388,7 @@ class ControllerCMDS():
             gid = session.gid
 
         key = "%s_%s" % (gid,id)
-        
+
         if key in self.jumpscriptsId:
             return self.jumpscriptsId[key]
         else:
@@ -587,7 +587,7 @@ class ControllerCMDS():
         if not j.basetype.dictionary.check(job):
             raise RuntimeError("job needs to be dict")
         jscript = self.getJumpscript(job['category'], job['cmd'])
-        if jscript.category == 'monitor.healthcheck':
+        if script and jscript.category == 'monitor.healthcheck':
             job['log'] = False
             self.saveHealth(job, jscript)
         saveinosis = job['log'] or job['state'] != 'OK'
@@ -600,7 +600,7 @@ class ControllerCMDS():
             self._deleteJobFromCache(job)
 
         #NO PARENT SUPPORT YET
-        # #now need to return it to the client who asked for the work 
+        # #now need to return it to the client who asked for the work
         # if job.parent and job.parent in self.jobs:
         #     parentjob = self.jobs[job.db.parent]
         #     parentjob.db.childrenActive.remove(job.id)
@@ -755,4 +755,3 @@ daemon.start()
 
 
 j.application.stop()
-
