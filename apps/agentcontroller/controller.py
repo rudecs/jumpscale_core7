@@ -587,7 +587,7 @@ class ControllerCMDS():
         if not j.basetype.dictionary.check(job):
             raise RuntimeError("job needs to be dict")
         jscript = self.getJumpscript(job['category'], job['cmd'])
-        if script and jscript.category == 'monitor.healthcheck':
+        if jscript and jscript.category == 'monitor.healthcheck':
             job['log'] = False
             self.saveHealth(job, jscript)
         saveinosis = job['log'] or job['state'] != 'OK'
