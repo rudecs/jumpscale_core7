@@ -42,7 +42,7 @@ class GitClient(object):
 
     def getBranchOrTag(self):
         try:
-            return 'tag', self.repo.git.describe('--tags')
+            return 'tag', self.repo.git.describe('--tags', '--exact-match')
         except:
             return 'branch', self.branchName
 

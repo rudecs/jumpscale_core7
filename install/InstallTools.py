@@ -1662,11 +1662,6 @@ class InstallTools():
     def getInstallCommand(self):
         from JumpScale import j
 
-        def getBranchOrTag(repo):
-            try:
-                return repo.repo.git.describe('--tags')
-            except:
-                return repo.branchName
         branches = {
             'jsbranch': j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7').getBranchOrTag()[1],
             'aysbranch': j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7').getBranchOrTag()[1]
