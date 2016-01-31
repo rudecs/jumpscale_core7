@@ -46,6 +46,9 @@ class VirtualMachines(object):
             remote.fabric.state.output['stdout'] = True
             remote.fabric.state.output['running'] = True
 
+    def addVolume(self, hostname, host, docker):
+        return True
+
 class VirtualMachinesDocker(VirtualMachines):
     def __init__(self, settings):
         self._docker = {
