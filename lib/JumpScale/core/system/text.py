@@ -264,6 +264,9 @@ class Text:
             if ttype=="str":
                 result=j.console.askString(question=descr, defaultparam=default, regex=regex, retry=retry)
 
+            elif ttype=="password":
+                result=j.console.askPassword(question=descr, confirm=False)
+
             elif ttype=="list":
                 result=j.console.askString(question=descr, defaultparam=default, regex=regex, retry=retry)
 
