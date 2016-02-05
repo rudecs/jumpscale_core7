@@ -67,13 +67,9 @@ class Openvclcoud(object):
     def initDocker(self, host, port, public):
         print '[+] building docker based environment'
         
-        print '[+] building the base image'
+        print '[+] preparing base image'
         today = time.strftime('%Y-%m-%d')
         image = 'openvcloud/%s' % today
-        
-        args = {'instance.image.name': image}
-        service = j.atyourservice.new(name='docker_ovc', args=args)
-        service.install(reinstall=True)
         
         self._docker = {
             'remote': host,
@@ -83,6 +79,20 @@ class Openvclcoud(object):
         }
         
         vm = j.clients.vm.get('docker', self._docker)
+        
+        # checking if image already exists
+        images = vm._docker['api'].getImages()
+        
+        if image not in images:
+            print '[+] building the image'
+            
+            args = {'instance.image.name': image}
+            j.atyourservice.remove(name='docker_ovc')
+            service = j.atyourservice.new(name='docker_ovc', args=args)
+            service.install(reinstall=False)
+            
+        else:
+            print '[+] image already made, re-using it...'
         
         machine = self.initMachine(vm, 'docker', self._docker)
         
