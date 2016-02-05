@@ -405,7 +405,7 @@ class Docker():
                 if internalport==22:
                     print '[+] checking for external ssh access: port %s' % extport
                     portfound=extport
-                    if j.system.net.waitConnectionTest(self.remote['host'], extport, timeout=2) == False:
+                    if j.system.net.waitConnectionTest(self.remote['host'], extport, timeout=10) == False:
                         log = self.client.logs(name)
                         j.events.opserror_critical("Could not connect to external port on docker:'%s', docker prob not running.\nStartuplog:\n%s\n"%(extport,log),category="docker.create")
 
