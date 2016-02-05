@@ -291,11 +291,22 @@ class Openvclcoud(object):
         
         print '[+] setup completed'
         
+        # check if netstat can gives pid
+        lines = cl.run('netstat -anoptuw | grep sshd | wc -l')
+        if int(lines) == 0:
+            print '[-] WARNING: ************************************************************'
+            print '[-] WARNING: no ssh pid found with netstat, this will break setup'
+            print '[-] WARNING: - if you are using docker, you are not up-to-date'
+            print '[-] WARNING: - otherwise, your system seems not correctly configured'
+            print '[-] WARNING: ************************************************************'
+        
+        else:
+            print '[+] environment is ready to be deployed'
+        
         # ensure that ssh agent is running and add the new key
         j.do.execute('eval $(ssh-agent -s)')
         
         print ''
-        print '[+] environment is ready to be deployed'
         print '[+] you can now ssh the ovcgit host to configure the environment'
         print '[+]   ssh root@%s -p %s -A' % (machine['remote'], machine['port'])
     
