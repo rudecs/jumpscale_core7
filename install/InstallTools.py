@@ -1551,7 +1551,7 @@ class InstallTools():
                 self.execute(cmd,timeout=600)
         else:
             if offline:
-                raise RuntimeError("Cannot clone repo %s to location %s"%(url,dest))
+                raise RuntimeError("Cannot clone repo %s to location %s\nYou can either disable offline mode or manually clone the repo"%(url,dest))
             print(("git clone %s -> %s"%(url,dest)))
             extra = ""
             if depth and depth != 0:
