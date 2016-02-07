@@ -335,7 +335,7 @@ class Service(object):
 
         self._loadActionModule()
 
-    def _getRepo(self, url, recipeitem=None, dest=None):
+    def _getRepo(self, url, recipeitem=None, dest=None, offline=None):
         if url in self._reposDone:
             return self._reposDone[url]
 
@@ -376,7 +376,7 @@ class Service(object):
         passwd = j.application.config.getStr("whoami.git.passwd").strip()
 
         dest = j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth,
-                                branch=branch, revision=revision, dest=dest, tag=tag)
+                                branch=branch, revision=revision, dest=dest, tag=tag, offline=offline)
         self._reposDone[url] = dest
         return dest
 
@@ -595,7 +595,7 @@ class Service(object):
         self.actions.prepare(self)
 
     @deps
-    def install(self, start=True, deps=True, reinstall=False, processed={}):
+    def install(self, start=True, deps=True, reinstall=False, processed={}, offline=None):
         """
         Install Service.
 
@@ -621,9 +621,9 @@ class Service(object):
         self.stop(deps=False)
         self.prepare(deps=deps, reverse=True)
         self.log("install instance")
-        self._install(start=start, deps=deps, reinstall=reinstall)
+        self._install(start=start, deps=deps, reinstall=reinstall, offline=offline)
 
-    def _install(self, start=True, deps=True, reinstall=False):
+    def _install(self, start=True, deps=True, reinstall=False, offline=None):
         # download
         for recipeitem in self.hrd.getListFromPrefix("service.web.export"):
             if "dest" not in recipeitem:
@@ -654,7 +654,7 @@ class Service(object):
 
             # print recipeitem
             # pull the required repo
-            dest0 = self._getRepo(recipeitem['url'], recipeitem=recipeitem)
+            dest0 = self._getRepo(recipeitem['url'], recipeitem=recipeitem, offline=offline)
             src = "%s/%s" % (dest0, recipeitem['source'])
             src = src.replace("//", "/")
             if "dest" not in recipeitem:
