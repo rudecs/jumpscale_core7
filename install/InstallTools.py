@@ -2209,4 +2209,9 @@ class Installer():
 do.installer=Installer()
 
 if __name__ == '__main__':
-    do.installer.installJS()
+    import argparse
+    parser = argparse.ArgumentParser(description='Install JumpScale')
+    parser.add_argument('-o', '--offline', required=False, default=None, help='offline mode', action='store_true')
+    args = parser.parse_args()
+
+    do.installer.installJS(offline=args.offline)
