@@ -112,7 +112,7 @@ def deps(F):  # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None, hrdSeed=None):
+    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None, hrdSeed=None, hrdReset=None):
         self.processed = dict()
         self.domain = domain
         self.instance = instance
@@ -125,6 +125,7 @@ class Service(object):
         self.parent = None
         self._reposDone = {}
         self.args = args or {}
+        self.hrdReset = hrdReset or False
         self.hrddata = {}
         self._categories = []
         self._producers = None
@@ -174,7 +175,7 @@ class Service(object):
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
         if self._hrd:
             return self._hrd
-        if not j.system.fs.exists(hrdpath):
+        if not j.system.fs.exists(hrdpath) or self.hrdReset:
             self._apply()
         else:
             self._hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
@@ -302,7 +303,12 @@ class Service(object):
         if j.system.fs.exists(source):
             j.do.copyFile(source, "%s/actions.lua" % self.path)
 
+        serviceTemplate = "%s/service.hrd" % self.templatepath
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
+
+        if self.hrdReset:
+            j.do.copyFile(serviceTemplate, hrdpath)
+
         mergeArgsHDRData = self.args.copy()
         mergeArgsHDRData.update(self.hrddata)
         mergeArgsHDRData.update(self.extractFromHRDSeed(self.domain, self.name, self.instance))
@@ -310,7 +316,7 @@ class Service(object):
         self._hrd = j.core.hrd.get(
             hrdpath, args=mergeArgsHDRData, prefixWithName=False)
         self._hrd.applyTemplates(
-            path="%s/service.hrd" % self.templatepath, prefix="service")
+            path=serviceTemplate, prefix="service")
         self._hrd.applyTemplates(
             path="%s/instance.hrd" % self.templatepath, prefix="instance")
 
