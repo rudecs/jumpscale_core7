@@ -1511,7 +1511,7 @@ class InstallTools():
 
         return repository_host, repository_type, repository_account, repository_name, dest, repository_url
 
-    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch=None,revision=None,tag=None):
+    def pullGitRepo(self,url="",dest=None,login=None,passwd=None,depth=1,ignorelocalchanges=False,reset=False,branch=None,revision=None,tag=None,offline=False):
         """
         will clone or update repo
         if dest == None then clone underneath: /opt/code/$type/$account/$repo
@@ -1526,7 +1526,9 @@ class InstallTools():
         checkdir="%s/.git"%(dest)
         rev = revision or branch or tag or 'HEAD'
         if self.exists(checkdir):
-            if ignorelocalchanges:
+            if offline:
+                return dest
+            elif ignorelocalchanges:
                 print(("git pull, ignore changes %s -> %s"%(url,dest)))
                 cmd="cd %s;git fetch -f -u"%dest
                 if depth!=None:
@@ -1548,6 +1550,8 @@ class InstallTools():
                     cmd="cd %s;git -c http.sslVerify=false pull"%dest
                 self.execute(cmd,timeout=600)
         else:
+            if offline:
+                raise RuntimeError("Cannot clone repo %s to location %s\nYou can either disable offline mode or manually clone the repo"%(url,dest))
             print(("git clone %s -> %s"%(url,dest)))
             extra = ""
             if depth and depth != 0:
@@ -1706,7 +1710,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
+    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME="",offline=False):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1786,10 +1790,10 @@ class Installer():
 
         self.debug=True
 
-        self.prepare(SANDBOX=SANDBOX,base=base)
+        self.prepare(SANDBOX=SANDBOX,base=base,offline=offline)
 
         print ("pull core")
-        do.pullGitRepo(JSGIT,branch=JSBRANCH, depth=1)
+        do.pullGitRepo(JSGIT,branch=JSBRANCH, depth=1,offline=offline)
         src="%s/github/jumpscale/jumpscale_core7/lib/JumpScale"%do.CODEDIR
         self.debug=False
 
@@ -1858,7 +1862,7 @@ class Installer():
             j.system.platform.ubuntu.serviceEnableStartAtBoot("ays")
 
         print("Get atYourService metadata.")
-        do.pullGitRepo(AYSGIT, branch=AYSBRANCH, depth=1)
+        do.pullGitRepo(AYSGIT, branch=AYSBRANCH, depth=1,offline=offline)
 
         print ("install was successfull")
         # if pythonversion==2:
@@ -2091,7 +2095,7 @@ class Installer():
             cmd="cd %s;curl -k https://bootstrap.pypa.io/get-pip.py > get-pip.py;python get-pip.py"%do.TMP
             do.execute(cmd)
 
-    def prepare(self,SANDBOX=1,base="/opt/jumpscale7"):
+    def prepare(self,SANDBOX=1,base="/opt/jumpscale7",offline=False):
         # if pythonversion==2:
         #     gitbase="base_python"
         # else:
@@ -2104,7 +2108,7 @@ class Installer():
 
             print ("pull binaries")
             gitbase="base_python"
-            do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1)
+            do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1,offline=offline)
 
             print ("copy binaries")
             basepath = "%s/git/binary/%s/root" % (do.CODEDIR, gitbase)
@@ -2205,4 +2209,9 @@ class Installer():
 do.installer=Installer()
 
 if __name__ == '__main__':
-    do.installer.installJS()
+    import argparse
+    parser = argparse.ArgumentParser(description='Install JumpScale')
+    parser.add_argument('-o', '--offline', required=False, default=None, help='offline mode', action='store_true')
+    args = parser.parse_args()
+
+    do.installer.installJS(offline=args.offline)

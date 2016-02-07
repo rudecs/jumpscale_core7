@@ -83,7 +83,7 @@ class ServiceTemplate(object):
         services = j.atyourservice.findServices(domain=self.domain,name=self.name)
         return [service.instance for service in services]
 
-    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False, hrdSeed=None, hrdReset=None):
+    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False, hrdSeed=None, offline=None, hrdReset=None):
         """
         Install Service.
 
@@ -114,7 +114,7 @@ class ServiceTemplate(object):
         service = self.newInstance(instance=instance, args=args, parent=parent, precise=True, hrdSeed=hrdSeed, hrdReset=hrdReset)
         service.args.update(args)
         service.noremote = noremote
-        service.install(start=start, deps=deps, reinstall=reinstall)
+        service.install(start=start, deps=deps, reinstall=reinstall, offline=offline)
 
 
     def build(self, deps=False, args={}, noremote=False, hrdSeed=None):
