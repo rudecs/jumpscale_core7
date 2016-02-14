@@ -36,7 +36,7 @@ class RemoteService(Service):
     def prepare(self, deps=True, reverse=True, processed={}):
         self.actions.executeaction(self, actionname="prepare")
 
-    def install(self, start=True, deps=True, reinstall=False, processed={}):
+    def install(self, start=True, deps=True, reinstall=False, processed={}, offline=None):
         """
         Install Service.
 
