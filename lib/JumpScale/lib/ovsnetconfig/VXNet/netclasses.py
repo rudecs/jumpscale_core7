@@ -6,6 +6,7 @@ from .utils import *
 class VXlan(object):
     def __init__(self,oid,backend='vxbackend'):
         def bytes(num):
+            num = num + 256 >> 8
             return num >> 8, num & 0xFF
         self.multicastaddr = '239.0.%s.%s' % bytes(oid.oid)
         self.id = oid
