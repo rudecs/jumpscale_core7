@@ -41,10 +41,13 @@ class GitClient(object):
         return self.repo.git.rev_parse('HEAD', abbrev_ref=True)
 
     def getBranchOrTag(self):
-        try:
-            return 'tag', self.repo.git.describe('--tags', '--exact-match')
-        except:
-            return 'branch', self.branchName
+        currentsha = self.repo.head.commit.hexsha
+        tags = self.repo.tags
+        tags.reverse()
+        for tag in tags:
+            if tag.commit.hexsha == currentsha:
+                return 'tag', tag.name
+        return 'branch', self.branchName
 
     @property
     def repo(self):
