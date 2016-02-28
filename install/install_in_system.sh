@@ -51,6 +51,6 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
 fi
 
 set -ex
-curl -k https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/web/bootstrap.py > $TMPDIR/bootstrap.py
+curl -k https://raw.githubusercontent.com/Jumpscale7/jumpscale_core7/master/install/web/bootstrap.py > $TMPDIR/bootstrap.py
 cd $TMPDIR
 python bootstrap.py
