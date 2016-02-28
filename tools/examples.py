@@ -48,7 +48,7 @@ get("https://github.com/Jumpscale/play")
 get("https://github.com/Jumpscale/play7")
 # get("https://github.com/Jumpscale/jumpscale_core")
 # get("https://github.com/Jumpscale/jumpscale_docs")
-get("https://github.com/Jumpscale/jumpscale_portal")
+get("https://github.com/Jumpscale7/jumpscale_portal")
 get("https://github.com/Jumpscale/jumpscale_examples7")
 
 get("https://github.com/Jumpscale7/ays_jumpscale7")
