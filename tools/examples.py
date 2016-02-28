@@ -43,7 +43,7 @@ get("http://git.aydo.com/binary/web_python")
 
 # get("https://github.com/Jumpscale/aydo")
 # get("https://github.com/Jumpscale/web")
-get("https://github.com/Jumpscale/jumpscale_core7")
+get("https://github.com/Jumpscale7/jumpscale_core7")
 get("https://github.com/Jumpscale/play")
 get("https://github.com/Jumpscale/play7")
 # get("https://github.com/Jumpscale/jumpscale_core")

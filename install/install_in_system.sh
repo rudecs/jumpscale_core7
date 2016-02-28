@@ -19,7 +19,7 @@ fi
 # export GITHUBPASSWD=''
 export SANDBOX=0
 # export JSBASE='/opt/jumpscale7'
-# export JSGIT='https://github.com/Jumpscale/jumpscale_core7.git'
+# export JSGIT='https://github.com/Jumpscale7/jumpscale_core7.git'
 # export JSBRANCH='master'
 # export AYSGIT='https://github.com/Jumpscale/ays_jumpscale7.git'
 # export AYSBRANCH='master'
