@@ -1794,7 +1794,7 @@ class Installer():
 
         print ("pull core")
         do.pullGitRepo(JSGIT,branch=JSBRANCH, depth=1,offline=offline)
-        src="%s/github/jumpscale/jumpscale_core7/lib/JumpScale"%do.CODEDIR
+        src="%s/github/jumpscale7/jumpscale_core7/lib/JumpScale"%do.CODEDIR
         self.debug=False
 
         if do.TYPE.startswith("OSX"):
@@ -1823,13 +1823,13 @@ class Installer():
         do.symlinkFilesInDir(src, destjs, includeDirs=True)
 
         for item in ["InstallTools","ExtraTools"]:
-            src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
+            src="%s/github/jumpscale7/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
             dest2="%s/%s.py"%(dest,item)
             do.symlink(src, dest2)
             dest2="%s/%s.py"%(destjs,item)
             do.symlink(src, dest2)
 
-        src="%s/github/jumpscale/jumpscale_core7/shellcmds"%do.CODEDIR
+        src="%s/github/jumpscale7/jumpscale_core7/shellcmds"%do.CODEDIR
         desttest="/usr/local/bin/js"
         if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
