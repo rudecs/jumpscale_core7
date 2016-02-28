@@ -12,9 +12,9 @@
 # export GITHUBPASSWD=''
 # export SANDBOX=1
 # export JSBASE='/opt/jumpscale7'
-# export JSGIT='https://github.com/Jumpscale7/jumpscale_core7.git'
+# export JSGIT='https://github.com/jumpscale7/jumpscale_core7.git'
 # export JSBRANCH='master'
-# export AYSGIT='https://github.com/Jumpscale7/ays_jumpscale7'
+# export AYSGIT='https://github.com/jumpscale7/ays_jumpscale7'
 # export AYSBRANCH='master'
 
 if [ "$(uname)" == "Darwin" ]; then
@@ -50,6 +50,6 @@ fi
 if [ -z $JSBRANCH ]; then export $JSBRANCH=master; fi
 
 set -ex
-curl -k https://raw.githubusercontent.com/Jumpscale7/jumpscale_core7/$JSBRANCH/install/web/bootstrap.py > $TMPDIR/bootstrap.py
+curl -k https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/$JSBRANCH/install/web/bootstrap.py > $TMPDIR/bootstrap.py
 cd $TMPDIR
 python bootstrap.py

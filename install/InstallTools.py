@@ -1655,7 +1655,7 @@ class InstallTools():
         """
         if not self._extratools:
             if not self.exists("ExtraTools.py"):
-                url="https://raw.githubusercontent.com/Jumpscale7/jumpscale_core/master/install/ExtraTools.py"
+                url="https://raw.githubusercontent.com/jumpscale7/jumpscale_core/master/install/ExtraTools.py"
                 self.download(url,"/tmp/ExtraTools.py")
                 if "/tmp" not in sys.path:
                     sys.path.append("/tmp")
@@ -1671,7 +1671,7 @@ class InstallTools():
             'aysbranch': j.clients.git.get('/opt/code/github/jumpscale7/ays_jumpscale7').getBranchOrTag()[1]
         }
 
-        return 'export JSBRANCH="%(jsbranch)s"; export AYSBRANCH="%(aysbranch)s"; curl https://raw.githubusercontent.com/Jumpscale7/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
+        return 'export JSBRANCH="%(jsbranch)s"; export AYSBRANCH="%(aysbranch)s"; curl https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
 
 
     def getWalker(self):
@@ -1710,7 +1710,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale7/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale7/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME="",offline=False):
+    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/jumpscale7/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/jumpscale7/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME="",offline=False):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73

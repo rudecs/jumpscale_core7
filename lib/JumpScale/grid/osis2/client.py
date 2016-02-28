@@ -75,7 +75,7 @@ class Client(object):
         raise NotImplemented()
     
     def _export(self, namespace, categoryname, outputpath, session=None):
-        # https://github.com/Jumpscale7/jumpscale_core7/blob/master/lib/JumpScale/grid/osis/OSISCMDS.py
+        # https://github.com/jumpscale7/jumpscale_core7/blob/master/lib/JumpScale/grid/osis/OSISCMDS.py
         raise NotImplemented()
      
 class NameSpaceClient(object):

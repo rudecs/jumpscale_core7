@@ -10,7 +10,7 @@
 
 mkdir -p /Users/Shared/sync/code/
 cd /Users/Shared/sync/code/
-git clone https://despiegk:????@github.com/Jumpscale7/jumpscale_core7.git
+git clone https://despiegk:????@github.com/jumpscale7/jumpscale_core7.git
 git checkout -b @ys --track origin/@ys
 
 #install brew	

@@ -6,7 +6,7 @@ rem echo %1%
 cd %~dp0
 
 rem to get jumpscale code
-git clone https://github.com/Jumpscale7/jumpscale_core7.git
+git clone https://github.com/jumpscale7/jumpscale_core7.git
 cd jumpscale_core7
 git pull origin @ys:@ys
 git checkout @ys

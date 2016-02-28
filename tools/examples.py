@@ -43,15 +43,15 @@ get("http://git.aydo.com/binary/web_python")
 
 # get("https://github.com/Jumpscale/aydo")
 # get("https://github.com/Jumpscale/web")
-get("https://github.com/Jumpscale7/jumpscale_core7")
+get("https://github.com/jumpscale7/jumpscale_core7")
 get("https://github.com/Jumpscale/play")
 get("https://github.com/Jumpscale/play7")
 # get("https://github.com/Jumpscale/jumpscale_core")
 # get("https://github.com/Jumpscale/jumpscale_docs")
-get("https://github.com/Jumpscale7/jumpscale_portal")
+get("https://github.com/jumpscale7/jumpscale_portal")
 get("https://github.com/Jumpscale/jumpscale_examples7")
 
-get("https://github.com/Jumpscale7/ays_jumpscale7")
+get("https://github.com/jumpscale7/ays_jumpscale7")
 
 # get("http://git.aydo.com/binary/mongodb")
 # get("http://git.aydo.com/binary/lemp")
