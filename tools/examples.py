@@ -51,7 +51,7 @@ get("https://github.com/Jumpscale/play7")
 get("https://github.com/Jumpscale/jumpscale_portal")
 get("https://github.com/Jumpscale/jumpscale_examples7")
 
-get("https://github.com/Jumpscale/ays_jumpscale7")
+get("https://github.com/Jumpscale7/ays_jumpscale7")
 
 # get("http://git.aydo.com/binary/mongodb")
 # get("http://git.aydo.com/binary/lemp")

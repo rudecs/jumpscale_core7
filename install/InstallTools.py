@@ -1710,7 +1710,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale7/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME="",offline=False):
+    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale7/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale7/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME="",offline=False):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
