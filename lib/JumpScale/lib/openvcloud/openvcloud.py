@@ -372,7 +372,7 @@ class Openvclcoud(object):
         if self.actionCheck(spacesecret, "vnas_jumpscale") is False:
             # install Jumpscale
             print "install jumpscale"
-            cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
+            cl.run('curl https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
             print "jumpscale installed"
 
             print "add openvcloud domain to atyourservice"
