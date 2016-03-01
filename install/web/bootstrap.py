@@ -32,7 +32,7 @@ import random
 if not os.path.exists(path):
     print "overwrite"
     r=random.randint(1, 10000)#to make sure caching does not work on internet
-    os.popen("curl -k https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%s/install/InstallTools.py?%s > %s"%(branch,r,path))
+    os.popen("curl -k https://raw.githubusercontent.com/Jumpscale7/jumpscale_core7/%s/install/InstallTools.py?%s > %s"%(branch,r,path))
 
 from InstallTools import *
 
