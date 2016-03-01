@@ -1651,7 +1651,7 @@ class InstallTools():
         """
         if not self._extratools:
             if not self.exists("ExtraTools.py"):
-                url="https://raw.githubusercontent.com/Jumpscale/jumpscale_core/master/install/ExtraTools.py"
+                url="https://raw.githubusercontent.com/jumpscale7/jumpscale_core/master/install/ExtraTools.py"
                 self.download(url,"/tmp/ExtraTools.py")
                 if "/tmp" not in sys.path:
                     sys.path.append("/tmp")
@@ -1668,11 +1668,11 @@ class InstallTools():
             except:
                 return repo.branchName
         branches = {
-            'jsbranch': j.clients.git.get('/opt/code/github/jumpscale/jumpscale_core7').getBranchOrTag()[1],
+            'jsbranch': j.clients.git.get('/opt/code/github/jumpscale7/jumpscale_core7').getBranchOrTag()[1],
             'aysbranch': j.clients.git.get('/opt/code/github/jumpscale/ays_jumpscale7').getBranchOrTag()[1]
         }
 
-        return 'export JSBRANCH="%(jsbranch)s"; export AYSBRANCH="%(aysbranch)s"; curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
+        return 'export JSBRANCH="%(jsbranch)s"; export AYSBRANCH="%(aysbranch)s"; curl https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/%(jsbranch)s/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh' % branches
 
 
     def getWalker(self):
@@ -1711,7 +1711,7 @@ do=InstallTools()
 
 class Installer():
 
-    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/Jumpscale/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
+    def installJS(self,base="",clean=False,insystem=True,GITHUBUSER="",GITHUBPASSWD="",CODEDIR="",JSGIT="https://github.com/jumpscale7/jumpscale_core7.git",JSBRANCH="master",AYSGIT="https://github.com/Jumpscale/ays_jumpscale7",AYSBRANCH="master",SANDBOX=1,EMAIL="",FULLNAME=""):
         """
         @param pythonversion is 2 or 3 (3 no longer tested and prob does not work)
         if 3 and base not specified then base becomes /opt/jumpscale73
@@ -1795,7 +1795,7 @@ class Installer():
 
         print ("pull core")
         do.pullGitRepo(JSGIT,branch=JSBRANCH, depth=1)
-        src="%s/github/jumpscale/jumpscale_core7/lib/JumpScale"%do.CODEDIR
+        src="%s/github/jumpscale7/jumpscale_core7/lib/JumpScale"%do.CODEDIR
         self.debug=False
 
         if do.TYPE.startswith("OSX"):
@@ -1824,13 +1824,13 @@ class Installer():
         do.symlinkFilesInDir(src, destjs, includeDirs=True)
 
         for item in ["InstallTools","ExtraTools"]:
-            src="%s/github/jumpscale/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
+            src="%s/github/jumpscale7/jumpscale_core7/install/%s.py"%(do.CODEDIR,item)
             dest2="%s/%s.py"%(dest,item)
             do.symlink(src, dest2)
             dest2="%s/%s.py"%(destjs,item)
             do.symlink(src, dest2)
 
-        src="%s/github/jumpscale/jumpscale_core7/shellcmds"%do.CODEDIR
+        src="%s/github/jumpscale7/jumpscale_core7/shellcmds"%do.CODEDIR
         desttest="/usr/local/bin/js"
         if insystem or not self.exists(desttest):
             dest="/usr/local/bin"
