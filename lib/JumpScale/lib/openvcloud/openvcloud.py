@@ -176,12 +176,12 @@ class Openvclcoud(object):
         # install jumpscale
         self.jumpscale(cl)
 
-        ovcversion = j.clients.git.get('/opt/code/git/0-complexity/openvcloud').getBranchOrTag()[1]
+        ovcversion = j.clients.git.get('/opt/code/github/0-complexity/openvcloud').getBranchOrTag()[1]
 
         print "[+] adding openvcloud domain to atyourservice"
         content  = "metadata.openvcloud            =\n"
         content += "    branch:'%s',\n" % (ovcversion)
-        content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
+        content += "    url:'https://github.com/0-complexity/openvcloud_ays',\n"
 
         cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
         
@@ -372,13 +372,14 @@ class Openvclcoud(object):
         if self.actionCheck(spacesecret, "vnas_jumpscale") is False:
             # install Jumpscale
             print "install jumpscale"
-            cl.run('curl https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
+            cmd = j.do.getInstallCommand()
+            cl.run(cmd)
             print "jumpscale installed"
 
             print "add openvcloud domain to atyourservice"
             content = """
 metadata.openvcloud            =
-    url:'https://git.aydo.com/0-complexity/openvcloud_ays',
+    url:'https://github.com/0-complexity/openvcloud_ays',
 """
             cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
             self.actionDone(spacesecret, "vnas_jumpscale")
