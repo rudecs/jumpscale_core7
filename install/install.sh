@@ -47,7 +47,7 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
     exit
 fi
 
-if [ -z $JSBRANCH ]; then export $JSBRANCH=master; fi
+if [ -z $JSBRANCH ]; then export JSBRANCH=master; fi
 
 set -ex
 curl -k https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/$JSBRANCH/install/web/bootstrap.py > $TMPDIR/bootstrap.py
