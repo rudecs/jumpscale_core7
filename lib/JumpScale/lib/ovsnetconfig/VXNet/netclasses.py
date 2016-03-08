@@ -8,10 +8,11 @@ class VXlan(object):
         def bytes(num):
             num = num + 256 >> 8
             return num >> 8, num & 0xFF
-        self.multicastaddr = '239.0.%s.%s' % bytes(oid.oid)
-        self.id = oid
+
+        self.id = NetID(oid)
+        self.multicastaddr = '239.0.%s.%s' % bytes(self.id.oid)
         self.backend = backend
-        self.name = 'vx-' + oid.tostring()
+        self.name = 'vx-' + self.id.tostring()
     def create(self):
         createVXlan(self.name, self.id.oid, self.multicastaddr, self.backend)
     def destroy(self):
@@ -20,8 +21,6 @@ class VXlan(object):
         disable_ipv6(self.name)
     def verify(self):
         pass
-
-
 
 class Bridge(object):
     def __init__(self, name):
@@ -37,9 +36,13 @@ class Bridge(object):
 
 
 class VXBridge(Bridge):
-    def __init__(self,oid):
-        assert isinstance(oid.tostring, object)
+    def __init__(self, oid):
+        oid = NetID(oid)
+        self.oid = oid
         self.name = 'space_' + oid.tostring()
+
+    def listConnections(self):
+        return listBridgeConnections(self.name)
 
 class BondBridge(object):
     def __init__(self, name, interfaces, bondname=None, trunks=None):
@@ -76,11 +79,14 @@ class VXNameSpace(NameSpace):
 
 
 class NetID(object):
-    def __init__(self,oid):
-        if type(oid) is str:
+    def __init__(self, oid):
+        if isinstance(oid, basestring):
             self.oid = int(oid,16)
+        elif isinstance(oid, NetID):
+            self.oid = oid.oid
         else:
             self.oid = oid
+
     def tostring(self):
         # netidstring = str(hex(self.netid,16))[2:]
         oidstring = '%04x' % self.oid
