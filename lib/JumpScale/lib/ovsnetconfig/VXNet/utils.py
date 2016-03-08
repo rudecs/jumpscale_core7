@@ -110,9 +110,7 @@ def addVlanPatch(parbr,vlbr,id, mtu=None):
         return r == 0
 
     def port_exists(br, port):
-        listprts = "{0} list-ports {1}".format(vsctl, br)
-        r,s,e = doexec(listprts.split())
-        return port in s.read()
+        return port in listBridgeConnections(br)
 
     parport = "{}-{!s}".format(vlbr,id)
     brport  = "{}-{!s}".format(parbr,id)
@@ -228,6 +226,11 @@ def connectIfToBridge(bridge,interface):
     r,s,e = doexec(cmd.split())
     if r:
         raise RuntimeError('Error adding port %s to bridge %s' %(interface,bridge))
+
+def listBridgeConnections(bridge):
+    listprts = "{0} list-ports {1}".format(vsctl, bridge)
+    r,s,e = doexec(listprts.split())
+    return s.read().splitlines()
 
 def connectIfToNameSpace(nsname,interface):
     cmd = '%s link set %s netns %s' %( ip, interface, nsname)
