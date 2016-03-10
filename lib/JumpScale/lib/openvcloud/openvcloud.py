@@ -20,6 +20,10 @@ class Openvclcoud(object):
     def initLocalhost(self, gitlaburl, gitlablogin, gitlabpasswd):
         self.preprocess()
         
+        if gitlablogin == None:
+            print("[-] no gitlab check will be done, using github")
+            return
+            
         print "[+] creating git repository"
 
         if gitlaburl.find("@") != -1:
@@ -165,8 +169,13 @@ class Openvclcoud(object):
         gitlabAccountname, gitlabReponame = j.clients.gitlab.getAccountnameReponameFromUrl(gitlaburl)
         gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
         
-        gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
-        gitlab.createProject(gitlabAccountname, gitlabReponame, public=False)
+        if gitlablogin:
+            print '[+] creating gitlab project'
+            
+            gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
+            
+            gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
+            gitlab.createProject(gitlabAccountname, gitlabReponame, public=False)
 
         cl = j.ssh.connect(machine['remote'], machine['port'], keypath=keypath, verbose=True)
 
@@ -181,7 +190,7 @@ class Openvclcoud(object):
         print "[+] adding openvcloud domain to atyourservice"
         content  = "metadata.openvcloud            =\n"
         content += "    branch:'%s',\n" % (ovcversion)
-        content += "    url:'https://github.com/0-complexity/openvcloud_ays',\n"
+        content += "    url:'git@github.com:0-complexity/openvcloud_ays',\n"
 
         cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
         
@@ -190,10 +199,21 @@ class Openvclcoud(object):
         # git credentials
         cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
         cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
-        infos = gitlab.getUserInfo(gitlablogin)
+        
+        infos = {
+            'name': ''
+        }
+        
+        baseinfos = {
+            'email': 'nobody@aydo.com',
+            'name': gitlablogin if gitlablogin else 'gig setup'
+        }
+        
+        if gitlablogin:
+            infos = gitlab.getUserInfo(gitlablogin)
 
-        email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
-        name = infos['name'] if infos['name'] != '' else gitlablogin
+        email = infos['email'] if infos.has_key('email') else baseinfos['email']
+        name = infos['name'] if infos['name'] != '' else baseinfos['name']
 
         cl.run('git config --global user.email "%s"' % email)
         cl.run('git config --global user.name "%s"' % name)
@@ -205,12 +225,16 @@ class Openvclcoud(object):
             cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
             cl.run('echo "" >> /root/.ssh/config')
 
-        repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
+        
+        host = 'git@git.aydo.com'
 
-
-
-        # git lab clone
-        repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
+        if gitlablogin:
+            repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
+            repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
+            
+        else:
+            repopath = "/opt/code/github/%s/%s/" % (gitlabAccountname, gitlabReponame)
+            repoURL = 'git@github.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
 
         if not cl.file_exists(repopath):
             host = 'git@git.aydo.com'
