@@ -283,13 +283,13 @@ class Openvclcoud(object):
             cl.run('cd %s; ays install -n docker_client --data "%s" -r' % (repopath, args))
         
         # ensure that portal libs are installed
-        cl.run('cd %s; ays install -n portal_lib -r' % (repopath))
+        cl.run('cd %s; ays install -n portal_lib -r' % repopath)
         
         
         
         # create ovc_setup instance to save settings
         args  = 'instance.ovc.environment:%s ' % gitlabReponame
-        args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
+        args += 'instance.ovc.path:%s ' % repopath
         args += 'instance.ovc.ms1.instance:main '           # FIXME, remove me
         args += 'instance.ovc.gitlab_client.instance:main ' # FIXME, remove me
         args += 'instance.ovc.password:%s ' % recoverypasswd
