@@ -68,7 +68,10 @@ def get_nic_params():
                 params = parse_ipl_line(entry,want)
             nictypes[intf]['params'] = params
             if  namespace == None:
-                nictypes[intf]['detail'] = get_nic_detail(intf)
+                try:
+                    nictypes[intf]['detail'] = get_nic_detail(intf)
+                except:
+                     pass
                 nictypes[intf]['namespace'] = None
             else:
                 nictypes[intf]['namespace'] = namespace
