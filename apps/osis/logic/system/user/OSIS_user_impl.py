@@ -54,7 +54,7 @@ class mainclass(parentclass):
         res=db.find_one({"id":id})
         # res["guid"]=str(res["_id"])
         if not res:
-            j.errorconditionhandler.raiseBug(message="Key %s doesn't exist" % key, level=4)
+            raise KeyError(key)
 
         if not full:
             res.pop("_id")
