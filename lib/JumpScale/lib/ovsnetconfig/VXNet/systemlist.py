@@ -71,7 +71,8 @@ def get_nic_params():
                 try:
                     nictypes[intf]['detail'] = get_nic_detail(intf)
                 except IOError:
-                     pass
+                    del nictypes[intf]
+                    continue
                 nictypes[intf]['namespace'] = None
             else:
                 nictypes[intf]['namespace'] = namespace
