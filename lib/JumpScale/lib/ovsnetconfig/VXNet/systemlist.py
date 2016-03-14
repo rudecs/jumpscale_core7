@@ -70,7 +70,7 @@ def get_nic_params():
             if  namespace == None:
                 try:
                     nictypes[intf]['detail'] = get_nic_detail(intf)
-                except:
+                except IOError:
                      pass
                 nictypes[intf]['namespace'] = None
             else:
