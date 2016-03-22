@@ -576,7 +576,7 @@ class ControllerCMDS():
                                        'category': job['cmd']})
         else:
             health['jobguid'] = None  # job is not saved so dont store job guid
-            health['messages'] = job['result']
+            health['messages'] = job['result'] or []
         self.healthclient.set(health)
 
     def notifyWorkCompleted(self, job,session=None):
