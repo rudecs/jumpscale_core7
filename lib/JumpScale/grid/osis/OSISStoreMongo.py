@@ -3,9 +3,28 @@ from JumpScale.grid.osis.OSISStore import OSISStore
 import imp
 import ujson as json
 import pymongo
-from pymongo import MongoClient
 import datetime
-import JumpScale.grid.mongodbclient
+
+
+def _changekey(object, map):
+    if isinstance(object, dict):
+        for key, value in object.iteritems():
+            if isinstance(key, basestring):
+                object.pop(key)
+                for old, new in map.iteritems():
+                    key = key.replace(old, new)
+                object[key] = value
+            object[key] = _changekey(value, map)
+    elif isinstance(object, list):
+        for idx, value in enumerate(object):
+            object[idx] = _changekey(value, map)
+    return object
+
+def cleankeys(object):
+    return _changekey(object, {'$': '\u0024', '.': '\u002e'})
+
+def restorekeys(object):
+    return _changekey(object, {'\u0024': '$', '\u002e': '.'})
 
 class OSISStoreMongo(OSISStore):
     MULTIGRID = True
@@ -78,6 +97,7 @@ class OSISStoreMongo(OSISStore):
             self.te.execute(params, service=self)
 
     def setPreSave(self, value, session):
+        value = cleankeys(value)
         self.runTasklet('set', value, session)
         return value
 
@@ -162,7 +182,7 @@ class OSISStoreMongo(OSISStore):
         if not full:
             res.pop("_id")
             res.pop("_ttl", None)
-        return res
+        return restorekeys(res)
         
     def exists(self, key, session=None):
         """
