@@ -123,9 +123,9 @@ from JumpScale import j
                 return False, "TIMEOUT"
             try:
                 return ppipe.recv()
-            except:
-                msg = 'JumpScript died unexpectedly'
-                result = j.errorconditionhandler.getErrorConditionObject(msg=msg)
+            except Exception as e:
+                eco = j.errorconditionhandler.parsePythonErrorObject(e)
+                eco['errormessagePub'] = 'JumpScript died unexpectedly %s'
                 return False, result
 
     def _getECO(self, e):

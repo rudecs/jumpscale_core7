@@ -17,8 +17,7 @@ PHYSMTU = 2000
 
 # TODO : errorhandling
 def send_to_syslog(msg):
-    pass
-    #print msg
+    print msg
     # pid = os.getpid()
     # print ("%s[%d] - %s" % (command_name, pid, msg))
     # syslog.syslog("%s[%d] - %s" % (command_name, pid, msg))
@@ -62,6 +61,11 @@ def get_all_ifaces():
                 addr = f.readline().strip()
                 ifaces[i] = addr
     return ifaces
+
+
+def iface_exists(name):
+    ifacepath = '/sys/class/net/%s' % name
+    return os.path.exists(ifacepath)
 
 
 def get_all_bridges():
@@ -158,10 +162,7 @@ def createVethPair(left,right):
 
 
 def destroyVethPair(left):
-    cmd = '%s link del %s ' %(ip, left)
-    r,s,e = doexec(cmd.split())
-    if r:
-        raise RuntimeError("Problem with destruction of Veth pair %s, err was: %s" % (left,e))
+    return destroyVXlan(left)
 
 
 def createVXlan(vxname,vxid,multicast,vxbackend):
@@ -182,11 +183,12 @@ def createVXlan(vxname,vxid,multicast,vxbackend):
 
 
 def destroyVXlan(name):
+    if not iface_exists(name):
+        return
     cmd = '%s link del %s ' %(ip, name)
-    r,s,e = doexec(cmd.split())
+    r, s, e = doexec(cmd.split())
     if r:
-        send_to_syslog("Problem with destruction of Veth pair %s, err was: %s" % (name,e.readlines()))
-        exit(1)
+        raise RuntimeError("Problem with destruction of Veth pair %s, err was: %s" % (name,e.readlines()))
 
 
 def addIPv4(interface,ipobj,namespace=None):
