@@ -498,4 +498,8 @@ class RouterOS(object):
         result=self.do("/ping",{"count":1,"address":addr})
         return result[0]["received"]=='1'
 
+    def arping(self, addr, interface):
+        result=self.do("/ping",{"count": 1, "address": addr, 'arp-ping': 'yes', 'interface': interface})
+        return result[0]["received"]=='1'
+
 
