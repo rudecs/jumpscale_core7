@@ -219,6 +219,8 @@ class GridHealthChecker(object):
         for nid, cats in self._status.iteritems():
             for cat, checks in cats.iteritems():
                 for check in checks:
+                    if check['state'] in ['SKIPPED']:
+                        continue
                     if check['state'] != 'OK' and state != 'ERROR':
                         state = check['state']
         self._rcl.set('health.status', state, ex=300)
@@ -239,6 +241,8 @@ class GridHealthChecker(object):
                 message['guid'] = health['jobguid']
                 message['interval'] = health['interval']
                 message['lastchecked'] = health['lastchecked']
+                if message['lastchecked'] + message['interval'] < now and message['state'] == 'OK':
+                    message['state'] = 'EXPIRED'
                 results.append((health['nid'], message, message['category']))
         self._returnResults(results)
 
@@ -295,7 +299,7 @@ class GridHealthChecker(object):
         for nid, result in data.items():
             for category, categorydata in result.items():
                 for dataitem in categorydata:
-                    if dataitem.get('state') != 'OK':
+                    if dataitem.get('state') not in ['OK', 'SKIPPED', 'RUNNING']:
                         errors.setdefault(nid, set())
                         errors[nid].add(category)
                     checktime = dataitem.get('lastchecked')

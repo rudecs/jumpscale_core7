@@ -182,11 +182,11 @@ class AtYourServiceFactory():
         self._templateCache[key] = finalRes
         return finalRes
 
-    def findServices(self, domain="", name="", instance="", parent='', precise=False):
+    def findServices(self, domain="", name="", instance="", parent='', precise=False, hrdReset=None):
         """
         FindServices looks for actual services that are created
         """
-        def createService(domain, name, instance, path, parent=None):
+        def createService(domain, name, instance, path, parent=None, hrdReset=None):
             # try to load service from instance file is they exists
             hrdpath = j.system.fs.joinPaths(path, "service.hrd")
             actionspath = j.system.fs.joinPaths(path, "actions.py")
@@ -202,7 +202,7 @@ class AtYourServiceFactory():
                     service = RemoteService(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent,
                                             remotecategory=remote.categories[0], remoteinstance=remote.instance)
                 else:
-                    service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent)
+                    service = Service(instance=instance, servicetemplate=servicetemplates[0], path=path, parent=parent, hrdReset=hrdReset)
                 return service
             # create service from action.py and service.hrd
             elif j.system.fs.exists(hrdpath) and j.system.fs.exists(actionspath):
@@ -243,7 +243,7 @@ class AtYourServiceFactory():
 
         for path in matched:
             domainfoud, namefound, instancefound = j.system.fs.getBaseName(path).split('__')
-            service = createService(domainfoud, namefound, instancefound, path, parent)
+            service = createService(domainfoud, namefound, instancefound, path, parent, hrdReset=hrdReset)
             res.append(service)
             self._instanceCache[service.id] = service
 

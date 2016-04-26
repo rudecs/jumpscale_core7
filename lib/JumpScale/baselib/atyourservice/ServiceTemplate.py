@@ -20,9 +20,9 @@ class ServiceTemplate(object):
         self.parent = parent
         self.metapath = path
 
-    def newInstance(self,instance="main", args={}, hrddata={}, path='', parent=None, precise=False, hrdSeed=None):
+    def newInstance(self,instance="main", args={}, hrddata={}, path='', parent=None, precise=False, hrdSeed=None, hrdReset=None):
         # TODO, should take in account the domain too
-        services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent, precise=precise)
+        services = j.atyourservice.findServices(name=self.name, instance=instance, parent=parent, precise=precise, hrdReset=hrdReset)
         if len(services)>0:
             if j.application.debug:
                 print "Service %s__%s__%s already exists" % (self.domain,self.name,instance)
@@ -35,7 +35,7 @@ class ServiceTemplate(object):
             service = RemoteService(instance=instance, servicetemplate=self, args=args, path=path, parent=parent,
                                     remotecategory='node', remoteinstance=remote.instance)
         else:
-            service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent, hrdSeed=hrdSeed)
+            service = Service(instance=instance, servicetemplate=self, args=args, path=path, parent=parent, hrdSeed=hrdSeed, hrdReset=hrdReset)
         return service
 
     def getHRD(self, prefix=False):
@@ -83,7 +83,7 @@ class ServiceTemplate(object):
         services = j.atyourservice.findServices(domain=self.domain,name=self.name)
         return [service.instance for service in services]
 
-    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False, hrdSeed=None):
+    def install(self, instance="main",start=True,deps=True, reinstall=False, args={}, parent=None, noremote=False, hrdSeed=None, offline=None, hrdReset=None):
         """
         Install Service.
 
@@ -111,10 +111,10 @@ class ServiceTemplate(object):
         if support==False:
             j.events.opserror_critical("Cannot install %s__%s because unsupported platform." % (self.domain, self.name))
 
-        service = self.newInstance(instance=instance, args=args, parent=parent, precise=True, hrdSeed=hrdSeed)
+        service = self.newInstance(instance=instance, args=args, parent=parent, precise=True, hrdSeed=hrdSeed, hrdReset=hrdReset)
         service.args.update(args)
         service.noremote = noremote
-        service.install(start=start, deps=deps, reinstall=reinstall)
+        service.install(start=start, deps=deps, reinstall=reinstall, offline=offline)
 
 
     def build(self, deps=False, args={}, noremote=False, hrdSeed=None):

@@ -92,7 +92,8 @@ class ActionsBaseNode(ActionsBase):
                         stdOutput=True, serviceObj=serviceObj)
 
         def jumpscale():
-            cl.sudo("curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh")
+            cmd = j.do.getInstallCommand()
+            cl.sudo(cmd)
         j.actions.start(name="jumpscale", description='install jumpscale',
                         action=jumpscale,
                         stdOutput=True, serviceObj=serviceObj)

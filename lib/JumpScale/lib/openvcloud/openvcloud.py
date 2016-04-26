@@ -20,6 +20,10 @@ class Openvclcoud(object):
     def initLocalhost(self, gitlaburl, gitlablogin, gitlabpasswd):
         self.preprocess()
         
+        if gitlablogin == None:
+            print("[-] no gitlab check will be done, using github")
+            return
+            
         print "[+] creating git repository"
 
         if gitlaburl.find("@") != -1:
@@ -67,13 +71,9 @@ class Openvclcoud(object):
     def initDocker(self, host, port, public):
         print '[+] building docker based environment'
         
-        print '[+] building the base image'
+        print '[+] preparing base image'
         today = time.strftime('%Y-%m-%d')
         image = 'openvcloud/%s' % today
-        
-        args = {'instance.image.name': image}
-        service = j.atyourservice.new(name='docker_ovc', args=args)
-        service.install(reinstall=True)
         
         self._docker = {
             'remote': host,
@@ -83,6 +83,20 @@ class Openvclcoud(object):
         }
         
         vm = j.clients.vm.get('docker', self._docker)
+        
+        # checking if image already exists
+        images = vm._docker['api'].getImages()
+        
+        if image not in images:
+            print '[+] building the image'
+            
+            args = {'instance.image.name': image}
+            j.atyourservice.remove(name='docker_ovc')
+            service = j.atyourservice.new(name='docker_ovc', args=args)
+            service.install(reinstall=False)
+            
+        else:
+            print '[+] image already made, re-using it...'
         
         machine = self.initMachine(vm, 'docker', self._docker)
         
@@ -155,8 +169,13 @@ class Openvclcoud(object):
         gitlabAccountname, gitlabReponame = j.clients.gitlab.getAccountnameReponameFromUrl(gitlaburl)
         gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
         
-        gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
-        gitlab.createProject(gitlabAccountname, gitlabReponame, public=False)
+        if gitlablogin:
+            print '[+] creating gitlab project'
+            
+            gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
+            
+            gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
+            gitlab.createProject(gitlabAccountname, gitlabReponame, public=False)
 
         cl = j.ssh.connect(machine['remote'], machine['port'], keypath=keypath, verbose=True)
 
@@ -166,12 +185,12 @@ class Openvclcoud(object):
         # install jumpscale
         self.jumpscale(cl)
 
-        ovcversion = j.clients.git.get('/opt/code/git/0-complexity/openvcloud').getBranchOrTag()[1]
+        ovcversion = j.clients.git.get('/opt/code/github/0-complexity/openvcloud').getBranchOrTag()[1]
 
         print "[+] adding openvcloud domain to atyourservice"
         content  = "metadata.openvcloud            =\n"
         content += "    branch:'%s',\n" % (ovcversion)
-        content += "    url:'https://git.aydo.com/0-complexity/openvcloud_ays',\n"
+        content += "    url:'git@github.com:0-complexity/openvcloud_ays',\n"
 
         cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
         
@@ -180,10 +199,21 @@ class Openvclcoud(object):
         # git credentials
         cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
         cl.run('jsconfig hrdset -n whoami.git.passwd -v "ssh"')
-        infos = gitlab.getUserInfo(gitlablogin)
+        
+        infos = {
+            'name': ''
+        }
+        
+        baseinfos = {
+            'email': 'nobody@aydo.com',
+            'name': gitlablogin if gitlablogin else 'gig setup'
+        }
+        
+        if gitlablogin:
+            infos = gitlab.getUserInfo(gitlablogin)
 
-        email = infos['email'] if infos.has_key('email') else 'nobody@aydo.com'
-        name = infos['name'] if infos['name'] != '' else gitlablogin
+        email = infos['email'] if infos.has_key('email') else baseinfos['email']
+        name = infos['name'] if infos['name'] != '' else baseinfos['name']
 
         cl.run('git config --global user.email "%s"' % email)
         cl.run('git config --global user.name "%s"' % name)
@@ -195,12 +225,16 @@ class Openvclcoud(object):
             cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
             cl.run('echo "" >> /root/.ssh/config')
 
-        repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
+        
+        host = 'git@git.aydo.com'
 
-
-
-        # git lab clone
-        repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
+        if gitlablogin:
+            repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
+            repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
+            
+        else:
+            repopath = "/opt/code/github/%s/%s/" % (gitlabAccountname, gitlabReponame)
+            repoURL = 'git@github.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
 
         if not cl.file_exists(repopath):
             host = 'git@git.aydo.com'
@@ -249,13 +283,13 @@ class Openvclcoud(object):
             cl.run('cd %s; ays install -n docker_client --data "%s" -r' % (repopath, args))
         
         # ensure that portal libs are installed
-        cl.run('cd %s; ays install -n portal_lib -r' % (repopath))
+        cl.run('cd %s; ays install -n portal_lib -r' % repopath)
         
         
         
         # create ovc_setup instance to save settings
         args  = 'instance.ovc.environment:%s ' % gitlabReponame
-        args += 'instance.ovc.path:/opt/code/git/%s/%s ' % (gitlabAccountname, gitlabReponame)
+        args += 'instance.ovc.path:%s ' % repopath
         args += 'instance.ovc.ms1.instance:main '           # FIXME, remove me
         args += 'instance.ovc.gitlab_client.instance:main ' # FIXME, remove me
         args += 'instance.ovc.password:%s ' % recoverypasswd
@@ -281,11 +315,22 @@ class Openvclcoud(object):
         
         print '[+] setup completed'
         
+        # check if netstat can gives pid
+        lines = cl.run('netstat -anoptuw | grep sshd | wc -l')
+        if int(lines) == 0:
+            print '[-] WARNING: ************************************************************'
+            print '[-] WARNING: no ssh pid found with netstat, this will break setup'
+            print '[-] WARNING: - if you are using docker, you are not up-to-date'
+            print '[-] WARNING: - otherwise, your system seems not correctly configured'
+            print '[-] WARNING: ************************************************************'
+        
+        else:
+            print '[+] environment is ready to be deployed'
+        
         # ensure that ssh agent is running and add the new key
         j.do.execute('eval $(ssh-agent -s)')
         
         print ''
-        print '[+] environment is ready to be deployed'
         print '[+] you can now ssh the ovcgit host to configure the environment'
         print '[+]   ssh root@%s -p %s -A' % (machine['remote'], machine['port'])
     
@@ -351,13 +396,14 @@ class Openvclcoud(object):
         if self.actionCheck(spacesecret, "vnas_jumpscale") is False:
             # install Jumpscale
             print "install jumpscale"
-            cl.run('curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh')
+            cmd = j.do.getInstallCommand()
+            cl.run(cmd)
             print "jumpscale installed"
 
             print "add openvcloud domain to atyourservice"
             content = """
 metadata.openvcloud            =
-    url:'https://git.aydo.com/0-complexity/openvcloud_ays',
+    url:'https://github.com/0-complexity/openvcloud_ays',
 """
             cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
             self.actionDone(spacesecret, "vnas_jumpscale")

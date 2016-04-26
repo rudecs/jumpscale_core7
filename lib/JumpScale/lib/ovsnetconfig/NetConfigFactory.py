@@ -7,7 +7,7 @@ from JumpScale import j
 import VXNet.vxlan as vxlan
 import VXNet.netclasses as netcl
 from .VXNet.utils import *
-import JumpScale.baselib.codetools
+from JumpScale.core.system.fs import FileLock
 
 class NetConfigFactory():
 
@@ -90,11 +90,24 @@ class NetConfigFactory():
         addVlanPatch(parentbridge, name, vlanid, mtu=mtu)
 
     def ensureVXNet(self, networkid, backend):
-        vxnet = vxlan.VXNet(networkid, backend)
-        vxnet.innamespace=False
-        vxnet.inbridge = True
-        vxnet.apply()
-        return vxnet
+        with FileLock('vxlan_%s' % networkid):
+            vxnet = vxlan.VXNet(networkid, backend)
+            vxnet.innamespace=False
+            vxnet.inbridge = True
+            vxnet.apply()
+            return vxnet
+
+    def cleanupIfUnused(self, networkid):
+        with FileLock('vxlan_%s' % networkid):
+            bridge = netcl.VXBridge(networkid)
+            connections = bridge.listConnections()
+            if len(connections) > 1:
+                return False
+            else:
+                vxlan = netcl.VXlan(networkid)
+                vxlan.destroy()
+                bridge.destroy()
+                return True
 
     def createVXLanBridge(self, networkid, backend,bridgename=None):
         """

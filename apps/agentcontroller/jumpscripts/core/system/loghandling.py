@@ -71,14 +71,16 @@ def action():
         OSISclientLogger.set(out)
 
     while ecoguid<>None:
-        eco = json.loads(rediscl.hget('eco:objects', ecoguid))
-        if not eco.get('epoch'):
-            eco["epoch"] = int(time.time())
-        ecoobj = j.errorconditionhandler.getErrorConditionObject(ddict=eco)
-        ecores= eventhandlingTE.executeV2(eco=ecoobj)
-        if hasattr(ecores,"tb"):
-            ecores.__dict__.pop("tb")
-        OSISclientEco.set(ecores.__dict__)
+        raweco = rediscl.hget('eco:objects', ecoguid)
+        if raweco:
+            eco = json.loads(raweco)
+            if not eco.get('epoch'):
+                eco["epoch"] = int(time.time())
+            ecoobj = j.errorconditionhandler.getErrorConditionObject(ddict=eco)
+            ecores= eventhandlingTE.executeV2(eco=ecoobj)
+            if hasattr(ecores,"tb"):
+                ecores.__dict__.pop("tb")
+            OSISclientEco.set(ecores.__dict__)
         ecoguid=ecoqueue.get_nowait()
 
 if __name__ == '__main__':

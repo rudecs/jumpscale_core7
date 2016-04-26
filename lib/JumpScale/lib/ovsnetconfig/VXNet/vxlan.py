@@ -49,6 +49,8 @@ class VXNet(object):
         self.ipv4 = None
         self.backend = backend
         self.existing = NetLayout()
+        self.innamespace=False
+        self.inbridge = True
 
 
     def apply(self):

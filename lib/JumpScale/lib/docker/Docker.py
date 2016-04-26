@@ -405,7 +405,7 @@ class Docker():
                 if internalport==22:
                     print '[+] checking for external ssh access: port %s' % extport
                     portfound=extport
-                    if j.system.net.waitConnectionTest(self.remote['host'], extport, timeout=2) == False:
+                    if j.system.net.waitConnectionTest(self.remote['host'], extport, timeout=10) == False:
                         log = self.client.logs(name)
                         j.events.opserror_critical("Could not connect to external port on docker:'%s', docker prob not running.\nStartuplog:\n%s\n"%(extport,log),category="docker.create")
 
@@ -434,7 +434,7 @@ class Docker():
             c.file_upload(hrdf,hrdf)
         c.fabric.state.output["running"]=True
         c.fabric.state.output["stdout"]=True
-        c.run("cd /opt/code/github/jumpscale/jumpscale_core7/install/ && bash install.sh")
+        c.run("cd /opt/code/github/jumpscale7/jumpscale_core7/install/ && bash install.sh")
 
     def getImages(self):
         images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images()]

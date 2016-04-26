@@ -5,7 +5,7 @@ use these install scripts to make your life easy
 
 ```
 #if ubuntu is in recent state & apt get update was done recently
-curl https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh
+curl https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/master/install/install.sh > /tmp/js7.sh && bash /tmp/js7.sh
 
 ```
 

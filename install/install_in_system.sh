@@ -19,9 +19,9 @@ fi
 # export GITHUBPASSWD=''
 export SANDBOX=0
 # export JSBASE='/opt/jumpscale7'
-# export JSGIT='https://github.com/Jumpscale/jumpscale_core7.git'
+# export JSGIT='https://github.com/jumpscale7/jumpscale_core7.git'
 # export JSBRANCH='master'
-# export AYSGIT='https://github.com/Jumpscale7/ays_jumpscale7.git'
+# export AYSGIT='https://github.com/jumpscale7/ays_jumpscale7.git'
 # export AYSBRANCH='master'
 
 set -ex
@@ -51,6 +51,6 @@ elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
 fi
 
 set -ex
-curl -k https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/web/bootstrap.py > $TMPDIR/bootstrap.py
+curl -k https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/master/install/web/bootstrap.py > $TMPDIR/bootstrap.py
 cd $TMPDIR
 python bootstrap.py

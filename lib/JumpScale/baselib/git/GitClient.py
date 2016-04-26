@@ -1,4 +1,5 @@
 from JumpScale import j
+from pkg_resources import parse_version
 
 
 class GitClient(object):
@@ -41,10 +42,13 @@ class GitClient(object):
         return self.repo.git.rev_parse('HEAD', abbrev_ref=True)
 
     def getBranchOrTag(self):
-        try:
-            return 'tag', self.repo.git.describe('--tags')
-        except:
-            return 'branch', self.branchName
+        currentsha = self.repo.head.commit.hexsha
+        tags = self.repo.tags
+        tags.sort(key=lambda tag: parse_version(tag.name), reverse=True)
+        for tag in tags:
+            if tag.commit.hexsha == currentsha:
+                return 'tag', tag.name
+        return 'branch', self.branchName
 
     @property
     def repo(self):

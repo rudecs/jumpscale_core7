@@ -246,6 +246,8 @@ class Daemon(object):
 
             eco.errormessage = \
                 "ERROR IN RPC CALL %s: %s. (Session:%s)\nData:%s\n" % (cmd, eco.errormessage, session, data)
+            if isinstance(e, KeyError):
+                eco.type = 'INPUT'
 
             eco.process()
             eco.__dict__.pop("tb", None)

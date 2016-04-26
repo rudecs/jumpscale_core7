@@ -100,10 +100,7 @@ def deps(F):  # F is func or method without instance
             for dep in packagechain:
                 if dep in processed.get(F.func_name):
                     dep.args = service.args
-                    try:
-                        result = processresult(result, F(dep, *args, deps=False, **kwargs))
-                    except Exception, e:
-                        print 'Performing action "%s" on dependecy "%s" failed with exception %s' % (F.func_name, dep.name, e)
+                    result = processresult(result, F(dep, *args, deps=False, **kwargs))
         else:
             result = processresult(
                 result, F(service, *args, deps=False, **kwargs))
@@ -112,7 +109,7 @@ def deps(F):  # F is func or method without instance
 
 class Service(object):
 
-    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None, hrdSeed=None):
+    def __init__(self, domain='', name='', instance="", hrd=None, servicetemplate=None, path="", args=None, parent=None, hrdSeed=None, hrdReset=None):
         self.processed = dict()
         self.domain = domain
         self.instance = instance
@@ -125,6 +122,7 @@ class Service(object):
         self.parent = None
         self._reposDone = {}
         self.args = args or {}
+        self.hrdReset = hrdReset or False
         self.hrddata = {}
         self._categories = []
         self._producers = None
@@ -174,7 +172,7 @@ class Service(object):
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
         if self._hrd:
             return self._hrd
-        if not j.system.fs.exists(hrdpath):
+        if not j.system.fs.exists(hrdpath) or self.hrdReset:
             self._apply()
         else:
             self._hrd = j.core.hrd.get(hrdpath, prefixWithName=False)
@@ -302,7 +300,12 @@ class Service(object):
         if j.system.fs.exists(source):
             j.do.copyFile(source, "%s/actions.lua" % self.path)
 
+        serviceTemplate = "%s/service.hrd" % self.templatepath
         hrdpath = j.system.fs.joinPaths(self.path, "service.hrd")
+
+        if self.hrdReset:
+            j.do.copyFile(serviceTemplate, hrdpath)
+
         mergeArgsHDRData = self.args.copy()
         mergeArgsHDRData.update(self.hrddata)
         mergeArgsHDRData.update(self.extractFromHRDSeed(self.domain, self.name, self.instance))
@@ -310,7 +313,7 @@ class Service(object):
         self._hrd = j.core.hrd.get(
             hrdpath, args=mergeArgsHDRData, prefixWithName=False)
         self._hrd.applyTemplates(
-            path="%s/service.hrd" % self.templatepath, prefix="service")
+            path=serviceTemplate, prefix="service")
         self._hrd.applyTemplates(
             path="%s/instance.hrd" % self.templatepath, prefix="instance")
 
@@ -329,7 +332,7 @@ class Service(object):
 
         self._loadActionModule()
 
-    def _getRepo(self, url, recipeitem=None, dest=None):
+    def _getRepo(self, url, recipeitem=None, dest=None, offline=None):
         if url in self._reposDone:
             return self._reposDone[url]
 
@@ -370,7 +373,7 @@ class Service(object):
         passwd = j.application.config.getStr("whoami.git.passwd").strip()
 
         dest = j.do.pullGitRepo(url=url, login=login, passwd=passwd, depth=depth,
-                                branch=branch, revision=revision, dest=dest, tag=tag)
+                                branch=branch, revision=revision, dest=dest, tag=tag, offline=offline)
         self._reposDone[url] = dest
         return dest
 
@@ -589,7 +592,7 @@ class Service(object):
         self.actions.prepare(self)
 
     @deps
-    def install(self, start=True, deps=True, reinstall=False, processed={}):
+    def install(self, start=True, deps=True, reinstall=False, processed={}, offline=None):
         """
         Install Service.
 
@@ -615,9 +618,9 @@ class Service(object):
         self.stop(deps=False)
         self.prepare(deps=deps, reverse=True)
         self.log("install instance")
-        self._install(start=start, deps=deps, reinstall=reinstall)
+        self._install(start=start, deps=deps, reinstall=reinstall, offline=offline)
 
-    def _install(self, start=True, deps=True, reinstall=False):
+    def _install(self, start=True, deps=True, reinstall=False, offline=None):
         # download
         for recipeitem in self.hrd.getListFromPrefix("service.web.export"):
             if "dest" not in recipeitem:
@@ -648,7 +651,7 @@ class Service(object):
 
             # print recipeitem
             # pull the required repo
-            dest0 = self._getRepo(recipeitem['url'], recipeitem=recipeitem)
+            dest0 = self._getRepo(recipeitem['url'], recipeitem=recipeitem, offline=offline)
             src = "%s/%s" % (dest0, recipeitem['source'])
             src = src.replace("//", "/")
             if "dest" not in recipeitem:

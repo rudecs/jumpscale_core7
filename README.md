@@ -13,9 +13,9 @@ https://gig.gitbooks.io/jumpscale/content/
 ```bash
 sudo -s
 #if ubuntu is in recent state & apt get update was done recently
-export AYSBRANCH=7.0
-export JSBRANCH=7.0
-cd /tmp;rm -f install.sh;curl -k https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/install.sh > install.sh;bash install.sh
+export AYSBRANCH=master
+export JSBRANCH=master
+cd /tmp;rm -f install.sh;curl -k https://raw.githubusercontent.com/jumpscale7/jumpscale_core7/master/install/install.sh > install.sh;bash install.sh
 ```
 
 api doc (generated out of code)

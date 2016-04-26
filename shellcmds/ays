@@ -81,6 +81,8 @@ group.add_argument('--local', required=False, action='store_true', default=False
 group.add_argument('-tn', '--targetname', required=False, default=None, help='node instance on which to execute the action')
 group.add_argument('-tt', '--targettype', required=False, default=None, help='node type on which to execute the action')
 group.add_argument('-hs', '--hrdseed', required=False, default=None, help='path to an hrd file that contains')
+group.add_argument('-hr', '--hrdreset', required=False, default=False, help='reset the hrd configuration', action='store_true')
+group.add_argument('-o', '--offline', required=False, default=None, help='offline mode', action='store_true')
 # group.add_argument('--lua',required=False,default=False,action="store_true",help='execute from actions.lua file')
 
 # install
@@ -168,9 +170,9 @@ def getTemplates(args, filterRemote=False, onlyRemote=False):
     return res
 
 
-def getServices(args, filterRemote=False, parent=None, precise=False, onlyRemote=False):
+def getServices(args, filterRemote=False, parent=None, precise=False, onlyRemote=False, hrdReset=None):
     res = []
-    services = j.atyourservice.findServices(args.domain, args.name, args.instance, parent=parent, precise=precise)
+    services = j.atyourservice.findServices(args.domain, args.name, args.instance, parent=parent, precise=precise, hrdReset=hrdReset)
     if args.noremote:
         #means we are installing over ssh, so we need to tell service to do everything local
         for service in services:
@@ -247,7 +249,7 @@ else:
     if args.targettype or args.targetname:
         args.parent = getTarget(args)
 
-    services = getServices(args, filterRemote=args.local, parent=args.parent, precise=args.immediate)
+    services = getServices(args, filterRemote=args.local, parent=args.parent, precise=args.immediate, hrdReset=args.hrdreset)
     if args.action == 'configure':
         for service in services:
             service.configure(deps=args.deps)
@@ -265,7 +267,7 @@ else:
             if len(services) > 0:
                 for s in services:
                     s.noremote = args.noremote
-                    s.install(deps=args.deps, reinstall=args.reinstall)
+                    s.install(deps=args.deps, reinstall=args.reinstall, offline=args.offline)
         else:
             tmpls = j.atyourservice.findTemplates(domain=args.domain, name=args.name)
             if len(tmpls) > 1:
@@ -275,7 +277,7 @@ else:
                 raise RuntimeError("no templates found for %s__%s. Be more precise please" % (args.domain, args.name))
 
             tmpls[0].install(instance=args.instance, start=True, deps=(not args.single), reinstall=args.reinstall,
-                             args=getHRDData(args), parent=getParent(args, precise=True), noremote=args.noremote, hrdSeed=args.hrdseed)
+                             args=getHRDData(args), parent=getParent(args, precise=True), noremote=args.noremote, hrdSeed=args.hrdseed, hrdReset=args.hrdreset, offline=args.offline)
 
     elif args.action == 'update':
         for service in services:

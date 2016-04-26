@@ -77,7 +77,9 @@ class List(BaseType):
                 value = [obj]
             else:
                 raise
-        if not isinstance(value, list):
+        if isinstance(value, (basestring, float, int)):
+            value = [value]
+        elif not isinstance(value, list):
             raise ValueError("Invalid value for list")
         return value
 

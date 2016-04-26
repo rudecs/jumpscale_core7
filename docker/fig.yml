@@ -3,5 +3,5 @@ js:
     command: /sbin/my_init
     volumes:
         - ~/.ssh:/root/.ssh
-        - ../:/opt/code/github/jumpscale/jumpscale_core7
-        - ../../ays_jumpscale7:/opt/code/github/jumpscale/ays_jumpscale7
+        - ../:/opt/code/github/jumpscale7/jumpscale_core7
+        - ../../ays_jumpscale7:/opt/code/github/jumpscale7/ays_jumpscale7
