@@ -50,8 +50,6 @@ fi
 if [ -z $JSBRANCH ]; then export JSBRANCH=master; fi
 
 set -ex
-==== BASE ====
 curl -k https://raw.githubusercontent.com/Jumpscale/jumpscale_core7/master/install/web/bootstrap.py > $TMPDIR/bootstrap.py
-==== BASE ====
 cd $TMPDIR
 python bootstrap.py
