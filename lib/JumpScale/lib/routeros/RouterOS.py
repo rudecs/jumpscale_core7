@@ -7,7 +7,6 @@ class RouterOSFactory(object):
 
     def get(self, host, login,password):
         return RouterOS(host, login,password)
-#!/usr/bin/python
 
 import sys, posix, time, md5, binascii, socket, select
 import netaddr
@@ -146,10 +145,6 @@ class ApiRos:
 class RouterOS(object):
 
     def __init__(self, host, login,password):
-        # self.configPath = j.system.fs.joinPaths('/etc', 'RouterOS')
-        # self.remoteApi = j.remote.cuisine.api
-        # j.remote.cuisine.fabric.env['password'] = password
-        # self.remoteApi.connect(host)
         self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._s.connect((host, 8728 ))  
         self.api = ApiRos(self._s)
@@ -157,7 +152,7 @@ class RouterOS(object):
         self.host=host
         self.login=login
         self.password=password
-        self.ftp=None
+        self._ftp = None
         if res!=True:
             raise RuntimeError("Could not login into RouterOS: %s"%host)
         self.configpath="%s/apps/routeros/configs/default/"%j.dirs.baseDir
@@ -318,12 +313,9 @@ class RouterOS(object):
         self.download(path, j.system.fs.joinPaths(destinationdir,path))
 
     def download(self,path,dest):
-        if self.ftp==None:
-            self._getFtp()
-        self.ftp.retrbinary('RETR %s'%path, open(dest, 'wb').write)
+        self.ftp.retrbinary('RETR %s'%path, fp.write)
 
     def list(self,path):
-        self._getFtp()
         res=[]
         def do(arg):
             if arg in [".",".."]:
@@ -333,7 +325,6 @@ class RouterOS(object):
         return res
 
     def delfile(self,path,raiseError=False):
-        self._getFtp()
         res=[]
         if raiseError:
             self.ftp.delete(path)
@@ -344,19 +335,21 @@ class RouterOS(object):
                 pass
 
     def mkdir(self, path):
-        self._getFtp()
         self.ftp.mkd(path)
 
-    def _getFtp(self):
-        from ftplib import FTP
-        if j.system.net.tcpPortConnectionTest(self.host,21):
-            self.ftp=FTP(host=self.host, user=self.login, passwd=self.password)
-        elif j.system.net.tcpPortConnectionTest(self.host,9021):
-            self.ftp=FTP()
-            self.ftp.connect(host="%s"%self.host,port=9021)
-            self.ftp.login(user=self.login, passwd=self.password)
-        else:
-            raise RuntimeError("Could not find port 21 or 9021 to open ftp connection to %s"%self.host)
+    @property
+    def ftp(self):
+        if not self._ftp:
+            from ftplib import FTP
+            if j.system.net.tcpPortConnectionTest(self.host,21):
+                self._ftp=FTP(host=self.host, user=self.login, passwd=self.password)
+            elif j.system.net.tcpPortConnectionTest(self.host,9021):
+                self._ftp=FTP()
+                self._ftp.connect(host="%s"%self.host,port=9021)
+                self._ftp.login(user=self.login, passwd=self.password)
+            else:
+                raise RuntimeError("Could not find port 21 or 9021 to open ftp connection to %s"%self.host)
+        return self._ftp
         
     def networkId2NetworkAddr(self,networkid):
         netrange=j.application.config.get("vfw.netrange.internal")
@@ -367,22 +360,22 @@ class RouterOS(object):
         self.ftp.close()
 
     def download(self,path,dest,raiseError=False):
-        self._getFtp()
-        j.system.fs.createDir(j.system.fs.getDirName(dest))
-        if raiseError:
-            self.ftp.retrbinary('RETR %s'%path, open(dest, 'wb').write)
+        fp = None
+        if isinstance(dest, basestring):
+            j.system.fs.createDir(j.system.fs.getDirName(dest))
+            fp - open(dest, 'wb')
         else:
-            try:
-                print(("download '%s'"%path))
-                self.ftp.retrbinary('RETR %s'%path, open(dest, 'wb').write)
-                print()
-            except Exception as e:
-                print("ERROR")
-                pass
+            fp = dest
+        try:
+            self.ftp.retrbinary('RETR %s'%path, fp.write)
+        except Exception as e:
+            if raiseError:
+                raise
+            else:
+                print("ERROR", e)
 
     def upload(self,path,dest):
         print(("upload: '%s' to '%s'"%(path,dest)))
-        self._getFtp()
         if not j.system.fs.exists(path=path):
             raise RuntimeError("Cannot find %s"%path)
         self.ftp.storbinary('STOR %s'%dest, open(path))
