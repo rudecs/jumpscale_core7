@@ -92,6 +92,7 @@ class QemuImg(object):
         if not j.system.fs.exists(fileName):
             raise IOError('Disk Image %s does not exist' % fileName)
 
+        diskImageFormat = diskImageFormat or ''
         command = self._getBinary()
         args = ['convert']
 
@@ -118,7 +119,8 @@ class QemuImg(object):
         if not createTarget:
             args.append('-n')
 
-        args.extend(['-f', str(diskImageFormat)])
+        if diskImageFormat:
+            args.extend(['-f', str(diskImageFormat)])
         args.extend(['-O', str(outputFormat)])
         if logger:
             args.append('-p')
