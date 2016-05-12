@@ -27,7 +27,7 @@ class Application:
         self.agentid = "starting"
         self._calledexit = False
         self.skipTraceback = False
-        self.debug = True
+        self.debug = False
 
         self.whoAmIBytestr = None
         self.whoAmI = WhoAmI(0,0,0)
@@ -133,7 +133,7 @@ class Application:
         j.dirs.init(reinit=True)
 
         if hasattr(self, 'config'):
-            self.debug = j.application.config.getBool('system.debug', default=True)
+            self.debug = j.application.config.getBool('system.debug', default=False)
 
         if self.redis!=None:
             if self.redis.hexists("application",self.appname):
