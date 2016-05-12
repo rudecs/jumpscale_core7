@@ -102,7 +102,7 @@ class Tmux:
         cmd = 'tmux list-sessions -F "#{session_name}"'
         if user!=None:
             cmd = "sudo -u %s -i %s"%(user,cmd)
-        exitcode, output = j.system.process.execute(cmd, dieOnNonZeroExitCode=False)
+        exitcode, output = j.system.process.execute(cmd, dieOnNonZeroExitCode=False, ignoreErrorOutput=True)
         if exitcode != 0:
             output = ""
         return [ name.strip() for name in output.split() ]
@@ -111,7 +111,7 @@ class Tmux:
         cmd = 'tmux list-panes -t "%s" -F "#{pane_pid};#{window_name}" -a' % session
         if user!=None:
             cmd = "sudo -u %s -i %s"%(user,cmd)
-        exitcode, output = j.system.process.execute(cmd, dieOnNonZeroExitCode=False)
+        exitcode, output = j.system.process.execute(cmd, dieOnNonZeroExitCode=False, ignoreErrorOutput=True)
         if exitcode>0:
             return None
         for line in output.split():
@@ -126,7 +126,7 @@ class Tmux:
         cmd = 'tmux list-windows -F "#{window_index}:#{window_name}" -t "%s"' % session
         if user!=None:
             cmd = "sudo -u %s -i %s"%(user,cmd)
-        exitcode, output = j.system.process.execute(cmd, dieOnNonZeroExitCode=False)
+        exitcode, output = j.system.process.execute(cmd, dieOnNonZeroExitCode=False, ignoreErrorOutput=True)
         if exitcode != 0:
             return result
         for line in output.split():

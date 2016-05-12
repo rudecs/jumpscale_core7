@@ -950,8 +950,14 @@ class InstallTools():
                             pass
             popenargs["preexec_fn"]=reset_signals
 
+        env = os.environ.copy()
+        if 'LD_LIBRARY_PATH' in env:
+            binpath = os.path.join(env['LD_LIBRARY_PATH'], command)
+            if not self.isFile(binpath) and env['LD_LIBRARY_PATH'] not in command:
+                env.pop('LD_LIBRARY_PATH')
+
         p=Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, \
-                    shell=useShell, env=os.environ,universal_newlines=True,cwd=cwd,bufsize=0,**popenargs)
+                    shell=useShell, env=env, universal_newlines=True,cwd=cwd,bufsize=0,**popenargs)
 
         class StreamReader(threading.Thread):
             def __init__(self, stream, queue, flag):
