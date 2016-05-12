@@ -1,10 +1,20 @@
 from JumpScale import j
 
-class Ubuntu:
+def getUbuntu():
+    import lsb_release
+    release = lsb_release.get_distro_information()['RELEASE']
+    if release.startswith("14"):
+        return Ubuntu()
+    elif release.startswith('16'):
+        return UbuntuSystemd()
+    raise NotImplemented("Ubuntu version %s is not supported" % release)
+
+class Ubuntu(object):
     def __init__(self):
         self._aptupdated = False
         self._checked = False
         self._cache=None
+        self._version = "14"
         self.installedPackageNames=[]
 
     def initApt(self):
@@ -38,8 +48,8 @@ class Ubuntu:
                 release = lsb_release.get_distro_information()['RELEASE']
                 if info != 'Ubuntu' and info !='LinuxMint':
                     raise RuntimeError("Only ubuntu or mint supported.")
-                if not (release.startswith("14") or release.startswith("15")):
-                    raise RuntimeError("Only ubuntu version 14+ supported")
+                if not release.startswith(self._version):
+                    raise RuntimeError("Only ubuntu version 14.04 supported")
                 self._checked = True
             except ImportError:
                 self._checked = False
@@ -365,3 +375,83 @@ stop on runlevel [016]
                 j.events.inputerror_critical("only support rsa or dsa for now")
             cmd="ssh-keygen -t %s -b 4096 -P '%s' -f %s" % (type, passphrase, path)
             j.do.executeInteractive(cmd)
+
+class UbuntuSystemd(Ubuntu):
+
+    def __init__(self):
+        super(UbuntuSystemd, self).__init__()
+        self._version = "16"
+
+    def serviceInstall(self, servicename, daemonpath, args='', respawn=True, pwd=None,env=None,reload=True):
+        C="""
+[Unit]
+Description={servicename}
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart={daemonpath} {args}
+Restart=always
+WorkingDirectory={pwd}
+Environment={env}
+
+[Install]
+WantedBy=multi-user.target
+                """.format(servicename=servicename, daemonpath=daemonpath, args=args, pwd=pwd, env=env)
+
+        j.system.fs.writeFile("/etc/systemd/system/%s.service" % servicename,C)
+
+        if reload:
+            j.system.process.execute("systemctl daemon-reload;systemctl enable %s"% servicename)
+
+    def serviceUninstall(self,servicename):
+        self.stopService(servicename)
+        filename = '%s.service'
+        for file_ in j.system.fs.find('/etc/systemd/', filename):
+            j.system.fs.remove(file_)
+
+
+    def listServices(self):
+        exitcode, output = j.system.process.execute('sudo systemctl list-unit-files --no-pager --no-legend')
+        results = {}
+        for line in output.splitlines():
+            key, value = line.split()
+            results[key] = value
+        return results
+
+    def startService(self, servicename):
+        j.logger.log("start service on ubuntu for:%s"%servicename,category="ubuntu.start")  #@todo P1 add log statements for all other methods of this class
+        if not self.statusService(servicename):
+            cmd="sudo systemctl start %s" % servicename
+            # print cmd
+            return j.system.process.execute(cmd)
+
+    def stopService(self, servicename):
+        cmd="sudo systemctl stop %s" % servicename
+        # print cmd
+        return j.system.process.execute(cmd,False)
+
+    def restartService(self, servicename):
+        return j.system.process.execute("sudo systemctl restart %s" % servicename,False)
+
+    def statusService(self, servicename):
+        exitcode, _ = j.system.process.execute("sudo systemctl is-active %s" % servicename,False)
+        return exitcode == 0
+
+    def serviceDisableStartAtBoot(self, servicename):
+        if '%s.service' % servicename in self.listServices():
+            j.system.process.execute("sudo systemctl disable %s" % servicename)
+
+    def serviceEnableStartAtBoot(self, servicename):
+        j.system.process.execute("sudo systemctl enable %s" % servicename)
+
+
+    def installDebFile(self, path, installDeps=True):
+        self.check()
+        j.system.process.execute('dpkg -i %s' % path)
+        if installDeps:
+            j.system.process.execute('apt-get -y install -f')
+
+
+    def updatePackageMetadata(self, force=True):
+        j.system.process.execute('apt-get update')

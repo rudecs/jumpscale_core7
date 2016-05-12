@@ -3,8 +3,8 @@ platformid = None
 import sys
 
 def cb():
-        from .ubuntu.Ubuntu import Ubuntu
-        return Ubuntu()
+    from .ubuntu.Ubuntu import getUbuntu
+    return getUbuntu()
 
 j.base.loader.makeAvailable(j, 'system.platform')
 if not sys.platform.startswith("win"):
