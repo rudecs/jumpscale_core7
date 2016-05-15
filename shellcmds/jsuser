@@ -135,12 +135,18 @@ if opts.action =='add' or opts.action =='set':
 
         emails=j.console.askString("comma separated list of emails").split(',')
 
-
     if opts.action =='add' and userclient.exists("%s_%s"%(j.application.whoAmI.gid,name)):
         j.errorconditionhandler.raiseOperationalCritical(message='user already exists', category="jsuser.add.exists")
-	
+
     if not _isValidUserName(name):
         j.errorconditionhandler.raiseOperationalCritical(message='Username name may not exceed 20 characters and may only contain a-z and 0-9', category="jsuser.add.invalid")
+
+    existinggroups = [grp['id'] for grp in groupclient.search({'$fields': ['id']})[1:]]
+    for group in groups:
+        if group not in existinggroups:
+            newgroup = groupclient.new()
+            newgroup.id = group
+            groupclient.set(newgroup)
         
     user=userclient.new()
     user.id=name
