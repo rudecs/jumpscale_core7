@@ -78,10 +78,11 @@ class Process():
         stdin = subprocess.PIPE
         stdout = sys.stdout
         stderr = sys.stderr
-        self.cmds.extend(['-lp', self.logpath])
+        cmds = self.cmds[:]  # copy cmds
+        cmds.extend(['-lp', self.logpath])
 
         try:            
-            self.p = psutil.Popen(self.cmds, env=self.env,cwd=self.workingdir,stdin=stdin, stdout=stdout, stderr=stderr,bufsize=0,shell=False) #f was: subprocess.PIPE
+            self.p = psutil.Popen(cmds, env=self.env,cwd=self.workingdir,stdin=stdin, stdout=stdout, stderr=stderr,bufsize=0,shell=False) #f was: subprocess.PIPE
             self.pid=self.p.pid
         except Exception as e:
             print("could not execute:%s\nError:\n%s"%(self,e))
