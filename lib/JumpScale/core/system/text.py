@@ -11,9 +11,10 @@ import unicodedata
 
 class Text:
     @staticmethod
-    def toStr(value, codec='utf-8'):
+    def toStr(value, codec='utf-8', normalize=True):
         if isinstance(value, unicode):
-            value=unicodedata.normalize('NFKD',value)
+            if normalize:
+                value=unicodedata.normalize('NFKD',value)
             value = value.encode(codec)
         return bytes(value)
 
