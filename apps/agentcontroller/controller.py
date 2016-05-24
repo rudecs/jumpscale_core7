@@ -89,7 +89,7 @@ class ControllerCMDS():
         return self.nodeclient.authenticate(user, passwd)
 
     def authenticate(self, session):
-        return False  # to make sure we dont use it
+        return self.nodeclient.authenticate(session.user, session.passwd)
 
     def scheduleCmd(self,gid,nid,cmdcategory,cmdname,args={},jscriptid=None,queue="",log=True,timeout=None,roles=[],wait=False,errorreport=False, session=None):
         """
@@ -101,7 +101,6 @@ class ControllerCMDS():
             raise RuntimeError("Either nid or roles should be given")
 
         if session<>None:
-            self._adminAuth(session.user,session.passwd)
             sessionid=session.id
         else:
             sessionid=None
@@ -270,8 +269,8 @@ class ControllerCMDS():
                 node.ipaddr.extend(ip)
 
     def registerNode(self, hostname, machineguid, session):
-        # if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
-        #     raise RuntimeError("Only admin can register new nodes")
+        if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
+            raise RuntimeError("Only admin can register new nodes")
         node = self.nodeclient.new()
         node.roles = session.roles
         node.gid = session.gid

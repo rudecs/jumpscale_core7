@@ -148,27 +148,11 @@ class ProcessManager():
 
 
         acclientinstancename = self.hrd.get('instance.agentcontroller.connection')
+        osisinstance = self.hrd.get('instance.osis.connection')
+        osisconfig = j.application.getAppInstanceHRD('osis_client', osisinstance)
         acconfig = j.application.getAppInstanceHRD('agentcontroller_client', acclientinstancename)
 
         acip = acconfig.get("instance.agentcontroller.client.addr",default="")
-
-        if "hekad" in self.services:
-            hekaServices=j.atyourservice.findservices("jumpscale","hekad")
-            # if not ays.isInstalled(instance="0"):
-            if len(hekaServices)==0:
-                hekad=j.atyourservice.new(name='hekad',instance='hekad')
-                hekad.install()
-                # ays.install(hrddata={},instance="hekad")
-
-            p=Process()
-            p.domain="jumpscale"
-            p.name="hekad"
-            p.instance=name
-            p.workingdir="/opt/heka"
-            p.cmds=["bin/hekad","--config=%s"%self.dir_hekadconfig]
-            p.start()
-            self.processes.append(p)
-
 
         if acip!="":
 
@@ -180,12 +164,15 @@ class ProcessManager():
             aclogin = acconfig.get("instance.agentcontroller.client.login",default="node")
             acpasswd = acconfig.get("instance.agentcontroller.client.passwd",default="")
 
+            osislogin = osisconfig.get('instance.param.osis.client.login')
+            osispassword = osisconfig.get('instance.param.osis.client.passwd')
+
             #processmanager enabled
             while j.system.net.waitConnectionTest(acip,acport,2)==False:
                 print("cannot connect to agentcontroller, will retry forever: '%s:%s'"%(acip,acport))
 
-            #now register to agentcontroller
-            self.acclient = j.clients.agentcontroller.get(acip, login=aclogin, passwd=acpasswd, new=True)
+            #now register to agentcontroller with osis credentials
+            self.acclient = j.clients.agentcontroller.get(acip, login=osislogin, passwd=osispassword, new=True)
             res=self.acclient.registerNode(hostname=socket.gethostname(), machineguid=j.application.getUniqueMachineId())
 
             nid=res["node"]["id"]
