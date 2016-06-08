@@ -54,9 +54,11 @@ def action():
             if checkusage and (freepercent < 10):
                 j.errorconditionhandler.raiseOperationalWarning(result['message'], 'monitoring')
                 result['state'] = 'WARNING'
+                result['uid'] = result['message']
             if checkusage and (freepercent < 5):
                 j.errorconditionhandler.raiseOperationalCritical(result['message'], 'monitoring', die=False)
                 result['state'] = 'ERROR'
+                result['uid'] = result['message']
         results.append(result)
 
     if not results:

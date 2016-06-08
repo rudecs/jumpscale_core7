@@ -35,7 +35,7 @@ def action():
             'select value from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h order by time desc limit 1' % 
             (gid, nid))
     except RemoteException , e:
-        return [{'category':'CPU', 'state':'ERROR', 'message':'influxdb halted cannot access data'}]
+        return [{'category':'CPU', 'state':'ERROR', 'message':'influxdb halted cannot access data', 'uid':'influxdb halted cannot access data'}]
          
     res=list()
 
@@ -43,7 +43,7 @@ def action():
         newvalue = newest['raw']['series'][0]['values'][0][1]
         oldestvalue = oldest['raw']['series'][0]['values'][0][1]
     except (KeyError,IndexError):
-        return [{'category':'CPU', 'state':'WARNING', 'message':'Not enough data collected'}]
+        return [{'category':'CPU', 'state':'WARNING', 'message':'Not enough data collected', 'uid':'Not enough data collected'}]
 
     avgctx = (newvalue - oldestvalue) / 3600.
     level = None
@@ -54,10 +54,12 @@ def action():
     if avgctx > 100000:
         level = 1
         result ['state'] = 'ERROR'
+        result['uid'] = 'CPU contextswitch value is too large'
 
     elif avgctx > 600000:
         level = 2
         result ['state'] = 'WARNING'
+        result['uid'] = 'CPU contextswitch value is too large'
 
     if level:
         msg = 'CPU contextswitch is to high current value: %.2f/s' % avgctx

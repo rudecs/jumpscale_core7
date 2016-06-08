@@ -34,6 +34,7 @@ def action():
             j.errorconditionhandler.raiseOperationalWarning(message, 'monitoring')
             result['state'] = 'HALTED'
             result['message'] = message
+            result['uid'] = message
             result['category'] = 'AYS Process'
         results.append(result)
             
