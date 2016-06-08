@@ -572,10 +572,30 @@ class ControllerCMDS():
             health['jobguid'] = job['guid']
             health['messages'].append({'state': 'ERROR',
                                        'message': 'Failed executing job',
-                                       'category': job['cmd']})
+                                       'category': job['cmd'],
+                                       'lasterror': job['timeStop'],
+                                       'uid': 'execution_failed'})
         else:
             health['jobguid'] = None  # job is not saved so dont store job guid
             health['messages'] = job['result'] or []
+
+        try:
+            ok_states = ['OK', 'SKIPPED']
+            last = self.healthclient.get('%(gid)s_%(nid)s_%(category)s_%(cmd)s' % job)
+            for new_message in health['messages']:
+                if new_message['state'] not in ok_states:
+                    for old_message in last.messages:
+                        if new_message['uid'] == old_message.get('uid', '') and old_message.get('state', 'OK') not in ok_states and old_message.get('lasterror', ''):
+                            new_message['lasterror'] = old_message['lasterror']
+                            break
+                    else:
+                        new_message['lasterror'] = job['timeStop']
+
+                else:
+                    new_message['lasterror'] = ''
+        except:
+            pass
+
         self.healthclient.set(health)
 
     def notifyWorkCompleted(self, job,session=None):

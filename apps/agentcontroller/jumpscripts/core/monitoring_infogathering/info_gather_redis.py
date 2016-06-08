@@ -64,6 +64,7 @@ def action():
                     j.errorconditionhandler.raiseOperationalWarning(result['message'], 'monitoring')
       
             result['state'] = state
+            result['uid'] = errmsg
             results.append(result)
             print results
 
