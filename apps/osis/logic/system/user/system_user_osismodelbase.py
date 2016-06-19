@@ -15,6 +15,7 @@ class system_user_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P_mobile=list()
         self._P_lastcheck=0
         self._P_groups=list()
+        self._P_protected=False
         self._P_authkey=""
         self._P_data=""
         self._P_authkeys=list()
@@ -249,6 +250,18 @@ class system_user_osismodelbase(j.code.classGetJSRootModelBase()):
     @groups.deleter
     def groups(self):
         del self._P_groups
+
+    @property
+    def protected(self):
+        return self._P_protected
+
+    @protected.setter
+    def protected(self, value):
+        self._P_protected=bool(value)
+
+    @protected.deleter
+    def protected(self):
+        del self._P_protected
 
     @property
     def authkey(self):
