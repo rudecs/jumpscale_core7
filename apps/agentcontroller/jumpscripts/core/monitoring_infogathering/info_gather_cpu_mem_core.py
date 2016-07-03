@@ -32,7 +32,7 @@ def action():
         return [{'category':'CPU', 'state':'ERROR', 'message':'influxdb is halted cannot access data', 'uid':'influxdb is halted cannot access data'}]
 
     try:
-        return get_results(cpuresults['raw']['series']) + get_results(memresults['raw']['series'])
+        return get_results(cpuresults['series']) + get_results(memresults['series'])
     except (KeyError,IndexError):
         return [{'category':'CPU', 'state':'WARNING', 'message':'Not enough data collected', 'uid':'Not enough data collected'}]
 

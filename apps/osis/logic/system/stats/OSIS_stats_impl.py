@@ -29,7 +29,7 @@ class mainclass(OSISStore):
         self.dbclient.delete_series(seriesName)
 
     def find(self, query, start=0, size =100, session=None):
-        return self.dbclient.query(query)
+        return self.dbclient.query(query).raw
 
     def destroyindex(self, session=None):
         raise RuntimeError("osis 'destroyindex' for stat not implemented")

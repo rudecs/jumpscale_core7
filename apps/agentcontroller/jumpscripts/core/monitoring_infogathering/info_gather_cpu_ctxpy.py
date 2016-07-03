@@ -40,8 +40,8 @@ def action():
     res=list()
 
     try:
-        newvalue = newest['raw']['series'][0]['values'][0][1]
-        oldestvalue = oldest['raw']['series'][0]['values'][0][1]
+        newvalue = newest['series'][0]['values'][0][1]
+        oldestvalue = oldest['series'][0]['values'][0][1]
     except (KeyError,IndexError):
         return [{'category':'CPU', 'state':'WARNING', 'message':'Not enough data collected', 'uid':'Not enough data collected'}]
 
