@@ -77,7 +77,7 @@ class JumpscriptsCmds():
         roles = set(j.core.grid.roles)
         if '*' in jumpscript.roles:
             jumpscript.roles.remove('*')
-        if jumpscript.enable and roles.issuperset(set(jumpscript.roles)):
+        if jumpscript.enable and roles.intersection(set(jumpscript.roles)):
             organization = jumpscript.organization
             name = jumpscript.name
             self.jumpscripts["%s_%s"%(organization,name)]=jumpscript
