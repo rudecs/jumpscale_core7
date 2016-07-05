@@ -116,16 +116,6 @@ class ErrorConditionObject():
     def process(self):
         self.toAscii()
 
-        if self.type in ["INPUT","MONITORING","OPERATIONS","PERFORMANCE"] and j.application.debug==False:
-            self.tb=""
-            self.code=""
-            self.backtrace=""
-            self.backtraceDetailed=""
-
-        # types=["INPUT","MONITORING","OPERATIONS","PERFORMANCE","BUG","UNKNOWN"]
-        # if not self.type in types:
-        #     j.events.inputerror_warning("Errorcondition was thrown with wrong type.\n%s"%str(self),"eco.check.type")
-
         if not j.basetype.integer.check(self.level):
             try:
                 self.level=int(self.level)
