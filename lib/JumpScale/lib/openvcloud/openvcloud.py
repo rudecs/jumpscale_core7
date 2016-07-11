@@ -237,7 +237,7 @@ class Openvclcoud(object):
             repoURL = 'git@github.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
 
         if not cl.file_exists(repopath):
-            cl.run('git clone git@github.com:gig-projects/env_template.git %s' % (host, repopath))
+            cl.run('git clone git@github.com:gig-projects/env_template.git %s' % repopath)
             cl.run('cd %s; git remote set-url origin %s' % (repopath, repoURL))
 
             # Note: rebase prevents for asking to merge local tree with remote
