@@ -158,7 +158,7 @@ class Openvclcoud(object):
         cmd = j.do.getInstallCommand()
         remote.run(cmd)
 
-    def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, domain, delete=False):
+    def initAYSGitVM(self, machine, gitlaburl, gitlablogin, gitlabpasswd, recoverypasswd, domain, environment, delete=False):
         keypath = '/root/.ssh/id_rsa'
 
         if len(recoverypasswd) < 6:
@@ -225,9 +225,6 @@ class Openvclcoud(object):
             cl.run('echo "    StrictHostKeyChecking no" >> /root/.ssh/config')
             cl.run('echo "" >> /root/.ssh/config')
 
-        
-        host = 'git@git.aydo.com'
-
         if gitlablogin:
             repopath = "/opt/code/git/%s/%s/" % (gitlabAccountname, gitlabReponame)
             repoURL = 'git@git.aydo.com:%s/%s.git' % (gitlabAccountname, gitlabReponame)
@@ -246,7 +243,6 @@ class Openvclcoud(object):
         # copy keys
         keys = {
             '/root/.ssh/id_rsa': (j.system.fs.joinPaths(repopath, 'keys', 'git_root'), ),
-            # '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), '/root/.ssh/authorized_keys'),
             '/root/.ssh/id_rsa.pub': (j.system.fs.joinPaths(repopath, 'keys', 'git_root.pub'), ),
         }
 
@@ -259,12 +255,10 @@ class Openvclcoud(object):
         # append key to authorized hosts
         cl.run("cat %s >> /root/.ssh/authorized_keys" % keys['/root/.ssh/id_rsa.pub'])
 
-
-
         # saving clients
         if machine['type'] == 'ms1':
             # create ms1_client to save ms1 connection info
-            args  = 'instance.param.location:%s ' % self._ms1['location']
+            args = 'instance.param.location:%s ' % self._ms1['location']
             args += 'instance.param.login:%s ' % self._ms1['username']
             args += 'instance.param.passwd:%s ' % self._ms1['password']
             args += 'instance.param.cloudspace:%s' % self._ms1['cloudspace']
@@ -273,7 +267,7 @@ class Openvclcoud(object):
         
         if machine['type'] == 'docker':
             # create ms1_client to save ms1 connection info
-            args  = 'instance.remote.host:%s ' % self._docker['remote']
+            args = 'instance.remote.host:%s ' % self._docker['remote']
             args += 'instance.remote.port:%s ' % self._docker['port']
             args += 'instance.public.address:%s ' % self._docker['public']
             args += 'instance.image.base:%s' % machine['image']
@@ -283,10 +277,8 @@ class Openvclcoud(object):
         # ensure that portal libs are installed
         cl.run('cd %s; ays install -n portal_lib -r' % repopath)
         
-        
-        
         # create ovc_setup instance to save settings
-        args  = 'instance.ovc.environment:%s ' % gitlabReponame
+        args = 'instance.ovc.environment:%s ' % environment
         args += 'instance.ovc.path:%s ' % repopath
         args += 'instance.ovc.ms1.instance:main '           # FIXME, remove me
         args += 'instance.ovc.gitlab_client.instance:main ' # FIXME, remove me
@@ -299,14 +291,11 @@ class Openvclcoud(object):
         
         cl.run('cd %s; ays install -n ovc_setup --data "%s" -r' % (repopath, args))
 
-        
-        
         # create ms1_client to save ms1 connection info
         args = 'instance.param.recovery.passwd:%s instance.param.ip:%s' % (recoverypasswd, machine['remote'])
         cl.run('cd %s; ays install -n git_vm --data "%s" -r' % (repopath, args))
         cl.run('git config --global push.default simple')
         cl.run('cd %s; jscode push' % repopath)
-        
         
         cl.run('cd %s; ays install -n ovc_namer -r' % repopath)
         cl.run('cd %s; jscode push' % repopath)
