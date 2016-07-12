@@ -159,13 +159,14 @@ class RouterOS(object):
         j.system.fs.createDir(j.system.fs.joinPaths(j.dirs.varDir,"routeros"))
         inputsentence = []
 
-    def do(self,cmd,args={}):
+    def do(self,cmd,args={}, rawargs=[]):
         cmds=[]
         cmds.append(cmd)
         for key,value in list(args.items()):
             arg="=%s=%s"%(key,value)
             cmds.append(arg)
-        if args!={}:
+        cmds.extend(rawargs)
+        if len(cmds) > 1:
             cmds.append("")
         print(">>> DO:")
         print(cmds)
@@ -178,18 +179,28 @@ class RouterOS(object):
         else:
             return False
 
-    def getLease(self, macaddress):
-        leases = self.do('/ip/dhcp-server/lease/print')
-        for lease in leases:
-             if 'mac-address' in lease and EUI(lease['mac-address'])== EUI(macaddress):
-                 return lease
-        return None
+    def getLease(self, macaddress, interface):
+        macaddress = str(EUI(macaddress, dialect=netaddr.mac_eui48)).replace('-', ':')
+        # try double check 5 times
+        for _ in xrange(5):
+            leases = self.do('/ip/dhcp-server/lease/print', rawargs=['?=mac-address=%s' % macaddress])
+            lease = next(iter(leases), None)
+            if not lease:
+                return None
+            # double check on lease
+            pingres = self._arping(lease['address'], interface)
+            if pingres['received'] == '1' and pingres['host'] == macaddress:
+                return lease
+            if pingres['received'] == '0':
+                # host is not online lets just hope the lease is correct
+                return lease
+
 
     def removeLease(self, mac):
         self.executeScript('/ip dhcp-server lease remove [find mac-address="%s"]' % mac)
 
-    def getIpaddress(self, macaddress):
-        lease = self.getLease(macaddress)
+    def getIpaddress(self, macaddress, interface):
+        lease = self.getLease(macaddress, interface)
         if lease and 'address' in list(lease.keys()):
             return lease['address']
         return None
@@ -491,8 +502,10 @@ class RouterOS(object):
         result=self.do("/ping",{"count":1,"address":addr})
         return result[0]["received"]=='1'
 
+    def _arping(self, addr, interface):
+        return self.do("/ping",{"count": 1, "address": addr, 'arp-ping': 'yes', 'interface': interface})[0]
+
     def arping(self, addr, interface):
-        result=self.do("/ping",{"count": 1, "address": addr, 'arp-ping': 'yes', 'interface': interface})
-        return result[0]["received"]=='1'
+        return self._arping(addr, interface)["received"] == '1'
 
 
