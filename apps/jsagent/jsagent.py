@@ -220,7 +220,7 @@ class ProcessManager():
 
     def _workerStart(self):
         pwd = '/opt/jumpscale7/apps/jsagent/lib'
-        for qname in ["default", "default", "io", "process", "hypervisor"]:
+        for qname in ["default", "default", "io", "process", "process", "hypervisor"]:
             p = Process()
             p.domain = 'workers'
             p.name = '%s' % qname
