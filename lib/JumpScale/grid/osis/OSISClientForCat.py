@@ -15,10 +15,13 @@ class LockWrapper(object):
         self.timeout = timeout
 
     def __enter__(self):
-        if not self.client.set(namespace='system', categoryname='lock', key=self.key, value=self.timeout):
+        times = ([55] * int(self.timeout / 55)) + [self.timeout % 55]
+        for timeout in times:
+            if self.client.set(namespace='system', categoryname='lock', key=self.key, value=timeout):
+                return True
+        else:
             from JumpScale.grid.serverbase.Exceptions import LockException
             raise LockException("Failed to lock %s in %ss" % (self.key, self.timeout))
-        return True
 
     def __exit__(self, type, value, traceback):
         self.client.delete(namespace='system', categoryname='lock', key=self.key)

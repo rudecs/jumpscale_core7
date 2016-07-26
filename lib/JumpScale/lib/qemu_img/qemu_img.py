@@ -168,9 +168,6 @@ class QemuImg(object):
         @result: dict with info in KB
         """
 
-        if not j.system.fs.exists(fileName):
-            raise IOError('Disk Image %s does not exist' % fileName)
-
         command = '%s info' % (self._getBinary())
 
         if diskImageFormat:

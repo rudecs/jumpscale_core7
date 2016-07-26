@@ -18,3 +18,11 @@ class mainclass(OSISStoreMongo):
             except pymongo.errors.DuplicateKeyError:
                 time.sleep(1)
         return False
+
+    def delete(self, key, session=None):
+        self.runTasklet('delete', key, session)
+        db, counter = self._getMongoDB(session)
+        try:
+            db.remove(key)
+        except KeyError:
+            pass
