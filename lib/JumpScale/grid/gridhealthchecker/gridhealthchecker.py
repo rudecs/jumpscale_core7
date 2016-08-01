@@ -241,7 +241,7 @@ class GridHealthChecker(object):
                 message['guid'] = health['jobguid']
                 message['interval'] = health['interval']
                 message['lastchecked'] = health['lastchecked']
-                if message['lastchecked'] + message['interval'] < now and message['state'] == 'OK':
+                if message['lastchecked'] + (1.5 * message['interval']) < now and message['state'] == 'OK':
                     message['state'] = 'EXPIRED'
                 results.append((health['nid'], message, message['category']))
         self._returnResults(results)
