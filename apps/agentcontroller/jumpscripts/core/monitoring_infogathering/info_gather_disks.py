@@ -1,11 +1,14 @@
 from JumpScale import j
 
 descr = """
-Checks disks' status
+Checks status of all physical disks and partitions on all nodes by checking free disk space on mount points
+(except if / of mount point contains .dontreportusage - which is needed as an exception for read and write cache for OVS)
+
+Throws WARNING per mount point if >90% used, throws ERROR per mount point if >95% used
+
 """
 
 organization = "jumpscale"
-name = 'check_disks'
 author = "zains@codescalers.com"
 license = "bsd"
 version = "1.0"

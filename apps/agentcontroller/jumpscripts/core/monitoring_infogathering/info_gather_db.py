@@ -1,7 +1,7 @@
 from JumpScale import j
 
 descr = """
-Checks databases' status
+Checks databases' status on Master 
 """
 
 organization = "jumpscale"
@@ -33,7 +33,7 @@ def action():
 
     if status['influxdb'] == False :
         j.errorconditionhandler.raiseOperationalCritical('influxdb status -> halted', 'monitoring', die=False)
-        results.append({'message': 'influxdb status -> halted', 'uid': 'influxdb status -> halted', 'state': 'HALTED', 'category': 'Databases'})        
+        results.append({'message': 'influxdb status -> halted', 'uid': 'influxdb status -> halted', 'state': 'HALTED', 'category': 'Databases'})
     else:
         results.append({'message': 'influxdb status -> running', 'state': 'OK', 'category': 'Databases'})
     return results

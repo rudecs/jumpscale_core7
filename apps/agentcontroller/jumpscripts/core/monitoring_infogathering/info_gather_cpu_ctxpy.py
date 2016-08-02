@@ -2,7 +2,12 @@ from JumpScale.grid.serverbase.Exceptions import RemoteException
 from JumpScale import j
 
 descr = """
-Check on average cpu
+This healthcheck checks if amount of context switches per CPU is higher than expected.
+
+Currently throws WARNING if more than 1M context switches and throws ERROR if more than 600k context switches
+
+TODO : check these values, specifically if amount of cores per CPU is growing
+
 """
 
 organization = "jumpscale"
@@ -19,24 +24,22 @@ async = True
 log = True
 queue ='process'
 
-
-
 def action():
     osis = j.core.osis.client
     gid = j.application.whoAmI.gid
     nid = j.application.whoAmI.nid
 
     try:
-       oldest = osis.search('system', 'stats', 
-            'select value from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h limit 1' % 
+       oldest = osis.search('system', 'stats',
+            'select value from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h limit 1' %
             (gid, nid))
 
-       newest = osis.search('system', 'stats', 
-            'select value from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h order by time desc limit 1' % 
+       newest = osis.search('system', 'stats',
+            'select value from "%s_%s_cpu.num_ctx_switches.gauge" where time > now() - 1h order by time desc limit 1' %
             (gid, nid))
     except RemoteException , e:
         return [{'category':'CPU', 'state':'ERROR', 'message':'influxdb halted cannot access data', 'uid':'influxdb halted cannot access data'}]
-         
+
     res=list()
 
     try:
@@ -51,7 +54,7 @@ def action():
     result['state'] = 'OK'
     result['message'] = 'CPU contextswitch value is: %.2f/s' % avgctx
     result['category'] = 'CPU'
-    if avgctx > 100000:
+    if avgctx > 1000000:
         level = 1
         result ['state'] = 'ERROR'
         result['uid'] = 'CPU contextswitch value is too large'
@@ -67,7 +70,7 @@ def action():
         eco.nid = nid
         eco.gid = gid
         eco.process()
-    
+
     res.append(result)
     return res
 

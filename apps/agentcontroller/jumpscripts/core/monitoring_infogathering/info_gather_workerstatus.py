@@ -2,7 +2,13 @@ from JumpScale import j
 import JumpScale.baselib.redis
 
 descr = """
-Monitor CPU and mem of worker
+Monitors if WORKERS on regular basis report to the agent for new tasks.
+
+Throws ERROR if WORKERS waits longer thane expected:
+For Default queue > 2 mins
+For IO queue > 2 hours
+For Hypervisor queue > 10 mins
+For Process queue > 1 min
 """
 
 organization = "jumpscale"
