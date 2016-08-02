@@ -218,12 +218,21 @@ class GridHealthChecker(object):
         state = 'OK'
         for nid, cats in self._status.iteritems():
             for cat, checks in cats.iteritems():
-                for check in checks:
-                    if check['state'] in ['SKIPPED']:
-                        continue
-                    if check['state'] != 'OK' and state != 'ERROR':
-                        state = check['state']
+                state = self._newState(state, self.getNodeDataState(checks))
         self._rcl.set('health.status', state, ex=300)
+        return state
+
+    def _newState(self, oldstate, newstate):
+        if newstate in ['SKIPPED']:
+            return oldstate
+        if newstate != 'OK' and oldstate != 'ERROR':
+            return newstate
+        return oldstate
+
+    def getNodeDataState(self, nodestat):
+        state = 'OK'
+        for check in nodestat:
+            state = self._newState(state, check['state'])
         return state
 
     def fetchMonitoringOnNode(self, nid=None, clean=True):
@@ -273,11 +282,11 @@ class GridHealthChecker(object):
                         nodedata={'gid': '', 'nid': '', 'name': '', 'status': '', 'issues': '- %s' % message}
                         print((form % nodedata))
 
-    def getWikiStatus(self, status):
+    def getWikiStatus(self, status, text=''):
         colormap = {'RUNNING': 'green', 'HALTED': 'red', 'UNKNOWN': 'orange', 'ERROR': 'red',
                     'BROKEN': 'red', 'OK': 'green', 'NOT OK': 'red', 'WARNING': 'orange',
                     'EXPIRED': 'orange'}
-        return '{color:%s}*%s*{color}' % (colormap.get(status, 'orange'), status)
+        return '{color:%s}*%s* %s{color}' % (colormap.get(status, 'orange'), status, text)
 
     def checkProcessManagerAllNodes(self, clean=True):
         if clean:
