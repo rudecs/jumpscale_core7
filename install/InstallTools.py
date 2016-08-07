@@ -1549,11 +1549,11 @@ class InstallTools():
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
                 if branch!=None:
-                    cmd="cd %s;git -c http.sslVerify=false pull origin %s"%(dest,branch)
+                    cmd="cd %s;git pull origin %s"%(dest,branch)
                 elif tag is not None:
-                    cmd="cd %s;git -c http.sslVerify=false pull origin tag %s"%(dest,tag)
+                    cmd="cd %s;git pull origin tag %s"%(dest,tag)
                 else:
-                    cmd="cd %s;git -c http.sslVerify=false pull"%dest
+                    cmd="cd %s;git pull"%dest
                 self.execute(cmd,timeout=600)
         else:
             if offline:
@@ -1563,9 +1563,9 @@ class InstallTools():
             if depth and depth != 0:
                  extra = "--depth=%s" % depth
             if branch or tag:
-                cmd="cd %s;git -c http.sslVerify=false clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, tag or branch,url,dest)
+                cmd="cd %s;git clone %s --single-branch -b %s %s %s"%(self.getParent(dest),extra, tag or branch,url,dest)
             else:
-                cmd="cd %s;git -c http.sslVerify=false clone %s  %s %s"%(self.getParent(dest),extra,url,dest)
+                cmd="cd %s;git clone %s  %s %s"%(self.getParent(dest),extra,url,dest)
             print cmd
 
             if depth!=None:
