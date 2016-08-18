@@ -503,9 +503,11 @@ class RouterOS(object):
         return result[0]["received"]=='1'
 
     def _arping(self, addr, interface):
-        return self.do("/ping",{"count": 1, "address": addr, 'arp-ping': 'yes', 'interface': interface})[0]
+        return self.do("/ping",{"count": 3, "address": addr, 'arp-ping': 'yes', 'interface': interface})[0]
 
     def arping(self, addr, interface):
-        return self._arping(addr, interface)["received"] == '1'
-
-
+        arping = self._arping(addr, interface)["received"]
+        try:
+            int(arping) >= 1
+        except ValueError as e:
+            return False
