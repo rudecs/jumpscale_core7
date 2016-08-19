@@ -508,6 +508,6 @@ class RouterOS(object):
     def arping(self, addr, interface):
         arping = self._arping(addr, interface)["received"]
         try:
-            int(arping) >= 1
+            return int(arping) >= 1
         except ValueError as e:
             return False
