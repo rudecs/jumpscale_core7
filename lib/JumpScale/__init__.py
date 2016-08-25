@@ -10,25 +10,22 @@ import sys
 import os
 
 if sys.platform.startswith("darwin"):
-    os.environ['JSBASE']='/Users/Shared/jumpscale/'
-    if not 'APPDATA' in os.environ:
-        os.environ['APPDATA']='/Users/Shared/jumpscale/var'
-    if not 'TMP' in os.environ:
-        os.environ['TMP']=  os.environ['TMPDIR']+"jumpscale/"
+    os.environ['JSBASE'] = '/Users/Shared/jumpscale/'
+    if 'APPDATA' not in os.environ:
+        os.environ['APPDATA'] = '/Users/Shared/jumpscale/var'
+    if 'TMP' not in os.environ:
+        os.environ['TMP'] = os.environ['TMPDIR'] + "jumpscale/"
 
-if 'VIRTUAL_ENV' in os.environ and not 'JSBASE' in os.environ:
+if 'VIRTUAL_ENV' in os.environ and 'JSBASE' not in os.environ:
     os.environ['JSBASE'] = os.environ['VIRTUAL_ENV']
 
-if not 'JSBASE' in os.environ:
+if 'JSBASE' not in os.environ:
     if sys.version.startswith("3"):
-        base="/opt/jumpscale73"
-    else:    
-        base="/opt/jumpscale7"
+        base = "/opt/jumpscale73"
+    else:
+        base = "/opt/jumpscale7"
 else:
-    base=os.environ['JSBASE']
-
-
-
+    base = os.environ['JSBASE']
 
 
 class Loader(object):
@@ -48,17 +45,21 @@ class Loader(object):
     def _getAttributeNames(self):
         return self._extensions.keys()
 
+
 class JumpScale(Loader):
     pass
+
 
 class Core(Loader):
     pass
 
+
 class EventsTemp():
-    def inputerror_critical(self,msg,category=""):
-        print("ERROR IN BOOTSTRAP:%s"%category)
+    def inputerror_critical(self, msg, category=""):
+        print("ERROR IN BOOTSTRAP:%s" % category)
         print(msg)
         sys.exit(1)
+
 
 def loadSubModules(filepath, prefix='JumpScale'):
     rootfolder = os.path.dirname(filepath)
@@ -71,39 +72,45 @@ def loadSubModules(filepath, prefix='JumpScale'):
         except ImportError, e:
             pass
 
-j = JumpScale()
 
-j.core=Core()
-j.events=EventsTemp()
+j = None
+try:
+    from jscompl import j
+except:
+    pass
+
+if not j or j:
+    j = JumpScale()
+
+j.core = Core()
+j.events = EventsTemp()
 
 from InstallTools import InstallTools
-j.do=InstallTools()
+j.do = InstallTools()
 
 from . import core
 
 from .core.PlatformTypes import PlatformTypes
-j.system.platformtype=PlatformTypes()
+j.system.platformtype = PlatformTypes()
 
 from .core import pmtypes
 pmtypes.register_types()
-j.basetype=pmtypes.register_types()
+j.basetype = pmtypes.register_types()
 
 from .core.Console import Console
-j.console=Console()
+j.console = Console()
 
 from .baselib import hrd
 
-j.application.config = j.core.hrd.get(path="%s/hrd/system"%base)
+j.application.config = j.core.hrd.get(path="%s/hrd/system" % base)
 
-j.logger.enabled = j.application.config.getBool("system.logging",default=False)
+j.logger.enabled = j.application.config.getBool("system.logging", default=False)
 
 from .core.Dirs import Dirs
-j.dirs=Dirs()
+j.dirs = Dirs()
 
 from .core import errorhandling
 
 loadSubModules(__file__)
 
 j.application.init()
-
-
