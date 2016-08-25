@@ -11,13 +11,16 @@ import inspect
 
 class Logger(object):
     def log(self, *args):
-        print args
+        print('LOG: ' + ' '.join(args))
 
     def debug(self, *args):
-        print args
+        print('DEBUG: ' + ' '.join(args))
+
+    def warning(self, *args):
+        print('WARNING: ' + ' '.join(args))
 
     def error(self, *args):
-        print args
+        print('ERROR: ' + ' '.join(args))
 
 
 class Arg:
@@ -128,7 +131,6 @@ class ClassDoc:
         except:
             self.errors += '#### Error trying to add %s source in %s.\n' % (name, self.location)
 
-        print("ADD METHOD:%s %s" % (self.path, name))
         md = MethodDoc(method, name, self)
         self.methods[name] = md
         return source, md.params
@@ -306,8 +308,6 @@ class Faker(): pass\n
         @param objectLocationPath is full location name in object tree e.g. j.system.fs , no need to fill in
         """
         self.logger.debug(objectLocationPath)
-        # if parent is None:
-        #     self.visited = []
 
         if obj == None:
             try:
@@ -338,12 +338,13 @@ class Faker(): pass\n
             return
         attrs = dir(obj)
 
-        # try:
-        #     for item in obj._getAttributeNames():
-        #         if item not in attrs:
-        #             attrs.append(item)
-        # except:
-        #     pass
+        try:
+            for item in obj._getAttributeNames():
+                if item not in attrs:
+                    attrs.append(item)
+        except:
+            pass
+
 
         ignore = ["constructor_args", "NOTHING", "template_class", "redirect_cache"]
 
@@ -393,7 +394,6 @@ class Faker(): pass\n
 
                 except Exception as e:
                     self.logger.error("the _getFactoryEnabledClasses gives error")
-                    import ipdb
             elif str(type(objattribute)).find("method") != -1 or str(type(objattribute)).find(
                     "'instancemethod'") != -1 or str(type(objattribute)).find("'function'") != -1 \
                     or str(type(objattribute)).find("'staticmethod'") != -1 or str(type(objattribute)).find(
