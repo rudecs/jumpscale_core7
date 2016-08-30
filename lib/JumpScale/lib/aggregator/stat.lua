@@ -1,12 +1,11 @@
---key,measurement,value,str(now),type,tags
+--key,value,str(now),type,tags
 
 local key = KEYS[1]
-local measurement = ARGV[1]
-local value = tonumber(ARGV[2])
-local now = tonumber(ARGV[3])
-local type = ARGV[4]
-local tags = ARGV[5]
-local node = ARGV[6]
+local value = tonumber(ARGV[1])
+local now = tonumber(ARGV[2])
+local type = ARGV[3]
+local tags = ARGV[4]
+local node = ARGV[5]
 
 local statekey = string.format("stats:%s:%s", node, key)
 
@@ -27,7 +26,7 @@ if prev then
     local diff
     local difftime
 
-    -- calculate the dif when absolute nrs are logged e.g. byte counter for network 
+    -- calculate the dif when absolute nrs are logged e.g. byte counter for network
     if differential then
         -- diff
         diff = value - v.val
@@ -132,11 +131,9 @@ else
     v.val = value
     v.key = key
     v.tags = tags
-    v.measurement = measurement
 
     local data = cjson.encode(v)
     redis.call('SET', statekey, data)
     redis.call('EXPIRE', statekey, 24*60*60) -- expire in a day
     return data
 end
-

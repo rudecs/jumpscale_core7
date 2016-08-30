@@ -4,7 +4,7 @@ import os
 import collections
 
 
-Stats = collections.namedtuple('Stats', 'measurement h_nr m_nr h_avg m_epoch m_total h_total m_avg m_last epoch ' +
+Stats = collections.namedtuple('Stats', 'h_nr m_nr h_avg m_epoch m_total h_total m_avg m_last epoch ' +
                                'm_max val h_max key tags h_epoch')
 
 Log = collections.namedtuple('Log', 'level message node epoch tags')
@@ -25,35 +25,33 @@ class AggregatorClient:
 
         self.nodename = nodename
 
-    def measure(self, key, measurement, tags, value, timestamp=None):
+    def measure(self, key, tags, value, timestamp=None):
         """
-        @param measurement is what you are measuring e.g. kbps (kbits per sec)
-        @param key is well chosen location in a tree structure e.g. key="%s.%s.%s"%(self.nodename,dev,measurement) e.g. myserver.eth0.kbps
+        @param key is well chosen location in a tree structure e.g. key="%s.%s"%(self.nodename,dev) e.g. myserver.eth0
            key needs to be unique
         @param tags node:kds dim:iops location:elgouna  : this allows aggregation in influxdb level
         @param timestamp stats timestamp, default to `now`
         """
-        return self._measure(key, measurement, tags, value, type="A", timestamp=timestamp)
+        return self._measure(key, tags, value, type="A", timestamp=timestamp)
 
-    def measureDiff(self, key, measurement, tags, value, timestamp=None):
-        return self._measure(key, measurement, tags, value, type="D", timestamp=timestamp)
+    def measureDiff(self, key, tags, value, timestamp=None):
+        return self._measure(key, tags, value, type="D", timestamp=timestamp)
 
-    def _measure(self, key, measurement, tags, value, type, timestamp=None):
+    def _measure(self, key, tags, value, type, timestamp=None):
         """
         in redis:
 
         local key=KEYS[1]
-        local measurement=ARGV[1]
-        local value = tonumber(ARGV[2])
-        local now = tonumber(ARGV[3])
-        local type=ARGV[4]
-        local tags=ARGV[5]
-        local node=ARGV[6]
+        local value = tonumber(ARGV[1])
+        local now = tonumber(ARGV[2])
+        local type=ARGV[3]
+        local tags=ARGV[4]
+        local node=ARGV[5]
 
         """
         if timestamp is None:
             timestamp = int(time.time())  # seconds
-        res = self.redis.evalsha(self._sha["stat"], 1, key, measurement, value,
+        res = self.redis.evalsha(self._sha["stat"], 1, key, value,
                                  str(timestamp), type, tags, self.nodename)
 
         return res
