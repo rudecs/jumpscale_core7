@@ -25,7 +25,7 @@
 
 - we want the data to be clean & pre-aggregated before it goes to influxdb
 - there are 2 types of measurement: absolute & differential which we believe is enough for 99% of requirements
-- we keep avg & max per minute and per hour which we believe is good enough for many decisions (no need to heavily query e.g. influxdb)
+- we keep avg & max per 5 minutes and per hour which we believe is good enough for many decisions (no need to heavily query e.g. influxdb)
 - this allows applications to send stat info as frequent as they want, the aggregator will make sure we have 1 per min/hour which makes implementation easy
 
 ### link to reality info
