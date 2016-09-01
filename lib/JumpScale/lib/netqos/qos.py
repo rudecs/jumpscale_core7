@@ -5,7 +5,6 @@ class QOS(object):
     def limitNic(self, name, rate, burst, prio=100):
         self.removeLimit(name)
         cmd = '''\
-delay=400ms
 # Add 2 rules, one to narrow down bw utilisation in any case and one to still allow interactivity for ssh to the vm (we could envision rdp as a third rule)
 
 # first create ingress policer
@@ -49,7 +48,7 @@ tc filter add dev {iface} protocol ip \
 tc filter add dev {iface} protocol ip \
     parent 1: prio 1 u32 match u32 0 0 flowid 1:3
 
-        '''.format(iface=name, prio=prio, burst=burst, rate=rate)
+        '''.format(iface=name, prio=prio, burst=burst, rate=rate, delay='400ms')
         j.system.process.execute(cmd)
 
     def removeLimit(self, name):
