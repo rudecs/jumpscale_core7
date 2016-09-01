@@ -19,12 +19,12 @@ LEVELMAP = {1: 'CRITICAL', 2: 'WARNING', 3: 'INFO', 4: 'DEBUG'}
 
 class ErrorConditionObject():
     """
-    @param type #BUG,INPUT,MONITORING,OPERATIONS,PERFORMANCE,UNKNOWN  
+    @param type #BUG,INPUT,MONITORING,OPERATIONS,PERFORMANCE,UNKNOWN
     @param level #1:critical, 2:warning, 3:info see j.enumerators.ErrorConditionLevel
     """
     def __init__(self,ddict={},msg="",msgpub="",category="",level=1,type="UNKNOWN",tb=None, data=None):
-        if ddict!={}:
-            self.__dict__=ddict
+        if isinstance(ddict, dict) and ddict != {}:
+            self.__dict__ = ddict
         else:
 
             self.backtrace=""
@@ -33,17 +33,17 @@ class ErrorConditionObject():
 
             if len(btkis)>1:
                 self.backtrace=self.getBacktrace(btkis,filename0,linenr0,func0)
-    
+
             self.guid=j.base.idgenerator.generateGUID() #is for default case where there is no redis
             self.category=category #is category in dot notation
             self.errormessage=msg
             self.errormessagePub=msgpub
             self.level=int(level) #1:critical, 2:warning, 3:info see j.enumerators.ErrorConditionLevel.
             self.data = data
-            
-            
 
-            if len(btkis)>1:                
+
+
+            if len(btkis)>1:
                 self.code=btkis[-1][0]
                 self.funcname=func0
                 self.funcfilename=filename0
@@ -63,11 +63,11 @@ class ErrorConditionObject():
             self.jid = 0
             self.masterjid = 0
 
-            
+
 
             self.epoch= j.base.time.getTimeEpoch()
-            self.type=str(type) #BUG,INPUT,MONITORING,OPERATIONS,PERFORMANCE,UNKNOWN  
-            self.tb=tb  
+            self.type=str(type) #BUG,INPUT,MONITORING,OPERATIONS,PERFORMANCE,UNKNOWN
+            self.tb=tb
 
             self.tags="" #e.g. machine:2323
             self.state="NEW" #["NEW","ALERT","CLOSED"]
@@ -107,7 +107,7 @@ class ErrorConditionObject():
                     print("BUG in toascii in ErrorConditionObject")
                     import ipdb
                     ipdb.set_trace()
-                                                
+
         self.errormessage=_toAscii(self.errormessage)
         self.errormessagePub=_toAscii(self.errormessagePub)
         self.errormessagePub=_toAscii(self.errormessagePub)
@@ -150,18 +150,18 @@ class ErrorConditionObject():
         content+="type/level: %s/%s\n" % (self.type,self.level)
         content+="%s\n" % self.errormessage
         if self.errormessagePub!="":
-            content+="errorpub: %s\n" % self.errormessagePub        
+            content+="errorpub: %s\n" % self.errormessagePub
 
         return content
-            
+
     __repr__=__str__
-    
+
     def log2filesystem(self):
         """
         write errorcondition to filesystem
         """
         j.system.fs.createDir(j.system.fs.joinPaths(j.dirs.logDir,"errors",j.application.appname))
-        path=j.system.fs.joinPaths(j.dirs.logDir,"errors",j.application.appname,"backtrace_%s.log"%(j.base.time.getLocalTimeHRForFilesystem()))        
+        path=j.system.fs.joinPaths(j.dirs.logDir,"errors",j.application.appname,"backtrace_%s.log"%(j.base.time.getLocalTimeHRForFilesystem()))
         msg="***ERROR BACKTRACE***\n"
         msg+="%s\n"%self.backtrace
         msg+="***ERROR MESSAGE***\n"
@@ -172,12 +172,12 @@ class ErrorConditionObject():
             msg+="\n***LOG MESSAGES***\n"
             for log in j.logger.logs:
                 msg+="%s\n"%log
-                
+
         msg+="***END***\n"
-        
+
         j.system.fs.writeFile(path,msg)
-        return path    
-    
+        return path
+
     def getBacktrace(self,btkis=None,filename0=None,linenr0=None,func0=None):
         if btkis==None:
             btkis,filename0,linenr0,func0=j.errorconditionhandler.getErrorTraceKIS()
@@ -190,7 +190,7 @@ class ErrorConditionObject():
             # print "BBBBBB:%s"%linenr
             # out+="%-15s : %s\n"%(func,filename)
             out+="  File \"%s\" Line %s, in %s\n"%(filename,linenrOverall,func)
-            c=0            
+            c=0
             code2=""
             for line in code.split("\n"):
                 if c==linenr:
@@ -227,7 +227,7 @@ class ErrorConditionObject():
         # if j.application.skipTraceback:
         #     return stack
         # for x in traceback.format_stack():
-        #     ignore=False            
+        #     ignore=False
         #     if x.find("IPython") != -1 or x.find("MessageHandler") != -1 \
         #       or x.find("EventHandler") != -1 or x.find("ErrorconditionObject") != -1 \
         #       or x.find("traceback.format") != -1 or x.find("ipython console") != -1:
@@ -235,9 +235,9 @@ class ErrorConditionObject():
         #     stack = "%s"%(stack+x if not ignore else stack)
         #     if len(stack)>50:
         #         self.backtrace=stack
-        #         return 
+        #         return
         # self.backtrace=stack
-        
+
     def _filterLocals(self,k,v):
         try:
             k="%s"%k
@@ -261,7 +261,7 @@ class ErrorConditionObject():
         """
         Get stackframe log
         is a very detailed log with filepaths, code locations & global vars, this output can become quite big
-        """        
+        """
         import inspect
         if j.application.skipTraceback:
             return ""
@@ -327,7 +327,7 @@ class ErrorConditionObject():
     def getContentKey(self):
         """
         return unique key for object, is used to define unique id
-        
+
         """
         dd=copy.copy(self.__dict__)
         if "_ckey" in dd:
