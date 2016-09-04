@@ -11,7 +11,7 @@ class JumpscriptsDocumentGenerator(object):
         @param filename:   the filename to be printed in the generated documentation
 
         """
-        info={}
+        info = {}
         info['scriptname'] = filename
         parsed = ast.parse(jumpscript)
         for node in ast.walk(parsed):
@@ -22,13 +22,13 @@ class JumpscriptsDocumentGenerator(object):
             elif type(node) == ast.Assign:
                 if len(node.targets) == 1:
                     try:
-                        id_= node.targets[0].id
+                        id_ = node.targets[0].id
                         value = node.value
                         if type(value) == ast.Str:
-                            info[id_]=value.s
+                            info[id_] = value.s
                         elif type(value) == ast.Num:
-                            info[id_]=value.n
-                        elif type(value) == ast.Name: #boolean maybe?
+                            info[id_] = value.n
+                        elif type(value) == ast.Name:  # boolean maybe?
                             if node.value.id in ['True', 'False']:
                                 info[id_] = value.id
                         elif type(value) == ast.List:
@@ -41,7 +41,8 @@ class JumpscriptsDocumentGenerator(object):
                                 elif "id" in dir(x):
                                     els.append(x.id)
                             info[id_] = str(els)
-                    except: pass
+                    except:
+                        pass
         return info
 
     def as_markdown(self, jsdictinfo):
@@ -50,13 +51,13 @@ class JumpscriptsDocumentGenerator(object):
         @param jsdictinfo: jumpscript info dict object.
 
         """
-        descr=jsdictinfo.get('descr', 'No description')
-        jsdictinfo['descr']="""\n```{descr}\n```""".format(descr=descr)
-        template="""
+        descr = jsdictinfo.get('descr', 'No description')
+        jsdictinfo['descr'] = """\n```{descr}\n```""".format(descr=descr)
+        template = """
 # JumpScript: {scriptname}
-        """.format(scriptname=jsdictinfo['scriptname'])
-        for k,v in jsdictinfo.items():
-            template += "### {k}: {v}\n".format(k=k, v=v)
+        """.format(scriptname=os.path.basename(jsdictinfo['scriptname']))
+        for k, v in jsdictinfo.items():
+            template += "\n#### {k}: {v}".format(k=k, v=v)
         return template
 
     def generate_jumpscripts_docs(self, src, dest):
@@ -72,7 +73,7 @@ class JumpscriptsDocumentGenerator(object):
                 dirname = os.path.basename(dirname)
                 docsdest = os.path.join(dest, dirname)
                 fbasename = os.path.basename(fullsrcpath)
-                fbasename, ext= os.path.splitext(fbasename)
+                fbasename, ext = os.path.splitext(fbasename)
                 fulldestpath = os.path.join(docsdest, fbasename+".md")
                 if not os.path.exists(docsdest):
                     os.makedirs(docsdest)
@@ -81,4 +82,3 @@ class JumpscriptsDocumentGenerator(object):
                     md = self.as_markdown(jmpinfo)
                     with open(fulldestpath, "w") as docfile:
                         docfile.write(md)
-
