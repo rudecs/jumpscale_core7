@@ -68,10 +68,11 @@ class JumpscriptsDocumentGenerator(object):
         @param dest: destination directory of generated documentation.
         """
         summarytext = "# Summary\n"
-        for dirname, subdirs, files in os.walk(src):
+        for dirname, subdirs, files in sorted(os.walk(src)):
+
             if os.path.basename(dirname):
                 summarytext += "- %s\n" % os.path.basename(dirname)
-            for f in files:
+            for f in sorted(files):
                 fullsrcpath = os.path.join(src, dirname, f)
                 dirname = os.path.basename(dirname)
                 docsdest = os.path.join(dest, dirname)
