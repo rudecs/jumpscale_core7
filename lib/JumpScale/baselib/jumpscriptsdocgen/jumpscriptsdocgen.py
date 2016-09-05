@@ -51,11 +51,12 @@ class JumpscriptsDocumentGenerator(object):
         @param jsdictinfo: jumpscript info dict object.
 
         """
+        basescriptname = os.path.basename(jsdictinfo['scriptname'])
         descr = jsdictinfo.get('descr', 'No description')
         jsdictinfo['descr'] = """\n```{descr}\n```""".format(descr=descr)
         template = """
 # JumpScript: {scriptname}
-        """.format(scriptname=os.path.basename(jsdictinfo['scriptname']))
+        """.format(scriptname=basescriptname)
         for k, v in jsdictinfo.items():
             template += "\n#### {k}: {v}".format(k=k, v=v)
         return template
@@ -66,8 +67,10 @@ class JumpscriptsDocumentGenerator(object):
         @param src: source directory of jumpscripts.
         @param dest: destination directory of generated documentation.
         """
-
+        summarytext = "# Summary\n"
         for dirname, subdirs, files in os.walk(src):
+            if os.path.basename(dirname):
+                summarytext += "- %s\n" % os.path.basename(dirname)
             for f in files:
                 fullsrcpath = os.path.join(src, dirname, f)
                 dirname = os.path.basename(dirname)
@@ -75,10 +78,17 @@ class JumpscriptsDocumentGenerator(object):
                 fbasename = os.path.basename(fullsrcpath)
                 fbasename, ext = os.path.splitext(fbasename)
                 fulldestpath = os.path.join(docsdest, fbasename+".md")
+
                 if not os.path.exists(docsdest):
                     os.makedirs(docsdest)
                 with open(fullsrcpath) as f:
                     jmpinfo = self.get_jumpscript_info(f.read(), fullsrcpath)
+                    basescriptname = os.path.basename(jmpinfo['scriptname'])
+
+                    summarytext += "    - [%s](%s)\n" % (basescriptname, fulldestpath.lstrip(dest))
                     md = self.as_markdown(jmpinfo)
                     with open(fulldestpath, "w") as docfile:
                         docfile.write(md)
+        summarypath = os.path.join(dest, "SUMMARY.md")
+        with open(summarypath, "w") as summaryf:
+            summaryf.write(summarytext)
