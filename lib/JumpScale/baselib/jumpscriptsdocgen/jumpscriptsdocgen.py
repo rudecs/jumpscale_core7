@@ -83,10 +83,10 @@ class JumpscriptsDocumentGenerator(object):
                 if not os.path.exists(docsdest):
                     os.makedirs(docsdest)
                 with open(fullsrcpath) as f:
+                    #  reflink = subdirname/scriptname (i.e collectors_stats/disk_virtual_stats.md)
+                    reflink = os.path.sep.join(fulldestpath.split(os.path.sep)[-2:])
                     jmpinfo = self.get_jumpscript_info(f.read(), fullsrcpath)
                     basescriptname = os.path.basename(jmpinfo['scriptname'])
-                    #reflink = subdirname/scriptname (i.e collectors_stats/disk_virtual_stats.md)
-                    reflink = os.path.join(os.path.basename(os.path.dirname(fulldestpath)), os.path.basename(fulldestpath))
                     summarytext += "    - [%s](%s)\n" % (basescriptname, reflink)
                     md = self.as_markdown(jmpinfo)
                     with open(fulldestpath, "w") as docfile:
