@@ -1,5 +1,6 @@
 from JumpScale import j
 import time
+import json
 import os
 import collections
 
@@ -61,10 +62,10 @@ class AggregatorClient:
         key is e.g. sda1.iops
         """
         data = self.redis.get("stats:%s:%s" % (self.nodename, key))
-        if data == None:
+        if data is not None:
             return {"val": None}
 
-        return Stats(**j.data.serializer.json.loads(data))
+        return Stats(**json.loads(data))
 
     @property
     def stats(self):
@@ -76,7 +77,7 @@ class AggregatorClient:
         while True:
             cursor, keys = self.redis.scan(cursor, match)
             for key in keys:
-                yield Stats(**j.data.serializer.json.loads(self.redis.get(key)))
+                yield Stats(**json.loads(self.redis.get(key)))
 
             if cursor == 0:
                 break
