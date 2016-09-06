@@ -67,6 +67,11 @@ class AggregatorClient:
 
         return Stats(**json.loads(data))
 
+    def statsByPerfix(self, prefix):
+        keys = self.redis.keys("stats:%s:%s" % (self.nodename, prefix))
+        for key in keys:
+            yield self.statGet(key)
+
     @property
     def stats(self):
         """
