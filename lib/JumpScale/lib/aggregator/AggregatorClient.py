@@ -62,8 +62,8 @@ class AggregatorClient:
         key is e.g. sda1.iops
         """
         data = self.redis.get("stats:%s:%s" % (self.nodename, key))
-        if data is not None:
-            return {"val": None}
+        if data is None:
+            return None
 
         return Stats(**json.loads(data))
 
