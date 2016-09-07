@@ -16,8 +16,8 @@ local c = ""
 local stat
 local prev = redis.call('GET', statekey)
 
-local now_short_m = math.floor(now / 60) * 60
-local now_short_h = math.floor(now / 3600) * 3600
+local now_short_m = (math.floor(now / 300) * 300) + 300
+local now_short_h = (math.floor(now / 3600) * 3600) + 3600
 
 local differential = type == "D"
 
@@ -27,7 +27,7 @@ if prev then
     local diff
     local difftime
 
-    -- calculate the dif when absolute nrs are logged e.g. byte counter for network 
+    -- calculate the dif when absolute nrs are logged e.g. byte counter for network
     if differential then
         -- diff
         diff = value - v.val
@@ -139,4 +139,3 @@ else
     redis.call('EXPIRE', statekey, 24*60*60) -- expire in a day
     return data
 end
-
