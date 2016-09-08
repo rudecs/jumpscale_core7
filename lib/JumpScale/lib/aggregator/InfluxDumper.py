@@ -1,10 +1,17 @@
 from JumpScale import j
 import Dumper
-import collections
 import json
 
 
-Stats = collections.namedtuple("Stats", "node key epoch stat avg max total")
+class Stats(object):
+    def __init__(self, node, key, epoch, stat, avg, max, total):
+        self.node = node
+        self.key = key
+        self.epoch = epoch
+        self.stat = stat
+        self.avg = avg
+        self.max = max
+        self.total = total
 
 
 class InfluxDumper(Dumper.BaseDumper):
@@ -12,7 +19,7 @@ class InfluxDumper(Dumper.BaseDumper):
     QUEUE_HOUR = 'queues:stats:hour'
     QUEUES = [QUEUE_MIN, QUEUE_HOUR]
 
-    def __init__(self, influx, database=None, cidr='127.0.0.1', ports=[9999]):
+    def __init__(self, influx, database=None, cidr='127.0.0.1', ports=[7777]):
         """
         Create a new instance of influx dumper
 
@@ -84,6 +91,9 @@ class InfluxDumper(Dumper.BaseDumper):
 
             stats = self._parse_line(line)
             info = redis.get("stats:%s:%s" % (stats.node, stats.key))
+
+            if stats.key.find('@') != -1:
+                stats.key = stats.key.split('@')[0]
 
             if info is not None:
                 info = json.loads(info)
