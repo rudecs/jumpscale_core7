@@ -41,8 +41,8 @@ if prev then
 
     if v.m_epoch < now_short_m then
         -- 1 min aggregation
-        local row = string.format("%s|%s|%u|%f|%f|%f",
-            node, key, v.m_epoch, stat, v.m_avg, v.m_max)
+        local row = string.format("%s|%s|%u|%f|%f|%f|%f",
+            node, key, v.m_epoch, stat, v.m_avg, v.m_max, v.m_total)
 
         redis.call("RPUSH", "queues:stats:min", row)
 
@@ -53,8 +53,8 @@ if prev then
     end
     if v.h_epoch < now_short_h then
         -- 1 hour aggregation
-        local row = string.format("%s|%s|%u|%f|%f|%f",
-            node, key, v.h_epoch, stat, v.h_avg, v.h_max)
+        local row = string.format("%s|%s|%u|%f|%f|%f|%f",
+            node, key, v.h_epoch, stat, v.h_avg, v.h_max, v.h_total)
 
         redis.call("RPUSH", "queues:stats:hour", row)
 
