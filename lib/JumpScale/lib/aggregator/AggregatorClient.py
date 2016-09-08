@@ -5,8 +5,17 @@ import os
 import collections
 
 
-Stats = collections.namedtuple('Stats', 'h_nr m_nr h_avg m_epoch m_total h_total m_avg m_last epoch ' +
-                               'm_max val h_max key tags h_epoch')
+TStats = collections.namedtuple('Stats', 'h_nr m_nr h_avg m_epoch m_total h_total m_avg m_last epoch ' +
+                                'm_max val h_max key tags h_epoch')
+
+
+class Stats(TStats):
+    @property
+    def tagObject(self):
+        if not hasattr(self, '_tagobject'):
+            self._tagobject = j.core.tags.getObject(self.tags)
+        return self._tagobject
+
 
 Log = collections.namedtuple('Log', 'level message node epoch tags')
 
