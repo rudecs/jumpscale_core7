@@ -32,7 +32,7 @@
     prop:id int,,
     prop:partnr int,,
     prop:gid int,,
-    prop:nid int,,    
+    prop:nid int,,
     prop:path str,,
     prop:size int,,
     prop:free int,,
@@ -58,11 +58,11 @@
     prop:jid int,,
     prop:masterjid int,,
     prop:epoch int,, epoch
-    prop:appname str,, 
+    prop:appname str,,
     prop:level int,, 1:critical, 2:warning, 3:info
     prop:type str,,
     prop:state str,, ["NEW","ALERT","CLOSED"]
-    prop:errormessage str,, 
+    prop:errormessage str,,
     prop:errormessagePub str,,
     prop:category str,, dot notation e.g. machine.start.failed
     prop:tags str,, e.g. machine:2323
@@ -78,13 +78,14 @@
     prop:occurrences int,, nr of times this error condition happened
 
 [rootmodel:grid] @index
-    prop:id int,,    
+    prop:id int,,
     prop:name str,,
     prop:useavahi bool,,
+    prop:settings dict(str),,
     prop:nid int,,
 
 [rootmodel:group] @index
-    prop:id int,,    
+    prop:id int,,
     prop:domain str,,
     prop:gid int,,
     prop:roles list(str),,
@@ -134,8 +135,8 @@
     prop:errorreport bool,,
 
 [rootmodel:jumpscript] @index
-    prop:id int,,    
-    prop:gid int,,    
+    prop:id int,,
+    prop:gid int,,
     prop:name str,,
     prop:descr str,,
     prop:category str,,
@@ -166,9 +167,9 @@
     prop:active bool,,
     prop:state str,, STARTED,STOPPED,RUNNING,FROZEN,CONFIGURED,DELETED
     prop:mem int,, in MB
-    prop:cpucore int,, 
-    prop:description str,, 
-    prop:otherid str,, 
+    prop:cpucore int,,
+    prop:description str,,
+    prop:otherid str,,
     prop:type str,, VM,LXC
     prop:lastcheck int,, epoch of last time the info was checked from reality
 
@@ -191,6 +192,8 @@
     prop:name str,,
     prop:roles list(str),,
     prop:netaddr str,,
+    prop:publickeys list(str),,
+    prop:hostkey str,,
     prop:machineguid str,,
     prop:ipaddr list(str),,
     prop:active bool,,
@@ -244,7 +247,7 @@
     prop:gid int,,
     prop:nid int,,
     prop:name str,,
-    prop:testrun str,, 
+    prop:testrun str,,
     prop:path str,,
     prop:state str,, #OK, ERROR, DISABLED
     prop:priority int,, #lower is highest priority

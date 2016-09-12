@@ -6,6 +6,7 @@ class system_grid_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P_id=0
         self._P_name=""
         self._P_useavahi=True
+        self._P_settings=dict()
         self._P_nid=0
         self._P_guid=""
         self._P__meta=list()
@@ -67,6 +68,25 @@ class system_grid_osismodelbase(j.code.classGetJSRootModelBase()):
     @useavahi.deleter
     def useavahi(self):
         del self._P_useavahi
+
+    @property
+    def settings(self):
+        return self._P_settings
+
+    @settings.setter
+    def settings(self, value):
+        if not isinstance(value, dict) and value is not None:
+            if isinstance(value, basestring) and j.basetype.dictionary.checkString(value):
+                value = j.basetype.dictionary.fromString(value)
+            else:
+                msg="property settings input error, needs to be dict, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: grid, value was:" + str(value)
+                raise TypeError(msg)
+
+        self._P_settings=value
+
+    @settings.deleter
+    def settings(self):
+        del self._P_settings
 
     @property
     def nid(self):
