@@ -10,24 +10,25 @@ class Node(OsisBaseObject):
     """
 
     def __init__(self, ddict={}):
+        self.gid = 0
+        self.id = 0
+        self.name = ""
+        self.roles = []
+        self.netaddr = None
+        self.guid = None
+        self.machineguid = ""
+        self.ipaddr=[]
+        self.hostkey=""
+        self.publickeys=[]
+        self.active = True
+        self.peer_stats=0 #node which has stats for this node
+        self.peer_log=0 #node which has transactionlog or other logs for this node
+        self.peer_backup=0 #node which has backups for this node
+        self.description=""
+        self.lastcheck=0 #epoch of last time the info was checked from reality
+        self._meta=["osisrootobj","system","fake4test",1] # osisrootobj,$namespace,$category,$version
         if ddict != {}:
             self.load(ddict)
-        else:
-            self.gid = 0
-            self.id = 0
-            self.name = ""
-            self.roles = []
-            self.netaddr = None
-            self.guid = None
-            self.machineguid = ""
-            self.ipaddr=[]
-            self.active = True
-            self.peer_stats=0 #node which has stats for this node
-            self.peer_log=0 #node which has transactionlog or other logs for this node
-            self.peer_backup=0 #node which has backups for this node
-            self.description=""
-            self.lastcheck=0 #epoch of last time the info was checked from reality
-            self._meta=["osisrootobj","system","fake4test",1] # osisrootobj,$namespace,$category,$version
 
 
     def getUniqueKey(self):
