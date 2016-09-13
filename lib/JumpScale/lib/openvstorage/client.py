@@ -54,27 +54,29 @@ class OVSClient(object):
     Represents the OVS client
     """
 
-    def __init__(self, ip, port, credentials=None, verify=False, version='*', raw_response=False):
+    def __init__(self, ip, port, credentials=None, verify=False, version='*',
+                 raw_response=False, cached_token=None, cache_token=lambda token: token):
         """
         Initializes the object with credentials and connection information
         """
         if credentials is not None and len(credentials) != 2:
-            raise RuntimeError('Credentials should be None (no authentication) or a tuple containing client_id and client_secret (authenticated)')
+            raise RuntimeError('Credentials should be None (no authentication)' +
+                               ' or a tuple containing client_id and client_secret (authenticated)')
         self.ip = ip
         self.port = port
         self.client_id = credentials[0] if credentials is not None else None
         self.client_secret = credentials[1] if credentials is not None else None
         self._url = 'https://{0}:{1}/api'.format(ip, port)
-        self._key = hashlib.sha256('{0}{1}{2}{3}'.format(self.ip, self.port, self.client_id, self.client_secret)).hexdigest()
-        self._token = None
+        self._key = hashlib.sha256('{0}{1}{2}{3}'.format(self.ip,
+                                                         self.port,
+                                                         self.client_id,
+                                                         self.client_secret)).hexdigest()
+        self._token = cached_token
         self._verify = verify
         self._version = version
         self._raw_response = raw_response
-        try:
-            from ovs.extensions.storage.volatilefactory import VolatileFactory
-            self._volatile_client = VolatileFactory.get_client()
-        except ImportError:
-            self._volatile_client = None
+        self._volatile_client = None
+        self._cache_token = cache_token
 
     def _connect(self):
         """
@@ -99,6 +101,7 @@ class OVSClient(object):
             error.status_code = raw_response.status_code
             raise error
         self._token = response['access_token']
+        self._cache_token(self._token)
 
     def _prepare(self, **kwargs):
         """
@@ -144,6 +147,8 @@ class OVSClient(object):
         else:
             if status_code in [401, 403]:
                 exception = ForbiddenException
+            elif status_code == 404:
+                exception = NotFoundException
             else:
                 exception = RuntimeError
             if parsed_output is not None:
