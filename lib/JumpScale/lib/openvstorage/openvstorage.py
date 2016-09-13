@@ -25,6 +25,7 @@ class OpenvStorageFactory(object):
                                        cache_token=self._cache_token)
                 connection.get('/')  # Test that we have a working connection
                 return connection
-            except requests.ConnectionError:
+            except (requests.ConnectionError, RuntimeError):
+                # TODO: fix except of RuntimeError ovs client doesnt pass http error for generic errors :(
                 if not ips:
                     raise
