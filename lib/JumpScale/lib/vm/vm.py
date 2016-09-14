@@ -83,7 +83,7 @@ class VirtualMachinesDocker(VirtualMachines):
 
         self._docker['public'] = settings['public']
 
-    def _cleanHostname(self, hostname)
+    def _cleanHostname(self, hostname):
         return hostname.replace('_', '')
 
     def commitMachine(self, hostname):
