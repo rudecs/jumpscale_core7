@@ -105,12 +105,12 @@ class Openvclcoud(object):
     def initMachine(self, vm, target, settings):
         sshport = 22 if target != 'docker' else 2202
         
-        vm.createMachine('ovc_git', memsize='0.5', ssdsize='10', delete=True)
-        vm.createPortForward('ovc_git', 22, sshport)
-        vm.createPortForward('ovc_git', self.bootstrapPort, self.bootstrapPort)
-        vm.commitMachine('ovc_git')
+        vm.createMachine('ovcgit', memsize='0.5', ssdsize='10', delete=True)
+        vm.createPortForward('ovcgit', 22, sshport)
+        vm.createPortForward('ovcgit', self.bootstrapPort, self.bootstrapPort)
+        vm.commitMachine('ovcgit')
         
-        machine = vm.getMachine('ovc_git')
+        machine = vm.getMachine('ovcgit')
         
         return machine
         
