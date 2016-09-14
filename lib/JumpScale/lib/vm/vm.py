@@ -83,7 +83,12 @@ class VirtualMachinesDocker(VirtualMachines):
 
         self._docker['public'] = settings['public']
 
+    def _cleanHostname(self, hostname)
+        return hostname.replace('_', '')
+
     def commitMachine(self, hostname):
+        hostname = self._cleanHostname(hostname)
+
         self.info('commit: %s' % hostname)
         if self.docking.get(hostname) is None:
             return False
@@ -96,7 +101,10 @@ class VirtualMachinesDocker(VirtualMachines):
 
 
     def getMachine(self, hostname):
+        hostname = self._cleanHostname(hostname)
+
         self.message('grabbing settings for: %s' % hostname)
+        
         dock = self._docker['api'].client.inspect_container(hostname)
         data = {
             'hostname': dock['Config']['Hostname'],
@@ -109,6 +117,8 @@ class VirtualMachinesDocker(VirtualMachines):
         return data
 
     def createPortForward(self, hostname, localport, publicport):
+        hostname = self._cleanHostname(hostname)
+
         self.info('port forwarding: %s (%s -> %s)' % (hostname, publicport, localport))
         if self.docking.get(hostname) == None:
             raise NameError('Hostname "%s" seems not ready for docker settings' % hostname)
@@ -117,6 +127,8 @@ class VirtualMachinesDocker(VirtualMachines):
         return True
     
     def addVolume(self, hostname, host, docker):
+        hostname = self._cleanHostname(hostname)
+
         self.info('directory mapping: %s (%s -> %s)' % (hostname, host, docker))
         if self.docking.get(hostname) == None:
             raise NameError('Hostname "%s" seems not ready for docker settings' % hostname)
@@ -125,6 +137,8 @@ class VirtualMachinesDocker(VirtualMachines):
         return True
 
     def createMachine(self, hostname, memsize, ssdsize, delete):
+        hostname = self._cleanHostname(hostname)
+
         self.info('initializing: %s (RAM: %s GB, Disk: %s GB)' % (hostname, memsize, ssdsize))
         self.docking[hostname] = {
             'memsize': memsize,
