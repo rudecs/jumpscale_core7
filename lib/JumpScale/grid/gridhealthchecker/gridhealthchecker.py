@@ -102,11 +102,11 @@ class GridHealthChecker(object):
                     if j.base.time.getEpochAgo('-2m') < lastchecked:
                         # print "%s"%nid,
                         self._runningnids.append(nid)
-                    else:                        
+                    else:
                         hago = round(float(j.base.time.getTimeEpoch()-lastchecked)/3600,1)
                         name = self._nodenames[nid]
                         gid = self._nodegids[nid]
-                        self._addError(nid, "On node:'%s' (%s) on grid %s. Processmanager is not responding, last heartbeat %s hours ago" % (name, nid, gid, hago), "heartbeat")    
+                        self._addError(nid, "On node:'%s' (%s) on grid %s. Processmanager is not responding, last heartbeat %s hours ago" % (name, nid, gid, hago), "heartbeat")
                 else:
                     self._addError(nid,"found heartbeat node '%s' which is not in grid nodes." % (nid),"heartbeat")
 
@@ -249,6 +249,7 @@ class GridHealthChecker(object):
             for message in health['messages']:
                 message['guid'] = health['jobguid']
                 message['interval'] = health['interval']
+                message['cmd'] = health['cmd']
                 message['lastchecked'] = health['lastchecked']
                 if message['lastchecked'] + (1.5 * message['interval']) < now and message['state'] == 'OK':
                     message['state'] = 'EXPIRED'
@@ -327,7 +328,7 @@ class GridHealthChecker(object):
         heartbeats = self._getHeartBeats(nid)
         for heartbeat in heartbeats:
             if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:
-                self._addResult(heartbeat['nid'], {'message': "Found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'], 
+                self._addResult(heartbeat['nid'], {'message': "Found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'],
                                 'state': 'ERROR'}, "JSAgent")
 
         nid2hb = dict([(x['nid'], x['lastcheck']) for x in heartbeats])
@@ -345,4 +346,3 @@ class GridHealthChecker(object):
                     self._addResult(nid, {'message': "Found heartbeat node when not in grid nodes.", 'state':'ERROR'}, "JSAgent")
         if clean:
             return self._status
-
