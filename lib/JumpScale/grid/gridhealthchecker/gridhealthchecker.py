@@ -244,7 +244,7 @@ class GridHealthChecker(object):
         query = {}
         if nid:
             query['nid'] = nid
-        healthdata = self._healthcl.search(query)[1:]
+        healthdata = self._healthcl.search(query, size=0)[1:]
         for health in healthdata:
             for message in health['messages']:
                 message['guid'] = health['jobguid']
