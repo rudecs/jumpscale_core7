@@ -1,3 +1,6 @@
+from gevent import monkey
+monkey.patch_all()
+
 from JumpScale import j
 import JumpScale.grid.osis
 import time
