@@ -60,6 +60,8 @@ if prev then
 
         v.h_total = 0
         v.h_nr = 0
+        v.h_last = v.h_avg
+        v.h_last_epoch = v.h_epoch
         v.h_max = value
         v.h_epoch = now_short_h
     end
