@@ -11,9 +11,12 @@ license = "bsd"
 version = "1.0"
 roles = []
 
+
 def action(provider, account, repo):
     path = j.do.getGitReposListLocal(provider, account, repo)[repo]
-    return j.clients.git.get(path).getBranchOrTag()
+    git = j.clients.git.get(path)
+    data = {'version': git.getBranchOrTag(), 'hex': git.repo.head.commit.hexsha[:7], 'timestamp': git.repo.head.commit.authored_date}
+    return data
 
 if __name__ == "__main__":
-    print action('github', 'jumpscale', 'jumpscale_core7')
+    print(action('github', 'jumpscale', 'jumpscale_core7'))
