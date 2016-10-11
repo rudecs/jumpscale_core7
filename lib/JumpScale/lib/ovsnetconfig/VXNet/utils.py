@@ -240,6 +240,13 @@ def listBridgeConnections(bridge):
     r,s,e = doexec(listprts.split())
     return s.read().splitlines()
 
+def removeIfFromBridge(bridge, interface):
+    cmd = '%s del-port %s %s' % (vsctl, bridge, interface)
+    r, s, e = doexec(cmd.split())
+    if r:
+        raise RuntimeError('Error adding port %s to bridge %s' %(interface,bridge))
+
+
 def connectIfToNameSpace(nsname,interface):
     cmd = '%s link set %s netns %s' %( ip, interface, nsname)
     r,s,e = doexec(cmd.split())
