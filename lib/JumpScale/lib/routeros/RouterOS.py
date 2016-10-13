@@ -16,7 +16,7 @@ class ApiRos:
     def __init__(self, sk):
         self.sk = sk
         self.currenttag = 0
-        
+
     def login(self, username, pwd):
         for repl, attrs in self.talk(["/login"]):
             chal = binascii.unhexlify(attrs['=ret'])
@@ -25,7 +25,7 @@ class ApiRos:
         md.update(pwd)
         md.update(chal)
         res=self.talk(["/login", "=name=" + username,"=response=00" + binascii.hexlify(md.digest())])
-        return res[0][0].find("done")!=-1        
+        return res[0][0].find("done")!=-1
 
     def talk(self, words):
         if self.writeSentence(words) == 0: return
@@ -58,7 +58,7 @@ class ApiRos:
             w = self.readWord()
             if w == '': return r
             r.append(w)
-            
+
     def writeWord(self, w):
         #print "<<< " + w
         self.writeLen(len(w))
@@ -81,61 +81,61 @@ class ApiRos:
             self.writeStr(chr((l >> 16) & 0xFF))
             self.writeStr(chr((l >> 8) & 0xFF))
             self.writeStr(chr(l & 0xFF))
-        elif l < 0x10000000:        
-            l |= 0xE0000000         
+        elif l < 0x10000000:
+            l |= 0xE0000000
             self.writeStr(chr((l >> 24) & 0xFF))
             self.writeStr(chr((l >> 16) & 0xFF))
             self.writeStr(chr((l >> 8) & 0xFF))
             self.writeStr(chr(l & 0xFF))
-        else:                       
+        else:
             self.writeStr(chr(0xF0))
             self.writeStr(chr((l >> 24) & 0xFF))
             self.writeStr(chr((l >> 16) & 0xFF))
             self.writeStr(chr((l >> 8) & 0xFF))
             self.writeStr(chr(l & 0xFF))
 
-    def readLen(self):              
-        c = ord(self.readStr(1))    
-        if (c & 0x80) == 0x00:      
-            pass                    
-        elif (c & 0xC0) == 0x80:    
-            c &= ~0xC0              
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-        elif (c & 0xE0) == 0xC0:    
-            c &= ~0xE0              
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-        elif (c & 0xF0) == 0xE0:    
-            c &= ~0xF0              
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-        elif (c & 0xF8) == 0xF0:    
-            c = ord(self.readStr(1))     
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-            c <<= 8                 
-            c += ord(self.readStr(1))    
-        return c                    
+    def readLen(self):
+        c = ord(self.readStr(1))
+        if (c & 0x80) == 0x00:
+            pass
+        elif (c & 0xC0) == 0x80:
+            c &= ~0xC0
+            c <<= 8
+            c += ord(self.readStr(1))
+        elif (c & 0xE0) == 0xC0:
+            c &= ~0xE0
+            c <<= 8
+            c += ord(self.readStr(1))
+            c <<= 8
+            c += ord(self.readStr(1))
+        elif (c & 0xF0) == 0xE0:
+            c &= ~0xF0
+            c <<= 8
+            c += ord(self.readStr(1))
+            c <<= 8
+            c += ord(self.readStr(1))
+            c <<= 8
+            c += ord(self.readStr(1))
+        elif (c & 0xF8) == 0xF0:
+            c = ord(self.readStr(1))
+            c <<= 8
+            c += ord(self.readStr(1))
+            c <<= 8
+            c += ord(self.readStr(1))
+            c <<= 8
+            c += ord(self.readStr(1))
+        return c
 
-    def writeStr(self, str):        
-        n = 0;                      
-        while n < len(str):         
+    def writeStr(self, str):
+        n = 0;
+        while n < len(str):
             r = self.sk.send(str[n:])
             if r == 0: raise RuntimeError("connection closed by remote end")
-            n += r                  
+            n += r
 
-    def readStr(self, length):      
-        ret = ''                    
-        while len(ret) < length:    
+    def readStr(self, length):
+        ret = ''
+        while len(ret) < length:
             s = self.sk.recv(length - len(ret))
             if s == '': raise RuntimeError("connection closed by remote end")
             ret += s
@@ -146,7 +146,7 @@ class RouterOS(object):
 
     def __init__(self, host, login,password):
         self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._s.connect((host, 8728 ))  
+        self._s.connect((host, 8728 ))
         self.api = ApiRos(self._s)
         res=self.api.login(login,password)
         self.host=host
@@ -195,16 +195,18 @@ class RouterOS(object):
                 # host is not online lets just hope the lease is correct
                 return lease
 
-
     def removeLease(self, mac):
         self.executeScript('/ip dhcp-server lease remove [find mac-address="%s"]' % mac)
+
+    def makeStaticLease(self, mac):
+        self.executeScript('/ip dhcp-server lease make-static [find mac-address="%s"]' % mac)
 
     def getIpaddress(self, macaddress, interface):
         lease = self.getLease(macaddress, interface)
         if lease and 'address' in list(lease.keys()):
             return lease['address']
         return None
- 
+
     def _parse_result(self, talk_result):
         result3=[]
         r = talk_result
@@ -267,8 +269,8 @@ class RouterOS(object):
                 if item["static"]==True:
                     result.append(item)
             else:
-                result.append(item)            
-        return result     
+                result.append(item)
+        return result
 
     def ipaddr_remove(self,ipaddr):
         """
@@ -281,7 +283,7 @@ class RouterOS(object):
                 args2["numbers"]="%s"%(nr)
                 self.do("/ip/address/remove", args=args2)
             nr+=1
-        
+
     def ipaddr_set(self,interfacename,ipaddr,comment="",single=False):
         """
         @param interfacename e.g. ether1
@@ -361,12 +363,12 @@ class RouterOS(object):
             else:
                 raise RuntimeError("Could not find port 21 or 9021 to open ftp connection to %s"%self.host)
         return self._ftp
-        
+
     def networkId2NetworkAddr(self,networkid):
         netrange=j.application.config.get("vfw.netrange.internal")
         net=netaddr.IPNetwork(netrange)
         return str(netaddr.IPAddress(net.first+int(networkid)))
-            
+
     def close(self):
         self.ftp.close()
 
@@ -416,7 +418,7 @@ class RouterOS(object):
         print("EXECUTE:")
         print(content)
         print("#################END##################")
-        
+
         self.upload(src,name)
         self.do("/import", args={"file-name":name})
         self.delfile(name, raiseError=False)
@@ -431,7 +433,7 @@ class RouterOS(object):
                 interface=item
                 break
             nr+=1
-        
+
         if interface==None:
             raise RuntimeError("Could not find interface %s"%interface)
 
@@ -447,7 +449,7 @@ class RouterOS(object):
         self.uploadExecuteScript(name=name,srcpath=src)
         j.system.fs.remove(src)
 
-    def uploadFilesFromDir(self,path,dest=""):       
+    def uploadFilesFromDir(self,path,dest=""):
         for item in j.system.fs.listFilesInDir(j.system.fs.joinPaths(self.configpath,path),False):
             if dest!="":
                 dest2=j.system.fs.joinPaths(dest,j.system.fs.getBaseName(item))
