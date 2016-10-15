@@ -38,7 +38,7 @@ class SSLSigning():
             cert.get_subject().CN = gethostname()
 
             import time
-            cert.set_serial_number(int(time.time() * 1000000)) 
+            cert.set_serial_number(int(time.time() * 1000000))
             cert.gmtime_adj_notBefore(0)
             cert.gmtime_adj_notAfter(10*365*24*60*60)
             cert.set_issuer(cert.get_subject())
@@ -79,7 +79,7 @@ class SSLSigning():
         import time
         cert.set_serial_number(int(time.time() * 1000000))
         cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(24 * 60 * 60)
+        cert.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)
         cert.set_issuer(ca_cert.get_subject())
         cert.set_pubkey(key)
         cert.sign(ca_key, "sha1")
@@ -115,7 +115,7 @@ class SSLSigning():
         import time
         cert.set_serial_number(int(time.time() * 1000000))
         cert.gmtime_adj_notBefore(0)
-        cert.gmtime_adj_notAfter(24 * 60 * 60)
+        cert.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)
         cert.set_issuer(ca_cert.get_subject())
         cert.set_pubkey(req.get_pubkey())
         cert.sign(ca_key, "sha1")
