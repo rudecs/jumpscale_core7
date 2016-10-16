@@ -1856,7 +1856,7 @@ class SystemFS:
 
     def targzCompress(self, sourcepath, destinationpath,followlinks=False,destInTar="",pathRegexIncludes=['.[a-zA-Z0-9]*'], \
                       pathRegexExcludes=[], contentRegexIncludes=[], contentRegexExcludes=[], depths=[],\
-                      extrafiles=[]):
+                      extrafiles=[], gzipped=True):
         """
         @param sourcepath: Source directory .
         @param destination: Destination filename.
@@ -1878,7 +1878,7 @@ class SystemFS:
         self.log("Compressing directory %s to %s"%(sourcepath, destinationpath))
         if not j.system.fs.exists(j.system.fs.getDirName(destinationpath)):
             j.system.fs.createDir(j.system.fs.getDirName(destinationpath))
-        t = tarfile.open(name = destinationpath, mode = 'w:gz')
+        t = tarfile.open(name = destinationpath, mode = 'w:%s' % ('gz' if gzipped else ''))
         if not(followlinks!=False or destInTar!="" or pathRegexIncludes!=['.*'] or pathRegexExcludes!=[] \
                or contentRegexIncludes!=[] or contentRegexExcludes!=[] or depths!=[]):
             t.add(sourcepath, "/")
