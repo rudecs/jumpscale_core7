@@ -89,7 +89,7 @@ class QemuImg(object):
         @param logger: Callback method to report progress
         @type logger: function
         """
-        if not j.system.fs.exists(fileName):
+        if ':' not in fileName and not j.system.fs.exists(fileName):
             raise IOError('Disk Image %s does not exist' % fileName)
 
         diskImageFormat = diskImageFormat or ''
