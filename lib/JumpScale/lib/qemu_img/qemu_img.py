@@ -122,14 +122,17 @@ class QemuImg(object):
         if diskImageFormat:
             args.extend(['-f', str(diskImageFormat)])
         args.extend(['-O', str(outputFormat)])
-        if logger:
-            args.append('-p')
+        args.append('-p')
         args.append(fileName)
         args.append(outputFileName)
 
         if not logger:
             command += ' ' + ' '.join(args)
-            exitCode, output = j.system.process.execute(command, outputToStdout=False, dieOnNonZeroExitCode=False)
+            print(command)
+            import subprocess
+            proc = subprocess.Popen(command.split(' '))
+            proc.wait()
+            exitCode = proc.returncode
         else:
             prc = j.system.process.executeAsync(command, args)
             output = ''
