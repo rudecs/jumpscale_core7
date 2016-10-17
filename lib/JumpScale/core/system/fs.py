@@ -234,7 +234,7 @@ class SystemFS:
         @param to: Destination file or folder path name
         @type to: string
         """
-        
+
         if ((fileFrom is None) or (to is None)):
             raise TypeError("No parameters given to system.fs.copyFile from %s, to %s" % (fileFrom, to))
         if j.system.fs.isFile(fileFrom):
@@ -256,10 +256,10 @@ class SystemFS:
                     raise RuntimeError("did not copyFile from:%s to:%s because in protected dir"%(fileFrom,to))
                     return
             try:
-                shutil.copy(fileFrom, to)                
+                shutil.copy(fileFrom, to)
                 self.log("Copied file from %s to %s" % (fileFrom,to),6)
             except Exception as e:
-                raise RuntimeError("Could not copy file from %s to %s, error %s" % (fileFrom,to,e))                
+                raise RuntimeError("Could not copy file from %s to %s, error %s" % (fileFrom,to,e))
         else:
             raise RuntimeError("Can not copy file, file: %s does not exist in system.fs.copyFile" % ( fileFrom ) )
 
@@ -297,7 +297,7 @@ class SystemFS:
         """
         self.log('Remove file with path: %s'%path,6)
         if len(path)>0 and path[-1]==os.sep:
-            path=path[:-1]        
+            path=path[:-1]
         if path is None:
             raise TypeError('Not enough parameters passed to system.fs.removeFile: %s'%path)
         if os.path.islink(path):
@@ -354,7 +354,7 @@ class SystemFS:
                 except OSError as e:
                     if e.errno != os.errno.EEXIST: #File exists
                         raise
-                    
+
             self.log('Created the directory [%s]' % toStr(newdir), 8)
 
     def copyDirTree(self, src, dst, keepsymlinks = False, eraseDestination = False, skipProtectedDirs=False, overwriteFiles=True,applyHrdOnDestPaths=None):
@@ -375,7 +375,7 @@ class SystemFS:
             raise TypeError('Not enough parameters passed in system.fs.copyDirTree to copy directory from %s to %s '% (src, dst))
         if j.system.fs.isDir(src):
             names = os.listdir(src)
- 
+
             if not j.system.fs.exists(dst):
                 self.createDir(dst,skipProtectedDirs=skipProtectedDirs)
 
@@ -428,7 +428,7 @@ class SystemFS:
                 else:
                     self.log('Trying to remove Directory tree with path: %s' % path)
                     shutil.rmtree(path)
-                    
+
                 self.log('Directory tree with path: %s is successfully removed' % path)
             else:
                 raise ValueError("Specified path: %s is not a Directory in system.fs.removeDirTree" % path)
@@ -675,19 +675,19 @@ class SystemFS:
         return ext
 
     def chown(self,path,user):
-        from pwd import getpwnam  
+        from pwd import getpwnam
         getpwnam(user)[2]
         uid=getpwnam(user).pw_uid
         gid=getpwnam(user).pw_gid
         os.chown(path, uid, gid)
-        for root, dirs, files in os.walk(path):  
-            for ddir in dirs:  
+        for root, dirs, files in os.walk(path):
+            for ddir in dirs:
                 path = os.path.join(root, ddir)
                 try:
                     os.chown(path, uid, gid)
                 except Exception as e:
                     if str(e).find("No such file or directory")==-1:
-                        raise RuntimeError("%s"%e)                
+                        raise RuntimeError("%s"%e)
             for file in files:
                 path = os.path.join(root, file)
                 try:
@@ -701,15 +701,15 @@ class SystemFS:
         @param permissions e.g. 0o660 (USE OCTAL !!!)
         """
         os.chmod(path,permissions)
-        for root, dirs, files in os.walk(path):  
-            for ddir in dirs:  
+        for root, dirs, files in os.walk(path):
+            for ddir in dirs:
                 path = os.path.join(root, ddir)
                 try:
                     os.chmod(path,permissions)
                 except Exception as e:
                     if str(e).find("No such file or directory")==-1:
                         raise RuntimeError("%s"%e)
-                    
+
             for file in files:
                 path = os.path.join(root, file)
                 try:
@@ -811,7 +811,7 @@ class SystemFS:
         items=self._listAllInDir(path=path, recursive=True, followSymlinks=False,listSymlinks=True)
         items=[item for item in items[0] if j.system.fs.isLink(item)]
         for item in items:
-            j.system.fs.unlink(item)        
+            j.system.fs.unlink(item)
 
     def _listInDir(self, path,followSymlinks=True):
         """returns array with dirs & files in directory
@@ -902,7 +902,7 @@ class SystemFS:
 
         for direntry in dircontent:
             fullpath = self.joinPaths(path, direntry)
-                
+
 
             if followSymlinks:
                 if self.isLink(fullpath):
@@ -924,9 +924,9 @@ class SystemFS:
                             if matcher(direntry, excludeItem):
                                 includeFile=False
                     if includeFile:
-                        filesreturn.append(fullpath)                    
+                        filesreturn.append(fullpath)
             elif self.isDir(fullpath):
-                if "d" in type:                                                                 
+                if "d" in type:
                     if not(listSymlinks==False and self.isLink(fullpath)):
                         filesreturn.append(fullpath)
                 if recursive:
@@ -938,13 +938,13 @@ class SystemFS:
                             for excludeItem in exclude:
                                 if matcher(fullpath, excludeItem):
                                     exclmatch=True
-                        if exclmatch==False:            
+                        if exclmatch==False:
                             if not(followSymlinks==False and self.isLink(fullpath)):
                                 r,depth = self._listAllInDir(fullpath, recursive, filter, minmtime, maxmtime,depth=depth,type=type,exclude=exclude,followSymlinks=followSymlinks,listSymlinks=listSymlinks)
-                                if len(r) > 0: 
+                                if len(r) > 0:
                                     filesreturn.extend(r)
             elif self.isLink(fullpath) and followSymlinks==False and listSymlinks:
-                filesreturn.append(fullpath)                
+                filesreturn.append(fullpath)
 
         return filesreturn,depth
 
@@ -1208,7 +1208,7 @@ class SystemFS:
                 return True
             else:
                 return False
-            
+
         if(os.path.islink(path)):
             self.log('path %s is a link'%path,8)
             return True
@@ -1282,7 +1282,7 @@ class SystemFS:
         except:
             raise OSError('Failed to unlink the specified file path: [%s] in system.ds.unlink' % filename)
 
-    def fileGetContents(self, filename): 
+    def fileGetContents(self, filename):
         """Read a file and get contents of that file
         @param filename: string (filename to open for reading )
         @rtype: string representing the file contents
@@ -1296,7 +1296,7 @@ class SystemFS:
         self.log('File %s is closed after reading'%filename,9)
         return data
 
-    def fileGetUncommentedContents(self, filename): 
+    def fileGetUncommentedContents(self, filename):
         """Read a file and get uncommented contents of that file
         @param filename: string (filename to open for reading )
         @rtype: list of lines of uncommented file contents
@@ -1345,7 +1345,7 @@ class SystemFS:
             self.remove(path)
         if not self.exists(path=path):
             self.writeFile(path,"")
-        
+
 
     def writeFile(self,filename, contents, append=False):
         """
@@ -1361,7 +1361,7 @@ class SystemFS:
             fp = open(filename,"ab")
         self.log('Writing contents in file %s'%filename,9)
 
-        # fp.write(bytes(contents, 'UTF-8')) 
+        # fp.write(bytes(contents, 'UTF-8'))
         fp.write(contents)
         fp.close()
 
@@ -1950,5 +1950,5 @@ class SystemFS:
             tar.close()
             #todo find better alternative for windows
         else:
-            cmd = "tar xzf '%s' -C '%s'" % (sourceFile, destinationdir)
+            cmd = "tar xf '%s' -C '%s'" % (sourceFile, destinationdir)
             j.system.process.execute(cmd)
