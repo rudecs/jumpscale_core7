@@ -457,6 +457,8 @@ class ControllerCMDS():
                     job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait)
                     if wait:
                         return self.waitJumpscript(job=job,session=session)
+                    else:
+                        return job
                 else:
                     job = list()
                     for node_guid in self.roles2agents[role]:
