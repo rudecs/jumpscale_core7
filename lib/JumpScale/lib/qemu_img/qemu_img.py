@@ -125,7 +125,7 @@ class QemuImg(object):
         args.append('-p')
         args.append(fileName)
         args.append(outputFileName)
-
+        output = ''
         if not logger:
             command += ' ' + ' '.join(args)
             print(command)
