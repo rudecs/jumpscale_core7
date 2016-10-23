@@ -19,6 +19,8 @@ class Specbase(j.code.classGetBase()):
             value = value.strip("\"")  
         if type == 'int' and value:
             return int(value)
+        elif type == 'float' and value:
+            return float(value)
         elif type == 'bool' and value:
             return j.basetype.boolean.fromString(value)
         return value

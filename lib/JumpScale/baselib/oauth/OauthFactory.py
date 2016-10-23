@@ -7,15 +7,18 @@ except:
     
 from JumpScale import j
 from JumpScale.core.baseclasses import BaseEnumeration
-from .OauthInstance import *
+from .OauthInstance import OauthInstance, ItsYouOnline
 
 class OauthFactory(object):
 
     def __init__(self):
         j.logger.consolelogCategories.append('oauth')
 
-    def get(self, addr='', accesstokenaddr='', id='', secret='', scope='', redirect_url='', user_info_url='', logout_url='', instance='github'):        
-        return OauthInstance(addr, accesstokenaddr, id, secret, scope, redirect_url, user_info_url, logout_url, instance)
+    def get(self, addr='', accesstokenaddr='', id='', secret='', scope='', redirect_url='', user_info_url='', logout_url='', instance='github'):
+        if instance == 'itsyouonline':
+            return ItsYouOnline(addr, accesstokenaddr, id, secret, scope, redirect_url, user_info_url, logout_url, instance)
+        else:
+            return OauthInstance(addr, accesstokenaddr, id, secret, scope, redirect_url, user_info_url, logout_url, instance)
 
     def log(self,msg,category='',level=5):
         category = 'oauth.%s'%category

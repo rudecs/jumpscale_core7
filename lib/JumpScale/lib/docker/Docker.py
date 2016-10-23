@@ -285,7 +285,7 @@ class Docker():
         @param ports in format as follows  "22:8022 80:8080"  the first arg e.g. 22 is the port in the container
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
         """
-        name=name.lower().strip()
+        name = name.lower().strip().replace('_', '')
         
         print '[+] creating docker: %s' % name
         

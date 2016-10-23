@@ -85,6 +85,12 @@ def createBridge(name):
     r,s,e = doexec(cmd.split())
     if r:
         raise RuntimeError("Problem with creation of bridge %s, err was: %s" % (name,e))
+    if name == "public":
+        cmd = '%s set Bridge %s stp_enable=true' % (vsctl,name)
+        r, s, e = doexec(cmd.split())
+        if r:
+            raise j.exceptions.RuntimeError("Problem setting STP on bridge %s, err was: %s" % (name, e))
+
 
 
 def destroyBridge(name):
@@ -233,6 +239,13 @@ def listBridgeConnections(bridge):
     listprts = "{0} list-ports {1}".format(vsctl, bridge)
     r,s,e = doexec(listprts.split())
     return s.read().splitlines()
+
+def removeIfFromBridge(bridge, interface):
+    cmd = '%s del-port %s %s' % (vsctl, bridge, interface)
+    r, s, e = doexec(cmd.split())
+    if r:
+        raise RuntimeError('Error adding port %s to bridge %s' %(interface,bridge))
+
 
 def connectIfToNameSpace(nsname,interface):
     cmd = '%s link set %s netns %s' %( ip, interface, nsname)

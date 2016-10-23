@@ -109,6 +109,20 @@ class NetConfigFactory():
                 bridge.destroy()
                 return True
 
+    def cleanupIfUnusedVlanBridge(self, bridgename):
+        with FileLock('vlan_%s' % bridgename):
+            bridge = netcl.Bridge(bridgename)
+            connections = bridge.listConnections()
+            if len(connections) > 1:
+                return False
+            else:
+                for connection in connections:
+                    parentbridge, vlan = connection.split('-')
+                    bridge.removeInterface(connection)
+                    pbridge = netcl.Bridge(parentbridge)
+                    pbridge.removeInterface('{}-{}'.format(bridgename, vlan))
+                bridge.destroy()
+
     def createVXLanBridge(self, networkid, backend,bridgename=None):
         """
         Creates a proper vxlan interface and bridge based on a backplane
@@ -206,7 +220,7 @@ iface $interface inet static
             C=C.replace("$mtu", "post-up ip l set %s mtu %d" % (interfacename, mtu))
         else:
             C=C.replace("$mtu", "")
-        
+
         ed=j.codetools.getTextFileEditor("/etc/network/interfaces")
         ed.setSection(interfacename,C)
         ed.save()

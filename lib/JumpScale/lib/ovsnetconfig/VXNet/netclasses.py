@@ -33,6 +33,10 @@ class Bridge(object):
         connectIfToBridge(self.name,interface)
     def no6(self):
         disable_ipv6(self.name)
+    def listConnections(self):
+        return listBridgeConnections(self.name)
+    def removeInterface(self, interface):
+        return removeIfFromBridge(self.name, interface)
 
 
 class VXBridge(Bridge):
@@ -40,9 +44,6 @@ class VXBridge(Bridge):
         oid = NetID(oid)
         self.oid = oid
         self.name = 'space_' + oid.tostring()
-
-    def listConnections(self):
-        return listBridgeConnections(self.name)
 
 class BondBridge(object):
     def __init__(self, name, interfaces, bondname=None, trunks=None):
@@ -103,4 +104,3 @@ class VethPair(object):
         disable_ipv6(self.left)
     def destroy(self):
         destroyVethPair(self.left)
-

@@ -89,7 +89,7 @@ class ControllerCMDS():
         return self.nodeclient.authenticate(user, passwd)
 
     def authenticate(self, session):
-        return False  # to make sure we dont use it
+        return self.nodeclient.authenticate(session.user, session.passwd)
 
     def scheduleCmd(self,gid,nid,cmdcategory,cmdname,args={},jscriptid=None,queue="",log=True,timeout=None,roles=[],wait=False,errorreport=False, session=None):
         """
@@ -101,7 +101,6 @@ class ControllerCMDS():
             raise RuntimeError("Either nid or roles should be given")
 
         if session<>None:
-            self._adminAuth(session.user,session.passwd)
             sessionid=session.id
         else:
             sessionid=None
@@ -270,8 +269,8 @@ class ControllerCMDS():
                 node.ipaddr.extend(ip)
 
     def registerNode(self, hostname, machineguid, session):
-        # if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
-        #     raise RuntimeError("Only admin can register new nodes")
+        if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
+            raise RuntimeError("Only admin can register new nodes")
         node = self.nodeclient.new()
         node.roles = session.roles
         node.gid = session.gid
@@ -458,6 +457,8 @@ class ControllerCMDS():
                     job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait)
                     if wait:
                         return self.waitJumpscript(job=job,session=session)
+                    else:
+                        return job
                 else:
                     job = list()
                     for node_guid in self.roles2agents[role]:
@@ -573,10 +574,30 @@ class ControllerCMDS():
             health['jobguid'] = job['guid']
             health['messages'].append({'state': 'ERROR',
                                        'message': 'Failed executing job',
-                                       'category': job['cmd']})
+                                       'category': job['cmd'],
+                                       'lasterror': job['timeStop'],
+                                       'uid': 'execution_failed'})
         else:
             health['jobguid'] = None  # job is not saved so dont store job guid
             health['messages'] = job['result'] or []
+
+        try:
+            ok_states = ['OK', 'SKIPPED']
+            last = self.healthclient.get('%(gid)s_%(nid)s_%(category)s_%(cmd)s' % job)
+            for new_message in health['messages']:
+                if new_message['state'] not in ok_states:
+                    for old_message in last.messages:
+                        if new_message['uid'] == old_message.get('uid', '') and old_message.get('state', 'OK') not in ok_states and old_message.get('lasterror', ''):
+                            new_message['lasterror'] = old_message['lasterror']
+                            break
+                    else:
+                        new_message['lasterror'] = job['timeStop']
+
+                else:
+                    new_message['lasterror'] = ''
+        except:
+            pass
+
         self.healthclient.set(health)
 
     def notifyWorkCompleted(self, job,session=None):

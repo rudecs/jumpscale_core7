@@ -41,7 +41,7 @@ def get_nic_params():
     namespaces = get_all_namespaces()
     def populatenictypes(lines, namespace=None):
         for l in lines:
-            if not 'state' in l: continue
+            if ' state ' not in l: continue
             entry = l.strip().split()
             intf = entry[1].rstrip(':').split('@', 1)[0]
             if intf == 'lo' : continue

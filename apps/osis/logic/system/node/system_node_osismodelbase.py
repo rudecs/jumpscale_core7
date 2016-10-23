@@ -8,6 +8,8 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P_name=""
         self._P_roles=list()
         self._P_netaddr=""
+        self._P_publickeys=list()
+        self._P_hostkey=""
         self._P_machineguid=""
         self._P_ipaddr=list()
         self._P_active=True
@@ -115,6 +117,44 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
     @netaddr.deleter
     def netaddr(self):
         del self._P_netaddr
+
+    @property
+    def publickeys(self):
+        return self._P_publickeys
+
+    @publickeys.setter
+    def publickeys(self, value):
+        if not isinstance(value, list) and value is not None:
+            if isinstance(value, basestring) and j.basetype.list.checkString(value):
+                value = j.basetype.list.fromString(value)
+            else:
+                msg="property publickeys input error, needs to be list, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: node, value was:" + str(value)
+                raise TypeError(msg)
+
+        self._P_publickeys=value
+
+    @publickeys.deleter
+    def publickeys(self):
+        del self._P_publickeys
+
+    @property
+    def hostkey(self):
+        return self._P_hostkey
+
+    @hostkey.setter
+    def hostkey(self, value):
+        if not isinstance(value, str) and value is not None:
+            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+                value = j.basetype.string.fromString(value)
+            else:
+                msg="property hostkey input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: node, value was:" + str(value)
+                raise TypeError(msg)
+
+        self._P_hostkey=value
+
+    @hostkey.deleter
+    def hostkey(self):
+        del self._P_hostkey
 
     @property
     def machineguid(self):

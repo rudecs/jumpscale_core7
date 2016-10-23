@@ -383,7 +383,9 @@ class UbuntuSystemd(Ubuntu):
         self._version = "16"
 
     def serviceInstall(self, servicename, daemonpath, args='', respawn=True, pwd=None,env=None,reload=True):
-        C="""
+        pwd = pwd or ''
+        env = env or ''
+        C="""\
 [Unit]
 Description={servicename}
 Wants=network-online.target

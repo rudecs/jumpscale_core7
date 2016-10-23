@@ -211,7 +211,7 @@ class AtYourServiceFactory():
             else:
                 raise RuntimeError("Cannot find service %s__%s__%s" % (domain, name, instance))
 
-        parentregex = ''
+        parentregex = '.*'
         if parent and isinstance(parent, (Service, RemoteService)):
             parentregex = '%s__%s__%s' % (parent.domain, parent.name, parent.instance)
         elif parent and isinstance(parent, basestring):

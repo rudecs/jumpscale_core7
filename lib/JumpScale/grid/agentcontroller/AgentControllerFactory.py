@@ -1,7 +1,9 @@
 from JumpScale import j
+import time
 import ujson as json
 
 PORT = 4444
+
 
 class AgentControllerFactory(object):
     def __init__(self):
@@ -98,6 +100,19 @@ class AgentControllerClient():
         client= j.servers.geventws.getHAClient(connections, user=login, passwd=passwd,category="agent", reconnect=True)
         self.__dict__.update(client.__dict__)
 
+    def listActiveSessions(self):
+        activesessions = {}
+        for gidnid, session in self.listSessions().iteritems():
+            # skip nodes that didnt respond in last 60 seconds
+            lastpolltime = session[0]
+            roles = session[1:]
+            if lastpolltime < time.time() - 60:
+                continue
+            gridid, nid = gidnid.split('_')
+            gridid, nid = int(gridid), int(nid)
+            activesessions[(gridid, nid)] = roles
+        return activesessions
+
     def execute(self,organization,name,role=None,nid=None,gid=None,timeout=60,wait=True,queue="",dieOnFailure=True,errorreport=True, args=None):
         """
         the arguments just put at end like executeWait("test",myarg=111,something=222)
@@ -124,13 +139,12 @@ class AgentControllerClient():
                 msg="%s\n\nCould not execute %s %s for role:%s, jobid was:%s\n"%(eco,organization,name,role,result["id"])
 
                 if errorreport:
-                    print(msg)                     
+                    print(msg)
 
-                if dieOnFailure:  
+                if dieOnFailure:
                     j.errorconditionhandler.halt(msg)
 
         if wait:
             return result["result"]
         else:
             return result
-

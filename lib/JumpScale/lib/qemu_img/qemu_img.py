@@ -89,7 +89,7 @@ class QemuImg(object):
         @param logger: Callback method to report progress
         @type logger: function
         """
-        if not j.system.fs.exists(fileName):
+        if ':' not in fileName and not j.system.fs.exists(fileName):
             raise IOError('Disk Image %s does not exist' % fileName)
 
         diskImageFormat = diskImageFormat or ''
@@ -122,14 +122,17 @@ class QemuImg(object):
         if diskImageFormat:
             args.extend(['-f', str(diskImageFormat)])
         args.extend(['-O', str(outputFormat)])
-        if logger:
-            args.append('-p')
+        args.append('-p')
         args.append(fileName)
         args.append(outputFileName)
-
+        output = ''
         if not logger:
             command += ' ' + ' '.join(args)
-            exitCode, output = j.system.process.execute(command, outputToStdout=False, dieOnNonZeroExitCode=False)
+            print(command)
+            import subprocess
+            proc = subprocess.Popen(command.split(' '))
+            proc.wait()
+            exitCode = proc.returncode
         else:
             prc = j.system.process.executeAsync(command, args)
             output = ''
@@ -167,9 +170,6 @@ class QemuImg(object):
         @param diskImageFormat: disk image format
         @result: dict with info in KB
         """
-
-        if not j.system.fs.exists(fileName):
-            raise IOError('Disk Image %s does not exist' % fileName)
 
         command = '%s info' % (self._getBinary())
 

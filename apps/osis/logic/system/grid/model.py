@@ -8,7 +8,7 @@ class Grid(OsisBaseObject):
     identifies the grid
     """
 
-    def __init__(self, ddict={}, name="", id=0, useavahi=1):
+    def __init__(self, ddict={}, name="", id=0, useavahi=1, settings=None):
         if ddict != {}:
             self.load(ddict)
         else:
@@ -16,7 +16,8 @@ class Grid(OsisBaseObject):
             self.useavahi = useavahi
             self.nid=0
             self.id=id
-            self.guid=id            
+            self.settings = settings or {}
+            self.guid=id
 
     def initFromLocalNodeInfo(self):
         """
@@ -47,4 +48,3 @@ class Grid(OsisBaseObject):
         self.guid = int(self.id)
         self.id = int(self.id)
         return self.guid
-

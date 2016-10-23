@@ -25,6 +25,12 @@ import os
 
 RUNTIME = 24 * 3600
 
+WORKERTIMEOUTS = {'default': 300,
+                  'process': 300,
+                  'io': 3600,
+                  'hypervisor': 300}
+DEFAULTTIMEOUT = 3600
+
 def restart_program():
     """Restarts the current program.
     Note: this function does not return. Any cleanup action (like
@@ -151,7 +157,9 @@ class Worker(object):
                     j.logger.enabled = job.log
 
                     job.timeStart = time.time()
-                    status, result=jscript.executeInWorker(**job.args)
+                    if not jscript.timeout:
+                        jscript.timeout = WORKERTIMEOUTS.get(self.queuename, DEFAULTTIMEOUT)
+                    status, result = jscript.executeInWorker(**job.args)
                     self.redisw.redis.hdel("workers:inqueuetest",jscript.getKey())
                     j.logger.enabled = True
                     if status:

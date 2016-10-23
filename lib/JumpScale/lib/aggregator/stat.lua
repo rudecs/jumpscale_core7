@@ -1,12 +1,11 @@
---key,measurement,value,str(now),type,tags
+--key,value,str(now),type,tags
 
 local key = KEYS[1]
-local measurement = ARGV[1]
-local value = tonumber(ARGV[2])
-local now = tonumber(ARGV[3])
-local type = ARGV[4]
-local tags = ARGV[5]
-local node = ARGV[6]
+local value = tonumber(ARGV[1])
+local now = tonumber(ARGV[2])
+local type = ARGV[3]
+local tags = ARGV[4]
+local node = ARGV[5]
 
 local statekey = string.format("stats:%s:%s", node, key)
 
@@ -16,8 +15,8 @@ local c = ""
 local stat
 local prev = redis.call('GET', statekey)
 
-local now_short_m = math.floor(now / 60) * 60
-local now_short_h = math.floor(now / 3600) * 3600
+local now_short_m = (math.floor(now / 300) * 300) + 300
+local now_short_h = (math.floor(now / 3600) * 3600) + 3600
 
 local differential = type == "D"
 
@@ -27,7 +26,7 @@ if prev then
     local diff
     local difftime
 
-    -- calculate the dif when absolute nrs are logged e.g. byte counter for network 
+    -- calculate the dif when absolute nrs are logged e.g. byte counter for network
     if differential then
         -- diff
         diff = value - v.val
@@ -42,8 +41,8 @@ if prev then
 
     if v.m_epoch < now_short_m then
         -- 1 min aggregation
-        local row = string.format("%s|%s|%u|%f|%f|%f",
-            node, key, v.m_epoch, stat, v.m_avg, v.m_max)
+        local row = string.format("%s|%s|%u|%f|%f|%f|%f",
+            node, key, v.m_epoch, stat, v.m_avg, v.m_max, v.m_total)
 
         redis.call("RPUSH", "queues:stats:min", row)
 
@@ -54,13 +53,15 @@ if prev then
     end
     if v.h_epoch < now_short_h then
         -- 1 hour aggregation
-        local row = string.format("%s|%s|%u|%f|%f|%f",
-            node, key, v.h_epoch, stat, v.h_avg, v.h_max)
+        local row = string.format("%s|%s|%u|%f|%f|%f|%f",
+            node, key, v.h_epoch, stat, v.h_avg, v.h_max, v.h_total)
 
         redis.call("RPUSH", "queues:stats:hour", row)
 
         v.h_total = 0
         v.h_nr = 0
+        v.h_last = v.h_avg
+        v.h_last_epoch = v.h_epoch
         v.h_max = value
         v.h_epoch = now_short_h
     end
@@ -132,11 +133,9 @@ else
     v.val = value
     v.key = key
     v.tags = tags
-    v.measurement = measurement
 
     local data = cjson.encode(v)
     redis.call('SET', statekey, data)
     redis.call('EXPIRE', statekey, 24*60*60) -- expire in a day
     return data
 end
-
