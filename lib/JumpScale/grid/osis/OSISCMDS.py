@@ -12,7 +12,7 @@ class OSISCMDS(object):
         self.db = None  # default db
         self.path="%s/apps/osis/logic"%j.dirs.baseDir
 
-    def authenticate(self, namespace, categoryname, name,passwd, session=None):
+    def authenticate(self, namespace, categoryname, name, passwd, session=None):
         """
         authenticates a user and returns the groups in which the user is
         """
@@ -32,9 +32,9 @@ class OSISCMDS(object):
         userguid = results[0]['guid']
         user = oi.get(userguid, session=session)
 
-        if user["passwd"]==j.tools.hash.md5_string(passwd) or user["passwd"]==passwd:
-            return {"authenticated":True,"exists":True,"groups":user["groups"],\
-                "passwdhash":user["passwd"],"authkey":user["authkey"]}
+        if user["passwd"] == j.tools.hash.md5_string(passwd):
+            return {"authenticated": True, "exists": True, "groups": user["groups"],
+                "passwdhash": user["passwd"], "authkey": user["authkey"]}
 
         return {"authenticated":False,"exists":True}
 
@@ -88,7 +88,7 @@ class OSISCMDS(object):
     def deleteSearch(self,namespace, categoryname,query, session=None):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.deleteSearch(query=query, session=session)
-        
+
     def updateSearch(self,namespace, categoryname,query,update, session=None):
         """
         update is dict or text
@@ -96,7 +96,7 @@ class OSISCMDS(object):
         text e.g. name:aname nr:1
         """
         oi = self._doAuth(namespace, categoryname, session)
-        return oi.updateSearch(query=query,update=update, session=session)  
+        return oi.updateSearch(query=query,update=update, session=session)
 
     def list(self, namespace, categoryname, prefix=None, session=None):
         oi = self._doAuth(namespace, categoryname, session)
@@ -173,7 +173,7 @@ class OSISCMDS(object):
         fullname = "%s_%s" % (namespace, category)
         if fullname in self.osisInstances:
             return self.osisInstances[fullname]
-        
+
         j.errorconditionhandler.raiseBug(
             message="cannot find osis local instance for namespace:%s & category:%s" % (namespace, category), die=False, \
             category="osis.valueerror")
@@ -182,7 +182,7 @@ class OSISCMDS(object):
         if session!=None:
             user=session.user
             passwd=session.passwd
-        
+
         if user=="root":
             if j.core.osis.superadminpasswd is None:
                 j.application.loadConfig()
@@ -253,7 +253,7 @@ class OSISCMDS(object):
             obj=j.core.specparser.getModelSpec("osismodel",namespace,ttype)
             result[ttype]=obj.obj2dict()
         return result
-        
+
     def listNamespaces(self, prefix="",session=None):
         ddirs = j.system.fs.listDirsInDir(self.path, dirNameOnly=True)
 
@@ -309,13 +309,13 @@ class OSISCMDS(object):
         else:
             templatespath = "_templates"
             if j.system.fs.exists(path=templatespath):
-                
+
                 # if j.system.fs.exists(path):
                 templatespath_namespace = j.system.fs.joinPaths(templatespath, "namespace")
                 templatespath_category = j.system.fs.joinPaths(templatespath, "category")
                 namespacepath = j.system.fs.joinPaths(path, namespacename)
                 j.system.fs.copyDirTree(templatespath_namespace, namespacepath, overwriteFiles=False)
-                if namespacename[0] != "_" and j.system.fs.exists(path=j.system.fs.joinPaths(namespacepath, ".parentInTemplate")):  
+                if namespacename[0] != "_" and j.system.fs.exists(path=j.system.fs.joinPaths(namespacepath, ".parentInTemplate")):
                     # check if parent is coming from template
                     j.system.fs.remove(j.system.fs.joinPaths(namespacepath, "OSIS_parent.py"))
                     j.system.fs.remove(j.system.fs.joinPaths(namespacepath, "OSIS_parent.pyc"))
@@ -326,7 +326,7 @@ class OSISCMDS(object):
                     # j.system.fs.copyDirTree(templatespath_osistasklets,catpath,overwriteFiles=overwriteTasklets)
 
     def init(self, path="",overwriteImplementation=False, namespacename=None, template=None):
-        
+
         if path != "":
             self.path = path
         else:
