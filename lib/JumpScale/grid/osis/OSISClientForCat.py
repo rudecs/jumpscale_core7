@@ -72,8 +72,8 @@ class OSISClientForCat():
     def authenticate(self, name,passwd,**args):
         """
         authenticates a user and returns the groups in which the user is
-        """ 
-        return  self.client.authenticate(namespace=self.namespace, categoryname=self.cat,name=name,passwd=passwd,**args)     
+        """
+        return  self.client.authenticate(namespace=self.namespace, categoryname=self.cat,name=name,passwd=passwd,**args)
 
     def new(self,**args):
         obj=self._getModelClass()(**args)
@@ -103,14 +103,14 @@ class OSISClientForCat():
         if key none then key will be given by server
         @return (guid,new,changed)
         """
-        # print "WAITINDEX:%s"%waitIndex        
+        # print "WAITINDEX:%s"%waitIndex
         if hasattr(obj,"dump"):
             obj=obj.dump()
         elif hasattr(obj,"__dict__"):
             obj=obj.__dict__
         return self.client.set(namespace=self.namespace, categoryname=self.cat, key=key, value=obj,waitIndex=waitIndex)
 
-    def get(self, key):        
+    def get(self, key):
         value = self.client.get(namespace=self.namespace, categoryname=self.cat, key=key)
         if isinstance(value, str):
             try:
@@ -128,13 +128,16 @@ class OSISClientForCat():
         else:
             return value
 
-    def exists(self, key):            
+    def getraw(self, key):
+        return self.client.get(namespace=self.namespace, categoryname=self.cat, key=key)
+
+    def exists(self, key):
         return self.client.exists(namespace=self.namespace, categoryname=self.cat, key=key)
 
-    def existsIndex(self,key,timeout=1):            
+    def existsIndex(self,key,timeout=1):
         return self.client.existsIndex(namespace=self.namespace, categoryname=self.cat, key=key,timeout=timeout)
 
-    def delete(self, key):        
+    def delete(self, key):
         return self.client.delete(namespace=self.namespace, categoryname=self.cat, key=key)
 
     def deleteSearch(self,query):
@@ -151,30 +154,30 @@ class OSISClientForCat():
         if lockkey:
             key += '_%s' % lockkey
         return LockWrapper(self.client, key, timeout)
-        
+
     def updateSearch(self,query,update):
         """
         update is dict or text
         dict e.g. {"name":aname,nr:1}  these fields will be updated then
         text e.g. name:aname nr:1
         """
-        return self.client.updateSearch(namespace=self.namespace, categoryname=self.cat, query=query,update=update)  
+        return self.client.updateSearch(namespace=self.namespace, categoryname=self.cat, query=query,update=update)
 
     def destroy(self):
         # self.client.deleteNamespaceCategory(namespacename=self.namespace, name=self.cat)
         return self.client.destroy(namespace=self.namespace, categoryname=self.cat)
 
     def list(self, prefix=""):
-        
+
         return self.client.list(namespace=self.namespace, categoryname=self.cat, prefix=prefix)
 
     def search(self, query, start=0, size=None):
-        
+
         return self.client.search(namespace=self.namespace, categoryname=self.cat, query=query,
                                   start=start, size=size)
 
     def aggregate(self, query):
-        
+
         return self.client.aggregate(namespace=self.namespace, categoryname=self.cat, query=query)
 
     def simpleSearch(self, params, start=0, size=None, withguid=False, withtotal=False, sort=None, partials=None, nativequery=None):
