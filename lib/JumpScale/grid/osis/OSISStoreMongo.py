@@ -32,7 +32,7 @@ class OSISStoreMongo(OSISStore):
 
     """
     Default object implementation for mongodbserver
-    NEW: 
+    NEW:
     - powerfull search capabilities
     - more consistent way of working with id's & guid's
 
@@ -183,7 +183,7 @@ class OSISStoreMongo(OSISStore):
             res.pop("_id")
             res.pop("_ttl", None)
         return restorekeys(res)
-        
+
     def exists(self, key, session=None):
         """
         get dict value
@@ -227,7 +227,7 @@ class OSISStoreMongo(OSISStore):
         kwargs = kwargs or {}
         return method(**kwargs)
 
-    def find(self, query, start=0, size=200, session=None):  
+    def find(self, query, start=0, size=200, session=None):
         """
         query can be a dict or a string
 
@@ -266,7 +266,7 @@ class OSISStoreMongo(OSISStore):
 
 
 
-        """   
+        """
         db, counter = self._getMongoDB(session)
         fields = None
         sorting = None
@@ -296,7 +296,7 @@ class OSISStoreMongo(OSISStore):
 
             if tags.tagExists("@start"):
                 start=int(tags.tagGet("@start"))
-                tags.tagDelete("@start")            
+                tags.tagDelete("@start")
 
             fields=None
             if tags.tagExists("@fields"):
@@ -349,7 +349,7 @@ class OSISStoreMongo(OSISStore):
                         for k, v in list(queryitem['terms'].items()):
                             mongoquery[k] = {'$in': v}
 
-                
+
                 mongoquery['$or'] = list()
                 for queryitem in query['query']['bool']['should']:
                     wilds = dict()
@@ -399,18 +399,19 @@ class OSISStoreMongo(OSISStore):
         db, _ = self._getMongoDB(session)
         count = db.remove(query)['n']
         return count
-        
-    def updateSearch(self,query,update, session=None):
+
+    def updateSearch(self, query, update, session=None):
         """
         update is dict or text
         dict e.g. {"name":aname,nr:1}  these fields will be updated then
         text e.g. name:aname nr:1
         """
-        if not j.basetype.string.check(query):
-            raise RuntimeError("not implemented")
-        if j.basetype.string.check(update):
+        if isinstance(query, dict):
+            db, _ = self._getMongoDB(session)
+            return db.update(query, update, multi=True)
+        elif j.basetype.string.check(update):
             tags=j.core.tags.getObject(update)
-            update=tags.getDict()            
+            update=tags.getDict()
         # self.db.find_and_modify(query,update=update)
         query+=' @fields:guid'
         counter=0
@@ -418,7 +419,7 @@ class OSISStoreMongo(OSISStore):
             update["guid"]=item["guid"]
             self.set(value=update, session=session)
             counter+=1
-            
+
         return counter
 
     def destroy(self, session=None):
@@ -432,7 +433,7 @@ class OSISStoreMongo(OSISStore):
         import JumpScale.baselib.redisworker
         path=j.system.fs.joinPaths(self.path,"demodata.py")
         if j.system.fs.exists(path):
-            module = imp.load_source("%s_%s_demodata"%(self.namespace,self.categoryname), path)    
+            module = imp.load_source("%s_%s_demodata"%(self.namespace,self.categoryname), path)
             job=j.clients.redisworker.execFunction(module.populate,_organization=self.namespace,_category=self.categoryname,_timeout=60,_queue="io",_log=True,_sync=False)
 
     def list(self, prefix="", withcontent=False, session=None):
