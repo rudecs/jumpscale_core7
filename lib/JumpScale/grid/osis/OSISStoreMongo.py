@@ -112,9 +112,6 @@ class OSISStoreMongo(OSISStore):
                 if isinstance(id, int) and id == 0:
                     return True
             return False
-        def update(value):
-            if isinstance(value['guid'], str):
-                value['guid'] = value['guid'].replace('-', '')
         def updateTTL(value):
                 if self.TTL != 0:
                     value['_ttl'] = datetime.datetime.utcnow()
@@ -129,10 +126,8 @@ class OSISStoreMongo(OSISStore):
             value = obj.dump()
 
             if ukey is not None:
-                update(value)
                 objInDB=db.find_one({"_id":ukey})
             elif 'guid' in value and value["guid"] != "":
-                update(value)
                 objInDB=db.find_one({"guid":value["guid"]})
 
             if objInDB!=None:
@@ -140,7 +135,6 @@ class OSISStoreMongo(OSISStore):
                 value.pop('id', None)
                 value.pop('guid', None)
                 objInDB.update(value)
-                update(objInDB)
                 updateTTL(objInDB)
                 objInDB = self.setPreSave(objInDB, session)
                 changed = oldckey != self.getObject(objInDB).getContentKey()
@@ -148,7 +142,6 @@ class OSISStoreMongo(OSISStore):
                     db.save(objInDB)
                 return (objInDB["guid"], False, changed)
 
-            update(value)
             if idIsZero():
                 value["id"]=self.incrId(counter)
                 obj = self.getObject(value)
@@ -168,7 +161,6 @@ class OSISStoreMongo(OSISStore):
         self.runTasklet('get', key, session)
         db, counter = self._getMongoDB(session)
         if j.basetype.string.check(key):
-            key=key.replace("-","")
             res=db.find_one({"guid":key})
         else:
             res=db.find_one({"guid":key})
@@ -191,7 +183,6 @@ class OSISStoreMongo(OSISStore):
         self.runTasklet('exists', key, session)
         db, counter = self._getMongoDB(session)
         if j.basetype.string.check(key) or isinstance(key, unicode):
-            key = key.replace('-', '')
             return not db.find_one({"guid":key})==None
         else:
             return not db.find_one({"id":key})==None

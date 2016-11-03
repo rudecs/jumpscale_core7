@@ -18,7 +18,6 @@ class mainclass(OSISStoreMongo):
         else:
             changed = False
             new = True
-        key = key.replace('-', '')
         value = j.tools.text.toStr(value)
         dbval = {"_id": key, "guid": key, "value": bson.Binary(value)}
         db.save(dbval)
@@ -27,4 +26,3 @@ class mainclass(OSISStoreMongo):
     def get(self, key, full=False, session=None):
         val = OSISStoreMongo.get(self, key, full, session=session)
         return val['value']
-
