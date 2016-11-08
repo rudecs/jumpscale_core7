@@ -586,7 +586,7 @@ class Service(object):
                 packages = self.hrd.getList("service.ubuntu.packages")
                 packages = [pkg.strip() for pkg in packages if pkg.strip() != ""]
                 if packages:
-                    j.do.execute("apt-get install -y -f %s" %
+                    j.do.execute("apt-get install --force-yes -y -f %s" %
                                  " ".join(packages), dieOnNonZeroExitCode=True)
 
         self.actions.prepare(self)

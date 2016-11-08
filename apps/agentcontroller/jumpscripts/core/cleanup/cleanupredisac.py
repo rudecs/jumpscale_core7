@@ -28,7 +28,6 @@ def action():
     except:
         import json
 
-    import JumpScale.grid.agentcontroller
     acl = j.clients.agentcontroller.get()
 
     rcl = j.clients.redis.getByInstance('system')
@@ -38,13 +37,15 @@ def action():
         jobs = rcl.hgetall(jobkey)
         for jobguid, jobstring in jobs.iteritems():
             job = json.loads(jobstring)
+            starttime = job['timeStart'] or 0
+            timeout = job['timeout'] or 0
             if job['state'] in ['OK', 'ERROR', 'TIMEOUT']:
                 rcl.hdel(jobkey, jobguid)
-            elif job['timeStart'] + job['timeout'] + EXTRATIME < now:
+            elif starttime + timeout + EXTRATIME < now:
                 rcl.hdel(jobkey, jobguid)
                 job['state'] = 'TIMEOUT'
                 eco = j.errorconditionhandler.getErrorConditionObject(msg='Job timed out')
-                j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
+                j.errorconditionhandler.raiseOperationalCritical(eco=eco, die=False)
                 eco.tb = None
                 eco.jid = job['guid']
                 eco.type = str(eco.type)

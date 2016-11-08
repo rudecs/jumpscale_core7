@@ -128,6 +128,8 @@ else
     v.m_last = 0
     v.m_epoch = now_short_m
     v.h_epoch = now_short_h
+    v.h_last = 0
+    v.h_last_epoch = 0
 
     v.epoch = now
     v.val = value
