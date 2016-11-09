@@ -1976,7 +1976,7 @@ class Installer():
         export PATH=$base/bin:$PATH
         export JSBASE=$base
         export PYTHONPATH=$base/lib:$base/lib/lib-dynload/:$base/bin:$base/lib/python.zip:$base/lib/plat-x86_64-linux-gnu
-        export LD_LIBRARY_PATH=$base/bin
+        #export LD_LIBRARY_PATH=$base/bin
         export PS1="(JumpScale) $PS1"
         if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
                 hash -r 2>/dev/null
