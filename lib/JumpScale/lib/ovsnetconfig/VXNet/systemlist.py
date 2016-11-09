@@ -47,7 +47,7 @@ def get_nic_params():
             if intf == 'lo' : continue
             nictypes[intf] = {}
             if 'vxlan' in entry :
-                want = ('state','id' ,'mtu','id','group','dev','port')
+                want = ('state','id' ,'mtu','id','group','dev')
                 params = parse_ipl_line(entry,want)
                 params['type'] = 'vxlan'
             elif 'veth' in entry:
