@@ -1542,9 +1542,13 @@ class InstallTools():
                 if tag is not None:
                     cmd+=" origin tag %s" % tag
                 if branch is not None:
-                    cmd+=" origin %s:%s" % (branch, branch)
+                    self.execute("cd %s; git remote set-branches origin '*'" % dest)
+                    cmd+=" origin %s" % branch
                 self.execute(cmd)
-                self.execute("cd %s;git reset --hard %s"%(dest, rev),timeout=600)
+                if branch is not None:
+                    self.execute("cd {0}; git checkout -B {1} remotes/origin/{1}".format(dest, branch))
+                else:
+                    self.execute("cd %s;git reset --hard %s"%(dest, rev),timeout=600)
             else:
                 #pull
                 print(("git pull %s -> %s"%(url,dest)))
