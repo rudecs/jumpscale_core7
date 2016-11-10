@@ -353,6 +353,18 @@ stop on runlevel [016]
             entry.uri = newuri
         src.save()
 
+
+    def listServices(self):
+        exitcode, output = j.system.process.execute('initctl list')
+        results = {}
+        for line in output.splitlines():
+            if line:
+                parts = line.split()
+                if len(parts) == 2:
+                    key, value = parts
+                    results[key] = 'enabled'
+        return results
+
     def addSourceUri(self,url):
         url=url.replace(";",":")
         name=url.replace("\\","/").replace("http://","").split("/")[0]
@@ -412,13 +424,15 @@ WantedBy=multi-user.target
         for file_ in j.system.fs.find('/etc/systemd/', filename):
             j.system.fs.remove(file_)
 
-
     def listServices(self):
-        exitcode, output = j.system.process.execute('sudo systemctl list-unit-files --no-pager --no-legend')
+        exitcode, output = j.system.process.execute('systemctl list-unit-files --no-pager --no-legend')
         results = {}
         for line in output.splitlines():
-            key, value = line.split()
-            results[key] = value
+            if line:
+                parts = line.split()
+                if len(parts) == 2:
+                    key, value = parts
+                    results[key] = value
         return results
 
     def startService(self, servicename):
