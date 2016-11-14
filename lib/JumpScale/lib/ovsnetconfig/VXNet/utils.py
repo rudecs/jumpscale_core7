@@ -24,7 +24,7 @@ def send_to_syslog(msg):
 
 
 def doexec(args):
-    """Execute a subprocess, then return its return code, stdout and stderr"""
+    """execute a subprocess, then return its return code, stdout and stderr"""
     send_to_syslog(args)
     proc = subprocess.Popen(args, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, bufsize=-1)
     rc = proc.wait()
@@ -170,6 +170,12 @@ def createVethPair(left,right):
 def destroyVethPair(left):
     return destroyVXlan(left)
 
+def oldipr2():
+    cmd = "%s -V" % ip
+    r,s,e = doexec(cmd.split())
+    v=r.split(",")[1].strip().split("-")[1]
+    return True if v<'ss140110' else False
+
 
 def createVXlan(vxname,vxid,multicast,vxbackend,dstport='4789'):
     """
@@ -179,14 +185,17 @@ def createVXlan(vxname,vxid,multicast,vxbackend,dstport='4789'):
     # 0000-fe99 for customer vxlans, ff00-ffff for environments
     MTU of VXLAN = 1500
     """
-    cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s dstport %s' % (vxname, vxid, multicast, vxbackend, dstport)
+    if oldipr2():
+        cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s port %s' % (vxname, vxid, multicast, vxbackend, dstport)
+    else:
+        cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s dstport %s' % (vxname, vxid, multicast, vxbackend, dstport)
+
     r,s,e = doexec(cmd.split())
     disable_ipv6(vxname)
     setMTU(vxname, 1500)
     ip_link_set(vxname,'up')
     if r:
         send_to_syslog("Problem with creation of vxlan %s, err was: %s" % (vxname ,e.readlines()))
-
 
 def destroyVXlan(name):
     if not iface_exists(name):
