@@ -17,7 +17,7 @@ PHYSMTU = 2000
 
 # TODO : errorhandling
 def send_to_syslog(msg):
-    print msg
+    print(msg)
     # pid = os.getpid()
     # print ("%s[%d] - %s" % (command_name, pid, msg))
     # syslog.syslog("%s[%d] - %s" % (command_name, pid, msg))
@@ -171,7 +171,7 @@ def destroyVethPair(left):
     return destroyVXlan(left)
 
 
-def createVXlan(vxname,vxid,multicast,vxbackend):
+def createVXlan(vxname,vxid,multicast,vxbackend,dstport='4789'):
     """
     Always brought up too
     Created with no protocol, and upped (no ipv4, no ipv6)
@@ -179,7 +179,7 @@ def createVXlan(vxname,vxid,multicast,vxbackend):
     # 0000-fe99 for customer vxlans, ff00-ffff for environments
     MTU of VXLAN = 1500
     """
-    cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s' % (vxname, vxid, multicast, vxbackend)
+    cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s dstport %s' % (vxname, vxid, multicast, vxbackend, dstport)
     r,s,e = doexec(cmd.split())
     disable_ipv6(vxname)
     setMTU(vxname, 1500)
