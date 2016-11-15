@@ -146,6 +146,15 @@ class Console:
         if log:
             j.logger.log(msg,1)
 
+    def info(self, text):
+        print('\033[1;36m[*] %s\033[0m' % text)
+
+    def warning(self, text):
+        print('\033[1;33m[-] %s\033[0m' % text)
+
+    def success(self, text):
+        print('\033[1;32m[+] %s\033[0m' % text)
+
     def echoListItem(self, msg):
         """
         Echo a list item
@@ -708,5 +717,3 @@ class Console:
             return [item.strip(" ") for item in results]
         else:
             return results
-
-
