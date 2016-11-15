@@ -155,6 +155,9 @@ class Console:
     def success(self, text):
         print('\033[1;32m[+] %s\033[0m' % text)
 
+    def notice(self, text):
+        print('\033[1;34m[+] %s\033[0m' % text)
+
     def echoListItem(self, msg):
         """
         Echo a list item
