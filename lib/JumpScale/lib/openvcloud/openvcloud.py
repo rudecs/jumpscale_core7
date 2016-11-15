@@ -348,11 +348,52 @@ class Openvclcoud(object):
         return nodes
 
     def getRemoteNode(self, nodename):
-        j.console.info('Finding node {}'.format(options.node))
-        services = j.atyourservice.findServices(name='node.ssh', instance=options.node)
-        if services != 0:
-            raise KeyError("Could not find node {}".format(options.node))
+        j.console.info('Finding node {}'.format(nodename))
+        services = j.atyourservice.findServices(name='node.ssh', instance=nodename)
+        if len(services) != 1:
+            raise KeyError("Could not find node {}".format(nodename))
         return services[0]
+
+    def configureNginxProxy(self, node, settings):
+        refsrv = j.atyourservice.findServices(name='node.ssh', instance='ovc_reflector')
+
+        if len(refsrv) > 0:
+            autossh = True
+            reflector = refsrv[0]
+
+            refaddress = reflector.hrd.getStr('instance.ip')
+            refport = reflector.hrd.getStr('instance.ssh.publicport')
+
+            if refport is None:
+                j.console.warning('cannot find reflector public ssh port')
+                sys.exit(1)
+
+            # find autossh of this node
+            autossh = next(iter(j.atyourservice.findServices(name='autossh', instance=nodename)), None)
+            if not autossh:
+                j.console.warning('cannot find auto ssh of node')
+                sys.exit(1)
+
+            remoteport = autossh.hrd.getInt('instance.remote.port') - 21000 + 2000
+            data_autossh = {'instance.local.address': 'localhost',
+                            'instance.local.port': '2001',
+                            'instance.remote.address': settings.getStr('instance.ovc.cloudip'),
+                            'instance.remote.bind': refaddress,
+                            'instance.remote.connection.port': refport,
+                            'instance.remote.login': 'guest',
+                            'instance.remote.port': remoteport,
+                            }
+
+            j.console.info('autossh tunnel port: %s' % data_autossh['instance.remote.port'])
+            j.console.info('cpunode reflector address: %s, %s' % (refaddress, refport))
+            temp = j.atyourservice.new(name='autossh', instance='http_proxy', args=data_autossh, parent=nodeService)
+            temp.consume('node', nodeService.instance)
+            temp.install(deps=True)
+
+        else:
+            autossh = False
+            j.console.warning('reflector not found, skipping autossh')
+        return autossh
 
     def initVnasCloudSpace(self, gitlablogin, gitlabpasswd, delete=False):
         print "get secret key for cloud api"
