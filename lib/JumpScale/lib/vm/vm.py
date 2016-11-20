@@ -1,6 +1,5 @@
 from JumpScale import j
-import json
-import urllib
+
 
 class VirtualMachinesFactory(object):
     def get(self, target, settings=None):
@@ -12,42 +11,31 @@ class VirtualMachinesFactory(object):
         else:
             raise NameError('Target "%s" not available' % target)
 
-class VirtualMachines(object):
-    # FIXME: move me
-    def info(self, text):
-        print '\033[1;36m[*] %s\033[0m' % text
-        
-    def warning(self, text):
-        print '\033[1;33m[-] %s\033[0m' % text
 
-    def success(self, text):
-        print '\033[1;32m[+] %s\033[0m' % text
-    
-    def message(self, text):
-        print '\033[0m[+] %s\033[0m' % text
-    
-    
+class VirtualMachines(object):
+
     """
     Console tools
     """
     def enableQuiet(self, remote=None):
         j.remote.cuisine.api.fabric.state.output['stdout'] = False
         j.remote.cuisine.api.fabric.state.output['running'] = False
-        
+
         if remote:
             remote.fabric.state.output['stdout'] = False
             remote.fabric.state.output['running'] = False
-    
+
     def disableQuiet(self, remote=None):
         j.remote.cuisine.api.fabric.state.output['stdout'] = True
         j.remote.cuisine.api.fabric.state.output['running'] = True
-        
+
         if remote:
             remote.fabric.state.output['stdout'] = True
             remote.fabric.state.output['running'] = True
 
     def addVolume(self, hostname, host, docker):
         return True
+
 
 class VirtualMachinesDocker(VirtualMachines):
     def __init__(self, settings):
@@ -59,7 +47,7 @@ class VirtualMachinesDocker(VirtualMachines):
             'public': ''
         }
         self.docking = {}
-        self.info('setting up backend: docker')
+        j.console.info('setting up backend: docker')
 
         # validator
         if not settings.get('public'):
@@ -71,14 +59,14 @@ class VirtualMachinesDocker(VirtualMachines):
 
         if settings.get('port'):
             self._docker['port'] = settings['port']
-        
+
         if settings.get('image'):
             self._docker['image'] = settings['image']
 
         self._docker['api'] = j.tools.docker
 
         if self._docker['remote']:
-            self.message('connecting remote server: %s/%s' % (self._docker['remote'], self._docker['port']))
+            j.console.message('connecting remote server: %s/%s' % (self._docker['remote'], self._docker['port']))
             self._docker['api'].connectRemoteTCP(self._docker['remote'], self._docker['port'])
 
         self._docker['public'] = settings['public']
@@ -89,7 +77,7 @@ class VirtualMachinesDocker(VirtualMachines):
     def commitMachine(self, hostname):
         hostname = self._cleanHostname(hostname)
 
-        self.info('commit: %s' % hostname)
+        j.console.info('commit: %s' % hostname)
         if self.docking.get(hostname) is None:
             return False
 
@@ -99,12 +87,11 @@ class VirtualMachinesDocker(VirtualMachines):
         self._docker['api'].create(name=hostname, ports=ports, base=self._docker['image'], vols=mount, mapping=False)
         return self.getMachine(hostname)
 
-
     def getMachine(self, hostname):
         hostname = self._cleanHostname(hostname)
 
-        self.message('grabbing settings for: %s' % hostname)
-        
+        j.console.message('grabbing settings for: %s' % hostname)
+
         dock = self._docker['api'].client.inspect_container(hostname)
         data = {
             'hostname': dock['Config']['Hostname'],
@@ -119,18 +106,18 @@ class VirtualMachinesDocker(VirtualMachines):
     def createPortForward(self, hostname, localport, publicport):
         hostname = self._cleanHostname(hostname)
 
-        self.info('port forwarding: %s (%s -> %s)' % (hostname, publicport, localport))
-        if self.docking.get(hostname) == None:
+        j.console.info('port forwarding: %s (%s -> %s)' % (hostname, publicport, localport))
+        if self.docking.get(hostname) is None:
             raise NameError('Hostname "%s" seems not ready for docker settings' % hostname)
 
         self.docking[hostname]['ports'].append('%s:%s' % (localport, publicport))
         return True
-    
+
     def addVolume(self, hostname, host, docker):
         hostname = self._cleanHostname(hostname)
 
-        self.info('directory mapping: %s (%s -> %s)' % (hostname, host, docker))
-        if self.docking.get(hostname) == None:
+        j.console.info('directory mapping: %s (%s -> %s)' % (hostname, host, docker))
+        if self.docking.get(hostname) is None:
             raise NameError('Hostname "%s" seems not ready for docker settings' % hostname)
 
         self.docking[hostname]['volumes'].append('%s:%s' % (docker, host))
@@ -139,7 +126,7 @@ class VirtualMachinesDocker(VirtualMachines):
     def createMachine(self, hostname, memsize, ssdsize, delete):
         hostname = self._cleanHostname(hostname)
 
-        self.info('initializing: %s (RAM: %s GB, Disk: %s GB)' % (hostname, memsize, ssdsize))
+        j.console.info('initializing: %s (RAM: %s GB, Disk: %s GB)' % (hostname, memsize, ssdsize))
         self.docking[hostname] = {
             'memsize': memsize,
             'status': 'waiting',
@@ -160,7 +147,7 @@ class VirtualMachinesMS1(VirtualMachines):
             'location': '',
             'sshkey': '/root/.ssh/id_rsa.pub'
         }
-        self.info('setting up backend: mothership1')
+        j.console.info('setting up backend: mothership1')
 
         # validator
         if not settings.get('secret'):
@@ -176,20 +163,20 @@ class VirtualMachinesMS1(VirtualMachines):
             self._mother['apiurl'] = settings['apiurl']
 
         # copy settings
-        self._mother['api']        = j.tools.ms1.get(self._mother['apiurl'])
-        self._mother['secret']     = settings['secret']
+        self._mother['api'] = j.tools.ms1.get(self._mother['apiurl'])
+        self._mother['secret'] = settings['secret']
         self._mother['cloudspace'] = settings['cloudspace']
-        self._mother['location']   = settings['location']
+        self._mother['location'] = settings['location']
 
-        self.message('loading mothership1 api: %s' % self._mother['apiurl'])
+        j.console.message('loading mothership1 api: %s' % self._mother['apiurl'])
         self._mother['api'].setCloudspace(self._mother['secret'], self._mother['cloudspace'], self._mother['location'])
 
     def commitMachine(self, hostname):
-        self.info('commit: %s' % hostname)
+        j.console.info('commit: %s' % hostname)
         return self.getMachine(hostname)
 
     def getMachine(self, hostname):
-        self.message('grabbing settings for: %s' % hostname)
+        j.console.message('grabbing settings for: %s' % hostname)
         item = self._mother['api'].getMachineObject(self._mother['secret'], hostname)
         ports = self._mother['api'].listPortforwarding(self._mother['secret'], hostname)
 
@@ -211,15 +198,15 @@ class VirtualMachinesMS1(VirtualMachines):
         return data
 
     def createPortForward(self, hostname, localport, publicport):
-        self.info('port forwarding: %s (%s -> %s)' % (hostname, publicport, localport))
+        j.console.info('port forwarding: %s (%s -> %s)' % (hostname, publicport, localport))
         return self._mother['api'].createTcpPortForwardRule(self._mother['secret'], hostname, localport, pubipport=publicport)
 
     def createMachine(self, hostname, memsize, ssdsize, delete):
-        self.info('initializing: %s (RAM: %s GB, Disk: %s GB)' % (hostname, memsize, ssdsize))
-        
+        j.console.info('initializing: %s (RAM: %s GB, Disk: %s GB)' % (hostname, memsize, ssdsize))
+
         memory = str(memsize)
         disk = str(ssdsize)
-        
+
         # FIXME: remove this try/catch ?
         try:
             self._mother['api'].createMachine(self._mother['secret'], hostname, memsize=memory, ssdsize=disk, imagename=self._mother['image'], sshkey=self._mother['sshkey'], delete=delete)

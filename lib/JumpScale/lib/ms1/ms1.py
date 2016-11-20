@@ -72,7 +72,7 @@ class MS1(object):
     def getCloudspaceObj(self, space_secret,**args):
         if not self.db.exists('cloudrobot:cloudspaces:secrets', space_secret):
             raise RuntimeError("E:Space secret does not exist, cannot continue (END)")
-        
+
         space=json.loads(self.db.get('cloudrobot:cloudspaces:secrets', space_secret))
         return space
 
@@ -311,7 +311,7 @@ class MS1(object):
                 break
             else:
                 time.sleep(1)
-                
+
         if not j.basetype.ipaddress.check(machine['interfaces'][0]['ipAddress']):
             raise RuntimeError('E:Machine was created, but never got an IP address')
 
@@ -435,17 +435,17 @@ class MS1(object):
 
     def _createPortForwardRule(self, spacesecret, name, machineport, pubip, pubipport, protocol):
         # self.sendUserMessage("Create PFW rule:%s %s %s"%(pubip,pubipport,protocol),args=args)
-        api,machines_actor,machine_id,cloudspace_id=self._getMachineApiActorId(spacesecret,name)
+        api,machines_actor,machine_id,cloudspace_id = self._getMachineApiActorId(spacesecret, name)
         portforwarding_actor = api.getActor('cloudapi', 'portforwarding')
         if pubip=="":
             cloudspaces_actor = api.getActor('cloudapi', 'cloudspaces')
             cloudspace = cloudspaces_actor.get(cloudspace_id)
             pubip=cloudspace['publicipaddress']
 
-        self.vars["space.ip.pub"]=pubip
+        self.vars["space.ip.pub"] = pubip
         self._deletePortForwardRule(spacesecret, name, pubip, pubipport, 'tcp')
 
-        print("[+] creating portforward: %s/%s -> %s/%s" % (pubip, pubipport, name, machineport))
+        j.console.info("creating portforward: %s/%s -> %s/%s" % (pubip, pubipport, name, machineport))
         portforwarding_actor.create(cloudspace_id, pubip, str(pubipport), machine_id, str(machineport), protocol)
 
         return "OK"
@@ -489,7 +489,7 @@ class MS1(object):
 
         for item in portforwarding_actor.list(cloudspace_id):
             if int(item["publicPort"]) == int(pubipport) and item['publicIp'] == pubip:
-                print("[+] deleting portforward: %s/%s -> %s/%s" % (pubip, item["publicPort"], item["localIp"], item["localPort"]))
+                j.console.info("deleting portforward: %s/%s -> %s/%s" % (pubip, item["publicPort"], item["localIp"], item["localPort"]))
                 portforwarding_actor.delete(cloudspace_id,item["id"])
 
         return "OK"
@@ -562,7 +562,7 @@ class MS1(object):
             return 'Machine %s does not belong to cloudspace whose secret is given' % name
 
 
-        print("[+] rebuilding ssh connection")
+        j.console.info("rebuilding ssh connection")
         portforwarding_actor = api.getActor('cloudapi', 'portforwarding')
         items=portforwarding_actor.list(cloudspace_id)
 

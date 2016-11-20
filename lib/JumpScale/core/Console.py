@@ -158,6 +158,9 @@ class Console:
     def notice(self, text):
         print('\033[1;34m[+] %s\033[0m' % text)
 
+    def message(self, text):
+        print('\033[0m[+] %s\033[0m' % text)
+
     def echoListItem(self, msg):
         """
         Echo a list item
