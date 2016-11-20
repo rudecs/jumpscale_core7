@@ -1,13 +1,16 @@
 from JumpScale import j
-import json
 import urllib
 import time
 
+
 class OpenvcloudFactory(object):
+
     def get(self):
         return Openvclcoud()
 
+
 class Openvclcoud(object):
+
     def __init__(self):
         self.reset = False
         self.db = j.db.keyvaluestore.getFileSystemStore("aysgit")
@@ -20,11 +23,11 @@ class Openvclcoud(object):
     def initLocalhost(self, gitlaburl, gitlablogin, gitlabpasswd):
         self.preprocess()
 
-        if gitlablogin == None:
-            print("[-] no gitlab check will be done, using github")
+        if gitlablogin is None:
+            j.console.warning("no gitlab check will be done, using github")
             return
 
-        print "[+] creating git repository"
+        j.console.info("creating git repository")
 
         if gitlaburl.find("@") != -1:
             j.events.inputerror_critical('[-] do not use "login:passwd@" in the url')
@@ -35,21 +38,21 @@ class Openvclcoud(object):
         gitlabAccountname, gitlabReponame = j.clients.gitlab.getAccountnameReponameFromUrl(gitlaburl)
         gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
 
-        print '[+] git group: %s' % gitlabAccountname
-        print '[+] environment: %s' % gitlabReponame
+        j.console.info('git group: %s' % gitlabAccountname)
+        j.console.info('environment: %s' % gitlabReponame)
 
         gitlab = j.clients.gitlab.get(gitlaburl0, gitlablogin, gitlabpasswd)
 
-        print '[+] checking for existing project'
+        j.console.info('checking for existing project')
 
         projects = gitlab.getProjects(False)
         for project in projects:
             if project['name'] == gitlabReponame and project['namespace']['name'] == gitlabAccountname:
-                print '[-] %s/%s: project already exists' % (gitlabAccountname, gitlabReponame)
+                j.console.warning('%s/%s: project already exists' % (gitlabAccountname, gitlabReponame))
                 j.application.stop()
 
     def initMothership(self, login, passwd, location, cloudspace, reset=False, apiurl='www.mothership1.com'):
-        print '[+] building mothership1 based environment'
+        j.console.info('building mothership1 based environment')
 
         api = j.tools.ms1.get(apiurl)
         secret = api.getCloudspaceSecret(login, passwd, cloudspace, location)
@@ -69,9 +72,9 @@ class Openvclcoud(object):
         return {'remote': machine['publicip'], 'port': machine['publicport'], 'secret': secret, 'public': machine['publicip']}
 
     def initDocker(self, host, port, public):
-        print '[+] building docker based environment'
+        j.console.info('building docker based environment')
 
-        print '[+] preparing base image'
+        j.console.info('preparing base image')
         today = time.strftime('%Y-%m-%d')
         image = 'openvcloud/%s' % today
 
@@ -96,7 +99,7 @@ class Openvclcoud(object):
             service.install(reinstall=False)
 
         else:
-            print '[+] image already made, re-using it...'
+            j.console.info('image already made, re-using it...')
 
         machine = self.initMachine(vm, 'docker', self._docker)
 
@@ -115,46 +118,46 @@ class Openvclcoud(object):
         return machine
 
     def preprocess(self):
-        print "[+] checking local ssh key"
+        j.console.info("checking local ssh key")
 
         keypath = '/root/.ssh/id_rsa'
 
         if not j.system.fs.exists(path=keypath):
-            print "[+] generating local rsa key"
+            j.console.info("generating local rsa key")
             j.system.platform.ubuntu.generateLocalSSHKeyPair()
 
-        print '[+] checking for redis'
+        j.console.info('checking for redis')
         if not j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
             redis = j.atyourservice.findServices(instance='system', name='redis')
 
             if len(redis) == 0:
-                print '[-] cannot continue, redis is not installed'
+                j.console.warning('cannot continue, redis is not installed')
                 j.application.stop()
 
             redis[0].start()
 
-    def actionCheck(self,gitlaburl,actionname):
+    def actionCheck(self, gitlaburl, actionname):
         if self.reset:
             return False
 
         key = "%s__%s" % (gitlaburl, actionname)
 
         if self.db.exists("", key):
-            print "[-] action: %s already done" % actionname
+            j.console.notice("action: %s already done" % actionname)
             return self.db.get("", key)
 
         return False
 
-    def actionDone(self,gitlaburl,actionname,args=None):
+    def actionDone(self, gitlaburl, actionname, args=None):
         key = "%s__%s" % (gitlaburl, actionname)
         self.db.set("", key, args)
 
     def jumpscale(self, remote):
         if remote.file_exists('/opt/jumpscale7/'):
-            print "[+] jumpscale seems already installed, skipping"
+            j.console.info("jumpscale seems already installed, skipping")
             return
 
-        print "[+] installing jumpscale"
+        j.console.info("installing jumpscale")
         cmd = j.do.getInstallCommand()
         remote.run(cmd)
 
@@ -164,13 +167,13 @@ class Openvclcoud(object):
         if len(recoverypasswd) < 6:
             j.events.inputerror_critical("[-] recovery passwd needs to be at least 6 chars")
 
-        print '[+] creating gitlab project'
+        j.console.info('creating gitlab project')
 
         gitlabAccountname, gitlabReponame = j.clients.gitlab.getAccountnameReponameFromUrl(gitlaburl)
         gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
 
         if gitlablogin:
-            print '[+] creating gitlab project'
+            j.console.info('creating gitlab project')
 
             gitlaburl0 = "/".join(gitlaburl.split("/")[:3])
 
@@ -179,7 +182,7 @@ class Openvclcoud(object):
 
         cl = j.ssh.connect(machine['remote'], machine['port'], keypath=keypath, verbose=True)
 
-        print '[+] generating keypair on the vm'
+        j.console.info('generating keypair on the vm')
         cl.ssh_keygen('root', 'rsa')
 
         # install jumpscale
@@ -187,14 +190,12 @@ class Openvclcoud(object):
 
         ovcversion = j.clients.git.get('/opt/code/github/0-complexity/openvcloud').getBranchOrTag()[1]
 
-        print "[+] adding openvcloud domain to atyourservice"
-        content  = "metadata.openvcloud            =\n"
+        j.console.info('adding openvcloud domain to atyourservice')
+        content = "metadata.openvcloud            =\n"
         content += "    branch:'%s',\n" % (ovcversion)
         content += "    url:'git@github.com:0-complexity/openvcloud_ays',\n"
 
         cl.file_append('/opt/jumpscale7/hrd/system/atyourservice.hrd', content)
-
-
 
         # git credentials
         cl.run('jsconfig hrdset -n whoami.git.login -v "ssh"')
@@ -281,7 +282,7 @@ class Openvclcoud(object):
         args = 'instance.ovc.environment:%s ' % environment
         args += 'instance.ovc.path:%s ' % repopath
         args += 'instance.ovc.ms1.instance:main '           # FIXME, remove me
-        args += 'instance.ovc.gitlab_client.instance:main ' # FIXME, remove me
+        args += 'instance.ovc.gitlab_client.instance:main '  # FIXME, remove me
         args += 'instance.ovc.password:%s ' % recoverypasswd
         args += 'instance.ovc.bootstrap.port:%s ' % self.bootstrapPort
         args += 'instance.ovc.bootstrap.host:%s ' % machine['remote']
@@ -305,26 +306,24 @@ class Openvclcoud(object):
         # check if netstat can gives pid
         lines = cl.run('netstat -anoptuw | grep sshd | wc -l')
         if int(lines) == 0:
-            print '[-] WARNING: ************************************************************'
-            print '[-] WARNING: no ssh pid found with netstat, this will break setup'
-            print '[-] WARNING: - if you are using docker, you are not up-to-date'
-            print '[-] WARNING: - otherwise, your system seems not correctly configured'
-            print '[-] WARNING: ************************************************************'
+            j.console.warning('WARNING: ************************************************************')
+            j.console.warning('WARNING: no ssh pid found with netstat, this will break setup')
+            j.console.warning('WARNING: - if you are using docker, you are not up-to-date')
+            j.console.warning('WARNING: - otherwise, your system seems not correctly configured')
+            j.console.warning('WARNING: ************************************************************')
 
         else:
-            print '[+] environment is ready to be deployed'
+            j.console.info('environment is ready to be deployed')
 
         # ensure that ssh agent is running and add the new key
         j.do.execute('eval $(ssh-agent -s)')
 
-        print ''
-        print '[+] you can now ssh the ovcgit host to configure the environment'
-        print '[+]   ssh root@%s -p %s -A' % (machine['remote'], machine['port'])
-
+        j.console.info('you can now ssh the ovcgit host to configure the environment')
+        j.console.info('  ssh root@%s -p %s -A' % (machine['remote'], machine['port']))
 
     def _getNodes(self):
         sshservices = j.atyourservice.findServices(name='node.ssh')
-        sshservices.sort(key = lambda x: x.instance)
+        sshservices.sort(key=lambda x: x.instance)
         return sshservices
 
     def getMasterNodes(self):
@@ -396,21 +395,22 @@ class Openvclcoud(object):
         return autossh
 
     def initVnasCloudSpace(self, gitlablogin, gitlabpasswd, delete=False):
-        print "get secret key for cloud api"
+        j.console.info("get secret key for cloud api")
         if self._spacesecret is None:
             j.events.inputerror_critical('no spacesecret set, need to call connect() method first')
         else:
             spacesecret = self._spacesecret
 
-        print "check local ssh key exists"
-        keypath='/root/.ssh/id_rsa'
+        j.console.info("check local ssh key exists")
+        keypath = '/root/.ssh/id_rsa'
         if not j.system.fs.exists(path=keypath):
-            print "generate local rsa key"
+            j.console.info("generate local rsa key")
             j.system.platform.ubuntu.generateLocalSSHKeyPair()
 
         if self.actionCheck(spacesecret, "vnas_machinecreate") is False:
             # create ovc_git vm
-            id, ip, port = self.api.createMachine(spacesecret, 'vnas_master', memsize='2', ssdsize='10', imagename='ubuntu 14.04 x64',sshkey='/root/.ssh/id_rsa.pub',delete=delete)
+            id, ip, port = self.api.createMachine(spacesecret, 'vnas_master', memsize='2', ssdsize='10',
+                                                  imagename='ubuntu 14.04 x64', sshkey='/root/.ssh/id_rsa.pub', delete=delete)
 
             # portforward 22 to 22 on ovc_git
             self.api.createTcpPortForwardRule(spacesecret, 'vnas_master', 22, pubipport=1500)
@@ -419,7 +419,7 @@ class Openvclcoud(object):
             cl = j.ssh.connect(ip, port, keypath=keypath, verbose=True)
 
             # generate key pair on the vm
-            print 'generate keypair on the vm'
+            j.console.info('generate keypair on the vm')
             cl.ssh_keygen('root', 'rsa')
 
             self.actionDone(spacesecret, "vnas_machinecreate", (ip, port))
@@ -429,12 +429,12 @@ class Openvclcoud(object):
 
         if self.actionCheck(spacesecret, "vnas_jumpscale") is False:
             # install Jumpscale
-            print "install jumpscale"
+            j.console.info("install jumpscale")
             cmd = j.do.getInstallCommand()
             cl.run(cmd)
-            print "jumpscale installed"
+            j.console.info("jumpscale installed")
 
-            print "add openvcloud domain to atyourservice"
+            j.console.info("add openvcloud domain to atyourservice")
             content = """
 metadata.openvcloud            =
     url:'https://github.com/0-complexity/openvcloud_ays',
@@ -449,13 +449,14 @@ metadata.openvcloud            =
 
         if self.actionCheck(spacesecret, "vnas_ovc_client") is False:
             # create ovc_client to save ovc connection info
-            args = 'instance.param.location:%s instance.param.login:%s instance.param.passwd:%s instance.param.cloudspace:%s instance.param.apiurl:%s' % (self.location, self.login, self.passwd, self.cloudspace, self.apiURL)
+            args = 'instance.param.location:%s instance.param.login:%s instance.param.passwd:%s instance.param.cloudspace:%s instance.param.apiurl:%s' % (
+                self.location, self.login, self.passwd, self.cloudspace, self.apiURL)
             cl.run('ays install -n ovc_client --data "%s" -r' % args)
             self.actionDone(spacesecret, "vnas_ovc_client")
 
         ss = cl.host().split(':')
         ip, port = ss[0], ss[1]
-        print "connect to the vnas_master with\nssh root@%s -p %s" % (ip, port)
+        j.console.info("connect to the vnas_master with\nssh root@%s -p %s" % (ip, port))
 
     def vmExists(self, spacesecret, name):
         try:
