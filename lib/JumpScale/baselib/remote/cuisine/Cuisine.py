@@ -29,12 +29,12 @@ class OurCuisine():
         self.api.connect('%s:%s' % (addr,port), login)
 
         env.password=passwd
-        
+
         return self.api
 
     def help(self):
         C = """
-import JumpScale.baselib.remote.cuisine        
+import JumpScale.baselib.remote.cuisine
 #easiest way to use do:
 c=j.remote.cuisine
 #and then
@@ -42,3 +42,12 @@ c=j.remote.cuisine
 c.user_ensure(...)
         """
         print(C)
+
+    def enableQuiet(self):
+        self.api.fabric.state.output['stdout'] = False
+        self.api.fabric.state.output['running'] = False
+
+
+    def disableQuiet(self):
+        self.api.fabric.state.output['stdout'] = True
+        self.api.fabric.state.output['running'] = True
