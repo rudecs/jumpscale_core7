@@ -159,7 +159,7 @@ class Console:
         print('\033[1;34m[+] %s\033[0m' % text)
 
     def message(self, text):
-        print('\033[0m[+] %s\033[0m' % text)
+        print('\033[1;37m[+] %s\033[0m' % text)
 
     def echoListItem(self, msg):
         """
