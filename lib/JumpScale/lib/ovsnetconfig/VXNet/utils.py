@@ -195,8 +195,8 @@ def createVXlan(vxname, vxid, multicast, vxbackend, dstport='4789'):
     MTU of VXLAN = 1500
     """
     if oldipr2():
-        cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s port %s' % (
-            vxname, vxid, multicast, vxbackend, dstport)
+        cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s' % (
+            vxname, vxid, multicast, vxbackend)
     else:
         cmd = 'ip link add %s type vxlan id %s group %s ttl 60 dev %s dstport %s' % (
             vxname, vxid, multicast, vxbackend, dstport)
