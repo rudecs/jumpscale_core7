@@ -54,7 +54,7 @@ class Process():
                 if self.pid==0:
                     self.do()
                 else:
-                    self.refresh()        
+                    self.refresh()
 
     def refresh(self):
         self.p= psutil.Process(self.pid)
@@ -67,7 +67,7 @@ class Process():
         rss,vms=self.p.get_memory_info()
         return vms!=0
 
-    def _spawnProcess(self):   
+    def _spawnProcess(self):
         if self.logpath==None:
             self.logpath=j.system.fs.joinPaths(j.dirs.logDir,"processmanager","logs","%s_%s_%s.log"%(self.domain,self.name,self.instance))
             j.system.fs.createDir(j.system.fs.joinPaths(j.dirs.logDir,"processmanager","logs"))
@@ -81,7 +81,7 @@ class Process():
         cmds = self.cmds[:]  # copy cmds
         cmds.extend(['-lp', self.logpath])
 
-        try:            
+        try:
             self.p = psutil.Popen(cmds, env=self.env,cwd=self.workingdir,stdin=stdin, stdout=stdout, stderr=stderr,bufsize=0,shell=False) #f was: subprocess.PIPE
             self.pid=self.p.pid
         except Exception as e:
@@ -99,7 +99,7 @@ class Process():
         if self.pythonCode!=None:
             exec(self.pythonCode)
 
-        os._exit(0)  
+        os._exit(0)
 
     def __str__(self):
         return "%s"%self.__dict__
@@ -184,7 +184,7 @@ class ProcessManager():
             jsagentService.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
             j.application.loadConfig()
             j.application.initWhoAmI(True)
-            
+
             self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
         else:
             self.acclient=None
@@ -192,7 +192,7 @@ class ProcessManager():
 
     def start(self):
 
-        # self._webserverStart()        
+        # self._webserverStart()
         self._workerStart()
 
         j.core.grid.init()
@@ -220,7 +220,7 @@ class ProcessManager():
 
     def _workerStart(self):
         pwd = '/opt/jumpscale7/apps/jsagent/lib'
-        for qname in ["default", "default", "io", "process", "process", "hypervisor"]:
+        for qname in ["default"] * 2 + ["io", "hypervisor"] + ["process"] * 5:
             p = Process()
             p.domain = 'workers'
             p.name = '%s' % qname
@@ -235,10 +235,10 @@ class ProcessManager():
         i=0
         while True:
             i+=1
-            # print "NEXT:%s\n"%i    
+            # print "NEXT:%s\n"%i
             for p in self.processes[:]:
-                # p.refresh()        
-                if p.p!=None:        
+                # p.refresh()
+                if p.p!=None:
                     if not p.is_running():
                         if p.restart:
                             print("%s:%s was stopped restarting" % (p.domain, p.name))
