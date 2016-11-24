@@ -1,6 +1,7 @@
 from JumpScale import j
 import urllib
 import time
+import sys
 
 
 class OpenvcloudFactory(object):
@@ -365,13 +366,13 @@ class Openvclcoud(object):
 
             if refport is None:
                 j.console.warning('cannot find reflector public ssh port')
-                sys.exit(1)
+                return False
 
             # find autossh of this node
-            autossh = next(iter(j.atyourservice.findServices(name='autossh', instance=nodename)), None)
+            autossh = next(iter(j.atyourservice.findServices(name='autossh', instance=node.instance)), None)
             if not autossh:
                 j.console.warning('cannot find auto ssh of node')
-                sys.exit(1)
+                return autossh
 
             remoteport = autossh.hrd.getInt('instance.remote.port') - 21000 + 2000
             data_autossh = {'instance.local.address': 'localhost',
@@ -385,8 +386,8 @@ class Openvclcoud(object):
 
             j.console.info('autossh tunnel port: %s' % data_autossh['instance.remote.port'])
             j.console.info('cpunode reflector address: %s, %s' % (refaddress, refport))
-            temp = j.atyourservice.new(name='autossh', instance='http_proxy', args=data_autossh, parent=nodeService)
-            temp.consume('node', nodeService.instance)
+            temp = j.atyourservice.new(name='autossh', instance='http_proxy', args=data_autossh, parent=node)
+            temp.consume('node', node.instance)
             temp.install(deps=True)
 
         else:
