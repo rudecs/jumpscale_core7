@@ -354,7 +354,7 @@ class Openvclcoud(object):
             raise KeyError("Could not find node {}".format(nodename))
         return services[0]
 
-    def configureNginxProxy(self, node, settings):
+    def configureNginxProxy(self, node, settings, instance='http_proxy'):
         refsrv = j.atyourservice.findServices(name='node.ssh', instance='ovc_reflector')
 
         if len(refsrv) > 0:
@@ -386,7 +386,7 @@ class Openvclcoud(object):
 
             j.console.info('autossh tunnel port: %s' % data_autossh['instance.remote.port'])
             j.console.info('cpunode reflector address: %s, %s' % (refaddress, refport))
-            temp = j.atyourservice.new(name='autossh', instance='http_proxy', args=data_autossh, parent=node)
+            temp = j.atyourservice.new(name='autossh', instance=instance, args=data_autossh, parent=node)
             temp.consume('node', node.instance)
             temp.install(deps=True)
 
