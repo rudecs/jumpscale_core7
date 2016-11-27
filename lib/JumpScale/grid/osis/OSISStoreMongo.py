@@ -79,10 +79,18 @@ class OSISStoreMongo(OSISStore):
 
     def create_indexes(self, spec):
         db, counter = self._getMongoDB()
+        textindex = []
         for property in spec.properties:
             if property.tags is not None and 'index' in property.tags:
-                j.console.info('Creating index {}/{}/{}'.format(self.namespace, self.categoryname, property.name))
-                db.ensure_index(property.name, background=True)
+                tagobj = j.core.tags.getObject(property.tags)
+                if 'index' in tagobj.labels:
+                    j.console.info('Creating index {}/{}/{}'.format(self.namespace, self.categoryname, property.name))
+                    db.ensure_index(property.name, background=True)
+                if tagobj.tags.get('index') == 'text':
+                    textindex.append((property.name, pymongo.TEXT))
+        if textindex:
+            j.console.info('Creating text index {}/{}'.format(self.namespace, self.categoryname))
+            db.ensure_index(textindex, background=True)
 
     def initall(self, path, namespace, categoryname):
         self._init_auth(path, namespace, categoryname)

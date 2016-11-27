@@ -62,7 +62,7 @@
     prop:level int,, 1:critical, 2:warning, 3:info @index
     prop:type str,, @index
     prop:state str,, ["NEW","ALERT","CLOSED"] @index
-    prop:errormessage str,,
+    prop:errormessage str,, @index:text
     prop:errormessagePub str,,
     prop:category str,, dot notation e.g. machine.start.failed @index
     prop:tags str,, e.g. machine:2323 @index
@@ -320,5 +320,5 @@
     prop:gid int,, @index
     prop:private int,,
     prop:masterjid int,,
-    prop:message str,, @index
+    prop:message str,, @index:text
     prop:tags str,, @index
