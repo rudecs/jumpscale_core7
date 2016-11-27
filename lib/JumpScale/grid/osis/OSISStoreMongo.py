@@ -20,11 +20,14 @@ def _changekey(object, map):
             object[idx] = _changekey(value, map)
     return object
 
+
 def cleankeys(object):
     return _changekey(object, {'$': '\u0024', '.': '\u002e'})
 
+
 def restorekeys(object):
     return _changekey(object, {'\u0024': '$', '\u002e': '.'})
+
 
 class OSISStoreMongo(OSISStore):
     MULTIGRID = True
@@ -37,16 +40,18 @@ class OSISStoreMongo(OSISStore):
     - more consistent way of working with id's & guid's
 
     """
+
     def __init__(self, dbconnections):
         self.dbclient = dbconnections['mongodb_main']
 
     def _getDB(self):
         raise RuntimeError("Not Implemented")
 
-    def _getMongoDB(self, session):
-        if not session.gid in self._db:
+    def _getMongoDB(self, session=None):
+        gid = session.gid if session is not None else None
+        if gid not in self._db:
             if not self.MULTIGRID:
-                dbnamespace = '%s_%s' % (session.gid, self.dbnamespace)
+                dbnamespace = '%s_%s' % (gid, self.dbnamespace)
             else:
                 dbnamespace = self.dbnamespace
             client = self.dbclient[dbnamespace]
@@ -55,8 +60,8 @@ class OSISStoreMongo(OSISStore):
 
             if self.TTL != 0:
                 db.ensure_index('_ttl', expireAfterSeconds=self.TTL)
-            self._db[session.gid] = db, counter
-        return self._db[session.gid]
+            self._db[gid] = db, counter
+        return self._db[gid]
 
     def init(self, path, namespace, categoryname):
         """
@@ -72,6 +77,12 @@ class OSISStoreMongo(OSISStore):
         self.dbnamespace = dbnamespace
         self.initall(path, namespace, categoryname)
 
+    def create_indexes(self, spec):
+        db, counter = self._getMongoDB()
+        for property in spec.properties:
+            if property.tags is not None and 'index' in property.tags:
+                j.console.info('Creating index {}/{}/{}'.format(self.namespace, self.categoryname, property.name))
+                db.ensure_index(property.name, background=True)
 
     def initall(self, path, namespace, categoryname):
         self._init_auth(path, namespace, categoryname)
@@ -101,24 +112,25 @@ class OSISStoreMongo(OSISStore):
         self.runTasklet('set', value, session)
         return value
 
-    def set(self, key, value, session=None, *args,**kwargs):
+    def set(self, key, value, session=None, *args, **kwargs):
         """
         value can be a dict or a raw value (seen as string)
         """
         db, counter = self._getMongoDB(session)
+
         def idIsZero():
             id = value.get('id')
             if id != None:
                 if isinstance(id, int) and id == 0:
                     return True
             return False
-        def updateTTL(value):
-                if self.TTL != 0:
-                    value['_ttl'] = datetime.datetime.utcnow()
 
+        def updateTTL(value):
+            if self.TTL != 0:
+                value['_ttl'] = datetime.datetime.utcnow()
 
         if j.basetype.dictionary.check(value):
-            objInDB=None
+            objInDB = None
 
             obj = self.getObject(value)
             obj.getSetGuid()
@@ -126,11 +138,11 @@ class OSISStoreMongo(OSISStore):
             value = obj.dump()
 
             if ukey is not None:
-                objInDB=db.find_one({"_id":ukey})
+                objInDB = db.find_one({"_id": ukey})
             elif 'guid' in value and value["guid"] != "":
-                objInDB=db.find_one({"guid":value["guid"]})
+                objInDB = db.find_one({"guid": value["guid"]})
 
-            if objInDB!=None:
+            if objInDB != None:
                 oldckey = self.getObject(objInDB).getContentKey()
                 value.pop('id', None)
                 value.pop('guid', None)
@@ -143,7 +155,7 @@ class OSISStoreMongo(OSISStore):
                 return (objInDB["guid"], False, changed)
 
             if idIsZero():
-                value["id"]=self.incrId(counter)
+                value["id"] = self.incrId(counter)
                 obj = self.getObject(value)
                 obj.getSetGuid()
                 value = obj.dump()
@@ -161,11 +173,11 @@ class OSISStoreMongo(OSISStore):
         self.runTasklet('get', key, session)
         db, counter = self._getMongoDB(session)
         if j.basetype.string.check(key):
-            res=db.find_one({"guid":key})
+            res = db.find_one({"guid": key})
         else:
-            res=db.find_one({"guid":key})
+            res = db.find_one({"guid": key})
             if res is None:
-                res=db.find_one({"id":key})
+                res = db.find_one({"id": key})
 
         # res["guid"]=str(res["_id"])
         if not res:
@@ -183,12 +195,12 @@ class OSISStoreMongo(OSISStore):
         self.runTasklet('exists', key, session)
         db, counter = self._getMongoDB(session)
         if j.basetype.string.check(key) or isinstance(key, unicode):
-            return not db.find_one({"guid":key})==None
+            return not db.find_one({"guid": key}) == None
         else:
-            return not db.find_one({"id":key})==None
+            return not db.find_one({"id": key}) == None
 
-    def index(self, obj,ttl=0,replication="sync",consistency="all",refresh=True):
-        #NOT RELEVANT FOR THIS TYPE OF DB
+    def index(self, obj, ttl=0, replication="sync", consistency="all", refresh=True):
+        # NOT RELEVANT FOR THIS TYPE OF DB
         return
 
     def delete(self, key, session=None):
@@ -200,12 +212,12 @@ class OSISStoreMongo(OSISStore):
         except KeyError:
             pass
 
-    def deleteIndex(self, key,waitIndex=False,timeout=1):
-        #NOT RELEVANT FOR THIS TYPE OF DB
+    def deleteIndex(self, key, waitIndex=False, timeout=1):
+        # NOT RELEVANT FOR THIS TYPE OF DB
         pass
 
-    def removeFromIndex(self, key,replication="sync",consistency="all",refresh=True):
-        #NOT RELEVANT FOR THIS TYPE OF DB
+    def removeFromIndex(self, key, replication="sync", consistency="all", refresh=True):
+        # NOT RELEVANT FOR THIS TYPE OF DB
         pass
 
     def count(self, query, session=None):
@@ -261,41 +273,40 @@ class OSISStoreMongo(OSISStore):
         db, counter = self._getMongoDB(session)
         fields = None
         sorting = None
-        if size==None:
-            size=200
-        sortlist=[]
+        if size == None:
+            size = 200
+        sortlist = []
         if j.basetype.string.check(query):
-            tags=j.core.tags.getObject(query)
-            sort=None
+            tags = j.core.tags.getObject(query)
+            sort = None
             if tags.tagExists("@sort"):
-                sort=tags.tagGet("@sort")
+                sort = tags.tagGet("@sort")
                 tags.tagDelete("@sort")
                 for item in sort.split(","):
-                    item=item.strip()
-                    if item=="":
+                    item = item.strip()
+                    if item == "":
                         continue
-                    if item[0]=="-":
-                        item=item.strip("-")
-                        sortlist.append((item,-1))
+                    if item[0] == "-":
+                        item = item.strip("-")
+                        sortlist.append((item, -1))
                     else:
-                        sortlist.append((item,1))
-
+                        sortlist.append((item, 1))
 
             if tags.tagExists("@size"):
-                size=int(tags.tagGet("@size"))
+                size = int(tags.tagGet("@size"))
                 tags.tagDelete("@size")
 
             if tags.tagExists("@start"):
-                start=int(tags.tagGet("@start"))
+                start = int(tags.tagGet("@start"))
                 tags.tagDelete("@start")
 
-            fields=None
+            fields = None
             if tags.tagExists("@fields"):
-                fields=tags.tagGet("@fields")
+                fields = tags.tagGet("@fields")
                 tags.tagDelete("@fields")
-                fields=[item.strip() for item in fields.split(",") if item.strip()!=""]
+                fields = [item.strip() for item in fields.split(",") if item.strip() != ""]
 
-            params=tags.getDict()
+            params = tags.getDict()
             for key, value in list(params.copy().items()):
                 if value.startswith('>'):
                     if 'm' in value or 'd' in value or 'h' in value:
@@ -312,8 +323,8 @@ class OSISStoreMongo(OSISStore):
                 elif '*' in value:
                     params[key] = {'$regex': '/%s/i' % value.replace('*', ''), '$options': 'i'}
 
-            result=[]
-            for item in db.find(params,limit=size,skip=start,fields=fields,sort=sortlist):
+            result = []
+            for item in db.find(params, limit=size, skip=start, fields=fields, sort=sortlist):
                 item.pop("_id")
                 item.pop("_ttl", None)
                 result.append(item)
@@ -321,7 +332,7 @@ class OSISStoreMongo(OSISStore):
         else:
             mongoquery = dict()
             if 'query' in query:
-                query.setdefault('query', {'bool':{'must':{}}})
+                query.setdefault('query', {'bool': {'must': {}}})
                 query['query']['bool'].setdefault('should', {})
                 query['query']['bool'].setdefault('must', {})
                 for queryitem in query['query']['bool']['must']:
@@ -330,16 +341,15 @@ class OSISStoreMongo(OSISStore):
                             mongoquery[k] = v
                     if 'range' in queryitem:
                         for k, v in list(queryitem['range'].items()):
-                            operatormap = {'from':'$gte', 'to':'$lte', 'gt': '$gt', 'gte': '$gte'}
+                            operatormap = {'from': '$gte', 'to': '$lte', 'gt': '$gt', 'gte': '$gte'}
                             for operator, val in list(v.items()):
                                 mongoquery[k] = {operatormap[operator]: val}
                     if 'wildcard' in queryitem:
                         for k, v in list(queryitem['wildcard'].items()):
-                            mongoquery[k] = {'$regex': '%s' % str(v).replace('*', ''), '$options':'i'}
+                            mongoquery[k] = {'$regex': '%s' % str(v).replace('*', ''), '$options': 'i'}
                     if 'terms' in queryitem:
                         for k, v in list(queryitem['terms'].items()):
                             mongoquery[k] = {'$in': v}
-
 
                 mongoquery['$or'] = list()
                 for queryitem in query['query']['bool']['should']:
@@ -386,7 +396,7 @@ class OSISStoreMongo(OSISStore):
         db, counter = self._getMongoDB(session)
         db.drop()
 
-    def deleteSearch(self,query, session=None):
+    def deleteSearch(self, query, session=None):
         db, _ = self._getMongoDB(session)
         count = db.remove(query)['n']
         return count
@@ -401,15 +411,15 @@ class OSISStoreMongo(OSISStore):
             db, _ = self._getMongoDB(session)
             return db.update(query, update, multi=True)
         elif j.basetype.string.check(update):
-            tags=j.core.tags.getObject(update)
-            update=tags.getDict()
+            tags = j.core.tags.getObject(update)
+            update = tags.getDict()
         # self.db.find_and_modify(query,update=update)
-        query+=' @fields:guid'
-        counter=0
+        query += ' @fields:guid'
+        counter = 0
         for item in self.find(query=query, session=session):
-            update["guid"]=item["guid"]
+            update["guid"] = item["guid"]
             self.set(value=update, session=session)
-            counter+=1
+            counter += 1
 
         return counter
 
@@ -422,10 +432,11 @@ class OSISStoreMongo(OSISStore):
 
     def demodata(self, session=None):
         import JumpScale.baselib.redisworker
-        path=j.system.fs.joinPaths(self.path,"demodata.py")
+        path = j.system.fs.joinPaths(self.path, "demodata.py")
         if j.system.fs.exists(path):
-            module = imp.load_source("%s_%s_demodata"%(self.namespace,self.categoryname), path)
-            job=j.clients.redisworker.execFunction(module.populate,_organization=self.namespace,_category=self.categoryname,_timeout=60,_queue="io",_log=True,_sync=False)
+            module = imp.load_source("%s_%s_demodata" % (self.namespace, self.categoryname), path)
+            job = j.clients.redisworker.execFunction(
+                module.populate, _organization=self.namespace, _category=self.categoryname, _timeout=60, _queue="io", _log=True, _sync=False)
 
     def list(self, prefix="", withcontent=False, session=None):
         """
@@ -439,19 +450,19 @@ class OSISStoreMongo(OSISStore):
                 item.pop('_id')
                 result.append(item)
         else:
-            cursor = db.find(fields=['guid',])
+            cursor = db.find(fields=['guid', ])
             for item in cursor:
                 result.append(item['guid'])
         return result
 
     def rebuildindex(self, session):
         db, counter = self._getMongoDB(session)
-        path=j.system.fs.joinPaths(self.path,"index.py")
+        path = j.system.fs.joinPaths(self.path, "index.py")
         if j.system.fs.exists(path):
-            module = imp.load_source("%s_%sindex"%(self.namespace,self.categoryname), path)
+            module = imp.load_source("%s_%sindex" % (self.namespace, self.categoryname), path)
             module.index(db)
 
-    def export(self, outputpath,query="", session=None):
+    def export(self, outputpath, query="", session=None):
         """
         export all objects of a category to json format, optional query
         Placed in outputpath

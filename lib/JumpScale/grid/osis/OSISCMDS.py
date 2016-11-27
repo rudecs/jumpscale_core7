@@ -10,7 +10,7 @@ class OSISCMDS(object):
         self.daemon = daemon
         self.osisInstances = {}  # key is namespace_categoryname
         self.db = None  # default db
-        self.path="%s/apps/osis/logic"%j.dirs.baseDir
+        self.path = "%s/apps/osis/logic" % j.dirs.baseDir
 
     def authenticate(self, namespace, categoryname, name, passwd, session=None):
         """
@@ -20,32 +20,31 @@ class OSISCMDS(object):
             oi = self._getOsisInstanceForCat("system", "node")
             return oi.auth.authenticate(oi, 'auth', name, passwd, session)
 
-        if namespace!="system" or categoryname!="user":
+        if namespace != "system" or categoryname != "user":
             raise RuntimeError("Cannot process, only supported for system/user namespace")
         oi = self._getOsisInstanceForCat("system", "user")
 
         query = {'id': name, 'active': True}
         results = oi.find(query, session=session)[1:]
         if not results:
-            return {"authenticated":False,"exists":False}
+            return {"authenticated": False, "exists": False}
 
         userguid = results[0]['guid']
         user = oi.get(userguid, session=session)
 
         if user["passwd"] == j.tools.hash.md5_string(passwd):
             return {"authenticated": True, "exists": True, "groups": user["groups"],
-                "passwdhash": user["passwd"], "authkey": user["authkey"]}
+                    "passwdhash": user["passwd"], "authkey": user["authkey"]}
 
-        return {"authenticated":False,"exists":True}
-
+        return {"authenticated": False, "exists": True}
 
     def _doAuth(self, namespace, categoryname, session):
         oi = self._getOsisInstanceForCat(namespace, categoryname)
-        if hasattr(oi, 'auth') and oi.auth!=None:
-            if oi.auth.authenticate(oi,"get",session.user,session.passwd, session=session)==False:
-                raise RuntimeError("Authentication error on get %s_%s for user %s"%(namespace,categoryname,session.user))
+        if hasattr(oi, 'auth') and oi.auth != None:
+            if oi.auth.authenticate(oi, "get", session.user, session.passwd, session=session) == False:
+                raise RuntimeError("Authentication error on get %s_%s for user %s" %
+                                   (namespace, categoryname, session.user))
         return oi
-
 
     def get(self, namespace, categoryname, key, session=None):
         oi = self._doAuth(namespace, categoryname, session)
@@ -55,23 +54,23 @@ class OSISCMDS(object):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.exists(key, session)
 
-    def existsIndex(self, namespace, categoryname, key, timeout=1,session=None):
+    def existsIndex(self, namespace, categoryname, key, timeout=1, session=None):
         oi = self._doAuth(namespace, categoryname, session)
-        return oi.existsIndex(key,timeout=timeout, session=session)
+        return oi.existsIndex(key, timeout=timeout, session=session)
 
-    def set(self, namespace, categoryname, key=None, value=None, waitIndex=False,session=None):
+    def set(self, namespace, categoryname, key=None, value=None, waitIndex=False, session=None):
         oi = self._doAuth(namespace, categoryname, session)
-        return oi.set(key=key, value=value,waitIndex=waitIndex, session=session)
+        return oi.set(key=key, value=value, waitIndex=waitIndex, session=session)
 
     def delete(self, namespace, categoryname, key, session=None):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.delete(key=key, session=session)
 
-    def destroy(self, namespace, categoryname,session=None):
+    def destroy(self, namespace, categoryname, session=None):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.destroy(session)
 
-    def demodata(self, namespace, categoryname,session=None):
+    def demodata(self, namespace, categoryname, session=None):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.demodata(session)
 
@@ -85,22 +84,22 @@ class OSISCMDS(object):
         result = oi.aggregate(query, session)
         return result
 
-    def deleteSearch(self,namespace, categoryname,query, session=None):
+    def deleteSearch(self, namespace, categoryname, query, session=None):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.deleteSearch(query=query, session=session)
 
-    def updateSearch(self,namespace, categoryname,query,update, session=None):
+    def updateSearch(self, namespace, categoryname, query, update, session=None):
         """
         update is dict or text
         dict e.g. {"name":aname,nr:1}  these fields will be updated then
         text e.g. name:aname nr:1
         """
         oi = self._doAuth(namespace, categoryname, session)
-        return oi.updateSearch(query=query,update=update, session=session)
+        return oi.updateSearch(query=query, update=update, session=session)
 
     def list(self, namespace, categoryname, prefix=None, session=None):
         oi = self._doAuth(namespace, categoryname, session)
-        if prefix==None:
+        if prefix == None:
             return oi.list(session=session)
         return oi.list(prefix, session=session)
 
@@ -112,15 +111,14 @@ class OSISCMDS(object):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.native(methodname=methodname, session=session, kwargs=kwargs)
 
-
     def checkChangeLog(self):
-        rediscl=None
+        rediscl = None
         if not j.application.config.exists("rediskvs.master.addr"):
             return
         while True:
-            if j.system.net.tcpPortConnectionTest('127.0.0.1',port=7771):
+            if j.system.net.tcpPortConnectionTest('127.0.0.1', port=7771):
                 try:
-                    if rediscl==None:
+                    if rediscl == None:
                         rediscl = j.db.keyvaluestore.getRedisStore(namespace='', host='127.0.0.1', port=7771)
                     rediscl.checkChangeLog()
                 except Exception as e:
@@ -139,7 +137,8 @@ class OSISCMDS(object):
                     try:
                         self._rebuildindex(ns, cat, session)
                     except Exception as e:
-                        j.errorconditionhandler.raiseOperationalWarning("Did not rebuild index for category '%s' in namespace '%s'. Error was: %s" % (cat, ns, e))
+                        j.errorconditionhandler.raiseOperationalWarning(
+                            "Did not rebuild index for category '%s' in namespace '%s'. Error was: %s" % (cat, ns, e))
         else:
             self._rebuildindex(namespace, categoryname, session)
 
@@ -167,7 +166,7 @@ class OSISCMDS(object):
                     status['influxdb'] = False
         return status
 
-    #################################################3
+    # 3
 
     def _getOsisInstanceForCat(self, namespace, category):
         fullname = "%s_%s" % (namespace, category)
@@ -175,69 +174,69 @@ class OSISCMDS(object):
             return self.osisInstances[fullname]
 
         j.errorconditionhandler.raiseBug(
-            message="cannot find osis local instance for namespace:%s & category:%s" % (namespace, category), die=False, \
+            message="cannot find osis local instance for namespace:%s & category:%s" % (namespace, category), die=False,
             category="osis.valueerror")
 
-    def _authenticateAdmin(self,session=None,user=None,passwd=None, die=True):
-        if session!=None:
-            user=session.user
-            passwd=session.passwd
+    def _authenticateAdmin(self, session=None, user=None, passwd=None, die=True):
+        if session != None:
+            user = session.user
+            passwd = session.passwd
 
-        if user=="root":
+        if user == "root":
             if j.core.osis.superadminpasswd is None:
                 j.application.loadConfig()
-                j.core.osis.superadminpasswd=j.application.config.get("osis.superadmin.passwd")
-                if j.core.osis.superadminpasswd=="":
+                j.core.osis.superadminpasswd = j.application.config.get("osis.superadmin.passwd")
+                if j.core.osis.superadminpasswd == "":
                     raise RuntimeError("osis.superadmin.passwd cannot be empty in hrd")
 
-            if passwd==j.core.osis.superadminpasswd:
+            if passwd == j.core.osis.superadminpasswd:
                 return True
-            if j.tools.hash.md5_string(passwd)==j.core.osis.superadminpasswd:
+            if j.tools.hash.md5_string(passwd) == j.core.osis.superadminpasswd:
                 return True
         else:
             if die:
-                raise RuntimeError("Could not authenticate for admin usage, user login was %s"%user)
+                raise RuntimeError("Could not authenticate for admin usage, user login was %s" % user)
             else:
                 return False
 
-    def createNamespace(self, name=None, incrementName=False, template=None,session=None):
+    def createNamespace(self, name=None, incrementName=False, template=None, session=None):
         """
         @return True
         """
-        if session!=None:
+        if session != None:
             self._authenticateAdmin(session)
-        #deal with incrementName
+        # deal with incrementName
         if name == None:
             name = str()
         if incrementName:
             name += str(self._incrementNamespaceId())
 
         if j.system.fs.exists(j.system.fs.joinPaths(self.path, name)):
-            #check namespace exists, if yes just return True
+            # check namespace exists, if yes just return True
             return True
 
-        #namespace does not exist yet
+        # namespace does not exist yet
         j.system.fs.createDir(j.system.fs.joinPaths(self.path, name))
         if template != None:
-            j.system.fs.copyDirTree(j.system.fs.joinPaths(self.path, "_%s" % template), \
-                j.system.fs.joinPaths(self.path, name), overwriteFiles=False)
+            j.system.fs.copyDirTree(j.system.fs.joinPaths(self.path, "_%s" % template),
+                                    j.system.fs.joinPaths(self.path, name), overwriteFiles=False)
 
         path = j.system.fs.joinPaths(self.path, name)
 
-        self._initDefaultContent( namespacename=name)
+        self._initDefaultContent(namespacename=name)
         self.init(path=self.path, namespacename=name, template=template)
         return True
 
-    def getOsisObjectClassCodeOrSpec(self,namespace,categoryname,session=None):
+    def getOsisObjectClassCodeOrSpec(self, namespace, categoryname, session=None):
         """
         @return (1,spec file for osis complex time)
         @return (2,content of model.py)
         @return (3,"")  #could not find
         """
 
-        path=j.system.fs.joinPaths(self.path, namespace,categoryname,"model.py")
-        genclassname = "%s_%s_osismodelbase"%(namespace,categoryname)
-        osismodelpath=j.system.fs.joinPaths(self.path, namespace,categoryname,"%s.py"%(genclassname))
+        path = j.system.fs.joinPaths(self.path, namespace, categoryname, "model.py")
+        genclassname = "%s_%s_osismodelbase" % (namespace, categoryname)
+        osismodelpath = j.system.fs.joinPaths(self.path, namespace, categoryname, "%s.py" % (genclassname))
         if j.system.fs.exists(path):
             model = j.system.fs.fileGetContents(path)
             if j.system.fs.exists(osismodelpath):
@@ -245,57 +244,56 @@ class OSISCMDS(object):
                 model = model.replace("from %s import %s" % (genclassname, genclassname), "")
             return 2, model
         else:
-            return 3,""
+            return 3, ""
 
-    def getOsisSpecModel(self,namespace,session=None):
-        result={}
-        for ttype in j.core.specparser.getModelNames("osismodel",namespace):
-            obj=j.core.specparser.getModelSpec("osismodel",namespace,ttype)
-            result[ttype]=obj.obj2dict()
+    def getOsisSpecModel(self, namespace, session=None):
+        result = {}
+        for ttype in j.core.specparser.getModelNames("osismodel", namespace):
+            obj = j.core.specparser.getModelSpec("osismodel", namespace, ttype)
+            result[ttype] = obj.obj2dict()
         return result
 
-    def listNamespaces(self, prefix="",session=None):
+    def listNamespaces(self, prefix="", session=None):
         ddirs = j.system.fs.listDirsInDir(self.path, dirNameOnly=True)
 
-        ddirs = [item for item in ddirs if  not item.find("_") == 0]
+        ddirs = [item for item in ddirs if not item.find("_") == 0]
 
         if prefix != "":
             ddirs = [item for item in ddirs if item.find(prefix) == 0]
 
         return ddirs
 
-
-    def listNamespaceCategories(self, namespacename,session=None):
+    def listNamespaceCategories(self, namespacename, session=None):
         ddirs = j.system.fs.listDirsInDir(j.system.fs.joinPaths(self.path,
                                                                 namespacename), dirNameOnly=True)
         return ddirs
 
-    def deleteNamespaceCategory(self, namespacename, name,removecode=False,session=None):
+    def deleteNamespaceCategory(self, namespacename, name, removecode=False, session=None):
         """
         """
-        if session!=None:
+        if session != None:
             self._authenticateAdmin(session)
         namespacepath = j.system.fs.joinPaths(self.path, namespacename)
         if not j.system.fs.exists(path=namespacepath):
-            raise RuntimeError("Could not find namespace with name:%s"%namespacename)
+            raise RuntimeError("Could not find namespace with name:%s" % namespacename)
         if removecode:
             j.system.fs.removeDirTree(j.system.fs.joinPaths(namespacepath, name))
-        key="%s_%s"%(namespacename,name)
+        key = "%s_%s" % (namespacename, name)
         try:
             self.elasticsearch.delete_index(key)
         except:
             pass
         self.db.destroy(key)
-        self.db.destroy(key+"_incr")
+        self.db.destroy(key + "_incr")
 
-    def createNamespaceCategory(self, namespacename, name,session=None):
+    def createNamespaceCategory(self, namespacename, name, session=None):
         """
         """
-        if session!=None:
+        if session != None:
             self._authenticateAdmin(session)
         namespacepath = j.system.fs.joinPaths(self.path, namespacename)
         if not j.system.fs.exists(path=namespacepath):
-            raise RuntimeError("Could not find namespace with name:%s"%namespacename)
+            raise RuntimeError("Could not find namespace with name:%s" % namespacename)
 
         j.system.fs.createDir(j.system.fs.joinPaths(namespacepath, name))
 
@@ -325,12 +323,12 @@ class OSISCMDS(object):
                     j.system.fs.copyDirTree(templatespath_category, catpath, overwriteFiles=False)
                     # j.system.fs.copyDirTree(templatespath_osistasklets,catpath,overwriteFiles=overwriteTasklets)
 
-    def init(self, path="",overwriteImplementation=False, namespacename=None, template=None):
+    def init(self, path="", overwriteImplementation=False, namespacename=None, template=None):
 
         if path != "":
             self.path = path
         else:
-            path=self.path
+            path = self.path
         j.logger.consoleloglevel = 7
 
         if namespacename == None:
@@ -345,27 +343,25 @@ class OSISCMDS(object):
             self._initDefaultContent(namespacename=namespacename)
 
             namespacepath = j.system.fs.joinPaths(path, namespacename)
-            specpath=j.system.fs.joinPaths(path, namespacename, "model.spec")
+            specpath = j.system.fs.joinPaths(path, namespacename, "model.spec")
 
-            j.core.osis.generateOsisModelDefaults(namespacename,specpath)
+            j.core.osis.generateOsisModelDefaults(namespacename, specpath)
 
             for catname in j.system.fs.listDirsInDir(namespacepath, dirNameOnly=True):
                 catpath = j.system.fs.joinPaths(namespacepath, catname)
 
-
-                #generate model class
+                # generate model class
                 modelfile = j.system.fs.joinPaths(catpath, "model.py")
                 if overwriteImplementation or not j.system.fs.exists(path=modelfile):
                     fileFrom = j.system.fs.joinPaths(namespacepath, "model_template.py")
                     if not j.system.fs.exists(fileFrom):
                         fileFrom = j.core.osis.getModelTemplate()
                     j.system.fs.copyFile(fileFrom, modelfile)
-                    ed=j.codetools.getTextFileEditor(modelfile)
-                    ed.replaceNonRegex("$categoryname",catname.capitalize())
+                    ed = j.codetools.getTextFileEditor(modelfile)
+                    ed.replaceNonRegex("$categoryname", catname.capitalize())
                     ed.save()
 
-
-                j.core.osis.getOsisModelClass(namespacename,catname)
+                j.core.osis.getOsisModelClass(namespacename, catname)
 
                 # check if there is already an implfile
                 implfile = "OSIS_%s_impl.py" % catname
@@ -374,14 +370,19 @@ class OSISCMDS(object):
                 if overwriteImplementation or not j.system.fs.exists(path=implpath):
                     j.system.fs.copyFile(fileFrom, implpath)
 
-                ed=j.codetools.getTextFileEditor(implpath)
-                ed.replaceNonRegex("$namespace",namespacename)
+                ed = j.codetools.getTextFileEditor(implpath)
+                ed.replaceNonRegex("$namespace", namespacename)
                 ed.save()
-
 
                 classs = j.core.osis._loadModuleClass(implpath)
                 if namespacename[0] != "_":
                     osis = classs(self.dbconnections)
-                    osis.init(catpath,namespace=namespacename, categoryname=catname)
+                    osis.init(catpath, namespace=namespacename, categoryname=catname)
+                    try:
+                        modelspec = j.core.specparser.getModelSpec("osismodel", namespacename, catname)
+                    except:
+                        pass
+                    else:
+                        osis.create_indexes(modelspec)
                     key = "%s_%s" % (namespacename, catname)
                     self.osisInstances[key] = osis

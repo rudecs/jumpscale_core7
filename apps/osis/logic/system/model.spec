@@ -4,46 +4,46 @@
 
 [rootmodel:alert] @index
     prop:id int,,
-    prop:gid int,,
-    prop:nid int,,
+    prop:gid int,, @index
+    prop:nid int,, @index
     prop:description str,,
     prop:descriptionpub str,,
-    prop:level int,, 1:critical, 2:warning, 3:info
-    prop:category str,, dot notation e.g. machine.start.failed
-    prop:tags str,, e.g. machine:2323
-    prop:state str,, ["NEW","ALERT","CLOSED"]
-    prop:inittime int,, first time there was an error condition linked to this alert
-    prop:lasttime int,, last time there was an error condition linked to this alert
-    prop:closetime int,, alert is closed, no longer active
+    prop:level int,, 1:critical, 2:warning, 3:info @index
+    prop:category str,, dot notation e.g. machine.start.failed @index
+    prop:tags str,, e.g. machine:2323 @index
+    prop:state str,, ["NEW","ALERT","CLOSED"] @index
+    prop:inittime int,, first time there was an error condition linked to this alert @index
+    prop:lasttime int,, last time there was an error condition linked to this alert @index
+    prop:closetime int,, alert is closed, no longer active @index
     prop:nrerrorconditions int,, nr of times this error condition happened
     prop:errorconditions list(int),, ids of errorconditions
 
 [rootmodel:audit]
     prop:id int,,
-    prop:user str,,
+    prop:user str,, @index
     prop:result str,,
-    prop:call str,,
-    prop:statuscode str,,
+    prop:call str,, @index
+    prop:statuscode str,, @index
     prop:args str,,
     prop:kwargs str,,
-    prop:timestamp str,,
+    prop:timestamp str,, @index
 
 [rootmodel:disk] @index
     prop:id int,,
     prop:partnr int,,
-    prop:gid int,,
-    prop:nid int,,
+    prop:gid int,, @index
+    prop:nid int,, @index
     prop:path str,,
-    prop:size int,,
+    prop:size int,, @index
     prop:free int,,
     prop:ssd int,,
     prop:fs str,,
     prop:mounted bool,,
-    prop:mountpoint str,,
-    prop:active bool,,
+    prop:mountpoint str,, @index
+    prop:active bool,, @index
     prop:model str,,
     prop:description str,,
-    prop:type list(str),, BOOT, DATA, ...
+    prop:type list(str),, BOOT, DATA, ... @index
     prop:lastcheck str,, epoch of last time the info was checked from reality
 
 [rootmodel:eco] @index
@@ -51,21 +51,21 @@
     Error Condition Object
     """
     prop:id int,,
-    prop:gid int,,
-    prop:nid int,,
+    prop:gid int,, @index
+    prop:nid int,, @index
     prop:aid int,,
     prop:pid int,,
     prop:jid int,,
     prop:masterjid int,,
-    prop:epoch int,, epoch
-    prop:appname str,,
-    prop:level int,, 1:critical, 2:warning, 3:info
-    prop:type str,,
-    prop:state str,, ["NEW","ALERT","CLOSED"]
+    prop:epoch int,, epoch @index
+    prop:appname str,, @index
+    prop:level int,, 1:critical, 2:warning, 3:info @index
+    prop:type str,, @index
+    prop:state str,, ["NEW","ALERT","CLOSED"] @index
     prop:errormessage str,,
     prop:errormessagePub str,,
-    prop:category str,, dot notation e.g. machine.start.failed
-    prop:tags str,, e.g. machine:2323
+    prop:category str,, dot notation e.g. machine.start.failed @index
+    prop:tags str,, e.g. machine:2323 @index
     prop:code str,,
     prop:funcname str,,
     prop:funcfilename str,,
@@ -73,13 +73,13 @@
     prop:backtrace str,,
     prop:backtraceDetailed str,,
     prop:extra str,,
-    prop:lasttime int,, last time there was an error condition linked to this alert
-    prop:closetime int,, alert is closed, no longer active
-    prop:occurrences int,, nr of times this error condition happened
+    prop:lasttime int,, last time there was an error condition linked to this alert @index
+    prop:closetime int,, alert is closed, no longer active @index
+    prop:occurrences int,, nr of times this error condition happened @index
 
 [rootmodel:grid] @index
     prop:id int,,
-    prop:name str,,
+    prop:name str,, @index
     prop:useavahi bool,,
     prop:settings dict(str),,
     prop:nid int,,
@@ -89,10 +89,10 @@
     prop:domain str,,
     prop:gid int,,
     prop:roles list(str),,
-    prop:active bool,,
+    prop:active bool,, @index
     prop:description str,,
     prop:lastcheck int,, epoch of last time the info updated
-    prop:users list(str),,
+    prop:users list(str),, @index
 
 [rootmodel:heartbeat]
     """
@@ -115,32 +115,32 @@
     """
     prop:id int,,
     prop:sessionid int,,
-    prop:nid int,,
-    prop:gid int,,
-    prop:cmd str,,
+    prop:nid int,, @index
+    prop:gid int,, @index
+    prop:cmd str,, @index
     prop:wait bool,,
-    prop:category str,,
-    prop:roles list(str),,
+    prop:category str,, @index
+    prop:roles list(str),, @index
     prop:args str,,
-    prop:queue str,,
+    prop:queue str,, @index
     prop:timeout int,,
     prop:result str,,
     prop:parent int,,
     prop:resultcode str,,
-    prop:state str,, SCHEDULED,STARTED,ERROR,OK,NOWORK
-    prop:timeCreate int,,
-    prop:timeStart int,,
-    prop:timeStop int,,
+    prop:state str,, SCHEDULED,STARTED,ERROR,OK,NOWORK @index
+    prop:timeCreate int,, @index
+    prop:timeStart int,, @index
+    prop:timeStop int,, @index
     prop:log bool,,
     prop:errorreport bool,,
 
 [rootmodel:jumpscript] @index
     prop:id int,,
     prop:gid int,,
-    prop:name str,,
+    prop:name str,, @index
     prop:descr str,,
-    prop:category str,,
-    prop:organization str,,
+    prop:category str,, @index
+    prop:organization str,, @index
     prop:author str,,
     prop:license str,,
     prop:version str,,
@@ -153,19 +153,19 @@
     prop:async bool,,
     prop:period int,,
     prop:order int,,
-    prop:queue str,,
+    prop:queue str,, @index
     prop:log bool,,
 
 [rootmodel:machine]
     prop:id int,,
-    prop:gid int,,
-    prop:nid int,,
-    prop:name str,,
+    prop:gid int,, @index
+    prop:nid int,, @index
+    prop:name str,, @index
     prop:roles list(str),,
     prop:netaddr str,,
     prop:ipaddr list(str),,
     prop:active bool,,
-    prop:state str,, STARTED,STOPPED,RUNNING,FROZEN,CONFIGURED,DELETED
+    prop:state str,, STARTED,STOPPED,RUNNING,FROZEN,CONFIGURED,DELETED @index
     prop:mem int,, in MB
     prop:cpucore int,,
     prop:description str,,
@@ -178,22 +178,22 @@
     project
     """
     prop:id int,,
-    prop:gid int,,
-    prop:nid int,,
-    prop:name str,,
-    prop:mac str,,
+    prop:gid int,, @index
+    prop:nid int,, @index
+    prop:name str,, @index
+    prop:mac str,, @index
     prop:ipaddr list(str),,
     prop:active bool,,
     prop:lastcheck int,, epoch of last time the info was checked from reality
 
 [rootmodel:node]
     prop:id int,,
-    prop:gid int,,
-    prop:name str,,
-    prop:roles list(str),,
+    prop:gid int,, @index
+    prop:name str,, @index
+    prop:roles list(str),, @index
     prop:netaddr str,,
-    prop:publickeys list(str),,
-    prop:hostkey str,,
+    prop:publickeys list(str),, @index
+    prop:hostkey str,, @index
     prop:machineguid str,,
     prop:ipaddr list(str),,
     prop:active bool,,
@@ -269,24 +269,24 @@
     """
     prop:id int,,
     prop:domain str,,
-    prop:gid int,,
-    prop:passwd str,, #stored hashed
+    prop:gid int,, @index
+    prop:passwd str,, #stored hashed @index
     prop:roles list(str),,
     prop:active bool,,
     prop:description str,,
-    prop:emails list(str),,
+    prop:emails list(str),, @index
     prop:xmpp list(str),,
     prop:mobile list(str),,
     prop:lastcheck int,, #epoch of last time the info updated
-    prop:groups list(str),,
-    prop:authkey str,,
+    prop:groups list(str),, @index
+    prop:authkey str,, @index
     prop:data str,,
-    prop:authkeys list(str),,
+    prop:authkeys list(str),, @index
 
 [rootmodel:vdisk] @index
     prop:id int,,
-    prop:gid int,,
-    prop:nid int,,
+    prop:gid int,, @index
+    prop:nid int,, @index
     prop:path str,,
     prop:backingpath str,,
     prop:size int,, #KB
