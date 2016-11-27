@@ -380,6 +380,7 @@ class OSISStoreMongo(OSISStore):
             else:
                 resultdata = db.find(mongoquery, fields=fields).skip(start).limit(size)
 
+            j.console.info(json.dumps(mongoquery))
             count = db.find(mongoquery).count()
             result = [count, ]
             for item in resultdata:

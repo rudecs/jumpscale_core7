@@ -305,3 +305,20 @@
     prop:backuplocation str,, #where is backup stored (tag based notation)
     prop:devicename str,,
     prop:lastcheck int,, #epoch of last time the info was checked from reality
+
+[rootmodel:log]
+    prop:id int,,
+    prop:category str,, @index
+    prop:jid int,, @index
+    prop:level int,, @index
+    prop:parentjid int,,
+    prop:appname str,, @index
+    prop:pid int,,
+    prop:nid int,, @index
+    prop:order int,, @index
+    prop:epoch int,, @index
+    prop:gid int,, @index
+    prop:private int,,
+    prop:masterjid int,,
+    prop:message str,, @index
+    prop:tags str,, @index
