@@ -1,4 +1,8 @@
 from JumpScale import j
+from collections import namedtuple
+
+Package = namedtuple('Package', 'name version arch')
+
 
 def getUbuntu():
     import lsb_release
@@ -9,19 +13,21 @@ def getUbuntu():
         return UbuntuSystemd()
     raise NotImplemented("Ubuntu version %s is not supported" % release)
 
+
 class Ubuntu(object):
+
     def __init__(self):
         self._aptupdated = False
         self._checked = False
-        self._cache=None
+        self._cache = None
         self._version = "14"
-        self.installedPackageNames=[]
+        self.installedPackageNames = []
 
     def initApt(self):
         try:
             import apt
         except ImportError:
-            #we dont wont jshell to break, self.check will take of this
+            # we dont wont jshell to break, self.check will take of this
             return
         apt.apt_pkg.init()
         if hasattr(apt.apt_pkg, 'Config'):
@@ -34,8 +40,8 @@ class Ubuntu(object):
         except:
             pass
         self._cache = apt.Cache()
-        self.aptCache=self._cache
-        self.apt=apt
+        self.aptCache = self._cache
+        self.apt = apt
 
     def check(self, die=True):
         """
@@ -46,7 +52,7 @@ class Ubuntu(object):
                 import lsb_release
                 info = lsb_release.get_distro_information()['ID']
                 release = lsb_release.get_distro_information()['RELEASE']
-                if info != 'Ubuntu' and info !='LinuxMint':
+                if info != 'Ubuntu' and info != 'LinuxMint':
                     raise RuntimeError("Only ubuntu or mint supported.")
                 if not release.startswith(self._version):
                     raise RuntimeError("Only ubuntu version 14.04 supported")
@@ -64,42 +70,45 @@ class Ubuntu(object):
         """
         self.check()
         import lsb_release
-        result=lsb_release.get_distro_information()
-        return result["CODENAME"].lower().strip(),result["DESCRIPTION"],result["ID"].lower().strip(),result["RELEASE"],
+        result = lsb_release.get_distro_information()
+        return result["CODENAME"].lower().strip(), result["DESCRIPTION"], result["ID"].lower().strip(), result["RELEASE"],
 
-    def existsUser(self,name):
-        cmd="getent passwd %s"%name
-        rc,out=j.system.process.execute(cmd, dieOnNonZeroExitCode=False, outputToStdout=False, useShell=False, ignoreErrorOutput=True)
-        if rc==2:
+    def existsUser(self, name):
+        cmd = "getent passwd %s" % name
+        rc, out = j.system.process.execute(cmd, dieOnNonZeroExitCode=False,
+                                           outputToStdout=False, useShell=False, ignoreErrorOutput=True)
+        if rc == 2:
             return False
         return True
 
-    def existsGroup(self,name):
-        cmd="id -g %s"%name
-        rc,out=j.system.process.execute(cmd, dieOnNonZeroExitCode=False, outputToStdout=False, useShell=False, ignoreErrorOutput=True)
-        if rc==1:
+    def existsGroup(self, name):
+        cmd = "id -g %s" % name
+        rc, out = j.system.process.execute(cmd, dieOnNonZeroExitCode=False,
+                                           outputToStdout=False, useShell=False, ignoreErrorOutput=True)
+        if rc == 1:
             return False
         return True
 
-    def createUser(self,name,passwd,home=None,creategroup=True,deletefirst=False):
+    def createUser(self, name, passwd, home=None, creategroup=True, deletefirst=False):
         # quietly add a user without password
 
         if deletefirst:
-            cmd='deluser %s'%(name)
-            j.do.execute(cmd,outputStdout=False, outputStderr=False, dieOnNonZeroExitCode=False)
+            cmd = 'deluser %s' % (name)
+            j.do.execute(cmd, outputStdout=False, outputStderr=False, dieOnNonZeroExitCode=False)
 
-        if self.existsUser(name)==False:
-            cmd='adduser --quiet --disabled-password -shell /bin/bash --home /home/%s --gecos "User" %s'%(name,name)
+        if self.existsUser(name) is False:
+            cmd = 'adduser --quiet --disabled-password -shell /bin/bash --home /home/%s --gecos "User" %s' % (
+                name, name)
             j.do.execute(cmd)
 
         # set password
         if passwd != '' or passwd is not None:
-            cmd='echo "%s:%s" | chpasswd'%(name,passwd)
+            cmd = 'echo "%s:%s" | chpasswd' % (name, passwd)
             j.do.execute(cmd)
 
         if creategroup and not self.existsGroup(name):
             self.createGroup(name)
-            self.addUser2Group(name,name)
+            self.addUser2Group(name, name)
 
         # import JumpScale.baselib.remote.cuisine
         # c=j.remote.cuisine.api
@@ -117,8 +126,8 @@ class Ubuntu(object):
         # if home!=None and not homeexists:
         #     c.dir_ensure(home,owner=name,group=name)
 
-    def createGroup(self,groupname):
-        cmd='groupadd  %s'%groupname
+    def createGroup(self, groupname):
+        cmd = 'groupadd  %s' % groupname
         j.do.execute(cmd)
         # import JumpScale.baselib.remote.cuisine
         # c=j.remote.cuisine.api
@@ -139,9 +148,9 @@ class Ubuntu(object):
         self.check()
         if j.basetype.list.check(packagenames):
             for packagename in packagenames:
-                self.checkInstall(packagename,cmdname)
+                self.checkInstall(packagename, cmdname)
         else:
-            packagename=packagenames
+            packagename = packagenames
             result, out = j.system.process.execute("which %s" % cmdname, False)
             if result != 0:
                 self.install(packagename)
@@ -153,9 +162,8 @@ class Ubuntu(object):
 
     def install(self, packagename):
 
-        cmd='unset JSBASE;unset PYTHONPATH;apt-get install %s --force-yes -y'%packagename
+        cmd = 'unset JSBASE;unset PYTHONPATH;apt-get install %s --force-yes -y' % packagename
         j.system.process.executeWithoutPipe(cmd)
-
 
     def installVersion(self, packageName, version):
         '''
@@ -169,7 +177,7 @@ class Ubuntu(object):
         '''
 
         self.check()
-        if self._cache==None:
+        if self._cache is None:
             self.initApt()
 
         mainPackage = self._cache[packageName]
@@ -183,7 +191,7 @@ class Ubuntu(object):
 
     def installDebFile(self, path, installDeps=True):
         self.check()
-        if self._cache==None:
+        if self._cache is None:
             self.initApt()
         import apt.debfile
         deb = apt.debfile.DebPackage(path, cache=self._cache)
@@ -193,34 +201,32 @@ class Ubuntu(object):
                 self.install(missingpkg)
         deb.install()
 
-    def downloadInstallDebPkg(self,url,removeDownloaded=False,minspeed=20):
+    def downloadInstallDebPkg(self, url, removeDownloaded=False, minspeed=20):
         """
         will download to tmp if not there yet
         will then install
         """
-        j.do.chdir() #will go to tmp
-        path=j.do.download(url,"",overwrite=False,minspeed=minspeed,curl=True)
+        j.do.chdir()  # will go to tmp
+        path = j.do.download(url, "", overwrite=False, minspeed=minspeed, curl=True)
         self.installDebFile(path)
         if removeDownloaded:
             j.do.delete(path)
 
-    def listFilesPkg(self,pkgname,regex=""):
+    def listFilesPkg(self, pkgname, regex=""):
         """
         list files of dpkg
         if regex used only output the ones who are matching regex
         """
-        rc,out=j.system.process.execute("dpkg -L %s"%pkgname)
-        if regex!="":
-            return j.codetools.regex.findAll(regex,out)
+        rc, out = j.system.process.execute("dpkg -L %s" % pkgname)
+        if regex != "":
+            return j.codetools.regex.findAll(regex, out)
         else:
             return out.split("\n")
 
-
-
     def remove(self, packagename):
-        j.logger.log("ubuntu remove package:%s"%packagename,category="ubuntu.remove")
+        j.logger.log("ubuntu remove package:%s" % packagename, category="ubuntu.remove")
         self.check()
-        if self._cache==None:
+        if self._cache is None:
             self.initApt()
         pkg = self._cache[packagename]
         if pkg.is_installed:
@@ -230,8 +236,8 @@ class Ubuntu(object):
         self._cache.commit()
         self._cache.clear()
 
-    def serviceInstall(self,servicename, daemonpath, args='', respawn=True, pwd=None,env=None,reload=True):
-        C="""
+    def serviceInstall(self, servicename, daemonpath, args='', respawn=True, pwd=None, env=None, reload=True):
+        C = """
 start on runlevel [2345]
 stop on runlevel [016]
 """
@@ -239,59 +245,60 @@ stop on runlevel [016]
             C += "respawn\n"
         if pwd:
             C += "chdir %s\n" % pwd
-        if env!=None:
-            for key,value in list(env.items()):
-                C+="env %s=%s\n"%(key,value)
-        C+="exec %s %s\n"%(daemonpath,args)
+        if env is not None:
+            for key, value in list(env.items()):
+                C += "env %s=%s\n" % (key, value)
+        C += "exec %s %s\n" % (daemonpath, args)
 
-        C=j.dirs.replaceTxtDirVars(C)
+        C = j.dirs.replaceTxtDirVars(C)
 
-        j.system.fs.writeFile("/etc/init/%s.conf"%servicename,C)
+        j.system.fs.writeFile("/etc/init/%s.conf" % servicename, C)
         if reload:
             j.system.process.execute("initctl reload-configuration")
 
-    def serviceUninstall(self,servicename):
+    def serviceUninstall(self, servicename):
         self.stopService(servicename)
-        j.system.fs.remove("/etc/init/%s.conf"%servicename)
+        j.system.fs.remove("/etc/init/%s.conf" % servicename)
 
     def startService(self, servicename):
-        j.logger.log("start service on ubuntu for:%s"%servicename,category="ubuntu.start")  #@todo P1 add log statements for all other methods of this class
+        # @todo P1 add log statements for all other methods of this class
+        j.logger.log("start service on ubuntu for:%s" % servicename, category="ubuntu.start")
         if not self.statusService(servicename):
-            cmd="sudo start %s" % servicename
+            cmd = "sudo start %s" % servicename
             # print cmd
             return j.system.process.execute(cmd)
 
     def stopService(self, servicename):
-        cmd="sudo stop %s" % servicename
+        cmd = "sudo stop %s" % servicename
         # print cmd
-        return j.system.process.execute(cmd,False)
+        return j.system.process.execute(cmd, False)
 
     def restartService(self, servicename):
-        return j.system.process.execute("sudo restart %s" % servicename,False)
+        return j.system.process.execute("sudo restart %s" % servicename, False)
 
     def statusService(self, servicename):
-        exitcode, output = j.system.process.execute("sudo status %s" % servicename,False)
+        exitcode, output = j.system.process.execute("sudo status %s" % servicename, False)
         parts = output.split(' ')
-        if len(parts) >=2 and parts[1].startswith('start'):
+        if len(parts) >= 2 and parts[1].startswith('start'):
             return True
 
         return False
 
     def serviceDisableStartAtBoot(self, servicename):
-         j.system.process.execute("update-rc.d -f %s remove" % servicename)
+        j.system.process.execute("update-rc.d -f %s remove" % servicename)
 
     def serviceEnableStartAtBoot(self, servicename):
-         j.system.process.execute("update-rc.d -f %s defaults" % servicename)
+        j.system.process.execute("update-rc.d -f %s defaults" % servicename)
 
     def updatePackageMetadata(self, force=True):
         self.check()
-        if self._cache==None:
+        if self._cache is None:
             self.initApt()
         self._cache.update()
 
     def upgradePackages(self, force=True):
         self.check()
-        if self._cache==None:
+        if self._cache is None:
             self.initApt()
         self.updatePackageMetadata()
         self._cache.upgrade()
@@ -300,48 +307,59 @@ stop on runlevel [016]
         return list(self._cache.keys())
 
     def getPackageNamesInstalled(self):
-        if self.installedPackageNames==[]:
-            result=[]
+        if self.installedPackageNames == []:
             for key in self.getPackageNamesRepo():
-                p=self._cache[key]
+                p = self._cache[key]
                 if p.installed:
                     self.installedPackageNames.append(p.name)
         return self.installedPackageNames
 
-    def getPackage(self,name):
+    def getPackage(self, name):
         return self._cache[name]
 
-    def findPackagesRepo(self,packagename):
-        packagename=packagename.lower().strip().replace("_","").replace("_","")
-        if self._cache==None:
+    def findPackagesRepo(self, packagename):
+        packagename = packagename.lower().strip().replace("_", "").replace("_", "")
+        if self._cache is None:
             self.initApt()
-        result=[]
+        result = []
         for item in self.getPackageNamesRepo():
-            item2=item.replace("_","").replace("_","").lower()
-            if item2.find(packagename)!=-1:
+            item2 = item.replace("_", "").replace("_", "").lower()
+            if item2.find(packagename) != -1:
                 result.append(item)
         return result
 
-    def findPackagesInstalled(self,packagename):
-        packagename=packagename.lower().strip().replace("_","").replace("_","")
-        if self._cache==None:
+    def findPackagesInstalled(self, packagename):
+        packagename = packagename.lower().strip().replace("_", "").replace("_", "")
+        if self._cache is None:
             self.initApt()
-        result=[]
+        result = []
         for item in self.getPackageNamesInstalled():
-            item2=item.replace("_","").replace("_","").lower()
-            if item2.find(packagename)!=-1:
+            item2 = item.replace("_", "").replace("_", "").lower()
+            if item2.find(packagename) != -1:
                 result.append(item)
         return result
 
+    def getInstalledPackages(self):
+        exitcode, result = j.system.process.execute('apt list --installed')
+        packages = []
+        for line in result.splitlines():
+            meta = line.split()
+            if len(meta) < 4:
+                continue
+            name = meta[0].split('/')[0]
+            version = meta[1]
+            arch = meta[2]
+            packages.append(Package(name, version, arch))
+        return packages
 
-    def find1packageInstalled(self,packagename):
-        j.logger.log("find 1 package in ubuntu",6,category="ubuntu.find")
-        res=self.findPackagesInstalled(packagename)
-        if len(res)==1:
+    def find1packageInstalled(self, packagename):
+        j.logger.log("find 1 package in ubuntu", 6, category="ubuntu.find")
+        res = self.findPackagesInstalled(packagename)
+        if len(res) == 1:
             return res[0]
-        elif len(res)>1:
-            raise RuntimeError("Found more than 1 package for %s"%packagename)
-        raise RuntimeError("Could not find package %s"%packagename)
+        elif len(res) > 1:
+            raise RuntimeError("Found more than 1 package for %s" % packagename)
+        raise RuntimeError("Could not find package %s" % packagename)
 
     def listSources(self):
         from aptsources import sourceslist
@@ -352,7 +370,6 @@ stop on runlevel [016]
         for entry in src.list:
             entry.uri = newuri
         src.save()
-
 
     def listServices(self):
         exitcode, output = j.system.process.execute('initctl list')
@@ -365,14 +382,14 @@ stop on runlevel [016]
                     results[key] = 'enabled'
         return results
 
-    def addSourceUri(self,url):
-        url=url.replace(";",":")
-        name=url.replace("\\","/").replace("http://","").split("/")[0]
-        path="/etc/apt/sources.list.d/%s.list"%name
-        j.do.writeFile(path,"deb %s\n"%url)
+    def addSourceUri(self, url):
+        url = url.replace(";", ":")
+        name = url.replace("\\", "/").replace("http://", "").split("/")[0]
+        path = "/etc/apt/sources.list.d/%s.list" % name
+        j.do.writeFile(path, "deb %s\n" % url)
 
     def whoami(self):
-        rc,result=j.system.process.execute("whoami")
+        rc, result = j.system.process.execute("whoami")
         return result.strip()
 
     def checkroot(self):
@@ -385,8 +402,9 @@ stop on runlevel [016]
         if not j.system.fs.exists(path):
             if type not in ['rsa', 'dsa']:
                 j.events.inputerror_critical("only support rsa or dsa for now")
-            cmd="ssh-keygen -t %s -b 4096 -P '%s' -f %s" % (type, passphrase, path)
+            cmd = "ssh-keygen -t %s -b 4096 -P '%s' -f %s" % (type, passphrase, path)
             j.do.executeInteractive(cmd)
+
 
 class UbuntuSystemd(Ubuntu):
 
@@ -394,10 +412,10 @@ class UbuntuSystemd(Ubuntu):
         super(UbuntuSystemd, self).__init__()
         self._version = "16"
 
-    def serviceInstall(self, servicename, daemonpath, args='', respawn=True, pwd=None,env=None,reload=True):
+    def serviceInstall(self, servicename, daemonpath, args='', respawn=True, pwd=None, env=None, reload=True):
         pwd = pwd or ''
         env = env or ''
-        C="""\
+        C = """\
 [Unit]
 Description={servicename}
 Wants=network-online.target
@@ -413,12 +431,12 @@ Environment={env}
 WantedBy=multi-user.target
                 """.format(servicename=servicename, daemonpath=daemonpath, args=args, pwd=pwd, env=env)
 
-        j.system.fs.writeFile("/etc/systemd/system/%s.service" % servicename,C)
+        j.system.fs.writeFile("/etc/systemd/system/%s.service" % servicename, C)
 
         if reload:
-            j.system.process.execute("systemctl daemon-reload;systemctl enable %s"% servicename)
+            j.system.process.execute("systemctl daemon-reload;systemctl enable %s" % servicename)
 
-    def serviceUninstall(self,servicename):
+    def serviceUninstall(self, servicename):
         self.stopService(servicename)
         filename = '%s.service'
         for file_ in j.system.fs.find('/etc/systemd/', filename):
@@ -435,23 +453,33 @@ WantedBy=multi-user.target
                     results[key] = value
         return results
 
+    def getPackageNamesInstalled(self):
+        exitcode, result = j.system.process.execute('dpkg --get-selections')
+        installedpackages = []
+        for line in result.splitlines():
+            packagename, status = line.split()
+            if status != 'deinstall':
+                installedpackages.append(packagename)
+        return installedpackages
+
     def startService(self, servicename):
-        j.logger.log("start service on ubuntu for:%s"%servicename,category="ubuntu.start")  #@todo P1 add log statements for all other methods of this class
+        # @todo P1 add log statements for all other methods of this class
+        j.logger.log("start service on ubuntu for:%s" % servicename, category="ubuntu.start")
         if not self.statusService(servicename):
-            cmd="sudo systemctl start %s" % servicename
+            cmd = "sudo systemctl start %s" % servicename
             # print cmd
             return j.system.process.execute(cmd)
 
     def stopService(self, servicename):
-        cmd="sudo systemctl stop %s" % servicename
+        cmd = "sudo systemctl stop %s" % servicename
         # print cmd
-        return j.system.process.execute(cmd,False)
+        return j.system.process.execute(cmd, False)
 
     def restartService(self, servicename):
-        return j.system.process.execute("sudo systemctl restart %s" % servicename,False)
+        return j.system.process.execute("sudo systemctl restart %s" % servicename, False)
 
     def statusService(self, servicename):
-        exitcode, _ = j.system.process.execute("sudo systemctl is-active %s" % servicename,False)
+        exitcode, _ = j.system.process.execute("sudo systemctl is-active %s" % servicename, False)
         return exitcode == 0
 
     def serviceDisableStartAtBoot(self, servicename):
@@ -461,13 +489,11 @@ WantedBy=multi-user.target
     def serviceEnableStartAtBoot(self, servicename):
         j.system.process.execute("sudo systemctl enable %s" % servicename)
 
-
     def installDebFile(self, path, installDeps=True):
         self.check()
         j.system.process.execute('dpkg -i %s' % path)
         if installDeps:
             j.system.process.execute('apt-get -y install -f')
-
 
     def updatePackageMetadata(self, force=True):
         j.system.process.execute('apt-get update')
