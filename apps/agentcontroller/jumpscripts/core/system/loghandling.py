@@ -1,4 +1,5 @@
 from JumpScale import j
+import time
 
 descr = """
 process logs queued in redis
@@ -15,7 +16,7 @@ startatboot = True
 order = 1
 enable = True
 async = True
-queue ='process'
+queue = 'process'
 log = False
 roles = []
 
@@ -24,9 +25,6 @@ try:
 except:
     import json
 
-import time
-import JumpScale.baselib.redis
-import JumpScale.grid.osis
 
 def action():
 
@@ -40,48 +38,64 @@ def action():
     OSISclientEco = j.clients.osis.getCategory(OSISclient, "system", "eco")
 
     log = None
-    path = "%s/apps/processmanager/loghandling/"%j.dirs.baseDir
+    path = "%s/apps/processmanager/loghandling/" % j.dirs.baseDir
     if j.system.fs.exists(path=path):
         loghandlingTE = j.core.taskletengine.get(path)
-        log=logqueue.get_nowait()
+        log = logqueue.get_nowait()
         # j.core.grid.logger.osis = OSISclientLogger
     else:
         loghandlingTE = None
 
-    ecoguid = None
-    path = "%s/apps/processmanager/eventhandling"%j.dirs.baseDir
+    ecokey = None
+    path = "%s/apps/processmanager/eventhandling" % j.dirs.baseDir
     if j.system.fs.exists(path=path):
         eventhandlingTE = j.core.taskletengine.get(path)
-        ecoguid=ecoqueue.get_nowait()
+        ecokey = ecoqueue.get_nowait()
     else:
         eventhandlingTE = None
 
-    out=[]
-    while log<>None:
-        log2=json.decode(log)
+    out = []
+    while log is not None:
+        log2 = json.decode(log)
         log3 = j.logger.getLogObjectFromDict(log2)
-        log4= loghandlingTE.executeV2(logobj=log3)
-        if log4<>None:
+        log4 = loghandlingTE.executeV2(logobj=log3)
+        if log4 is not None:
             out.append(log4.__dict__)
-        if len(out)>500:
+        if len(out) > 500:
             OSISclientLogger.set(out)
-            out=[]
-        log=logqueue.get_nowait()
-    if len(out)>0:
+            out = []
+        log = logqueue.get_nowait()
+    if len(out) > 0:
         OSISclientLogger.set(out)
 
-    while ecoguid<>None:
-        raweco = rediscl.hget('eco:objects', ecoguid)
+    def process_ecokey(ecokey):
+        raweco = rediscl.hget('eco:objects', ecokey)
+        eco = None
         if raweco:
             eco = json.loads(raweco)
             if not eco.get('epoch'):
                 eco["epoch"] = int(time.time())
             ecoobj = j.errorconditionhandler.getErrorConditionObject(ddict=eco)
-            ecores= eventhandlingTE.executeV2(eco=ecoobj)
-            if hasattr(ecores,"tb"):
+            ecores = eventhandlingTE.executeV2(eco=ecoobj)
+            if hasattr(ecores, "tb"):
                 ecores.__dict__.pop("tb")
             OSISclientEco.set(ecores.__dict__)
-        ecoguid=ecoqueue.get_nowait()
+            eco['occurrences'] = 0
+            rediscl.hset('eco:objects', ecokey, json.dumps(eco))
+            rediscl.srem('eco:secos', ecokey)
+
+    while ecokey is not None:
+        process_ecokey(ecokey)
+        ecokey = ecoqueue.get_nowait()
+    htime = rediscl.get('eco:htime') or 0
+    if int(htime) < time.time() - 300:
+        members = rediscl.smembers('eco:secos')
+        if members:
+            rediscl.srem('eco:secos', *members)
+            for member in members:
+                process_ecokey(member)
+        rediscl.set('eco:htime', str(int(time.time())))
+
 
 if __name__ == '__main__':
     j.core.osis.client = j.clients.osis.getByInstance('main')

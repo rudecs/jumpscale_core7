@@ -11,21 +11,29 @@ if redis.call("HEXISTS", "eco:objects",key)==1 then
     eco["lasttime"]=eco["epoch"]
     eco["epoch"]=ecodb["epoch"]
     eco["guid"]=ecodb["guid"]
+    eco["pushtime"]=ecodb["pushtime"] or 0
 else
     eco["occurrences"]=1
+    eco["pushtime"] = 0
     eco["lasttime"]=eco["epoch"]
 
 end
 
-local ecoraw=cjson.encode(eco)
-
-redis.call("HSET", "eco:objects",key,ecoraw)
-
-if lasttime<(eco["lasttime"]-300) then
-    --more than 5 min ago
+local delta = eco['occurrences'] or 0
+if delta > 300 then
+   delta = 300
+end
+if eco["pushtime"] + delta < eco["lasttime"] then
+    eco["pushtime"] = eco["epoch"]
     redis.call("RPUSH", "queues:eco",key)
+else
+   redis.call("SADD", "eco:secos", key)
 end
 
+local ecoraw=cjson.encode(eco)
+redis.call("HSET", "eco:objects",key,ecoraw)
+
+-- keep redis clean
 if redis.call("LLEN", "queues:eco") > 1000 then
     local todelete = redis.call("LPOP", "queues:eco")
     redis.call("HDEL","eco:objects",todelete)
