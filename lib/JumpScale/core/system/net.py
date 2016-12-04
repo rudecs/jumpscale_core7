@@ -48,7 +48,7 @@ class SystemNet:
             if conn:
                 conn.close()
         return True
-        
+
     def waitConnectionTest(self,ipaddr,port,timeout):
         """
         will return false if not successfull (timeout)
@@ -100,7 +100,7 @@ class SystemNet:
             code = urllib.request.urlopen(url).getcode()
         except Exception:
             j.errorconditionhandler.raiseOperationalCritical("Url %s is unreachable" % url)
-        
+
         if code != 200:
             j.logger.setLogTargetLogForwarder()
             j.errorconditionhandler.raiseOperationalCritical("Url %s is unreachable" % url)
@@ -235,7 +235,7 @@ class SystemNet:
                 if ipTuple: # if empty array skip
                     result.extend([ ip[0] for ip in ipTuple])
             return result
-    
+
     def checkIpAddressIsLocal(self,ipaddr):
         if ipaddr.strip() in self.getIpAdresses():
             return True
@@ -262,7 +262,7 @@ class SystemNet:
             proxy_support = urllib.request.ProxyHandler()
             opener = urllib.request.build_opener(proxy_support)
             urllib.request.install_opener(opener)
-    
+
     def getNics(self,up=False):
         """ Get Nics on this machine
         Works only for Linux/Solaris systems
@@ -459,7 +459,7 @@ class SystemNet:
             cmd="ip route del 0/0"
             rc,out,err=j.do.execute(cmd,outputStdout=False,outputStderr=False,dieOnNonZeroExitCode=False)
 
-        removegw()            
+        removegw()
         couter=0
         while gwexists():
             removegw()
@@ -480,7 +480,7 @@ class SystemNet:
         import pynetlinux
 
         import JumpScale.baselib.netconfig
-        j.system.netconfig.reset(True)        
+        j.system.netconfig.reset(True)
 
         if ipaddr==None or gw == None:
             j.events.inputerror_critical("Cannot configure network when ipaddr or gw not specified","net.config")
@@ -495,9 +495,9 @@ class SystemNet:
                 time.sleep(1)
                 counter+=1
                 print "waiting for bridge:brpub to go down"
-        
+
         i=pynetlinux.ifconfig.findif(interface)
-        if i<>None:            
+        if i<>None:
             print "found %s, will try to bring down."%interface
             i.down()
             counter=0
@@ -506,7 +506,7 @@ class SystemNet:
                 time.sleep(1)
                 counter+=1
                 print "waiting for interface:%s to go down"%interface
-        
+
         if config:
             import JumpScale.baselib.netconfig
             j.system.netconfig.enableInterfaceStatic(dev=interface,ipaddr="%s/%s"%(ipaddr,mask),gw=gw,start=True)
@@ -521,7 +521,7 @@ class SystemNet:
         while i.is_up()==False:
             i.up()
             time.sleep(1)
-            print "waiting for interface:%s to go up"%interface 
+            print "waiting for interface:%s to go up"%interface
 
         print "interface:%s up"%interface
 
@@ -545,9 +545,9 @@ class SystemNet:
 
     def setBasicNetConfigurationDHCP(self,interface="eth0"):
         """
-        this will bring all bridges down        
+        this will bring all bridges down
         """
-        
+
         import pynetlinux
         import JumpScale.baselib.netconfig
 
@@ -561,9 +561,9 @@ class SystemNet:
                 time.sleep(1)
                 counter+=1
                 print "waiting for bridge:%s to go down"%br.name
-        
+
         i=pynetlinux.ifconfig.findif(interface)
-        if i<>None:            
+        if i<>None:
             print "found %s, will try to bring down."%interface
             i.down()
             counter=0
@@ -576,14 +576,14 @@ class SystemNet:
             cmd="ip addr flush dev %s"%interface
             j.system.process.execute(cmd)
 
-        
+
         j.system.netconfig.enableInterface(dev=interface,start=True)
-        
+
         print "check interface up"
         while i.is_up()==False:
             i.up()
             time.sleep(1)
-            print "waiting for interface:%s to go up"%interface 
+            print "waiting for interface:%s to go up"%interface
 
         print "interface:%s up"%interface
 
@@ -643,7 +643,7 @@ class SystemNet:
             print "gw found:%s"%gw
 
         if gw==None:
-            raise RuntimeError("Did not find gw: %s"%gw)            
+            raise RuntimeError("Did not find gw: %s"%gw)
 
         if not j.system.net.pingMachine(gw,pingtimeout=2):
             raise RuntimeError("cannot continue to execute on bridgeConfigResetPub, gw was not reachable.")
@@ -670,10 +670,10 @@ class SystemNet:
                     time.sleep(1)
                     counter+=1
                     print "waiting for bridge:%s to go down"%br.name
-            
+
             #bring own interface down
             i=pynetlinux.ifconfig.findif(interface)
-            if i<>None:            
+            if i<>None:
                 print "found %s, will try to bring down."%interface
                 i.down()
                 counter=0
@@ -699,7 +699,7 @@ class SystemNet:
             j.system.netconfig.setNameserver("8.8.8.8")
 
         except Exception,e:
-            print "error in bridgeConfigResetPub:'%s'"%e            
+            print "error in bridgeConfigResetPub:'%s'"%e
             j.system.net.setBasicNetConfiguration(interface,ipaddr,gw,mask,config=False)
 
 
@@ -715,7 +715,7 @@ class SystemNet:
 
         @TODO change for windows
 
-        """ 
+        """
         netaddr={}
         if j.system.platformtype.isLinux():
             return [item for item in getNetworkInfo()]
@@ -770,7 +770,7 @@ class SystemNet:
         elif j.system.platformtype.isWindows():
             import wmi
             ipv4Pattern = '^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$'
-            
+
             w = wmi.WMI()
             NICIndex = interface.split(":")[0]
             nic = w.Win32_NetworkAdapterConfiguration(index=NICIndex)[0]
@@ -778,7 +778,7 @@ class SystemNet:
             if nic.IPAddress:
                 for x in range(0, len(nic.IPAddress)):
                     # skip IPv6 addresses for now
-                    if re.match(ipv4Pattern, str(nic.IPAddress[x])) != None: 
+                    if re.match(ipv4Pattern, str(nic.IPAddress[x])) != None:
                         result.append( [str(nic.IPAddress[x]), str(nic.IPSubnet[x]), ''] )
             return result
         else:
@@ -815,7 +815,7 @@ class SystemNet:
             return None
         elif j.system.platformtype.isWindows():
             import wmi
-            w = wmi.WMI()   
+            w = wmi.WMI()
             NICIndex = interface.split(":")[0]
             return str(w.Win32_NetworkAdapterConfiguration(index=NICIndex)[0].MACAddress)
         else:
@@ -977,6 +977,24 @@ class SystemNet:
             j.logger.log('[%s] is not a valid ip address'%ipaddress, 7)
             return False
 
+    def ping(self, ip, count=10, interval=0.2):
+        pingcmd = 'ping -n -c {count} -i {interval} {ip}'.format(count=count, interval=interval, ip=ip)
+        exitcode, output = j.system.process.execute(pingcmd)
+        received_re = r'^{} packets transmitted, (?P<received>\d+) received.*$'.format(count)
+        stats_re = r'^rtt min/avg/max/mdev = (?P<min>\d+\.\d+)/(?P<avg>\d+\.\d+)/(?P<max>\d+\.\d+)/(?P<mdev>\d+\.\d+).*$'
+        results = {}
+        received_match = re.search(received_re, output, flags=re.M)
+        if received_match:
+            for key, value in received_match.groupdict().iteritems():
+                results[key] = float(value)
+                if key == 'received':
+                    results['percent'] = int(float(results['received']) / count) * 100
+        stats_match = re.search(stats_re, output, flags=re.M)
+        if stats_match:
+            for key, value in stats_match.groupdict().iteritems():
+                results[key] = float(value)
+        return results
+
     def pingMachine(self, ip, pingtimeout=60, recheck = False, allowhostname = True):
         """Ping a machine to check if it's up/running and accessible
         @param ip: Machine Ip Address
@@ -1046,7 +1064,7 @@ class SystemNet:
             j.system.fs.writeFile(hostsfile, filecontents)
         else:
             j.logger.log('Ip address %s not found in hosts file' %ip, 1)
-            
+
     def getHostNamesForIP(self, hostsfile, ip):
         """Get hostnames for ip address
         @param hostsfile: File where hosts are defined
@@ -1076,7 +1094,7 @@ class SystemNet:
         # get content of hostsfile
         filecontents = j.system.fs.fileGetContents(hostsfile)
         searchObj = re.search('^%s\s.*\n' %ip, filecontents, re.MULTILINE)
-        
+
         hostnames = ' '.join(hostname)
         if searchObj:
             filecontents = filecontents.replace(searchObj.group(0), '%s %s\n' %(ip, hostnames))
