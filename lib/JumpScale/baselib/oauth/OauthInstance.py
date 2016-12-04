@@ -1,22 +1,24 @@
-import datetime
 import urllib
 import requests
 import string
 import random
-
-try:
-    import ujson as json
-except:
-    import json
 from JumpScale import j
 
+
+class AuthError(Exception):
+    pass
+
+
 class UserInfo(object):
+
     def __init__(self, username, emailaddress, groups):
         self.username = username
         self.emailaddress = emailaddress
         self.groups = groups
 
+
 class OauthInstance(object):
+
     def __init__(self, addr, accesstokenaddr, id, secret, scope, redirect_url, user_info_url, logout_url, instance):
         if not addr:
             hrd = j.application.getAppInstanceHRD('oauth_client', instance)
@@ -27,7 +29,7 @@ class OauthInstance(object):
             self.redirect_url = hrd.get('instance.oauth.client.redirect_url')
             self.secret = hrd.get('instance.oauth.client.secret')
             self.user_info_url = hrd.get('instance.oauth.client.user_info_url')
-            self.logout_url = hrd.get('instance.oauth.client.logout_url') 
+            self.logout_url = hrd.get('instance.oauth.client.logout_url')
         else:
             self.addr = addr
             self.id = id
@@ -54,21 +56,22 @@ class OauthInstance(object):
             'Accept': 'application/json'})
 
         if not result.ok or 'error' in result.json():
-            msg = 'Not Authorized -- %s' % result.json()['error']
+            msg = result.json()['error']
             j.logger.log(msg)
-            raise RuntimeError(msg)
+            raise AuthError(msg)
         return result.json()
 
     def getUserInfo(self, accesstoken):
         params = {'access_token': accesstoken['access_token']}
         userinforesp = requests.get('%s?%s' % (self.user_info_url, urllib.urlencode(params)))
         if not userinforesp.ok:
-            msg = 'Not Authorized -- failed ot get user defailts'
+            msg = 'Failed to get user details'
             j.logger.log(msg)
-            raise RuntimeError(msg)
+            raise AuthError(msg)
 
         userinfo = userinforesp.json()
         return UserInfo(userinfo['login'], userinfo['email'], ['user'])
+
 
 class ItsYouOnline(OauthInstance):
 
@@ -80,9 +83,9 @@ class ItsYouOnline(OauthInstance):
             'Accept': 'application/json'})
 
         if not result.ok or 'error' in result.json():
-            msg = 'Not Authorized -- %s' % result.json()['error']
+            msg = result.text
             j.logger.log(msg)
-            raise RuntimeError(msg)
+            raise AuthError(msg)
         return result.json()
 
     def getUserInfo(self, accesstoken):
@@ -91,9 +94,9 @@ class ItsYouOnline(OauthInstance):
         userinfourl = self.user_info_url.format(**accesstoken.get('info', {}))
         userinforesp = requests.get(userinfourl, headers=headers)
         if not userinforesp.ok:
-            msg = 'Not Authorized -- failed ot get user defailts'
+            msg = 'Failed to get user details'
             j.logger.log(msg)
-            raise RuntimeError(msg)
+            raise AuthError(msg)
 
         groups = ['user']
         for scope in scopes:
