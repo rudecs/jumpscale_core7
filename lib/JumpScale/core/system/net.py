@@ -979,7 +979,9 @@ class SystemNet:
 
     def ping(self, ip, count=10, interval=0.2):
         pingcmd = 'ping -n -c {count} -i {interval} {ip}'.format(count=count, interval=interval, ip=ip)
-        exitcode, output = j.system.process.execute(pingcmd)
+        exitcode, output = j.system.process.execute(pingcmd, dieOnNonZeroExitCode=False)
+        if exitcode == 127:
+            raise RuntimeError('Ping command not installed.')
         received_re = r'^{} packets transmitted, (?P<received>\d+) received.*$'.format(count)
         stats_re = r'^rtt min/avg/max/mdev = (?P<min>\d+\.\d+)/(?P<avg>\d+\.\d+)/(?P<max>\d+\.\d+)/(?P<mdev>\d+\.\d+).*$'
         results = {}
