@@ -55,10 +55,13 @@ class ErrorConditionHandler():
             key=eco.getUniqueKey()
             
             data=eco.toJson()
-            res=self.escalateToRedis(keys=["queues:eco","eco:incr","eco:occurrences","eco:objects","eco:last"],args=[key,data])
-            # print "redisreturn: '%s'"%res
-            # j.application.stop()
-            res= json.loads(res)            
+            try:
+                res=self.escalateToRedis(keys=["queues:eco","eco:incr","eco:occurrences","eco:objects","eco:last"],args=[key,data])
+                # print "redisreturn: '%s'"%res
+                # j.application.stop()
+                res= json.loads(res)            
+            except:
+                return None
             return res
         else:
             return None
