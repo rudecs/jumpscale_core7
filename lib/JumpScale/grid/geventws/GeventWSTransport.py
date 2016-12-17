@@ -7,13 +7,14 @@ import requests
 
 class GeventWSTransport(Transport):
 
-    def __init__(self, addr="localhost", port=9999, timeout=None, endpoint='rpc/'):
+    def __init__(self, addr="localhost", port=9999, timeout=None, endpoint='rpc/', poolsize=100):
         scheme = 'http' if port != 443 else 'https'
         self.url = "%s://%s:%s/%s" % (scheme, addr, port, endpoint)
         self._id = None
         self.timeout = timeout
         self._session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=5, pool_block=True)
+        adapter = requests.adapters.HTTPAdapter(
+            pool_connections=poolsize, pool_maxsize=poolsize, max_retries=5, pool_block=True)
         self._session.mount('{}://'.format(scheme), adapter)
         self._addr = addr
         self._port = port
@@ -84,8 +85,8 @@ class GeventWSTransport(Transport):
 
 class GeventWSHATransport(TCPHATransport):
 
-    def __init__(self, connections, timeout=None):
-        TCPHATransport.__init__(self, connections, GeventWSTransport, timeout)
+    def __init__(self, connections, timeout=None, poolsize=100):
+        TCPHATransport.__init__(self, connections, GeventWSTransport, timeout, poolsize=poolsize)
 
     @property
     def ipaddr(self):
