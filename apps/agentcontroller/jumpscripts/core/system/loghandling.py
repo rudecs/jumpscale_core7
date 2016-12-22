@@ -18,7 +18,7 @@ enable = True
 async = True
 queue = 'process'
 log = False
-roles = []
+roles = ['node']
 
 try:
     import ujson as json
