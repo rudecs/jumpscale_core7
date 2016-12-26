@@ -32,7 +32,7 @@ def kill(pid, sig=None):
 
         except OSError as e:
             raise RuntimeError("Could not kill process with id %s.\n%s" % (pid,e))
-        
+
     elif j.system.platformtype.isWindows():
         import win32api, win32process, win32con
         try:
@@ -1227,11 +1227,11 @@ class SystemProcess:
             print(("system.process.executeAsync [%s]" % command))
 
         if j.system.platformtype.isWindows():
-            if argsInCommand:                
+            if argsInCommand:
                 cmd = subprocess.list2cmdline([command] + args)
             else:
                 cmd = command
-                
+
 
             if redirectStreams: # Process will be started and the Popen object will be returned. The calling function can use this object to read or write to its pipes or to wait for completion.
                 retVal = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, env=os.environ, shell = useShell)
@@ -1375,7 +1375,7 @@ class SystemProcess:
                 childprocess = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, shell=True, env=os.environ)
                 (output,error) = childprocess.communicate()
                 exitcode = childprocess.returncode
-                
+
             elif j.system.platformtype.isWindows():
                 import subprocess, win32pipe, msvcrt, pywintypes
 
@@ -1406,7 +1406,7 @@ class SystemProcess:
         except Exception as e:
             raise
 
-        output=output.decode("utf8")#'ascii')            
+        output=output.decode("utf8")#'ascii')
         error=error.decode("utf8")#'ascii')
 
         if exitcode!=0 or error!="":
@@ -1466,7 +1466,7 @@ class SystemProcess:
         """
         if params==None:
             params=j.core.params.get()
-        codeLines = code.split("\n")        
+        codeLines = code.split("\n")
         if "def " not in codeLines[0]:
             raise ValueError("code to execute needs to start with def")
         def_indent = codeLines[0].find("def ")
@@ -1499,15 +1499,15 @@ class SystemProcess:
             raise RuntimeError("Could not import code, code submitted was \n%s" % code)
 
         main = execContext['main']
-        
+
         #try to execute the code
         result={}
         try:
             result=main(params)
-        except Exception as e:            
+        except Exception as e:
             raise RuntimeError("Error %s.\ncode submitted was \n%s" % (e,code))
         return result
-        
+
     def isPidAlive(self, pid):
         """Checks whether this pid is alive.
            For unix, a signal is sent to check that the process is alive.
@@ -1544,7 +1544,7 @@ class SystemProcess:
                 if line.find(filterstr)!=-1:
                     line=line.strip()
                     # print "found pidline:%s"%line
-                    found.append(int(line.split(" ")[0]))   
+                    found.append(int(line.split(" ")[0]))
         return found
 
     def checkstart(self,cmd,filterstr,nrtimes=1,retry=1):
@@ -1583,7 +1583,7 @@ class SystemProcess:
             for item in found:
                 self.kill(int(item),9)
             found=self.getPidsByFilter(filterstr)
-                
+
         if len(found)!=0:
             raise RuntimeError("could not stop %s, found %s nr of instances."%(cmd,len(found)))
 
@@ -1602,7 +1602,7 @@ class SystemProcess:
                 match = co.search(line)
                 if not match:
                     continue
-                gd = match.groupdict()                
+                gd = match.groupdict()
                 # print "%s"%line
                 # print gd["cmd"]
                 # print process
@@ -1625,12 +1625,25 @@ class SystemProcess:
                 return process
         raise RuntimeError("Could not find process with pid:%s"%pid)
 
+    def isHostProcess(self, pid):
+        import psutil
+        if pid in [1, 0]:
+            return True
+        try:
+            proc = psutil.Process(pid)
+            if proc.name() in ['lxc-start', 'docker-containerd']:
+                return False
+            else:
+                return self.isHostProcess(proc.ppid())
+        except psutil.NoSuchProcess:
+            return False
+
     def getProcessPidsFromUser(self,user):
         import psutil
         result=[]
         for process in psutil.get_process_list():
             if process.username==user:
-                result.append(process.pid)            
+                result.append(process.pid)
         return result
 
     def killUserProcesses(self,user):
@@ -1794,7 +1807,7 @@ class SystemProcess:
                 except Exception,e:
                     if str(e).find("psutil.AccessDenied")==-1:
                         raise RuntimeError(str(e))
-                    continue                    
+                    continue
                 if cc!=[]:
                     for conn in cc:
                         portfound=conn.laddr[1]
@@ -1861,7 +1874,7 @@ class SystemProcess:
         for item in self.appsGetNames():
             pids=self.appGetPidsActive(item)
             pids=[pid for pid in pids if pid not in defunctlist]
-                
+
             if pids==[]:
                 j.application.redis.hdelete("application",item)
             else:
@@ -1873,7 +1886,7 @@ class SystemProcess:
         todelete=[]
         for pid in pids:
             if not self.isPidAlive(pid):
-                todelete.append(pid)        
+                todelete.append(pid)
             else:
                 environ = self.getEnviron(pid)
                 if environ.get('JSPROCNAME') != appname:
@@ -1883,5 +1896,3 @@ class SystemProcess:
         j.application.redis.hset("application",appname,json.dumps(pids))
 
         return pids
-
-

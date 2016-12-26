@@ -232,6 +232,7 @@ class ActionsBase():
                 pids.update(j.system.process.getPidsByPort(port))
             if process.get('filterstr', None):
                 pids.update(j.system.process.getPidsByFilter(process['filterstr']))
+        pids = filter(j.system.process.isHostProcess, pids)
         return list(pids)
 
     def halt(self,serviceobj):
