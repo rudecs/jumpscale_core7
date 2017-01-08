@@ -964,7 +964,7 @@ class SystemFS:
         if self.isLink(fullpath):
             link = self.readlink(fullpath)
             path = self.joinPaths(self.getDirName(fullpath), link)
-            if self.isDir(path):
+            if os.path.isdir(path):
                 return True
         return False
 
