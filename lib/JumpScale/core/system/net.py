@@ -367,6 +367,24 @@ class SystemNet:
         else:
             raise RuntimeError("Not supported on this platform!")
 
+    def getNicSpeed(self, nic):
+        speedfile = '/sys/class/net/%s/speed' % nic
+        if j.system.fs.exists(speedfile):
+            try:
+                return int(j.system.fs.fileGetContents(speedfile))
+            except IOError:
+                pass
+        # check if its ovs bridge
+        ovsconfig = j.system.ovsnetconfig.getConfigFromSystem()
+        nics = j.system.process.execute('ovs-vsctl list-ifaces %s' % nic)[1].split('\n')
+        for nic in nics:
+            if nic in ovsconfig:
+                if ovsconfig[nic]['detail'][0] == 'PHYS':
+                    match = re.search('(?P<speed>\d+)', ovsconfig[nic]['detail'][3])
+                    return int(match.group('speed'))
+        raise ValueError("Could not find network speed")
+
+
     def getVlanTag(self,interface,nicType=None):
         """Get VLan tag on the specified interface and vlan type"""
         if nicType == None:
