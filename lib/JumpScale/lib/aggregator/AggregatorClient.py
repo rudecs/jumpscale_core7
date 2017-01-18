@@ -5,7 +5,7 @@ import os
 import collections
 
 
-TStats = collections.namedtuple('Stats', 'h_nr m_nr h_avg m_epoch m_total h_total m_avg m_last epoch ' +
+TStats = collections.namedtuple('Stats', 'h_nr m_nr h_avg m_epoch m_total h_total m_avg m_last m_last_epoch epoch ' +
                                 'm_max val h_max key tags h_epoch h_last h_last_epoch')
 
 
