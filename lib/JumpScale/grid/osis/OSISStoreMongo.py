@@ -1,9 +1,16 @@
 from JumpScale import j
+from JumpScale.core.errorhandling.ErrorConditionHandler import BaseException
 from JumpScale.grid.osis.OSISStore import OSISStore
 import imp
 import ujson as json
 import pymongo
 import datetime
+
+
+class ObjectNotFound(BaseException):
+    def __init__(self, message):
+        eco = j.errorconditionhandler.getErrorConditionObject(msg=message, category='osis.objectnotfound')
+        super(ObjectNotFound, self).__init__(message, eco)
 
 
 def _changekey(object, map):
@@ -189,7 +196,7 @@ class OSISStoreMongo(OSISStore):
 
         # res["guid"]=str(res["_id"])
         if not res:
-            raise KeyError(key)
+            raise ObjectNotFound(key)
 
         if not full:
             res.pop("_id")
