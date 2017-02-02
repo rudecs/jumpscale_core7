@@ -12,7 +12,9 @@ class mainclass(OSISStoreMongo):
         if count == 1:
             db.update({'guid': value['guid']},
                       {'$inc': {'occurrences': value['occurrences']},
-                       '$set': {'lasttime': value['lasttime']}
+                       '$set': {'lasttime': value['lasttime'],
+                                'errormessage': value['errormessage'],
+                                'errormessagePub': value['errormessagePub']}
                        })
         else:
             new = True
