@@ -31,11 +31,11 @@ class HaltException(BaseException):
 
 
 class ErrorConditionHandler():
-    
+
     def __init__(self,haltOnError=True,storeErrorConditionsLocal=True):
         self._blacklist = None
         self.lastAction=""
-        self.haltOnError=haltOnError     
+        self.haltOnError=haltOnError
         self.setExceptHook()
         self.lastEco=None
         self.redis=None
@@ -53,13 +53,13 @@ class ErrorConditionHandler():
 
         if self.redis!=None and self.escalateToRedis!=None:
             key=eco.getUniqueKey()
-            
+
             data=eco.toJson()
             try:
                 res=self.escalateToRedis(keys=["queues:eco","eco:incr","eco:occurrences","eco:objects","eco:last"],args=[key,data])
                 # print "redisreturn: '%s'"%res
                 # j.application.stop()
-                res= json.loads(res)            
+                res= json.loads(res)
             except:
                 return None
             return res
@@ -75,10 +75,10 @@ class ErrorConditionHandler():
             else:
                 self._blacklist = list()
         return self._blacklist
-        
+
     def toolStripNonAsciFromText(text):
-        return string.join([char for char in str(text) if ((ord(char)>31 and ord(char)<127) or ord(char)==10)],"")        
-        
+        return string.join([char for char in str(text) if ((ord(char)>31 and ord(char)<127) or ord(char)==10)],"")
+
     def setExceptHook(self):
         sys.excepthook = self.excepthook
         self.inException=False
@@ -86,12 +86,13 @@ class ErrorConditionHandler():
     def getLevelName(self, level):
         return LEVELMAP.get(level, 'UNKNOWN')
 
-    def _handleRaise(self, type, level, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags=""):        
+    def _handleRaise(self, type, level, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags="", noreraise=False):
         if pythonExceptionObject!=None:
-            eco=self.parsePythonErrorObject(pythonExceptionObject,level=level,message=message)            
+            eco=self.parsePythonErrorObject(pythonExceptionObject,level=level,message=message)
             eco.category=category
+            eco.noreraise = noreraise
         else:
-            eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,level=level) 
+            eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,level=level, noreraise=noreraise)
             eco.getBacktrace()
 
         eco.tags=tags
@@ -99,7 +100,7 @@ class ErrorConditionHandler():
         eco.process()
         return eco
 
-    def raiseBug(self, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",die=True,tags="", level=1):
+    def raiseBug(self, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",die=True,tags="", level=1, noreraise=False):
         """
         use this to raise a bug in the code, this is the only time that a stacktrace will be asked for
         level will be Critical
@@ -109,19 +110,19 @@ class ErrorConditionHandler():
         @param pythonExceptionObject is the object as it comes from a try except statement
 
         try:
-            ##do something            
+            ##do something
         except Exception,e:
             j.errorconditionhandler.raiseBug("an error",category="exceptions.init",e)
-        
+
         """
         type = "BUG"
-        eco = self._handleRaise(type, level, message, category, pythonExceptionObject, pythonTraceBack, msgpub, tags)
-        if die:                     
+        eco = self._handleRaise(type, level, message, category, pythonExceptionObject, pythonTraceBack, msgpub, tags, noreraise=noreraise)
+        if die:
             self.halt(eco.errormessage, eco)
 
     raiseCritical = raiseBug
 
-    def raiseWarning(self, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags=""):
+    def raiseWarning(self, message,category="", pythonExceptionObject=None,pythonTraceBack=None,msgpub="",tags="", noreraise=False):
         """
         use this to raise a bug in the code, this is the only time that a stacktrace will be asked for
         @param message is the error message which describes the bug
@@ -130,15 +131,15 @@ class ErrorConditionHandler():
         @param pythonExceptionObject is the object as it comes from a try except statement
 
         try:
-            ##do something            
+            ##do something
         except Exception,e:
             j.errorconditionhandler.raiseBug("an error",category="exceptions.init",e)
-        
+
         """
         level = "WARNING"
-        return self.raiseBug(message, category, pythonExceptionObject, pythonTraceBack, msgpub, False, tags, level)
-        
-    def raiseOperationalCritical(self, message="", category="",msgpub="",die=True,tags="",eco=None,extra=None):
+        return self.raiseBug(message, category, pythonExceptionObject, pythonTraceBack, msgpub, False, tags, level, noreraise=noreraise)
+
+    def raiseOperationalCritical(self, message="", category="",msgpub="",die=True,tags="",eco=None,extra=None, noreraise=False):
         """
         use this to raise an operational issue about the system
         @param message is message we want to use for operators
@@ -147,22 +148,24 @@ class ErrorConditionHandler():
         """
         if not eco:
             eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,level=1,\
-                                         type="OPERATIONS")
+                                         type="OPERATIONS", noreraise=noreraise)
             eco.tags=tags
         else:
             eco.type="OPERATIONS"
             eco.level=1
+            eco.noreraise = noreraise
+
 
         if eco!=None:
             eco.errormessage=eco.errormessage.strip("\"")
         if extra!=None:
             eco.extra=extra
-        
+
         eco.type="OPERATIONS"
 
         eco.process()
-        
-        msg = eco.errormessage 
+
+        msg = eco.errormessage
         if j.application.debug:
             msg=str(eco)
 
@@ -183,104 +186,105 @@ class ErrorConditionHandler():
             message+="((silent))\n"
         raise RuntimeError(message)
 
-    def raiseOperationalWarning(self, message="", category="",msgpub="",tags="",eco=None):
+    def raiseOperationalWarning(self, message="", category="",msgpub="",tags="",eco=None, noreraise=False):
         if not eco:
             eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,level=3,\
-                                         type="OPERATIONS")
+                                         type="OPERATIONS", noreraise=noreraise)
             eco.tags=tags
         else:
             eco.type="OPERATIONS"
             eco.level=3
         eco.process()
         return eco
-        
-    def raiseInputError(self, message="", category="input",msgpub="",die=True ,backtrace="",tags=""):
+
+    def raiseInputError(self, message="", category="input",msgpub="",die=True ,backtrace="",tags="", noreraise=False):
         eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,\
-                                         level=1,type="INPUT")
+                                         level=1,type="INPUT", noreraise=noreraise)
         eco.tags=tags
         if backtrace:
             eco.backtrace=backtrace
         eco.process()
-   
+
         if j.application.debug:
             print(eco)
         else:
             print("***INPUT ERROR***")
             if category!=None:
-                print(("category:%s"%category))     
+                print(("category:%s"%category))
             print(message)
 
         if die:
             self.halt(eco.errormessage, eco)
         return eco
-        
-    def raiseMonitoringError(self, message, category="",msgpub="",die=False,tags=""):
+
+    def raiseMonitoringError(self, message, category="",msgpub="",die=False,tags="", noreraise=False):
         eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,\
-                                         level=1,type="MONITORING")
+                                         level=1,type="MONITORING", noreraise=noreraise)
         eco.tags=tags
         eco.process()
         if die:
             self.halt(eco.description, eco)
         return eco
-        
-    def raisePerformanceError(self, message, category="",msgpub="",tags=""):
+
+    def raisePerformanceError(self, message, category="",msgpub="",tags="", noreraise=False):
         eco=self.getErrorConditionObject(msg=message,msgpub=msgpub,category=category,\
-                                         level=1,type="PERFORMANCE")
+                                         level=1,type="PERFORMANCE", noreraise=noreraise)
         eco.tags=tags
         eco.process()
         if die:
             self.halt(eco.description, eco)
         return eco
-        
-    def getErrorConditionObject(self,ddict={},msg="",msgpub="",category="",level=1,type="UNKNOWN",tb=None):
+
+    def getErrorConditionObject(self,ddict={},msg="",msgpub="",category="",level=1,type="UNKNOWN",tb=None, noreraise=False):
         """
         @data is dict with fields of errorcondition obj
         returns only ErrorConditionObject which should be used in jumpscale to define an errorcondition (or potential error condition)
-        
-        """                
-        errorconditionObject= ErrorConditionObject(ddict=ddict,msg=msg,msgpub=msgpub,level=level,category=category,type=type,tb=tb)                
-        return errorconditionObject        
-  
+
+        """
+        errorconditionObject= ErrorConditionObject(ddict=ddict,msg=msg,msgpub=msgpub,level=level,category=category,type=type,tb=tb)
+        errorconditionObject.noreraise = noreraise
+        return errorconditionObject
+
     def processPythonExceptionObject(self,pythonExceptionObject,ttype=None, tb=None,level=1,message="",sentry=True):
-        """ 
+        """
         how to use
-        
+
         try:
-            ##do something            
+            ##do something
         except Exception,e:
             j.errorconditionhandler.processpythonExceptionObject(e)
-            
+
         @param pythonExceptionObject is errorobject thrown by python when there is an exception
         @param ttype : is the description of the error, can be None
         @param tb : can be a python data object for traceback, can be None
-        
+
         @return [ecsource,ecid,ecguid]
-        
+
         the errorcondition is then also processed e.g. send to local logserver and/or stored locally in errordb
-        """        
+        """
         eco=self.parsePythonErrorObject(pythonExceptionObject,ttype, tb,level,message)
         eco.process()
         return eco
-        
+
     def parsePythonErrorObject(self,pythonExceptionObject,ttype=None, tb=None,level=1,message=""):
-        
-        """ 
+
+        """
         how to use
-        
+
         try:
-            ##do something            
+            ##do something
         except Exception,e:
             eco=j.errorconditionhandler.parsePythonErrorObject(e)
 
-        eco is jumpscale internal format for an error 
+        eco is jumpscale internal format for an error
         next step could be to process the error objecect (eco) e.g. by eco.process()
-            
+
         @param pythonExceptionObject is errorobject thrown by python when there is an exception
         @param ttype : is the description of the error, can be None
         @param tb : can be a python data object for traceback, can be None
-        
+
         @return a ErrorConditionObject object as used by jumpscale (should be the only type of object we send around)
-        """        
+        """
         if isinstance(pythonExceptionObject, BaseException):
             return self.getErrorConditionObject(pythonExceptionObject.eco)
 
@@ -292,14 +296,14 @@ class ErrorConditionHandler():
                 message2=str(pythonExceptionObject)
         except:
             message2=str(pythonExceptionObject)
-            
+
         if message2.find("((")!=-1:
-            tag=j.codetools.regex.findOne("\(\(.*\)\)",message2)         
+            tag=j.codetools.regex.findOne("\(\(.*\)\)",message2)
         else:
             tag=""
-            
+
         message+=message2
-        
+
         if ttype!=None:
             try:
                 type_str=str(ttype).split("exceptions.")[1].split("'")[0]
@@ -307,18 +311,18 @@ class ErrorConditionHandler():
                 type_str=str(ttype)
         else:
             type_str=""
-            
+
         if type_str.lower().find("exception")==-1:
             message="%s: %s" % (type_str,message)
-        
 
-        errorobject=self.getErrorConditionObject(msg=message,msgpub="",level=level,tb=tb)      
+
+        errorobject=self.getErrorConditionObject(msg=message,msgpub="",level=level,tb=tb)
 
         try:
             import ujson as json
         except:
             import json
-        
+
         if "message" in pythonExceptionObject.__dict__:
             errorobject.exceptioninfo = json.dumps({'message': pythonExceptionObject.message})
         else:
@@ -328,7 +332,7 @@ class ErrorConditionHandler():
 
         module = inspect.getmodule(pythonExceptionObject)
         errorobject.exceptionmodule = module.__name__ if module else None
-        
+
         # errorobject.tb=tb
 
         # try:
@@ -349,7 +353,7 @@ class ErrorConditionHandler():
             errorobject.funcfilename=tb.tb_frame.f_code.co_filename
         except:
             pass
-        return errorobject        
+        return errorobject
 
     def reRaiseECO(self, eco):
         import json
@@ -370,7 +374,7 @@ class ErrorConditionHandler():
         This routine will create an errorobject & escalate to the infoserver
         @ttype : is the description of the error
         @tb : can be a python data object or a Event
-        """           
+        """
         if isinstance(pythonExceptionObject, HaltException):
             j.application.stop(1)
 
@@ -378,7 +382,7 @@ class ErrorConditionHandler():
         if self.inException:
             print("ERROR IN EXCEPTION HANDLING ROUTINES, which causes recursive errorhandling behaviour.")
             print(pythonExceptionObject)
-            return 
+            return
 
         self.inException=True
 
@@ -386,15 +390,15 @@ class ErrorConditionHandler():
 
         if self.lastAction!="":
             j.logger.log("Last action done before error was %s" % self.lastAction)
-        self._dealWithRunningAction()      
-        self.inException=False             
+        self._dealWithRunningAction()
+        self.inException=False
         eco.process()
         print(eco)
 
         #from IPython import embed
         #print "DEBUG NOW ooo"
         #embed()
-        
+
 
     def checkErrorIgnore(self,eco):
         if j.application.debug:
@@ -433,8 +437,8 @@ class ErrorConditionHandler():
                 f_locals = getattr(tb.tb_frame, 'f_locals', {})
                 if not _getitem_from_frame(f_locals, '__traceback_hide__'):
                     frames.append((tb.tb_frame, getattr(tb, 'tb_lineno', None)))
-                tb = tb.tb_next        
-            frames.reverse()  
+                tb = tb.tb_next
+            frames.reverse()
 
         result=[]
         ignore=["ipython","errorcondition","loghandler","errorhandling"]
@@ -459,7 +463,7 @@ class ErrorConditionHandler():
         func0="unknown"
         frs=self.getFrames(tb=tb)
         frs.reverse()
-        for f,linenr in frs:            
+        for f,linenr in frs:
             try:
                 code,linenr2=inspect.findsource(f)
             except IOError:
@@ -476,7 +480,7 @@ class ErrorConditionHandler():
                 func0=finfo.function
 
         return out,filename0,linenr0,func0
-             
+
     def _dealWithRunningAction(self):
         """Function that deals with the error/resolution messages generated by j.action.start() and j.action.stop()
         such that when an action fails it throws a jumpscale event and is directed to be handled here
@@ -488,7 +492,7 @@ class ErrorConditionHandler():
         #     j.console.echo("\n\n")
         #     j.console.echo( "ERROR:\n%s\n" % j.action._runningActions[-1].errorMessage)
         #     j.console.echo( "RESOLUTION:\n%s\n" % j.action._runningActions[-1].resolutionMessage)
-        #     j.action.clean()    
+        #     j.action.clean()
 
     def lastActionSet(self,lastActionDescription):
         """
@@ -507,13 +511,13 @@ class ErrorConditionHandler():
         j.logger.enabled=False #no need to further log, there is error
 
         tracefile=""
-        
+
         def findEditorLinux():
-            apps=["sublime_text","geany","gedit","kate"]                
+            apps=["sublime_text","geany","gedit","kate"]
             for app in apps:
                 try:
                     if j.system.unix.checkApplicationInstalled(app):
-                        editor=app                    
+                        editor=app
                         return editor
                 except:
                     pass
@@ -523,7 +527,7 @@ class ErrorConditionHandler():
             #if j.application.shellconfig.debug:
                 #print "###ERROR: BACKTRACE"
                 #print errorConditionObject.backtrace
-                #print "###END: BACKTRACE"                
+                #print "###END: BACKTRACE"
 
             editor = None
             if j.system.platformtype.isLinux():
@@ -534,9 +538,9 @@ class ErrorConditionHandler():
                 if j.system.fs.exists(editorPath):
                     editor = editorPath
             tracefile=errorConditionObject.log2filesystem()
-            #print "EDITOR FOUND:%s" % editor            
+            #print "EDITOR FOUND:%s" % editor
             if editor:
-                #print errorConditionObject.errormessagepublic   
+                #print errorConditionObject.errormessagepublic
                 if tb==None:
                     try:
                         res = j.console.askString("\nAn error has occurred. Do you want do you want to do? (s=stop, c=continue, t=getTrace)")
@@ -556,7 +560,7 @@ class ErrorConditionHandler():
                         j.system.process.executeWithoutPipe(cmd,dieOnNonZeroExitCode=False)
                     else:
                         result,out=j.system.process.execute(cmd,dieOnNonZeroExitCode=False, outputToStdout=False)
-                    
+
                 j.logger.clear()
                 if res == "c":
                     return

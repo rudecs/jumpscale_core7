@@ -8,8 +8,11 @@ class mainclass(OSISStoreMongo):
     def set(self, key, value, waitIndex=False, session=None):
         db, counter = self._getMongoDB(session)
         count = db.find({"guid": value["guid"]}).count()
+        noreraise = value.pop('noreraise', False)
         new = False
         if count == 1:
+            if noreraise:
+                return value['guid'], new, False
             db.update({'guid': value['guid']},
                       {'$inc': {'occurrences': value['occurrences']},
                        '$set': {'lasttime': value['lasttime'],

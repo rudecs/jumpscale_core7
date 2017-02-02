@@ -67,6 +67,7 @@ class ErrorConditionObject():
             self.closetime = 0  # alert is closed, no longer active
 
             self.occurrences = 1  # nr of times this error condition happened
+            self.noreraise = False
 
             self.getUniqueKey()
             self.guid = str(uuid.UUID(self.uniquekey))
@@ -79,8 +80,8 @@ class ErrorConditionObject():
             C = "%s_%s_%s_%s_%s_%s_%s_%s" % (self.gid, self.nid, self.category, self.level,
                                              self.funcname, self.funcfilename, self.appname, self.type)
         else:
-            C = "%s_%s_%s_%s_%s_%s_%s_%s" % (self.gid, self.nid, self.errormessage,
-                                             self.level, self.funcname, self.funcfilename, self.appname, self.type)
+            C = "%s_%s_%s_%s_%s_%s_%s_%s" % (self.gid, self.nid, self.errormessage, self.level,
+                                             self.funcname, self.funcfilename, self.appname, self.type)
         self.uniquekey = j.tools.hash.md5_string(C)
         return self.uniquekey
 
