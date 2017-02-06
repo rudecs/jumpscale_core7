@@ -31,14 +31,6 @@ WORKERTIMEOUTS = {'default': 300,
                   'hypervisor': 300}
 DEFAULTTIMEOUT = 3600
 
-def restart_program():
-    """Restarts the current program.
-    Note: this function does not return. Any cleanup action (like
-    saving data) must be done before calling this function."""
-    python = sys.executable
-    os.execl(python, python, * sys.argv)
-
-
 class Worker(object):
 
     def __init__(self,queuename, logpath):
@@ -76,7 +68,7 @@ class Worker(object):
         if action == "RESTART":
             self.log("RESTART ASKED")
             j.application.stop(0, True)
-            restart_program()
+            # jsagent will respawn worker
 
         if action=="RELOAD":
             self.log("RELOAD ASKED")
@@ -129,7 +121,7 @@ class Worker(object):
                             jscript.load()
                             self.actions[jskey] = jscript
 
-                        except Exception as e:                
+                        except Exception as e:
                             agentid=j.application.getAgentId()
                             if jscript!=None:
                                 msg="could not compile jscript:%s %s_%s on agent:%s.\nError:%s"%(jscript.id,jscript.organization,jscript.name,agentid,e)
