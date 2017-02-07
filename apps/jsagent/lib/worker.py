@@ -54,7 +54,7 @@ class Worker(object):
                 client = j.clients.agentcontroller.get(ipaddr, login='node')
                 self.clients[ipaddr] = client
             else:
-                if self.acclient==None:
+                if self.acclient is None:
                     self.acclient = j.clients.agentcontroller.getByInstance()
                 return self.acclient
         return client
@@ -77,6 +77,9 @@ class Worker(object):
     def run(self):
         self.log("STARTED")
         while True:
+            if os.getppid() == 1:
+                # parent has been killed time for us to stop
+                break
             self.redisw.redis.hset("workers:heartbeat",self.queuename,int(time.time()))
             if self.starttime + RUNTIME < time.time():
                 self.log("Running for %s seconds restarting" % RUNTIME)
@@ -194,21 +197,21 @@ class Worker(object):
                             job.result=eco.__dict__
                             job.resultcode=1
 
-                    #ok or not ok, need to remove from queue test
-                    #thisin queue test is done to now execute script multiple time
+                    # ok or not ok, need to remove from queue test
+                    # thisin queue test is done to now execute script multiple time
                     self.notifyWorkCompleted(job)
                 finally:
                     j.application.jid = 0
 
 
-    def notifyWorkCompleted(self,job):
-        job.timeStop=int(time.time())
+    def notifyWorkCompleted(self, job):
+        job.timeStop = int(time.time())
 
         if job.internal:
-            #means is internal job
+            # means is internal job
             self.redisw.redis.set("workers:jobs:%s" % job.id, json.dumps(job.__dict__), ex=60)
-            self.redisw.redis.rpush("workers:return:%s"%job.id,time.time())
-            self.redisw.redis.expire("workers:return:%s"%job.id, 60)
+            self.redisw.redis.rpush("workers:return:%s" % job.id, time.time())
+            self.redisw.redis.expire("workers:return:%s" % job.id, 60)
         try:
             acclient = self.getClient(job)
         except Exception as e:
@@ -222,19 +225,18 @@ class Worker(object):
                 j.events.opserror("could not report job in error to agentcontroller", category='workers.errorreporting', e=e)
                 return
 
-        #jumpscripts coming from AC
-        if job.state!="OK":
+        # jumpscripts coming from AC
+        if job.state != "OK":
             self.redisw.redis.expire("workers:jobs:%s" % job.id, 60)
             reportJob()
         else:
             if job.log or job.wait:
                 reportJob()
-            #we don't have to keep status of local job result, has been forwarded to AC
+            # we don't have to keep status of local job result, has been forwarded to AC
             if not job.internal:
                 self.redisw.redis.delete("workers:jobs:%s" % job.id)
 
-
-    def log(self, message, category='',level=5, time=None):
+    def log(self, message, category='', level=5, time=None):
         if time is None:
             time = j.base.time.getLocalTimeHR()
         msg = "%s:worker:%s:%s" % (time, self.queuename, message)
@@ -242,9 +244,10 @@ class Worker(object):
             print(msg)
         except IOError:
             pass
-        if self.logFile != None:
-            msg = msg+"\n"
+        if self.logFile is not None:
+            msg += "\n"
             self.logFile.write(msg)
+
 
 if __name__ == '__main__':
     parser = cmdutils.ArgumentParser()
@@ -254,7 +257,7 @@ if __name__ == '__main__':
 
     opts = parser.parse_args()
 
-    j.application.instanceconfig = j.application.getAppInstanceHRD(name="jsagent",instance=opts.instance)
+    j.application.instanceconfig = j.application.getAppInstanceHRD(name="jsagent", instance=opts.instance)
 
     j.core.osis.client = j.clients.osis.getByInstance(die=False)
 
@@ -264,7 +267,7 @@ if __name__ == '__main__':
         j.application.initGrid()
 
     j.logger.consoleloglevel = 2
-    j.logger.maxlevel=7
+    j.logger.maxlevel = 7
 
-    worker=Worker(opts.queuename, opts.logpath)
+    worker = Worker(opts.queuename, opts.logpath)
     worker.run()
