@@ -83,7 +83,8 @@ class Worker(object):
             self.redisw.redis.hset("workers:heartbeat",self.queuename,int(time.time()))
             if self.starttime + RUNTIME < time.time():
                 self.log("Running for %s seconds restarting" % RUNTIME)
-                restart_program()
+                j.application.stop(0, True)
+                # jsagent will respawn worker
 
             try:
                 self.log("check if work")
