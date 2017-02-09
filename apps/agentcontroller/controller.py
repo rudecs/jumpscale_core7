@@ -607,7 +607,9 @@ class ControllerCMDS():
         self._log("NOTIFY WORK COMPLETED: jobid:%s"%job["id"])
         if not j.basetype.dictionary.check(job):
             raise RuntimeError("job needs to be dict")
-        if job['category'] != 'pm' and job['queue'] != 'internal':
+
+        # don't try to get jumpscripts for internal jobs and jobs directly scheduled to the workers
+        if job['category'] != 'pm' and job['queue'] != 'internal' and job['category']:
             jscript = self.getJumpscript(job['category'], job['cmd'])
             if jscript and jscript.category == 'monitor.healthcheck':
                 job['log'] = False
