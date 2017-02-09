@@ -9,14 +9,17 @@ from JumpScale import j
 IPBLOCKS = re.compile("(^|\n)(?P<block>\d+:.*?)(?=(\n\d+)|$)", re.S)
 IPMAC = re.compile("^\s+link/\w+\s+(?P<mac>(\w+:){5}\w{2})", re.M)
 IPIP = re.compile("^\s+inet\s(?P<ip>(\d+\.){3}\d+)/(?P<cidr>\d+)", re.M)
-IPNAME = re.compile("^\d+: (?P<name>.*?)(?=[:@])", re.M)
+IPNAME = re.compile("^\d+: (?P<name>.*?)(?=[:@]).+ mtu (?P<mtu>\d+)", re.M)
 
 def parseBlock(block):
-    result = {'ip': [], 'cidr': [], 'mac': '', 'name': ''}
+    result = {'ip': [], 'cidr': [], 'mac': '', 'name': '', 'mtu': 0}
     for rec in (IPMAC, IPNAME):
         match = rec.search(block)
         if match:
-            result.update(match.groupdict())
+            mydict = match.groupdict()
+            if 'mtu' in mydict:
+                mydict['mtu'] = int(mydict['mtu'])
+            result.update(mydict)
     for mrec in (IPIP, ):
         for m in mrec.finditer(block):
             for key, value in list(m.groupdict().items()):
