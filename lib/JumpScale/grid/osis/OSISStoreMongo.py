@@ -9,6 +9,7 @@ import datetime
 
 class ObjectNotFound(BaseException):
     def __init__(self, message):
+        message = "ObjectNotFound {}".format(message)
         eco = j.errorconditionhandler.getErrorConditionObject(msg=message, category='osis.objectnotfound')
         super(ObjectNotFound, self).__init__(message, eco)
 
