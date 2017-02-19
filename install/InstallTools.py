@@ -1040,6 +1040,7 @@ class InstallTools():
                     print "TIMEOUT"
                     rc=999
                     p.kill()
+                    p.wait()
 
                     break
 

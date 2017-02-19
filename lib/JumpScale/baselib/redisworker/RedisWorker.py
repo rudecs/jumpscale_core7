@@ -65,7 +65,7 @@ class Job(OsisBaseObject):
         splitted=source.split("\n")
         splitted[0]=splitted[0].replace(action.__name__,"action")
         self.source="\n".join(splitted)
-            
+
     def getSetGuid(self):
         """
         use osis to define & set unique guid (sometimes also id)
@@ -120,7 +120,7 @@ class RedisWorkerFactory(object):
 
     def _getJob(self, jscriptid=None,args={}, timeout=60,log=True, queue="default",ddict={}, internal=True):
         job=Job(ddict=ddict, args=args, timeout=timeout, sessionid=self.sessionid, jscriptid=jscriptid,log=log, queue=queue, internal=internal)
-        job.id=self.redis.incr("workers:joblastid")      
+        job.id=self.redis.incr("workers:joblastid")
         job.getSetGuid()
         return job
 
@@ -139,7 +139,7 @@ class RedisWorkerFactory(object):
             jsdict=json.loads(jsdict)
         else:
             return None
-        
+
         return Jumpscript(ddict=jsdict)
 
     def deleteJumpscripts(self):
@@ -161,8 +161,8 @@ class RedisWorkerFactory(object):
             jsdict=json.loads(jsdict)
         else:
             return None
-        return Jumpscript(ddict=jsdict)        
-        
+        return Jumpscript(ddict=jsdict)
+
     def execFunction(self,method,_category="unknown", _organization="unknown",_timeout=60,_queue="default",_log=True,_sync=True,**args):
         """
         @return job
@@ -201,7 +201,7 @@ def action%(argspec)s:
             jumpscript_data=json.dumps(js.__dict__)
             self.redis.hset("workers:jumpscripts:id",js.id, jumpscript_data)
             if js.organization!="" and js.name!="":
-                self.redis.hset("workers:jumpscripts:name","%s__%s"%(js.organization,js.name), jumpscript_data)            
+                self.redis.hset("workers:jumpscripts:name","%s__%s"%(js.organization,js.name), jumpscript_data)
             self.redis.hset("workers:jumpscripthashes",key,js.id)
 
         job=self._getJob(js.id,args=args,timeout=_timeout,log=_log,queue=_queue, internal=True)
@@ -209,7 +209,7 @@ def action%(argspec)s:
         self._scheduleJob(job)
         if _sync:
             job=self.waitJob(job,timeout=_timeout)
-            return job.result            
+            return job.result
         else:
             return job
 
@@ -224,10 +224,10 @@ def action%(argspec)s:
                 inserttime=self.redis.hget("workers:inqueuetest",jumpscript.getKey())
                 if inserttime is not None and int(inserttime)<(int(time.time())-3600): #when older than 1h remove no matter what
                     self.redis.hdel("workers:inqueuetest",jumpscript.getKey())
-                    self.checkQueue()                
+                    self.checkQueue()
                     return False
                 print(("%s is already scheduled"%jumpscript.name))
-                return True                
+                return True
         return False
 
     def execJumpscript(self,jumpscriptid=None,jumpscript=None,_timeout=60,_queue="default",_log=True,_sync=True,**args):
@@ -242,7 +242,7 @@ def action%(argspec)s:
         else:
             js = jumpscript
 
-        
+
         if self.checkJumpscriptQueue(js,_queue):
             return None
         job=self._getJob(js.id,args=args,timeout=_timeout,log=_log,queue=_queue, internal=True)
@@ -253,7 +253,7 @@ def action%(argspec)s:
         self._scheduleJob(job)
         if _sync:
             job=self.waitJob(job,timeout=_timeout)
-        return job   
+        return job
 
     def execJobAsync(self,job):
         print(("execJobAsync:%s"%job["id"]))
@@ -295,15 +295,14 @@ def action%(argspec)s:
 
     def waitJob(self,job,timeout=600):
         result=self.redis.blpop("workers:return:%s"%job.id, timeout=timeout)
-        if result==None:            
+        if result==None:
             job.state="TIMEOUT"
             job.timeStop=int(time.time())
             self.redis.set("workers:jobs%s" % job.id, json.dumps(job.__dict__), ex=60)
             j.events.opserror("timeout on job:%s"%job, category='workers.job.wait.timeout', e=None)
         else:
-            job=self.getJob(job.id)
+            job=Job(ddict=self.getJob(job.id))
 
-        job=Job(ddict=job)
         if job.state!="OK":
             eco=j.errorconditionhandler.getErrorConditionObject(ddict=job.result)
             # eco.process()
