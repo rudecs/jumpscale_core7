@@ -150,6 +150,12 @@ from JumpScale import j
             print(eco)
             return False, eco
 
+    def executeLocal(self, *args, **kwargs):
+        if not self.path:
+            self.write()
+        if not self._loaded:
+            self.load()
+        return self.module.action(*args, **kwargs)
 
     def execute(self, *args, **kwargs):
         """
