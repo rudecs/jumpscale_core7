@@ -232,14 +232,16 @@ class Daemon(object):
             else:
                 result = ffunction(data, session=session)
         except Exception as e:
+            data.pop('session', None)
             if isinstance(e, BaseException):
+                if e.eco is not None:
+                    e.eco.data = data
                 return returnCodes.ERROR, returnformat, e.eco
             eco = j.errorconditionhandler.parsePythonErrorObject(e)
             eco.level = 2
             eco.data = data
             # print eco
             # eco.errormessage += "\nfunction arguments were:%s\n" % str(inspect.getargspec(ffunction).args)
-            data.pop('session', None)
             if len(str(data))>1024:
                 data="too much data to show."
 
@@ -253,7 +255,8 @@ class Daemon(object):
             eco.__dict__.pop("tb", None)
             eco.tb=None
             errorres = eco.__dict__
-            return returnCodes.ERROR, returnformat, errorres 
+            j.console.warning(eco)
+            return returnCodes.ERROR, returnformat, errorres
 
         return returnCodes.OK, returnformat, result
 
