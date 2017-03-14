@@ -1,4 +1,5 @@
 from JumpScale import j
+from JumpScale.grid.osis.OSISStoreMongo import ObjectNotFound
 
 parentclass = j.core.osis.getOsisImplementationParentClass("system")  # is the name of the namespace
 
@@ -46,7 +47,7 @@ class mainclass(parentclass):
 
         # res["guid"]=str(res["_id"])
         if not res:
-            j.errorconditionhandler.raiseBug(message="Key %s doesn't exist" % key, level=4)
+            raise ObjectNotFound(key)
 
         if not full:
             res.pop("_id")

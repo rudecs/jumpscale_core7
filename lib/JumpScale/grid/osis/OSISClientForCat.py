@@ -2,10 +2,15 @@ from JumpScale import j
 import imp
 import inspect
 from JumpScale.core.system.fs import FileLock
+from JumpScale.grid.serverbase.Exceptions import RemoteException
 
 json=j.db.serializers.getSerializerType("j")
 
 OBJECTCLASSES = dict()
+
+
+class ObjectNotFound(Exception):
+    pass
 
 
 class LockWrapper(object):
@@ -111,7 +116,13 @@ class OSISClientForCat():
         return self.client.set(namespace=self.namespace, categoryname=self.cat, key=key, value=obj,waitIndex=waitIndex)
 
     def get(self, key):
-        value = self.client.get(namespace=self.namespace, categoryname=self.cat, key=key)
+        try:
+            value = self.client.get(namespace=self.namespace, categoryname=self.cat, key=key)
+        except RemoteException as error:
+            if error.eco['category'] == 'osis.objectnotfound':
+                raise ObjectNotFound('%s of type %s' % (error.eco['data']['key'], error.eco['data']['categoryname']))
+            raise
+
         if isinstance(value, str):
             try:
                 value=json.loads(value)
@@ -138,9 +149,14 @@ class OSISClientForCat():
         return self.client.existsIndex(namespace=self.namespace, categoryname=self.cat, key=key,timeout=timeout)
 
     def delete(self, key):
-        return self.client.delete(namespace=self.namespace, categoryname=self.cat, key=key)
+        try:
+            return self.client.delete(namespace=self.namespace, categoryname=self.cat, key=key)
+        except RemoteException as error:
+            if error.eco['category'] == 'osis.objectnotfound':
+                raise ObjectNotFound('%s of type %s' % (error.eco['data']['key'], error.eco['data']['categoryname']))
+            raise
 
-    def deleteSearch(self,query):
+    def deleteSearch(self, query):
         return self.client.deleteSearch(namespace=self.namespace, categoryname=self.cat, query=query)
 
     def lock(self, lockkey=None, timeout=55):

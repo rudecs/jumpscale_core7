@@ -1,6 +1,7 @@
 from JumpScale import j
+from JumpScale.grid.osis.OSISStoreMongo import ObjectNotFound
 
-parentclass=j.core.osis.getOsisImplementationParentClass("system")  #is the name of the namespace
+parentclass = j.core.osis.getOsisImplementationParentClass("system")  #is the name of the namespace
 import bson
 
 class mainclass(parentclass):
@@ -50,7 +51,7 @@ class mainclass(parentclass):
         res=db.find_one({"id":id})
         # res["guid"]=str(res["_id"])
         if not res:
-            raise KeyError(key)
+            raise ObjectNotFound(key)
 
         if not full:
             res.pop("_id")
@@ -63,7 +64,3 @@ class mainclass(parentclass):
         client = self.dbclient[self.dbnamespace]
         client.group.update({"users":id}, {"$pull":{"users":id}}, multi = True)
         super(mainclass, self).delete(id, session)
-
-
-
-
