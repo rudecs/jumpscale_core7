@@ -469,6 +469,7 @@ class InstallTools():
         except Exception as e:
             raise RuntimeError('Failed to get base name of the given path: %s, Error: %s'% (path,str(e)))
 
+
     def checkDirOrLinkToDir(self,fullpath):
         """
         check if path is dir or link to a dir
@@ -476,8 +477,9 @@ class InstallTools():
         if not self.isLink(fullpath) and os.path.isdir(fullpath):
             return True
         if self.isLink(fullpath):
-            link=self.readLink(fullpath)
-            if self.isDir(link):
+            link = self.readLink(fullpath)
+            path = self.joinPaths(self.getDirName(fullpath), link)
+            if os.path.isdir(path):
                 return True
         return False
 
