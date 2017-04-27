@@ -314,7 +314,7 @@ class ActionsBase():
                     result = do(process)
                 if result or not wait:
                     break
-            else:
+            if result is False:
                 domain, name = self._getDomainName(serviceobj, process)
                 log("Status %s:%s not running" % (domain, name))
                 return False
