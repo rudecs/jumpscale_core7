@@ -17,9 +17,11 @@ class mainclass(parentclass):
         return id
 
     def set(self, key, value, waitIndex=False, session=None):
-        oldGroup = self.get(value["guid"])
+        oldGroup = None
+        if self.exists(value['guid']):
+            oldGroup = self.get(value["guid"])
         guid, new, changed = super(parentclass, self).set(key, value, session=session)
-        if changed:
+        if changed and oldGroup:
             print("OBJECT CHANGED WRITE")
             u = j.core.osis.cmds._getOsisInstanceForCat("system", "user")
             removeList = list(set(oldGroup['users']) - set(value['users']))
