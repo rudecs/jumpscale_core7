@@ -274,10 +274,7 @@ class ActionsBase():
                 if j.system.fs.exists(path="/etc/my_init.d/"):
                     _, res, _ = j.do.execute("sv status %s" % name, dieOnNonZeroExitCode=False,
                                              outputStdout=False, outputStderr=False, captureout=True)
-                    if res.startswith('run'):
-                        return True
-                    else:
-                        return False
+                    return res.startswith('run')
                 else:
                     return j.system.platform.ubuntu.statusService(name)
             else:
@@ -288,7 +285,6 @@ class ActionsBase():
                 if not wait:
                     timeout = 0
                 if len(ports) > 0:
-
                     for port in ports:
                         # need to do port checks
                         if wait:
@@ -296,6 +292,7 @@ class ActionsBase():
                                 return False
                         elif j.system.net.tcpPortConnectionTest('127.0.0.1', port) == False:
                                 return False
+                    return True
                 else:
                     # no ports defined
                     filterstr=process["filterstr"].strip()
@@ -303,21 +300,21 @@ class ActionsBase():
                     if filterstr=="":
                         raise RuntimeError("Process filterstr cannot be empty.")
 
-                    start = j.base.time.getTimeEpoch()
-                    now = start
-                    while now <= start+timeout:
-                        if j.system.process.checkProcessRunning(filterstr):
-                            return True
-                        now = j.base.time.getTimeEpoch()
+                    if j.system.process.checkProcessRunning(filterstr):
+                        return True
                     return False
         processes = serviceobj.getProcessDicts()
         for i, process in enumerate(processes):
-            if len(processes) > 1:
-                result = do(process, nbr=i)
+            start = time.time()
+            timeout = process["timeout_start"]
+            while start + timeout > time.time():
+                if len(processes) > 1:
+                    result = do(process, nbr=i)
+                else:
+                    result = do(process)
+                if result or not wait:
+                    break
             else:
-                result = do(process)
-
-            if result is False:
                 domain, name = self._getDomainName(serviceobj, process)
                 log("Status %s:%s not running" % (domain, name))
                 return False
