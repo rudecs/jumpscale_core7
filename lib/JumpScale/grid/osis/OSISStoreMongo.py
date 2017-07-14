@@ -426,7 +426,9 @@ class OSISStoreMongo(OSISStore):
         """
         if isinstance(query, dict):
             db, _ = self._getMongoDB(session)
-            return db.update(query, update, multi=True)
+            result = db.update(query, update, multi=True)
+            result.pop('electionId', None)
+            return result
         elif j.basetype.string.check(update):
             tags = j.core.tags.getObject(update)
             update = tags.getDict()
