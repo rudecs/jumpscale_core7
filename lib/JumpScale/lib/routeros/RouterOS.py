@@ -198,6 +198,11 @@ class RouterOS(object):
     def removeLease(self, mac):
         self.executeScript('/ip dhcp-server lease remove [find mac-address="%s"]' % mac)
 
+    def add_leases(self, leases):
+        for lease in leases:
+            self.do('/ip/dhcp-server/lease/add', lease)
+            self.makeStaticLease(lease['mac-address'])
+
     def makeStaticLease(self, mac):
         self.executeScript('/ip dhcp-server lease make-static [find mac-address="%s"]' % mac)
 
