@@ -65,7 +65,7 @@ def action():
             OSISclientLogger.set(out)
             out = []
         log = logqueue.get_nowait()
-    if len(out) > 0:
+    if len(out) > 0 and j.application.debug:
         OSISclientLogger.set(out)
 
     def process_ecokey(ecokey):
