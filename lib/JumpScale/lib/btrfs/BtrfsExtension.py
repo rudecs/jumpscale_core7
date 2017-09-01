@@ -34,7 +34,17 @@ class BtrfsExtension(object):
         """
         Create a readonly snapshot 
         """
-        self.__btrfs("subvolume", "snapshot -r", path, dest)
+        self.snapshot(path, dest, True)
+
+    def snapshot(self, path, dest, readonly=False):
+        """
+        Create snapshot
+        """
+        cmd = ['subvolume', 'snapshot']
+        if readonly:
+            cmd.append('-r')
+        cmd.extend([path, dest])
+        self.__btrfs(*cmd)
         
     
     def subvolumeCreate(self, path, name):
