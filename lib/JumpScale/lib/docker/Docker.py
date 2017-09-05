@@ -22,7 +22,7 @@ class Docker():
         url = '%s:%s' % (address, port)
         self.client = docker.Client(base_url=url)
         self.remote = {'host': address, 'port': port}
-            
+
     def _execute(self, command):
         env = os.environ.copy()
         env.pop('PYTHONPATH', None)
@@ -286,9 +286,9 @@ class Docker():
         @param vols in format as follows "/var/insidemachine:/var/inhost # /var/1:/var/1 # ..."   '#' is separator
         """
         name = name.lower().strip().replace('_', '')
-        
+
         print '[+] creating docker: %s' % name
-        
+
         running=self.list()
         running=list(running.keys())
         if not replace:
@@ -437,7 +437,7 @@ class Docker():
         c.run("cd /opt/code/github/jumpscale7/jumpscale_core7/install/ && bash install.sh")
 
     def getImages(self):
-        images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images()]
+        images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images() if items['RepoTags']]
         return images
 
     def removeImages(self,tag="<none>:<none>"):
@@ -469,7 +469,7 @@ class Docker():
         # path=j.system.fs.joinPaths(self._get_rootpath(name),"root",".ssh","authorized_keys")
         privkeyloc="/root/.ssh/id_rsa"
         keyloc=privkeyloc + ".pub"
-        
+
         if not j.system.fs.exists(path=keyloc):
             j.system.process.executeWithoutPipe("ssh-keygen -t rsa -f %s -N ''" % privkeyloc)
             if not j.system.fs.exists(path=keyloc):
@@ -500,7 +500,7 @@ class Docker():
                 counter+=1
                 print '[+] connecting ssh docker'
                 c.ssh_authorize("root", key)
-                
+
             except Exception,e:
                 time.sleep(1)
                 continue
