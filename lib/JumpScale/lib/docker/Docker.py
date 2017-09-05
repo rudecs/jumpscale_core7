@@ -437,7 +437,7 @@ class Docker():
         c.run("cd /opt/code/github/jumpscale7/jumpscale_core7/install/ && bash install.sh")
 
     def getImages(self):
-        images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images() if items['RepoTags']]
+        images=[str(item["RepoTags"][0]).replace(":latest","") for item in self.client.images() if item['RepoTags']]
         return images
 
     def removeImages(self,tag="<none>:<none>"):
