@@ -204,6 +204,7 @@ class RouterOS(object):
             self.makeStaticLease(lease['mac-address'])
 
     def makeStaticLease(self, mac):
+        mac = str(EUI(mac, dialect=netaddr.mac_eui48)).replace('-', ':')
         self.executeScript('/ip dhcp-server lease make-static [find mac-address="%s"]' % mac)
 
     def getIpaddress(self, macaddress, interface):
