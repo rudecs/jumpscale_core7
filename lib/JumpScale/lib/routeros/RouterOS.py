@@ -174,17 +174,22 @@ class RouterOS(object):
         return self._parse_result(r)
 
     def leaseExists(self, macaddress):
-        if self.getLease(macaddress):
+        macaddress = str(EUI(macaddress, dialect=netaddr.mac_eui48)).replace('-', ':')
+        if self._getLease(macaddress):
             return True
         else:
             return False
+
+    def _getLease(self, macaddress):
+        leases = self.do('/ip/dhcp-server/lease/print', rawargs=['?=mac-address=%s' % macaddress])
+        lease = next(iter(leases), None)
+        return lease
 
     def getLease(self, macaddress, interface):
         macaddress = str(EUI(macaddress, dialect=netaddr.mac_eui48)).replace('-', ':')
         # try double check 5 times
         for _ in xrange(5):
-            leases = self.do('/ip/dhcp-server/lease/print', rawargs=['?=mac-address=%s' % macaddress])
-            lease = next(iter(leases), None)
+            lease = self._getLease(macaddress)
             if not lease:
                 return None
             # double check on lease
@@ -196,11 +201,13 @@ class RouterOS(object):
                 return lease
 
     def removeLease(self, mac):
+        mac = str(EUI(mac, dialect=netaddr.mac_eui48)).replace('-', ':')
         self.executeScript('/ip dhcp-server lease remove [find mac-address="%s"]' % mac)
 
     def add_leases(self, leases):
         for lease in leases:
-            self.do('/ip/dhcp-server/lease/add', lease)
+            if not self.leaseExists(lease['mac-address']):
+                self.do('/ip/dhcp-server/lease/add', lease)
             self.makeStaticLease(lease['mac-address'])
 
     def makeStaticLease(self, mac):
