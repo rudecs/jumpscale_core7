@@ -10,6 +10,8 @@ except ImportError:
 
 
 LEVELMAP = {1: 'CRITICAL', 2: 'WARNING', 3: 'INFO', 4: 'DEBUG'}
+REVERSEMAP = {v: k for k, v in LEVELMAP.items()}
+REVERSEMAP['ERROR'] = 1
 
 
 class ErrorConditionObject():

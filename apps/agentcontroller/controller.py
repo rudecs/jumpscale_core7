@@ -592,6 +592,17 @@ class ControllerCMDS():
                             break
                     else:
                         new_message['lasterror'] = job['timeStop']
+                    eco = j.errorconditionhandler.getErrorConditionObject(
+                        msg=new_message['message'],
+                        category='healtcheck.{}'.format(new_message['category']),
+                        type='OPERATIONS',
+                        level=j.errorconditionhandler.getLevelByName(new_message['state'])
+
+                    )
+                    eco.gid = job['gid']
+                    eco.nid = job['nid']
+                    eco.backtrace = ""
+                    eco.process()
 
                 else:
                     new_message['lasterror'] = ''
