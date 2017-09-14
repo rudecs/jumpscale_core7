@@ -1,38 +1,81 @@
+cache = {}
+
 def main(j, params, service, tags, tasklet):
     """
     Create or update Alert object
     """
 
-    import time
+    """
+    Define alerta information in system/system.hrd
+
+alerta.api_key                 = 'j4ypz80lnQMHC3Ah8jiatrcfPP2ktWJdgW18UlpE'
+alerta.api_url                 = 'http://172.17.0.3:8080'
+
+
+For operator
+
+export ALERTA_SVR_CONF_FILE=~/.alertad.conf   
+
+root@js7:~cat ~/.alertad.conf                                                                                
+DEBUG = True
+CORS_ORIGINS = [
+        '*',
+        'http://172.17.0.3:8000',
+        'http://172.17.0.3:8080',
+
+]
+
+SEVERITY_MAP = {
+         'CRITICAL':1,
+         'WARNING': 2,
+         'INFO':3,
+         'DEBUG':4
+}
+
+
+ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
+
+    """
+
+    from JumpScale import j
+    import requests
+
+    config = j.application.config.getDictFromPrefix("system.alerta")  
+
+    if not config:
+        return 
+
     eco = params.value
-    session = params.session
-    alertservice = j.core.osis.cmds._getOsisInstanceForCat('system', 'alert')
+    gid, nid = eco['gid'], eco['nid']
+    if gid not in cache:
+        gridservice = j.core.osis.cmds._getOsisInstanceForCat('system', 'grid')
+        grids = gridservice.search({'id':gid})[1:]
+        if grids:
+            cache[gid] = grids[0]['name']
+        else:
+            cache[gid] = "Development"
 
-    alerts = alertservice.search({'eco':eco['guid']}, session=session)[1:]
-    alert = {'eco': eco['guid'],
-                'errormessage': eco['errormessage'],
-                'errormessagePub': eco['errormessagePub'],
-                'category': eco['category'],
-                'gid': eco['gid'],
-                'nid': eco['nid'],
-                'lasttime': eco.get('lasttime')}
-    if not alerts:
-        alert['inittime'] = eco['epoch']
-        alert['state'] = 'ALERT'
-        alert['epoch'] = eco['lasttime']
-        alert['level'] = 1
-        alertobj = alertservice.new()
-        alertobj.load(alert)
-        alert = alertobj.dump()
+    envname = cache[gid]
+    backtrace = eco['backtrace']
+    tags = "gid:{},nid:{}".format(gid, nid)
 
-    else:
-        alertdata = alerts[0]
-        if alertdata['state'] in ['RESOLVED', 'CLOSED']:
-            alertdata['state'] = 'ALERT'
-        alertdata.update(alert)
-        alert = alertdata
-    alertservice.set(None, alert, session=session)
     
+    headers = {
+                "Authorization": "key {}".format(config['api_key']),
+                "Content-type": "application/json"
+              }
+
+    
+    severity = j.errorconditionhandler.getLevelName(eco['level'])
+    data = dict(attributes={'backtrace': backtrace}, resource=eco['guid'],
+                text=eco['errormessage'], environment=envname, service=[eco['appname']],
+                tags=[tags], severity=severity, event="ErrorCondition")
+
+    resp = requests.post(config['api_url']+"/alert", json=data, headers=headers)
+
+
 def match(j, params, service, tags, tasklet):
+
     eco = params.value
-    return params.action == 'set' and eco['level'] < 3 # only critical and warning
+
+    return params.action == 'set'

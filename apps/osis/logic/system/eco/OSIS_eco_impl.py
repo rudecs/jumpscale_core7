@@ -6,6 +6,7 @@ class mainclass(OSISStoreMongo):
     TTL = 3600 * 24 * 5  # 5 days
 
     def set(self, key, value, waitIndex=False, session=None):
+        self.setPreSave(value, session)
         db, counter = self._getMongoDB(session)
         count = db.find({"guid": value["guid"]}).count()
         noreraise = value.pop('noreraise', False)
