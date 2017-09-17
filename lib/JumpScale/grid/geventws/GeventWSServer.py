@@ -43,7 +43,7 @@ def jsonrpc(func):
 
 class GeventWSServer():
 
-    def __init__(self, addr, port, sslorg=None, ssluser=None, sslkeyvaluestor=None):
+    def __init__(self, addr, port, sslorg=None, ssluser=None, sslkeyvaluestor=None, verbose=False):
         """
         @param handler is passed as a class
         """        
@@ -51,6 +51,7 @@ class GeventWSServer():
         self.addr = addr
         self.key = "1234"
         self.nr = 0
+        self.verbose = False
         # self.jobhandler = JobHandler()
         self.daemon = j.servers.base.getDaemon(sslorg=sslorg, ssluser=ssluser, sslkeyvaluestor=sslkeyvaluestor)
         self.server = WSGIServer(('', self.port), self.rpcRequest)
@@ -117,6 +118,8 @@ class GeventWSServer():
         if environ["CONTENT_TYPE"]=='application/raw' and environ["REQUEST_METHOD"]=='POST':
             data=environ["wsgi.input"].read()
             category, cmd, data2, informat, returnformat, sessionid = j.servers.base._unserializeBinSend(data)
+            if self.verbose:
+                print(category, cmd, data2)
             resultcode, returnformat, result = self.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
             data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
             return self.responseRaw(data3,start_response)

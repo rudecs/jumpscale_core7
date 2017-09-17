@@ -4,15 +4,18 @@ monkey.patch_all()
 from JumpScale import j
 import JumpScale.grid.osis
 import time
+import argparse
+import sys
 
 j.application.start("osisserver")
 
-import sys
 if __name__ == '__main__':
 
-    args=sys.argv
-    osis_instance=args[1]
-    osishrd = j.application.getAppInstanceHRD(name="osis",instance=osis_instance)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', help='Enable verbose logging', default=False, action='store_true')
+    parser.add_argument('osisinstance', help='Choose osis instance to use', default="main")
+    options = parser.parse_args()
+    osishrd = j.application.getAppInstanceHRD(name="osis",instance=options.osisinstance)
     connectionsconfig = osishrd.getDictFromPrefix('instance.param.osis.connection')
     connections = {}
 
@@ -46,6 +49,6 @@ if __name__ == '__main__':
 
     superadminpasswd = osishrd.get("instance.param.osis.superadmin.passwd")
 
-    j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=osishrd)
+    j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=osishrd, verbose=options.verbose)
 
     j.application.stop()

@@ -180,7 +180,7 @@ class OSISFactory:
         osis.init()
         return osis
 
-    def startDaemon(self, path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=None, dbconnections={}, hrd=None):
+    def startDaemon(self, path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=None, dbconnections={}, hrd=None, verbose=False):
         """
         start deamon
         """
@@ -193,7 +193,7 @@ class OSISFactory:
         if self.superadminpasswd == "":
             j.events.inputerror_critical("cannot start osis, superadminpasswd needs to be specified")
 
-        daemon = j.servers.geventws.getServer(port=port)
+        daemon = j.servers.geventws.getServer(port=port, verbose=verbose)
         OSISCMDS.dbconnections = dbconnections
         daemon.addCMDsInterface(OSISCMDS, category="osis")  # pass as class not as object !!!
         daemon.daemon.cmdsInterfaces["osis"].init(path=path)  # ,esip=elasticsearchip,esport=elasticsearchport,db=db)

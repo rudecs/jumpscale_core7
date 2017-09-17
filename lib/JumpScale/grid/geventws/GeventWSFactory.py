@@ -7,7 +7,7 @@ class GeventWSFactory():
         self.cache = {}
         self.cachecat = {}
 
-    def getServer(self, port, sslorg=None, ssluser=None, sslkeyvaluestor=None):
+    def getServer(self, port, sslorg=None, ssluser=None, sslkeyvaluestor=None, verbose=False):
         """
         HOW TO USE:
         daemon=j.servers.geventws.getServer(port=4444)
@@ -29,7 +29,7 @@ class GeventWSFactory():
 
         """
         from .GeventWSServer import GeventWSServer
-        return GeventWSServer('', port, ssluser=ssluser, sslorg=sslorg, sslkeyvaluestor=sslkeyvaluestor)
+        return GeventWSServer('', port, ssluser=ssluser, sslorg=sslorg, sslkeyvaluestor=sslkeyvaluestor, verbose=verbose)
 
     def getClient(self, addr, port, category="core", org="myorg", user="root", passwd="passwd", ssl=False, roles=[], id=None, timeout=60, poolsize=100):
 
