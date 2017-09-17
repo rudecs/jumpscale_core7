@@ -146,13 +146,12 @@ class ProcessManager():
 
         self.hrd=j.application.instanceconfig
 
-
         acclientinstancename = self.hrd.get('instance.agentcontroller.connection')
         osisinstance = self.hrd.get('instance.osis.connection')
         osisconfig = j.application.getAppInstanceHRD('osis_client', osisinstance)
         acconfig = j.application.getAppInstanceHRD('agentcontroller_client', acclientinstancename)
 
-        acip = acconfig.get("instance.agentcontroller.client.addr",default="")
+        acip = acconfig.getList("instance.agentcontroller.client.addr",default="")[0]
 
         if acip!="":
 
