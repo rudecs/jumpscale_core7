@@ -51,7 +51,7 @@ class GeventWSServer():
         self.addr = addr
         self.key = "1234"
         self.nr = 0
-        self.verbose = False
+        self.verbose = verbose
         # self.jobhandler = JobHandler()
         self.daemon = j.servers.base.getDaemon(sslorg=sslorg, ssluser=ssluser, sslkeyvaluestor=sslkeyvaluestor)
         self.server = WSGIServer(('', self.port), self.rpcRequest)
