@@ -98,8 +98,7 @@ class OSISClientFactory(object):
                     "Osis superadmin passwd has not been defined on this node, please put in #hrd (osis.superadmin.passwd) or use argument 'passwd'.")
 
         with j.logger.nostdout():
-            client = j.servers.geventws.getClient(connections[0][0], connections[0][
-                                                  1], user=user, passwd=passwd, category="osis", poolsize=poolsize)
+            client = j.servers.geventws.getHAClient(connections, user=user, passwd=passwd, category="osis", poolsize=poolsize)
         self.osisConnections[key] = client
         return client
 

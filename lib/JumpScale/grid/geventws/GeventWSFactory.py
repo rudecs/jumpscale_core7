@@ -51,7 +51,7 @@ class GeventWSFactory():
         self.cachecat[keycat] = cl.getCmdClient(category)
         return self.cachecat[keycat]
 
-    def getHAClient(self, connections, category="core", org="myorg", user="root", passwd="passwd", ssl=False, roles=[], id=None, timeout=60, reconnect=False):
+    def getHAClient(self, connections, category="core", org="myorg", user="root", passwd="passwd", ssl=False, roles=[], id=None, timeout=60, reconnect=False, poolsize=100):
 
         key = "%s" % (connections)
         keycat = "%s_%s" % (connections, category)
@@ -64,7 +64,7 @@ class GeventWSFactory():
         else:
             from .GeventWSTransport import GeventWSHATransport
             from JumpScale.grid.serverbase.DaemonClient import DaemonClient
-            trans = GeventWSHATransport(connections, timeout)
+            trans = GeventWSHATransport(connections, timeout, poolsize=100)
             cl = DaemonClient(org=org, user=user, passwd=passwd, ssl=ssl, transport=trans, id=id)
             self.cache[key] = cl
 
