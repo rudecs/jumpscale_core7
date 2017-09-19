@@ -14,9 +14,9 @@ alerta.api_url                 = 'http://172.17.0.3:8080'
 
 For operator
 
-export ALERTA_SVR_CONF_FILE=~/.alertad.conf   
+export ALERTA_SVR_CONF_FILE=~/.alertad.conf
 
-root@js7:~cat ~/.alertad.conf                                                                                
+root@js7:~cat ~/.alertad.conf
 DEBUG = True
 CORS_ORIGINS = [
         '*',
@@ -40,10 +40,10 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
     from JumpScale import j
     import requests
 
-    config = j.application.config.getDictFromPrefix("system.alerta")  
+    config = j.application.config.getDictFromPrefix("system.alerta")
 
     if not config:
-        return 
+        return
 
     eco = params.value
     gid, nid = eco['gid'], eco['nid']
@@ -59,19 +59,21 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
     backtrace = eco['backtrace']
     tags = "gid:{},nid:{}".format(gid, nid)
 
-    
+
     headers = {
-                "Authorization": "key {}".format(config['api_key']),
+                "Authorization": "Key {}".format(config['api_key']),
                 "Content-type": "application/json"
               }
 
-    
+
     severity = j.errorconditionhandler.getLevelName(eco['level'])
     data = dict(attributes={'backtrace': backtrace}, resource=eco['guid'],
                 text=eco['errormessage'], environment=envname, service=[eco['appname']],
                 tags=[tags], severity=severity, event="ErrorCondition")
 
     resp = requests.post(config['api_url']+"/alert", json=data, headers=headers)
+    if resp.status_code != 201:
+        print('Can not send Alert code: {}, resp: {}'.format(resp.status_code, resp.text))
 
 
 def match(j, params, service, tags, tasklet):
