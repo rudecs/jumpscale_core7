@@ -154,8 +154,8 @@ class JumpscriptsCmds():
             self._run(period, redisw)
 
     def _configureScheduling(self):
-        periods = j.core.processmanager.daemon.greenlets.keys():
+        periods = j.core.processmanager.daemon.greenlets.keys()
         for period in self.jumpscriptsByPeriod.keys():
             loopkey = "loop%s"%period
             if loopkey not in periods:
-                j.core.processmanager.daemon.schedule(, self._loop, period=period)
+                j.core.processmanager.daemon.schedule(loopkey, self._loop, period=period)
