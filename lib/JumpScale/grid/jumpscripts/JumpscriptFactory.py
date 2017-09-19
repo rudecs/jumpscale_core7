@@ -91,6 +91,11 @@ from JumpScale import j
     def getKey(self):
         return "%s_%s" % (self.organization, self.name)
 
+    def __eq__(self, other):
+        if not isinstance(other, Jumpscript):
+            return False
+        return self.name == other.name and self.organization == other.organization
+
     def executeInWorker(self, *args, **kwargs):
         if not self.path:
             self.write()

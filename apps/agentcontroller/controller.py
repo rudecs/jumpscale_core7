@@ -48,9 +48,9 @@ class JumpscriptHandler(FileSystemEventHandler):
     def on_any_event(self, event):
         if event.src_path and not event.is_directory and event.src_path.endswith('.py'):
             try:
-                self.agentcontroller.reloadjumpscripts()
-            except:
-                pass # reload failed shoudl try again next file change
+                self.agentcontroller.reloadjumpscript(event.src_path)
+            except Exception as e:
+                print "Failed to reload jumpscript", e
 
 class ControllerCMDS():
 
@@ -171,6 +171,15 @@ class ControllerCMDS():
             gid,nid=item.split("_")
             cmds.scheduleCmd(gid,nid,cmdcategory="pm",jscriptid=0,cmdname="reloadjumpscripts",args={},queue="internal",log=False,timeout=60,roles=[],session=session)
         print "OK"
+
+    def reloadjumpscript(self, path, session=None):
+        script = self.loadJumpscript(path)
+        print "want processmanagers to reload js:",
+        for item in self.osisclient.list("system","node"):
+            gid,nid=item.split("_")
+            cmds.scheduleCmd(gid, nid, cmdcategory="jumpscripts", jscriptid=0, cmdname="loadJumpscript",
+                             args={'jumpscript': script.getDict()}, 
+                             queue="internal", log=False, timeout=60, roles=[], session=session)
 
     def restartWorkers(self,session=None):
         for item in self.osisclient.list("system","node"):
@@ -325,39 +334,38 @@ class ControllerCMDS():
     def loadJumpscripts(self, path="jumpscripts", session=None):
         if session<>None:
             self._adminAuth(session.user,session.passwd)
+        for filepath in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
+            self.loadJumpscript(filepath)
 
-        for path2 in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
 
-            if j.system.fs.getDirName(path2,True)[0]=="_": #skip dirs starting with _
-                continue
+    def loadJumpscript(self, path):
+        if j.system.fs.getDirName(path,True)[0]=="_": #skip dirs starting with _
+            return
+        try:
+            script = Jumpscript(path=path)
+        except Exception as e:
+            msg="Could not load jumpscript:%s\n" % path
+            msg+="Error was:%s\n" % e
+            # print msg
+            j.errorconditionhandler.raiseInputError(msgpub="",message=msg,category="agentcontroller.load",tags="",die=False)
+            j.application.stop()
+            return
+        name = getattr(script, 'name', "")
+        if name=="":
+            name=j.system.fs.getBaseName(path)
+            name=name.replace(".py","").lower()
 
-            try:
-                script = Jumpscript(path=path2)
-            except Exception as e:
-                msg="Could not load jumpscript:%s\n" % path2
-                msg+="Error was:%s\n" % e
-                # print msg
-                j.errorconditionhandler.raiseInputError(msgpub="",message=msg,category="agentcontroller.load",tags="",die=False)
-                j.application.stop()
-                continue
+        t=self.jumpscriptclient.new(name=name, action=script.module.action)
+        t.__dict__.update(script.getDict())
 
-            name = getattr(script, 'name', "")
-            if name=="":
-                name=j.system.fs.getBaseName(path2)
-                name=name.replace(".py","").lower()
-
-            t=self.jumpscriptclient.new(name=name, action=script.module.action)
-            t.__dict__.update(script.getDict())
-
-            guid,r,r=self.jumpscriptclient.set(t)
-            t=self.jumpscriptclient.get(guid)
-
-            self._log("found jumpscript:%s " %("id:%s %s_%s" % (t.id,t.organization, t.name)))
-
-            key0 = "%s_%s" % (t.gid,t.id)
-            key = "%s_%s" % (t.organization, t.name)
-            self.jumpscripts[key] = t
-            self.jumpscriptsId[key0] = t
+        guid,r,r=self.jumpscriptclient.set(t)
+        t=self.jumpscriptclient.get(guid)
+        self._log("found jumpscript:%s " %("id:%s %s_%s" % (t.id,t.organization, t.name)))
+        idkey = "%s_%s" % (t.gid,t.id)
+        namekey = "%s_%s" % (t.organization, t.name)
+        self.jumpscripts[namekey] = t
+        self.jumpscriptsId[idkey] = t
+        return script
 
     def getJumpscript(self, organization, name,gid=None,reload=False, session=None):
         if session<>None:

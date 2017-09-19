@@ -14,7 +14,7 @@ async=True
 roles = []
 log=True
 
-def action(cmd="hostname -a"):
+def action(cmd="hostname"):
     return j.system.process.execute(cmd, dieOnNonZeroExitCode=False)
 
 

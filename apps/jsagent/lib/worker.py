@@ -20,7 +20,7 @@ import JumpScale.grid.osis
 import JumpScale.baselib.redis
 from JumpScale.baselib.redisworker.RedisWorker import RedisWorkerFactory
 import JumpScale.grid.jumpscripts
-
+import uuid
 import os
 
 RUNTIME = 24 * 3600
@@ -38,6 +38,7 @@ class Worker(object):
         self.clients = dict()
         self.acclient = None
         self.redisw = RedisWorkerFactory()
+        self.workername = str(uuid.uuid4())
         self.queuename=queuename
         self.init()
         self.starttime = time.time()
@@ -75,6 +76,7 @@ class Worker(object):
             self.actions={}
 
     def run(self):
+        self.redisw.registerWorker(self.workername, self.queuename)
         self.log("STARTED")
         while True:
             if os.getppid() == 1:
@@ -88,7 +90,7 @@ class Worker(object):
 
             try:
                 self.log("check if work")
-                jtype, job = self.redisw._getWork(self.queuename,timeout=10)
+                jtype, job = self.redisw._getWork(self.queuename, self.workername, timeout=10)
             except Exception as e:
                 if str(e).find("Could not find queue to execute job")!=-1:
                     #create queue

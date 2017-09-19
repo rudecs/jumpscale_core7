@@ -192,6 +192,9 @@ class ProcessManager():
     def start(self):
 
         # self._webserverStart()
+        from JumpScale.baselib.redisworker.RedisWorker import RedisWorkerFactory
+        rw = RedisWorkerFactory()
+        rw.clearWorkers()
         self._workerStart()
 
         j.core.grid.init()

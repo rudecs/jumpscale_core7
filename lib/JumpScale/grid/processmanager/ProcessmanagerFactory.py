@@ -82,8 +82,10 @@ class ProcessmanagerFactory:
         return found
 
     def restartWorkers(self):
-        for queuename in ('default', 'io', 'hypervisor', 'process'):
-            j.clients.redisworker.redis.lpush("workers:action:%s"%queuename,"RESTART")
+        j.clients.redisworker.scheduleAction('RESTART')
+
+    def reloadWorkers(self):
+        j.clients.redisworker.scheduleAction('RELOAD')
 
     def getCmdsObject(self,category):
         if self.cmds.has_key(category):

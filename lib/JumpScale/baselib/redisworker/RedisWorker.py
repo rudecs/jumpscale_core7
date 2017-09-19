@@ -100,7 +100,6 @@ class RedisWorkerFactory(object):
     def redis(self):
         if self._redis is None:
             self._redis=j.clients.redis.getByInstance("system", gevent=True)
-            self._redis.delete("workers:sessions")
             #local jumpscripts start at 10000
             if not self._redis.exists("workers:jumpscriptlastid") or int(self._redis.get("workers:jumpscriptlastid"))<1000000:
                 self._redis.set("workers:jumpscriptlastid",1000000)
@@ -132,6 +131,20 @@ class RedisWorkerFactory(object):
             raise KeyError("cannot find job with id:%s"%jobid)
         return jobdict
 
+    def registerWorker(self, workername, queue):
+        self.redis.set("workers:worker:%s:%s" % (queue, workername), "1")
+
+    def getWorkerNames(self, queue):
+        workers = []
+        for key in self.redis.keys('workers:worker:%s:*' % queue):
+            workername = key.split(':', 3)[-1]
+            workers.append(workername)
+        return workers
+
+    def clearWorkers(self):
+        keys = self.redis.keys('workers:worker:*')
+        if keys:
+            self.redis.delete(*keys)
 
     def getJumpscriptFromId(self,jscriptid):
         jsdict=self.redis.hget("workers:jumpscripts:id",jscriptid)
@@ -271,13 +284,18 @@ def action%(argspec)s:
                 print(jobbin)
         #@todo needs to be implement, need to check there are no double recurring jobs, need to check jumpscripts exist, need to check jobs are also in redis, ...
 
+    def scheduleAction(self, action):
+        for queuename in ('default', 'io', 'hypervisor', 'process'):
+            for workername in self.getWorkerNames(queuename):
+                self.redis.lpush("workers:action:%s:%s" % (queuename, workername), action)
+    
 
-    def _getWork(self,qname,timeout=0):
+    def _getWork(self,qname, workername=None, timeout=0):
         if qname not in self.queue:
             raise RuntimeError("Could not find queue to execute job:%s ((ops:workers.schedulework L:1))"%qname)
 
         queue=self.queue[qname]
-        actionqueue = "workers:action:%s" % qname
+        actionqueue = "workers:action:%s:%s" % (qname, workername)
 
         if timeout!=0:
             result = self.redis.blpop([queue.key, actionqueue], timeout=timeout)
