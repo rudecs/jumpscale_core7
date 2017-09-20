@@ -61,12 +61,25 @@ class JumpscriptsCmds():
 
     def loadJumpscript(self, jumpscript, session=None):
         if session is not None:
-            self._adminAuth(session.user,session.passwd)
+            self._adminAuth(session.user, session.passwd)
         jumpscript = Jumpscript(ddict=jumpscript)
-        self._processJumpscript(jumpscript, self.startatboot)
+
+        unscheduleperiods = []
         for period, jumpscripts in self.jumpscriptsByPeriod.iteritems():
             if jumpscript in jumpscripts:
                 jumpscripts.remove(jumpscript)
+            if not jumpscripts:
+                unscheduleperiods.append(period)
+
+        for period in unscheduleperiods:
+            loopkey = "loop%s" % period
+            greenlet = j.core.processmanager.daemon.greenlets.pop(loopkey, None)
+            if greenlet:
+                greenlet.kill()
+            self.jumpscriptsByPeriod.pop(period, None)
+            
+
+        self._processJumpscript(jumpscript, self.startatboot)
 
         j.core.processmanager.reloadWorkers()
         self._configureScheduling()
@@ -151,11 +164,12 @@ class JumpscriptsCmds():
         while True:
             waittime = wait()
             gevent.sleep(waittime)
+            print 'Running JumpScripts with period {}'.format(period)
             self._run(period, redisw)
 
     def _configureScheduling(self):
         periods = j.core.processmanager.daemon.greenlets.keys()
         for period in self.jumpscriptsByPeriod.keys():
-            loopkey = "loop%s"%period
+            loopkey = "loop%s" % period
             if loopkey not in periods:
                 j.core.processmanager.daemon.schedule(loopkey, self._loop, period=period)
