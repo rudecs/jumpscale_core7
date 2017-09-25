@@ -29,7 +29,11 @@ if prev then
     -- calculate the dif when absolute nrs are logged e.g. byte counter for network
     if differential then
         -- diff
-        diff = value - v.val
+        if value < v.val then
+            diff = value
+        else
+            diff = value - v.val
+        end
         difftime = now - v.epoch
         -- calculate diff per second.
         stat = diff / difftime
