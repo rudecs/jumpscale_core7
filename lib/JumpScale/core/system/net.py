@@ -1011,7 +1011,7 @@ class SystemNet:
             for key, value in received_match.groupdict().iteritems():
                 results[key] = float(value)
                 if key == 'received':
-                    results['percent'] = int(float(results['received']) / count) * 100
+                    results['percent'] = int(float(results['received']) / count * 100)
         stats_match = re.search(stats_re, output, flags=re.M)
         if stats_match:
             for key, value in stats_match.groupdict().iteritems():
