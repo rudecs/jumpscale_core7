@@ -1,4 +1,5 @@
 cache = {}
+nodes_cache = {}
 
 def main(j, params, service, tags, tasklet):
     """
@@ -55,7 +56,17 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
         else:
             cache[gid] = "Development"
 
+    if nid not in nodes_cache:
+        nodeservice = j.core.osis.cmds._getOsisInstanceForCat('system', 'node')
+        nodes = nodeservice.search({'id': nid})[1:]
+        if nodes:
+            nodes_cache[nid] = nodes[0]['name']
+        else:
+            nodes_cache[nid] = "Unrecognized Node"
+        
+
     envname = cache[gid]
+    node = nodes_cache[nid]
     backtrace = eco['backtrace']
     tags = "gid:{},nid:{}".format(gid, nid)
 
@@ -68,12 +79,17 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
 
     severity = j.errorconditionhandler.getLevelName(eco['level'])
     data = dict(attributes={'backtrace': backtrace}, resource=eco['guid'],
-                text=eco['errormessage'], environment=envname, service=[eco['appname']],
+                text=eco['errormessage'], environment=envname, service=["{} - {}".format(node, eco['appname'])],
                 tags=[tags], severity=severity, event="ErrorCondition")
-
-    resp = requests.post(config['api_url']+"/alert", json=data, headers=headers)
-    if resp.status_code != 201:
-        print('Can not send Alert code: {}, resp: {}'.format(resp.status_code, resp.text))
+    if eco['state'].lower() == "closed":
+        data['status'] = "closed"
+        
+    try:
+        resp = requests.post(config['api_url']+"/alert", json=data, headers=headers)
+        if resp.status_code != 201:
+            print('Can not send Alert code: {}, resp: {}'.format(resp.status_code, resp.text))
+    except Exception as e:
+        print(e)
 
 
 def match(j, params, service, tags, tasklet):

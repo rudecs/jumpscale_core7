@@ -18,7 +18,8 @@ class mainclass(OSISStoreMongo):
                       {'$inc': {'occurrences': value['occurrences']},
                        '$set': {'lasttime': value['lasttime'],
                                 'errormessage': value['errormessage'],
-                                'errormessagePub': value['errormessagePub']}
+                                'errormessagePub': value['errormessagePub'],
+                                'state': value['state']}
                        })
         else:
             new = True
