@@ -172,7 +172,10 @@ class ProcessManager():
 
             #now register to agentcontroller with osis credentials
             self.acclient = j.clients.agentcontroller.get(acip, login=osislogin, passwd=osispassword, new=True)
-            res=self.acclient.registerNode(hostname=socket.gethostname(), machineguid=j.application.getUniqueMachineId())
+            memory = psutil.virtual_memory().total / 1024**2
+            res=self.acclient.registerNode(hostname=socket.gethostname(), 
+                                           machineguid=j.application.getUniqueMachineId(),
+                                           memory=memory)
 
             nid=res["node"]["id"]
             jsagentService = j.atyourservice.get('jumpscale', 'jsagent', parent=None)

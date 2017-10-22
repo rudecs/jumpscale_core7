@@ -277,7 +277,7 @@ class ControllerCMDS():
                 ip = [netitem['ip']] if isinstance(netitem['ip'], basestring) else netitem['ip']
                 node.ipaddr.extend(ip)
 
-    def registerNode(self, hostname, machineguid, session):
+    def registerNode(self, hostname, machineguid, memory, session):
         if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
             raise RuntimeError("Only admin can register new nodes")
         node = self.nodeclient.new()
@@ -285,6 +285,7 @@ class ControllerCMDS():
         node.gid = session.gid
         node.name = hostname
         node.machineguid = machineguid
+        node.memory = memory
         self._updateNetInfo(session.netinfo, node)
         nodeid, new, changed = self.nodeclient.set(node)
         node = self.nodeclient.get(nodeid)

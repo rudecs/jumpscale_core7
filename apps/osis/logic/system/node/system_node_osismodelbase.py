@@ -18,6 +18,7 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P_peer_backup=0
         self._P_description=""
         self._P_lastcheck=0
+        self._P_memory=0
         self._P__meta=list()
         self._P_guid=""
         self._P__meta=list()
@@ -307,6 +308,25 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
     @lastcheck.deleter
     def lastcheck(self):
         del self._P_lastcheck
+
+    @property
+    def memory(self):
+        return self._P_memory
+
+    @memory.setter
+    def memory(self, value):
+        if not isinstance(value, int) and value is not None:
+            if isinstance(value, basestring) and j.basetype.integer.checkString(value):
+                value = j.basetype.integer.fromString(value)
+            else:
+                msg="property memory input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: node, value was:" + str(value)
+                raise TypeError(msg)
+
+        self._P_memory=value
+
+    @memory.deleter
+    def memory(self):
+        del self._P_memory
 
     @property
     def _meta(self):

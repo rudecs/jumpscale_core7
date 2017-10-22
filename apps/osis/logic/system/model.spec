@@ -202,6 +202,7 @@
     prop:peer_backup int,, node which has backups for this node
     prop:description str,,
     prop:lastcheck int,,
+    prop:memory int,, amount of memory in mb
     prop:_meta list(str),, osisrootobj,$namespace,$category,$version
 
 [rootmodel:process] @index
