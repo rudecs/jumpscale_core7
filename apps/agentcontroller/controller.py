@@ -559,7 +559,10 @@ class ControllerCMDS():
             job['nid'] = session.nid
             saveinosis = job['log']
             job['state'] = 'STARTED'
-            self._setJob(job, saveinosis)
+            if saveinosis:
+                self._setJob(job, saveinosis)
+            elif not job['wait']:
+                self._deleteJobFromCache(job)
             self._log("getwork found for node:%s for jsid:%s"%(session.nid,job["jscriptid"]))
             return job
 
@@ -659,26 +662,7 @@ class ControllerCMDS():
             q=self._getJobQueue(job["guid"])
             q.put(json.dumps(job))
             q.set_expire(60) # if result is not fetched in 60 seconds we can delete this
-        else:
-            self._deleteJobFromCache(job)
-
-        #NO PARENT SUPPORT YET
-        # #now need to return it to the client who asked for the work
-        # if job.parent and job.parent in self.jobs:
-        #     parentjob = self.jobs[job.db.parent]
-        #     parentjob.db.childrenActive.remove(job.id)
-        #     if job.db.state == 'ERROR':
-        #         parentjob.db.state = 'ERROR'
-        #         parentjob.db.result = job.db.result
-        #     if not parentjob.db.childrenActive:
-        #         #all children executed
-        #         parentjob.db.resultcode=0
-        #         if parentjob.db.state != 'ERROR':
-        #             parentjob.db.state = "OK"
-        #         if not parentjob.db.result:
-        #             parentjob.db.result = json.dumps(None)
-        #         parentjob.save()
-        #         parentjob.done()
+        self._deleteJobFromCache(job)
 
         self._log("completed job")
         return
