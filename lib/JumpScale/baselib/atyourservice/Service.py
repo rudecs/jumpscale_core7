@@ -708,10 +708,10 @@ class Service(object):
                         else:
                             j.system.fs.copyFile(
                                 src, dest, True, overwriteFile=delete)
-
         self.configure(deps=False)
 
-        self.start()
+        if start:
+            self.start()
         j.system.fs.writeFile(j.system.fs.joinPaths(self.path, "installed.version"), self.hrd.get('service.installed.checksum'))
 
         # else:

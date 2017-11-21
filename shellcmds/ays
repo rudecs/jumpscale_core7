@@ -94,6 +94,8 @@ group.add_argument('--parent', required=False, default='',
                    help='parent services (domain__name__instance). Can also define ancestors through \'ancestordomain__ancestorname__ancestorinstance:parentdomain__parentname__parentinstance\'')
 group.add_argument('--immediate', required=False, action='store_true',
                    default=False, help='use this to get the first level match of services')
+group.add_argument('--no-start', required=False, action='store_false', dest='start',
+                   default=True, help='use this to not start the processes of the installed binaries.')
 group.add_argument('-r', '--reinstall', required=False, action='store_true', help='Reinstall found service')
 group.add_argument('-s', '--single', required=False, action='store_true', help='Do not install dependencies')
 
@@ -276,7 +278,7 @@ else:
             if len(tmpls) <= 0:
                 raise RuntimeError("no templates found for %s__%s. Be more precise please" % (args.domain, args.name))
 
-            tmpls[0].install(instance=args.instance, start=True, deps=(not args.single), reinstall=args.reinstall,
+            tmpls[0].install(instance=args.instance, start=args.start, deps=(not args.single), reinstall=args.reinstall,
                              args=getHRDData(args), parent=getParent(args, precise=True), noremote=args.noremote, hrdSeed=args.hrdseed, hrdReset=args.hrdreset, offline=args.offline)
 
     elif args.action == 'update':
