@@ -47,8 +47,7 @@ def _hash_funcs(alg):
         @returns: %(alg)s hash hex digest of the input value
         @rtype: string
         '''
-        if isinstance(s, str):
-            s = s.encode('utf-8')
+        s = j.tools.text.toStr(s)
         impl = hashlib.new(alg, s)
         return impl.hexdigest()
 

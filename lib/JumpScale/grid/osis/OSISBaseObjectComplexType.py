@@ -45,7 +45,7 @@ class OSISBaseObjectComplexType(j.code.classGetJSRootModelBase()):
         is like returning the hash, is used to see if object changed
         """
         dd=j.code.object2json(self,True,ignoreKeys=["guid","id","sguid","moddate"],ignoreUnderscoreKeys=True)
-        return j.tools.hash.md5_string(str(dd))
+        return j.tools.hash.md5_string(j.tools.text.toStr(dd))
 
     def load(self, ddict):
         """

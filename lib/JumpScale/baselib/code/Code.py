@@ -236,10 +236,10 @@ class Code():
                     value.append(todict(item,{},ignoreKeys))
                 return value
             elif isinstance(obj, unicode):
-                return obj.encode('utf8')
-            elif isinstance(obj, (int,str,float,bool,long)) or obj==None:
                 return obj
-            elif isinstance(obj, bytes) or obj==None:
+            elif isinstance(obj, (int,float,bool,long)) or obj is None:
+                return obj
+            elif isinstance(obj, (str, bytes)):
                 return obj.decode('utf-8', 'ignore')
             elif isinstance(obj, ClassBase):
                 if hasattr(obj,"_obj2dict"):
