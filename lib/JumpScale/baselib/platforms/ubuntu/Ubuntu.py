@@ -453,6 +453,15 @@ WantedBy=multi-user.target
                     results[key] = value
         return results
 
+    def getServicePID(self, name):
+        """
+        returns the pid of the service
+        if pid == 0, then there is no service running with this name
+        """
+        exitcode, output = j.system.process.execute("systemctl show -p MainPID {name}".format(name=name))
+        pid = int(output.strip().split('=')[1])
+        return pid
+
     def getPackageNamesInstalled(self):
         exitcode, result = j.system.process.execute('dpkg --get-selections')
         installedpackages = []
