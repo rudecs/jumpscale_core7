@@ -160,7 +160,7 @@ class Worker(object):
                     status, result = jscript.executeInWorker(**job.args)
                     self.redisw.redis.hdel("workers:inqueuetest",jscript.getKey())
                     j.logger.enabled = True
-                    if status:
+                    if status is True:
                         job.result=result
                         job.state="OK"
                         job.resultcode=0
@@ -195,7 +195,10 @@ class Worker(object):
                                 self.log(eco)
                             # j.events.bug_warning(msg,category="worker.jscript.notexecute")
                             # self.loghandler.logECO(eco)
-                            job.state="ERROR"
+                            if isinstance(status, basestring):
+                                job.state = status
+                            else:
+                                job.state="ERROR"
                             eco.tb = None
                             job.result=eco.__dict__
                             job.resultcode=1

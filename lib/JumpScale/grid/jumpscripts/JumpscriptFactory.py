@@ -10,6 +10,8 @@ import StringIO
 import collections
 import os
 import base64
+import traceback
+import signal
 
 class Jumpscript(object):
     def __init__(self, ddict=None, path=None):
@@ -107,6 +109,23 @@ from JumpScale import j
             return result
         else:
             def helper(pipe):
+                def errorhandler(sig, frame):
+                    try:
+                        msg = 'Failed to execute job on time'
+                        eco = j.errorconditionhandler.getErrorConditionObject(msg=msg)
+                        eco.backtrace = eco.getBacktraceDetailed(frame=frame.f_back, startframe=9)
+                        eco.backtraceDetailed = eco.backtrace
+                        eco.tb = None
+                        eco.tags = "jscategory:%s"%self.category
+                        eco.jid = j.application.jid
+                        eco.tags += " jsorganization:%s"%self.organization
+                        eco.tags +=" jsname:%s"%self.name
+                        j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
+                    except Exception as e:
+                        eco = str(e)
+                    pipe.send(("TIMEOUT", eco))
+
+                signal.signal(signal.SIGTERM, errorhandler)
                 try:
                     result = self.executeInProcess(*args, **kwargs)
                     pipe.send(result)
@@ -125,7 +144,7 @@ from JumpScale import j
             proc.join(self.timeout)
             if proc.is_alive():
                 proc.terminate()
-                return False, "TIMEOUT"
+                proc.join()
             try:
                 return ppipe.recv()
             except Exception as e:
@@ -135,6 +154,8 @@ from JumpScale import j
 
     def _getECO(self, e):
         eco = j.errorconditionhandler.parsePythonErrorObject(e)
+        eco.backtrace = eco.getBacktraceDetailed()
+        eco.backtraceDetailed = eco.backtrace
         eco.tb = None
         eco.errormessage='Exec error procmgr jumpscr:%s_%s on node:%s_%s %s'%(self.organization,self.name, \
                 j.application.whoAmI.gid, j.application.whoAmI.nid,eco.errormessage)
@@ -150,7 +171,6 @@ from JumpScale import j
         except Exception as e:
             print "error in jumpscript factory: execute in process."
             eco = self._getECO(e)
-            print eco
             j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
             print(eco)
             return False, eco

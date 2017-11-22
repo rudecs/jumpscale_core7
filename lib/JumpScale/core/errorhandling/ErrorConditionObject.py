@@ -30,7 +30,8 @@ class ErrorConditionObject():
             btkis, filename0, linenr0, func0 = j.errorconditionhandler.getErrorTraceKIS(tb=tb)
 
             if len(btkis) > 1:
-                self.backtrace = self.getBacktrace(btkis, filename0, linenr0, func0)
+                self.backtrace = self.getBacktraceDetailed()
+                self.backtraceDetailed = self.backtrace
 
             self.category = category  # is category in dot notation
             self.errormessage = msg
@@ -235,9 +236,9 @@ class ErrorConditionObject():
 
     def _filterLocals(self, k, v):
         try:
-            k = "%s" % k
-            v = "%s" % v
-            if k in ["re", "q", "jumpscale", "pprint", "qexec", "jshell", "Shell", "__doc__", "__file__", "__name__", "__package__", "i", "main", "page"]:
+            k = "{}".format(k)
+            v = "{:r<1024.1024}".format(v)
+            if k.lower() in ["re", "q", "jumpscale", "pprint", "qexec", "jshell", "Shell", "__doc__", "__file__", "__name__", "__package__", "i", "main", "page", 'eco', 'errorcondition', 'errorconditionobject']:
                 return False
             if v.find("<module") != -1:
                 return False
@@ -247,12 +248,14 @@ class ErrorConditionObject():
                 return False
             if v.find("jumpscale.Shell") != -1:
                 return False
+            if '==== STACKFRAME =====' in v:
+                return False
         except:
             return False
 
         return True
 
-    def getBacktraceDetailed(self, tracebackObject=""):
+    def getBacktraceDetailed(self, tracebackObject=None, frame=None, startframe=0, framecount=50):
         """
         Get stackframe log
         is a very detailed log with filepaths, code locations & global vars, this output can become quite big
@@ -262,16 +265,14 @@ class ErrorConditionObject():
             return ""
         sep = "\n" + "-" * 90 + "\n"
         result = ''
-        if not tracebackObject:
-            return ""  # @todo needs to be fixed so it does work
         if tracebackObject is None:
-            tracebackObject = inspect.currentframe()  # @todo does not work
-        frames = inspect.getinnerframes(tracebackObject, 16)
-        nrlines = 0
-        for (frame, filename, lineno, fun, context, idx) in frames:
-            nrlines += 1
-            if nrlines > 100:
-                return result
+            if frame is None:
+                frame = inspect.currentframe()
+            frames = inspect.getouterframes(frame, 16)[::-1]
+        else:
+            frames = inspect.getinnerframes(tracebackObject, 16)
+        frames = frames[startframe:]
+        for (frame, filename, lineno, fun, context, idx) in frames[-framecount:]:
             location = filename + "(line %d) (function %s)\n" % (lineno, fun)
             if location.find("EventHandler.py") == -1:
                 result += "  " + sep
@@ -285,9 +286,6 @@ class ErrorConditionObject():
                             prefix = "--> "
                         l += 1
                         result += prefix + line
-                        nrlines += 1
-                        if nrlines > 100:
-                            return result
                 result += "  " + "============ LOCALS============\n"
                 for (k, v) in sorted(frame.f_locals.items()):
                     if self._filterLocals(k, v):
@@ -295,11 +293,8 @@ class ErrorConditionObject():
                             result += "    %s : %s\n" % (str(k), str(v))
                         except:
                             pass
-                        nrlines += 1
-                        if nrlines > 100:
-                            return result
 
-        self.backtrace = result
+        return result
 
     def getCategory(self):
         return "eco"
