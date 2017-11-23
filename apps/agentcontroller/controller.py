@@ -178,7 +178,7 @@ class ControllerCMDS():
         for item in self.osisclient.list("system","node"):
             gid,nid=item.split("_")
             cmds.scheduleCmd(gid, nid, cmdcategory="jumpscripts", jscriptid=0, cmdname="loadJumpscript",
-                             args={'jumpscript': script.getDict()}, 
+                             args={'jumpscript': script.getDict()},
                              queue="internal", log=False, timeout=60, roles=[], session=session)
 
     def restartWorkers(self,session=None):
@@ -570,7 +570,7 @@ class ControllerCMDS():
     def send_healthcheck_eco(self, job, message, state="NEW"):
         eco = j.errorconditionhandler.getErrorConditionObject(
         msg=message['message'],
-        category='healtcheck.{}'.format(message['category']),
+        category='healthcheck.{}'.format(message['category']),
         type='OPERATIONS',
         level=j.errorconditionhandler.getLevelByName(message['state'])
         )
@@ -642,7 +642,7 @@ class ControllerCMDS():
 
         self.healthclient.set(health)
 
-        
+
     def notifyWorkCompleted(self, job,session=None):
         """
         job here is a dict
