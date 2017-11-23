@@ -47,6 +47,8 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
         return
 
     eco = params.value
+    if "healthcheck" not in eco['category']:
+        return
     gid, nid = eco['gid'], eco['nid']
     if gid not in cache:
         gridservice = j.core.osis.cmds._getOsisInstanceForCat('system', 'grid')
@@ -83,7 +85,7 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
                 tags=[tags], severity=severity, event="ErrorCondition")
     if eco['state'].lower() == "closed":
         data['status'] = "closed"
-        
+
     try:
         resp = requests.post(config['api_url']+"/alert", json=data, headers=headers)
         if resp.status_code != 201:
