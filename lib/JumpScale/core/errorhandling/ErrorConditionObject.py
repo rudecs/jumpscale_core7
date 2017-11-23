@@ -30,7 +30,7 @@ class ErrorConditionObject():
             btkis, filename0, linenr0, func0 = j.errorconditionhandler.getErrorTraceKIS(tb=tb)
 
             if len(btkis) > 1:
-                self.backtrace = self.getBacktraceDetailed()
+                self.backtrace = self.getBacktraceDetailed(tb)
                 self.backtraceDetailed = self.backtrace
 
             self.category = category  # is category in dot notation

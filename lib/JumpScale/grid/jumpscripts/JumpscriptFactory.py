@@ -154,8 +154,6 @@ from JumpScale import j
 
     def _getECO(self, e):
         eco = j.errorconditionhandler.parsePythonErrorObject(e)
-        eco.backtrace = eco.getBacktraceDetailed()
-        eco.backtraceDetailed = eco.backtrace
         eco.tb = None
         eco.errormessage='Exec error procmgr jumpscr:%s_%s on node:%s_%s %s'%(self.organization,self.name, \
                 j.application.whoAmI.gid, j.application.whoAmI.nid,eco.errormessage)
