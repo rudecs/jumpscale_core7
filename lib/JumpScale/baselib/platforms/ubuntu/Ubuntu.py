@@ -484,6 +484,18 @@ WantedBy=multi-user.target
         # print cmd
         return j.system.process.execute(cmd, False)
 
+    def reloadService(self, servicename):
+        cmd = "systemctl stop %s" % servicename
+        # print cmd
+        return j.system.process.execute(cmd, False)
+
+    def serviceExists(self, servicename):
+        for service in self.listServices():
+            name, type_ = service.rsplit('.', 1)
+            if name == servicename:
+                return True
+        return False
+
     def restartService(self, servicename):
         return j.system.process.execute("sudo systemctl restart %s" % servicename, False)
 

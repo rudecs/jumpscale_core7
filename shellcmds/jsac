@@ -12,6 +12,7 @@ parser.add_argument('-nid', '--nodeid', dest='nid', required=False, type=int, he
 parser.add_argument('-gid', '--gridid', dest='gid', required=False, type=int, help='Use for exec')
 parser.add_argument('-r', '--role', required=False, help='Use for exec')
 parser.add_argument('-n', '--name', required=False, help='Use for exec')
+parser.add_argument('-e', '--all', required=False, action='store_true', default=False, help='Excecute on all matching roles')
 parser.add_argument('-o', '--organization', required=False, help='Use for exec')
 parser.add_argument('-a', '--arguments', required=False, default="", help='Use for exec, eg. msg:test')
 parser.add_argument('-q', '--queue', required=False, default=None, help='Specify queue to execute tas on')
@@ -42,7 +43,7 @@ elif opts.action == 'exec':
             if value.isdigit():
                 value = int(value)
             args[key] = value
-    job = ac.executeJumpscript(opts.organization, opts.name, nid=opts.nid, gid=opts.gid, role=opts.role, args=args, queue=opts.queue)
+    job = ac.executeJumpscript(opts.organization, opts.name, nid=opts.nid, gid=opts.gid, role=opts.role, args=args, queue=opts.queue, all=opts.all)
     print("Job:\n\n: %s" % yaml.dump(job).replace('!!python/unicode ', ''))
 
 j.application.stop()
