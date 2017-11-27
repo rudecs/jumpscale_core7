@@ -144,7 +144,15 @@ from JumpScale import j
             proc.join(self.timeout)
             if proc.is_alive():
                 proc.terminate()
-                proc.join()
+                proc.join(5)
+                if proc.is_alive():
+                    os.kill(proc.pid, signal.SIGKILL)
+                    msg = 'Failed to execute job on time and failed to kill cleanly'
+                    eco = j.errorconditionhandler.getErrorConditionObject(msg=msg)
+                    eco.errormessagePub = 'JumpScript died unexpectedly %s'
+                    eco.tb = False
+                    return "TIMEOUT", eco.dump()
+
             try:
                 return ppipe.recv()
             except Exception as e:

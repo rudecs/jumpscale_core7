@@ -187,13 +187,17 @@ class ActionsBase():
             return
 
         def stop_process(process, nbr=None):
+            def kill_pids(currenpids, killsignal):
+                pids = set(self.get_pids(serviceobj,[process])) - set(currentpids)
+                now = time.time()
+                while pids and now + 60 > time.time():
+                    for pid in pids:
+                        j.system.process.kill(pid, killsignal)
+                    pids = set(self.get_pids(serviceobj, [process])) - set(currentpids)
+                return pids
+
             currentpids = (os.getpid(), os.getppid())
-            pids = set(self.get_pids(serviceobj,[process])) - set(currentpids)
-            now = time.time()
-            while pids and now + 60 > time.time():
-                for pid in pids:
-                    j.system.process.kill(pid, signal.SIGTERM)
-                pids = set(self.get_pids(serviceobj, [process])) - set(currentpids)
+            kill_pids(currentpids, signal.SIGTERM)
 
             startupmethod=process["startupmanager"]
             domain, name = self._getDomainName(serviceobj, process)
@@ -208,6 +212,7 @@ class ActionsBase():
                 for tmuxkey,tmuxname in j.system.platform.screen.getWindows(domain).items():
                     if tmuxname==name:
                         j.system.platform.screen.killWindow(domain,name)
+            kill_pids(currentpids, signal.SIGKILL)
 
         if serviceobj.name == 'redis':
             j.logger.redislogging = None
