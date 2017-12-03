@@ -194,7 +194,6 @@ class ProcessManager():
 
     def start(self):
 
-        # self._webserverStart()
         from JumpScale.baselib.redisworker.RedisWorker import RedisWorkerFactory
         rw = RedisWorkerFactory()
         rw.clearWorkers()
@@ -205,36 +204,24 @@ class ProcessManager():
 
         self.mainloop()
 
-    def _webserverStart(self):
-        #start webserver
-        server=PMWSServer()
-        server.pm=self
-
-        p=Process()
-        p.domain="jumpscale"
-        p.name="web"
-        p.instance="main"
-        p.workingdir="/"
-        p.pythonObj=server
-        p.pythonCode="self.pythonObj.start()"
-        p.start()
-        self.processes.append(p)
-
     def _processManagerStart(self):
         j.core.processmanager.start()
 
     def _workerStart(self):
-        pwd = '/opt/jumpscale7/apps/jsagent/lib'
         for qname in ["default"] * 2 + ["io", "hypervisor"] + ["process"] * 5:
-            p = Process()
-            p.domain = 'workers'
-            p.name = '%s' % qname
-            p.instance = 'main'
-            p.workingdir = pwd
-            p.cmds = ['python', 'worker.py', '-qn', qname, '-i', opts.instance]
-            p.restart = True
-            p.start()
-            self.processes.append(p)
+            self.startWorker(qname)
+
+
+    def startWorker(self, qname):
+        p = Process()
+        p.domain = 'workers'
+        p.name = qname
+        p.instance = 'main'
+        p.workingdir = '/opt/jumpscale7/apps/jsagent/lib'
+        p.cmds = ['python', 'worker.py', '-qn', qname, '-i', opts.instance]
+        p.restart = True
+        p.start()
+        self.processes.append(p)
 
     def mainloop(self):
         i=0
@@ -274,6 +261,7 @@ j.application.instanceconfig = j.application.getAppInstanceHRD('jsagent', 'main'
 
 #first start processmanager with all required stuff
 pm=ProcessManager(reset=opts.reset)
+j.application.app = pm
 processes=pm.processes
 pm.services=[item.strip().lower() for item in opts.services.split(",")]
 

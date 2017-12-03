@@ -292,7 +292,7 @@ def action%(argspec)s:
 
     def _getWork(self,qname, workername=None, timeout=0):
         if qname not in self.queue:
-            raise RuntimeError("Could not find queue to execute job:%s ((ops:workers.schedulework L:1))"%qname)
+            self._queue[qname] = self.redis.getQueue("workers:work:{}".format(qname))
 
         queue=self.queue[qname]
         actionqueue = "workers:action:%s:%s" % (qname, workername)
@@ -336,7 +336,10 @@ def action%(argspec)s:
             qname="default"
 
         if qname not in self.queue:
-            raise RuntimeError("Could not find queue to execute job:%s ((ops:workers.schedulework L:1))"%job)
+            # open queue and start worker if not defailt queue
+            self._queue[qname] = self.redis.getQueue("workers:work:{}".format(qname))
+            j.application.app.startWorker(qname)
+
 
         queue=self.queue[qname]
 
