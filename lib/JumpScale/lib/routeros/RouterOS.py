@@ -157,7 +157,6 @@ class RouterOS(object):
             raise RuntimeError("Could not login into RouterOS: %s"%host)
         self.configpath="%s/apps/routeros/configs/default/"%j.dirs.baseDir
         j.system.fs.createDir(j.system.fs.joinPaths(j.dirs.varDir,"routeros"))
-        inputsentence = []
 
     def do(self,cmd,args={}, rawargs=[]):
         cmds=[]
@@ -173,9 +172,11 @@ class RouterOS(object):
         r=self.api.talk(cmds)
         return self._parse_result(r)
 
+    def _format_mac(self, mac):
+        return str(EUI(mac, dialect=netaddr.mac_eui48)).replace('-', ':')
+
     def leaseExists(self, macaddress):
-        macaddress = str(EUI(macaddress, dialect=netaddr.mac_eui48)).replace('-', ':')
-        if self._getLease(macaddress):
+        if self._getLease(self._format_mac(macaddress)):
             return True
         else:
             return False
@@ -186,7 +187,7 @@ class RouterOS(object):
         return lease
 
     def getLease(self, macaddress, interface):
-        macaddress = str(EUI(macaddress, dialect=netaddr.mac_eui48)).replace('-', ':')
+        macaddress = self._format_mac(macaddress)
         # try double check 5 times
         for _ in xrange(5):
             lease = self._getLease(macaddress)
@@ -201,18 +202,21 @@ class RouterOS(object):
                 return lease
 
     def removeLease(self, mac):
-        mac = str(EUI(mac, dialect=netaddr.mac_eui48)).replace('-', ':')
-        self.executeScript('/ip dhcp-server lease remove [find mac-address="%s"]' % mac)
+        self.executeScript('/ip dhcp-server lease remove [find mac-address="%s"]' % self._format_mac(mac))
 
     def add_leases(self, leases):
         for lease in leases:
-            if not self.leaseExists(lease['mac-address']):
+            lease['mac-address'] = self._format_mac(lease['mac-address'])
+            roslease = self._getLease(lease['mac-address'])
+            if roslease and roslease['address'] != lease['address']:
+                self.removeLease(lease['mac-address'])
+                self.do('/ip/dhcp-server/lease/add', lease)
+            elif not roslease:
                 self.do('/ip/dhcp-server/lease/add', lease)
             self.makeStaticLease(lease['mac-address'])
 
     def makeStaticLease(self, mac):
-        mac = str(EUI(mac, dialect=netaddr.mac_eui48)).replace('-', ':')
-        self.executeScript('/ip dhcp-server lease make-static [find mac-address="%s"]' % mac)
+        self.executeScript('/ip dhcp-server lease make-static [find mac-address="%s"]' % self._format_mac(mac))
 
     def getIpaddress(self, macaddress, interface):
         lease = self.getLease(macaddress, interface)
@@ -383,6 +387,7 @@ class RouterOS(object):
         return str(netaddr.IPAddress(net.first+int(networkid)))
 
     def close(self):
+        self._s.close()
         self.ftp.close()
 
     def download(self,path,dest,raiseError=False):
