@@ -80,8 +80,16 @@ def action():
             if hasattr(ecores, "tb"):
                 ecores.__dict__.pop("tb")
             OSISclientEco.set(ecores.__dict__)
-            eco['occurrences'] = 0
-            rediscl.hset('eco:objects', ecokey, json.dumps(eco))
+            eco_data = {}
+            eco_data["occurrences"] = 0
+            eco_data["epoch"] = eco["epoch"]
+            eco_data["guid"] = eco["guid"]
+            eco_data["lasttime"] = eco["lasttime"]
+            eco_data["pushtime"] = eco["pushtime"]
+            eco_data["gid"] = eco["gid"]
+            eco_data["nid"] = eco["nid"]
+
+            rediscl.hset('eco:objects', ecokey, json.dumps(eco_data))
             rediscl.srem('eco:secos', ecokey)
 
     while ecokey is not None:

@@ -6,12 +6,15 @@ class mainclass(OSISStoreMongo):
     TTL = 3600 * 24 * 5  # 5 days
 
     def set(self, key, value, waitIndex=False, session=None):
-        self.setPreSave(value, session)
         db, counter = self._getMongoDB(session)
-        count = db.find({"guid": value["guid"]}).count()
+        objectindb = db.find_one({"guid": value["guid"]})
+        if objectindb:
+            objectindb.update(value)
+            value = objectindb
         noreraise = value.pop('noreraise', False)
+        self.setPreSave(value, session)
         new = False
-        if count == 1:
+        if objectindb:
             if noreraise:
                 return value['guid'], new, False
             db.update({'guid': value['guid']},
@@ -21,6 +24,7 @@ class mainclass(OSISStoreMongo):
                                 'errormessagePub': value['errormessagePub'],
                                 'state': value['state']}
                        })
+
         else:
             new = True
             db.save(value)
