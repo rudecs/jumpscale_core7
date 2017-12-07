@@ -1,15 +1,16 @@
 from JumpScale import j
 # import JumpScale.baselib.remote
-import time
 from netaddr import EUI
+import md5
+import binascii
+import socket
+import netaddr
 
 class RouterOSFactory(object):
 
-    def get(self, host, login,password):
-        return RouterOS(host, login,password)
+    def get(self, host, login, password, timeout=None):
+        return RouterOS(host, login, password, timeout)
 
-import sys, posix, time, md5, binascii, socket, select
-import netaddr
 
 class ApiRos:
     "Routeros api"
@@ -144,8 +145,10 @@ class ApiRos:
 
 class RouterOS(object):
 
-    def __init__(self, host, login,password):
+    def __init__(self, host, login, password, timeout=None):
         self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if socket is not None:
+            self._s.settimeout(timeout)
         self._s.connect((host, 8728 ))
         self.api = ApiRos(self._s)
         res=self.api.login(login,password)
