@@ -97,6 +97,13 @@ class PlatformTypes():
             if parent!="":
                 raise RuntimeError("Could not find parent %s in tree, probably order of insertion not ok."%parent)
 
+    def isVirtual(self):
+        return self.getVirtual() != 'none'
+
+    def getVirtual(self):
+        _, type_ = j.system.process.execute('systemd-detect-virt', dieOnNonZeroExitCode=False)
+        return type_.strip()
+
 
     def _getPlatform(self):
 
