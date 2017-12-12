@@ -189,6 +189,11 @@ class RouterOS(object):
         lease = next(iter(leases), None)
         return lease
 
+    def _getLeaseByAddress(self, address):
+        leases = self.do('/ip/dhcp-server/lease/print', rawargs=['?=address=%s' % address])
+        lease = next(iter(leases), None)
+        return lease
+
     def getLease(self, macaddress, interface):
         macaddress = self._format_mac(macaddress)
         # try double check 5 times
@@ -215,6 +220,10 @@ class RouterOS(object):
                 self.removeLease(lease['mac-address'])
                 self.do('/ip/dhcp-server/lease/add', lease)
             elif not roslease:
+                # check if ip is taken by another lease
+                roslease = self._getLeaseByAddress(lease['address'])
+                if roslease:
+                    self.removeLease(roslease['mac-address'])
                 self.do('/ip/dhcp-server/lease/add', lease)
             self.makeStaticLease(lease['mac-address'])
 
