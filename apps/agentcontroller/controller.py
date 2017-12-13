@@ -567,7 +567,7 @@ class ControllerCMDS():
             self._log("getwork found for node:%s for jsid:%s"%(session.nid,job["jscriptid"]))
             return job
 
-    def send_healthcheck_eco(self, job, message, state="NEW"):
+    def send_healthcheck_eco(self, health, message, state="NEW"):
         eco = j.errorconditionhandler.getErrorConditionObject(
         msg=message['message'],
         category='healthcheck.{}'.format(message['category']),
@@ -575,12 +575,13 @@ class ControllerCMDS():
         level=j.errorconditionhandler.getLevelByName(message['state'])
         )
         eco.state = state
-        eco.gid = job['gid']
-        eco.nid = job['nid']
+        eco.gid = health['gid']
+        eco.nid = health['nid']
         eco.backtrace = ""
         eco.process()
 
     def saveHealth(self, job, jumpscript):
+        import copy
         interval = 0
         if jumpscript.period:
             if isinstance(jumpscript.period, int):
@@ -588,7 +589,9 @@ class ControllerCMDS():
             else:
                 cron = crontab.CronTab(jumpscript.period)
                 interval = cron.next() - cron.previous()
-        health = {'nid': job['nid'],
+
+        health_checks = []
+        health_tmpl = {'nid': job['nid'],
                   'gid': job['gid'],
                   'interval': interval,
                   'lastchecked': job['timeStop'],
@@ -596,51 +599,73 @@ class ControllerCMDS():
                   'messages': []}
 
         if job['state'] != 'OK':
+            health = copy.deepcopy(health_tmpl)
             health['jobguid'] = job['guid']
             health['messages'].append({'state': 'ERROR',
-                                       'message': 'Failed executing job',
+                                       'message': 'Failed executing job %s' % job['cmd'],
                                        'category': job['cmd'],
                                        'lasterror': job['timeStop'],
                                        'uid': 'execution_failed'})
+            health_checks.append(health)
         else:
-            health['jobguid'] = None  # job is not saved so dont store job guid
-            health['messages'] = job['result'] or []
+            if job['result']:
+                msgs = copy.deepcopy(job['result'])
+                for msg in msgs:
+                    if 'nid' in msg:
+                        health = copy.deepcopy(health_tmpl)
+                        health['nid'] = msg['nid']
+                        health['messages'] = [msg]
+                        health['jobguid'] = None
+                        health_checks.append(health)
+                        job['result'].remove(msg)
+            else:
+                health = copy.deepcopy(health_tmpl)
+                health['jobguid'] = None  # job is not saved so dont store job guid
+                health['messages'] = []
+                health_checks.append(health)
+
+            if job['result']:
+                health = copy.deepcopy(health_tmpl)
+                health['jobguid'] = None
+                health['messages'] = job['result']
+                health_checks.append(health)
 
         try:
             ok_states = ['OK', 'SKIPPED']
-            last = self.healthclient.get('%(gid)s_%(nid)s_%(category)s_%(cmd)s' % job)
-            for new_message in health['messages']:
-                send_eco = True
-                eco_state = "NEW"
-                for old_message in last.messages[::-1]:
-                    if new_message['uid'] == old_message.get('uid', ''):
-                        last.messages.remove(old_message)
-                        # if new msg not ok, then set last error
-                        if new_message['state'] not in ok_states:
-                            new_message['lasterror'] = old_message.get('lasterror', job['timeStop'])
-                            message = new_message
-                            state = new_message['state']
-                            break
-                        elif old_message.get('state', 'OK') not in ok_states:
-                            # if new msg is ok, then check for old msg if not ok, then set state of eco to CLOSED
-                                # Here we use the old message to get the old eco
-                                message = old_message
-                                eco_state = "CLOSED"
+            for health in health_checks:
+                last = self.healthclient.get('%(gid)s_%(nid)s_%(cmd)s' % health)
+                for new_message in health['messages']:
+                    send_eco = True
+                    eco_state = "NEW"
+                    for old_message in last.messages[::-1]:
+                        if new_message['uid'] == old_message.get('uid', ''):
+                            last.messages.remove(old_message)
+                            # if new msg not ok, then set last error
+                            if new_message['state'] not in ok_states:
+                                new_message['lasterror'] = old_message.get('lasterror', job['timeStop'])
+                                message = new_message
+                                state = new_message['state']
                                 break
-                else:
-                    send_eco = False
-                    new_message['lasterror'] = ''
-                if send_eco:
-                    self.send_healthcheck_eco(job, message, eco_state)
+                            elif old_message.get('state', 'OK') not in ok_states:
+                                # if new msg is ok, then check for old msg if not ok, then set state of eco to CLOSED
+                                    # Here we use the old message to get the old eco
+                                    message = old_message
+                                    eco_state = "CLOSED"
+                                    break
+                    else:
+                        send_eco = False
+                        new_message['lasterror'] = ''
+                    if send_eco:
+                        self.send_healthcheck_eco(health, message, eco_state)
 
-            # CLOSE all remaining old ecos in error state
-            for message in last.messages:
-                if message.get('state', 'OK') not in ok_states:
-                    self.send_healthcheck_eco(job, message, "CLOSED")
+                # CLOSE all remaining old ecos in error state
+                for message in last.messages:
+                    if message.get('state', 'OK') not in ok_states:
+                        self.send_healthcheck_eco(health, message, "CLOSED")
         except:
             pass
-
-        self.healthclient.set(health)
+        for health in health_checks:
+            self.healthclient.set(health)
 
 
     def notifyWorkCompleted(self, job,session=None):

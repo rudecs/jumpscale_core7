@@ -146,7 +146,6 @@ class GridHealthChecker(object):
         self._clean()
         self.getNodes()
         self._clean()
-        self.checkHeartbeat(clean=False)
         self.checkProcessManagerAllNodes(clean=False)
         results = list()
         greens = list()
@@ -240,7 +239,6 @@ class GridHealthChecker(object):
         now = time.time()
         if clean:
             self._clean()
-        self.checkHeartbeat(nid=nid, clean=False)
         query = {}
         if nid:
             query['nid'] = nid
@@ -316,33 +314,3 @@ class GridHealthChecker(object):
                     if oldestdate is None or (checktime is not None and checktime < oldestdate):
                         oldestdate = checktime
         return errors, oldestdate
-
-    def checkHeartbeat(self, clean=True, nid=None):
-        if clean:
-            self._clean()
-        if self._nids==[]:
-            self.getNodes()
-        self.printOut('CHECKING HEARTBEATS...')
-        self.printOut("\tget all heartbeats (just query from OSIS):")
-        self.printOut("OK")
-        heartbeats = self._getHeartBeats(nid)
-        for heartbeat in heartbeats:
-            if heartbeat['nid'] not in self._nids and heartbeat['nid'] not in self._nidsNonActive:
-                self._addResult(heartbeat['nid'], {'message': "Found heartbeat node '%s' when not in grid nodes." % heartbeat['nid'],
-                                'state': 'ERROR'}, "JSAgent")
-
-        nid2hb = dict([(x['nid'], x['lastcheck']) for x in heartbeats])
-        nids = [nid] if nid else self._nids
-        for nid in nids:
-            if nid not in self._nidsNonActive:
-                if nid in nid2hb:
-                    lastchecked = nid2hb[nid]
-                    if not j.base.time.getEpochAgo('-2m') < lastchecked:
-                        state = 'ERROR'
-                    else:
-                        state = 'OK'
-                    self._addResult(nid, {'message': "Heartbeat", 'state': state, 'lastchecked': lastchecked}, "JSAgent")
-                else:
-                    self._addResult(nid, {'message': "Found heartbeat node when not in grid nodes.", 'state':'ERROR'}, "JSAgent")
-        if clean:
-            return self._status

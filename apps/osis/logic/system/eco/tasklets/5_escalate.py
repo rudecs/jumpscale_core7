@@ -65,7 +65,7 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
             nodes_cache[nid] = nodes[0]['name']
         else:
             nodes_cache[nid] = "Unrecognized Node"
-        
+
 
     envname = cache[gid]
     node = nodes_cache[nid]
@@ -82,7 +82,7 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
     severity = j.errorconditionhandler.getLevelName(eco['level'])
     data = dict(attributes={'backtrace': backtrace}, resource=eco['guid'],
                 text=eco['errormessage'], environment=envname, service=["{} - {}".format(node, eco['appname'])],
-                tags=[tags], severity=severity, event="ErrorCondition")
+                tags=[tags], severity=severity, event=eco['category'])
     if eco['state'].lower() == "closed":
         data['status'] = "closed"
 

@@ -168,7 +168,7 @@ class Worker(object):
                         if isinstance(result, basestring):
                             job.state = result
                         else:
-                            eco = result
+                            eco = j.errorconditionhandler.getErrorConditionObject(ddict=result)
                             agentid=j.application.getAgentId()
                             msg="Could not execute jscript:%s %s_%s on agent:%s\nError: %s"%(jscript.id,jscript.organization,jscript.name,agentid, eco.errormessage)
                             eco.errormessage = msg
