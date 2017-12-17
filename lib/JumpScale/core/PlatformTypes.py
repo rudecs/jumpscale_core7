@@ -101,7 +101,7 @@ class PlatformTypes():
         return self.getVirtual() != 'none'
 
     def getVirtual(self):
-        _, type_ = j.system.process.execute('systemd-detect-virt', dieOnNonZeroExitCode=False)
+        _, type_ = j.system.process.execute('systemd-detect-virt', dieOnNonZeroExitCode=False, ignoreErrorOutput=True)
         return type_.strip()
 
 
