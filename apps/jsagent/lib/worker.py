@@ -9,6 +9,7 @@ except:
 import psutil
 import JumpScale.baselib.taskletengine
 from JumpScale.baselib import cmdutils
+from JumpScale.core.errorhandling.ErrorConditionObject import ErrorConditionObject
 
 # Preload libraries
 j.system.platform.psutil=psutil
@@ -168,26 +169,18 @@ class Worker(object):
                         if isinstance(result, basestring):
                             job.state = result
                         else:
-                            eco = j.errorconditionhandler.getErrorConditionObject(ddict=result)
+                            if isinstance(result, ErrorConditionObject):
+                                eco = result
+                            elif isinstance(result, dict):
+                                eco = j.errorconditionhandler.getErrorConditionObject(ddict=result)
+                            else:
+                                eco = j.errorconditionhandler.getErrorConditionObject(msg="Invalid result {}".format(result))
                             agentid=j.application.getAgentId()
                             msg="Could not execute jscript:%s %s_%s on agent:%s\nError: %s"%(jscript.id,jscript.organization,jscript.name,agentid, eco.errormessage)
                             eco.errormessage = msg
                             eco.jid = job.guid
                             eco.code=jscript.source
                             eco.category = "workers.executejob"
-
-                            out=""
-                            tocheck=["\"worker.py\"","jscript.executeInWorker","return self.module.action","JumpscriptFactory.py"]
-                            for line in eco.backtrace.split("\n"):
-                                found=False
-                                for check in tocheck:
-                                    if line.find(check)<>-1:
-                                        found=True
-                                        break
-                                if found==False:
-                                    out+="%s\n"%line
-
-                            eco.backtrace=out
 
                             if job.id<1000000:
                                 eco.process()
