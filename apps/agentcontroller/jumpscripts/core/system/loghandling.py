@@ -50,7 +50,6 @@ def action():
     path = "%s/apps/processmanager/eventhandling" % j.dirs.baseDir
     if j.system.fs.exists(path=path):
         eventhandlingTE = j.core.taskletengine.get(path)
-        ecokey = ecoqueue.get_nowait()
     else:
         eventhandlingTE = None
 
@@ -79,7 +78,6 @@ def action():
             ecores = eventhandlingTE.executeV2(eco=ecoobj)
             if hasattr(ecores, "tb"):
                 ecores.__dict__.pop("tb")
-            OSISclientEco.set(ecores.__dict__)
             eco_data = {}
             eco_data["occurrences"] = 0
             eco_data["epoch"] = eco["epoch"]
@@ -91,10 +89,18 @@ def action():
 
             rediscl.hset('eco:objects', ecokey, json.dumps(eco_data))
             rediscl.srem('eco:secos', ecokey)
+            return ecores
 
-    while ecokey is not None:
-        process_ecokey(ecokey)
-        ecokey = ecoqueue.get_nowait()
+    ecosres = []
+    queue_size = ecoqueue.qsize()
+    ecokeys = set(rediscl.lrange(ecoqueue.key, 0, queue_size))
+    rediscl.ltrim(ecoqueue.key, queue_size, queue_size)
+    for ecokey in ecokeys:
+        eco = process_ecokey(ecokey)
+        if eco:
+            ecosres.append(eco.__dict__)
+    print(len(ecosres))
+    OSISclientEco.set(ecosres)
     htime = rediscl.get('eco:htime') or 0
     if int(htime) < time.time() - 300:
         members = rediscl.smembers('eco:secos')
