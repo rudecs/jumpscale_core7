@@ -99,8 +99,8 @@ def action():
         eco = process_ecokey(ecokey)
         if eco:
             ecosres.append(eco.__dict__)
-    print(len(ecosres))
-    OSISclientEco.set(ecosres)
+    if ecosres:
+        OSISclientEco.set(ecosres)
     htime = rediscl.get('eco:htime') or 0
     if int(htime) < time.time() - 300:
         members = rediscl.smembers('eco:secos')
