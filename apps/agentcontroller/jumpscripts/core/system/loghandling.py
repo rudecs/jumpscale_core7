@@ -61,7 +61,8 @@ def action():
         if log4 is not None:
             out.append(log4.__dict__)
         if len(out) > 500:
-            OSISclientLogger.set(out)
+            if j.application.debug:
+                OSISclientLogger.set(out)
             out = []
         log = logqueue.get_nowait()
     if len(out) > 0 and j.application.debug:
