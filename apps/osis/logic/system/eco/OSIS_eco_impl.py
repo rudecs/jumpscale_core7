@@ -1,10 +1,13 @@
 from JumpScale import j
+from gevent.pool import Pool
 from JumpScale.grid.osis.OSISStoreMongo import OSISStoreMongo
-import gevent
 
 
 class mainclass(OSISStoreMongo):
     TTL = 3600 * 24 * 5  # 5 days
+    def __init__(self, *args, **kwargs):
+        super(mainclass, self).__init__(*args, **kwargs)
+        self.pool = Pool(1000)
 
     def set_helper(self, session, value, isList=False):
         if isList:
@@ -37,6 +40,7 @@ class mainclass(OSISStoreMongo):
 
     def set(self, key, value, waitIndex=False, session=None):
         if isinstance(value, list):
-            gevent.spawn(self.set_helper, session, value, True)
+            self.pool.wait_available()
+            self.pool.apply_async(self.set_helper, (session, value, True))
             return None, None, True
         return self.set_helper(session, value)
