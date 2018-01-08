@@ -83,12 +83,13 @@ class AgentControllerClient():
         if isinstance(addr, basestring):
             connections = list()
             for con in addr.split(','):
-                self.ipaddr = con
                 connections.append((con, port))
         elif isinstance(addr, (tuple, list)):
             connections = [ (ip, port) for ip in addr ]
         else:
             raise ValueError("AgentControllerIP shoudl be either string or iterable")
+
+        self.ipaddr = connections[0][0]
         if login == 'root' and passwd is None:
             instances = j.application.getAppHRDInstanceNames('agentcontroller_client')
             if not instances:
