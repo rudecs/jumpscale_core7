@@ -1,4 +1,4 @@
-
+set -e
 #known env variables
 
 #JSBASE : is root where jumpscale will be installed
