@@ -1773,7 +1773,7 @@ class SystemProcess:
             for line in output.splitlines():
                 match = re.match(regex, line)
                 if not match:
-                    raise RuntimeError("Unexpected output from netstat -tanup: [%s]" % line)
+                    continue
                 pid_of_line = match.groups()[0]
                 if pid == -1:
                     pid = pid_of_line
