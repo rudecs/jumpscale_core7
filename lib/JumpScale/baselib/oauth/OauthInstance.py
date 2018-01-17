@@ -75,6 +75,11 @@ class OauthInstance(object):
 
 class ItsYouOnline(OauthInstance):
 
+    def extra(self, session, accesstoken):
+        jwt = self.getJWT(accesstoken)
+        session['jwt'] = jwt
+        session.save()
+
     def getAccessToken(self, code, state):
         payload = {'code': code, 'client_id': self.id, 'client_secret': self.secret,
                    'redirect_uri': self.redirect_url, 'grant_type': '',
@@ -106,3 +111,13 @@ class ItsYouOnline(OauthInstance):
 
         userinfo = userinforesp.json()
         return UserInfo(userinfo['username'], userinfo['emailaddresses'][0]['emailaddress'], groups)
+
+
+    def getJWT(self, access_token):
+        url = 'https://itsyou.online/v1/oauth/jwt?scope=user:memberof:{0}.0-access,user:publickey:ssh'.format(self.id)
+        headers = {'Authorization': 'token {0}'.format(access_token['access_token'])}
+        resp = requests.get(url, headers=headers)
+        jwt = ""
+        if resp.status_code == 200:
+            jwt = resp.content
+        return jwt
