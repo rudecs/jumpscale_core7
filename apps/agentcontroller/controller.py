@@ -578,6 +578,10 @@ class ControllerCMDS():
         eco.gid = health['gid']
         eco.nid = health['nid']
         eco.backtrace = ""
+        tags =  j.core.tags.getObject(eco.tags)
+        tags.tagSet('health', health['guid'])
+        tags.tagSet('uid', message.get('uid'))
+        eco.tags = tags.tagstring
         eco.process()
 
     def saveHealth(self, job, jumpscript):

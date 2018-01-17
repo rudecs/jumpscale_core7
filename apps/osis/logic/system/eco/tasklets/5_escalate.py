@@ -70,7 +70,7 @@ ALLOWED_ENVIRONMENTS = ["du-conv-2", "production"]
     envname = cache[gid]
     node = nodes_cache[nid]
     backtrace = eco['backtrace']
-    tags = "gid:{},nid:{}".format(gid, nid)
+    tags = eco['tags']
 
 
     headers = {
