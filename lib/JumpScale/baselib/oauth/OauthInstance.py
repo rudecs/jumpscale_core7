@@ -3,6 +3,9 @@ import requests
 import string
 import random
 from JumpScale import j
+from jose import jwt as jose_jwt
+import datetime
+import json
 
 
 class AuthError(Exception):
@@ -72,7 +75,6 @@ class OauthInstance(object):
         userinfo = userinforesp.json()
         return UserInfo(userinfo['login'], userinfo['email'], ['user'])
 
-
 class ItsYouOnline(OauthInstance):
 
     def extra(self, session, accesstoken):
@@ -120,4 +122,27 @@ class ItsYouOnline(OauthInstance):
         jwt = ""
         if resp.status_code == 200:
             jwt = resp.content
+        return jwt
+
+    def get_active_jwt(self, jwt=None, session=None):
+        """
+        Will fetch a new jwt if current jwt is expired
+        """
+        if not jwt and not session:
+            raise RuntimeError("Either jwt or session needs to be set")
+        if session:
+            jwt = session.get('jwt')
+        jwt_data = jose_jwt.get_unverified_claims(jwt)
+        jwt_data = json.loads(jwt_data)
+        exp_date = datetime.datetime.fromtimestamp(jwt_data["exp"])
+        now = datetime.datetime.now()
+        if now > exp_date:
+            url = 'https://itsyou.online/v1/oauth/jwt/refresh'
+            headers = {'Authorization': 'bearer {0}'.format(jwt)}
+            resp = requests.get(url, headers=headers)
+            jwt = ""
+            if resp.status_code == 200:
+                jwt = resp.content
+                if session:
+                    session['jwt'] = jwt
         return jwt
