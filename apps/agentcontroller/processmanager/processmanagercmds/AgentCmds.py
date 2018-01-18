@@ -42,7 +42,7 @@ class AgentCmds():
                 client.register()
                 return client
             except Exception:
-                self.log("Failed to connect to agentcontroller %s" % acip)
+                self.log("Failed to connect to agentcontroller %s" % str(acip))
                 gevent.sleep(5)
 
     def loop(self, acip, config):
