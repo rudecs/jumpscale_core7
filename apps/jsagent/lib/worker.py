@@ -79,9 +79,10 @@ class Worker(object):
     def run(self):
         self.redisw.registerWorker(self.workername, self.queuename)
         self.log("STARTED")
+        ppid = os.getppid()
         while True:
-            if os.getppid() == 1:
-                # parent has been killed time for us to stop
+            if os.getppid() != ppid:
+                # parent has changed time for us to stop
                 break
             self.redisw.redis.hset("workers:heartbeat",self.queuename,int(time.time()))
             if self.starttime + RUNTIME < time.time():
