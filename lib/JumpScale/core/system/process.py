@@ -1297,7 +1297,7 @@ class SystemProcess:
 
         return retVal
 
-    def execute(self, command , dieOnNonZeroExitCode=True, outputToStdout=False, useShell = False, ignoreErrorOutput=False):
+    def execute(self, command , dieOnNonZeroExitCode=True, outputToStdout=False, useShell = False, ignoreErrorOutput=False, ErrIfExists=False):
         """Executes a command, returns the exitcode and the output
         @param command: command to execute
         @param dieOnNonZeroExitCode: boolean to die if got non zero exitcode
@@ -1363,6 +1363,10 @@ class SystemProcess:
         if command is None:
             raise ValueError('Error, cannot execute command not specified')
         j.logger.log("system.process.execute [%s]" % command, 8)
+
+        if ErrIfExists:
+            if self.checkProcessRunning(command)
+                raise RuntimeError('Error, %s command is already running' % command)
         try:
             import errno
             if j.system.platformtype.isUnix():
