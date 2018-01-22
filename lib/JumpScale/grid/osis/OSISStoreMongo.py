@@ -67,6 +67,9 @@ class OSISStoreMongo(OSISStore):
             counter = client["counter"]
 
             if self.TTL != 0:
+                for key in db.index_information():
+                    if key.startswith('_ttl'): 
+                        db.drop_index(key)
                 db.ensure_index('_ttl', expireAfterSeconds=self.TTL)
             self._db[gid] = db, counter
         return self._db[gid]
