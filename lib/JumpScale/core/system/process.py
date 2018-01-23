@@ -1297,12 +1297,13 @@ class SystemProcess:
 
         return retVal
 
-    def execute(self, command , dieOnNonZeroExitCode=True, outputToStdout=False, useShell = False, ignoreErrorOutput=False):
+    def execute(self, command , dieOnNonZeroExitCode=True, outputToStdout=False, useShell = False, ignoreErrorOutput=False, noDuplicates=False):
         """Executes a command, returns the exitcode and the output
         @param command: command to execute
         @param dieOnNonZeroExitCode: boolean to die if got non zero exitcode
         @param outputToStdout: boolean to show/hide output to stdout
         @param ignoreErrorOutput standard stderror is added to stdout in out result, if you want to make sure this does not happen put on True
+        @param noDuplicates: bool to throw error if process with same args is already runnin.
         @rtype: integer represents the exitcode plus the output of the executed command
         if exitcode is not zero then the executed command returned with errors
         """
@@ -1363,6 +1364,10 @@ class SystemProcess:
         if command is None:
             raise ValueError('Error, cannot execute command not specified')
         j.logger.log("system.process.execute [%s]" % command, 8)
+
+        if noDuplicates:
+            if self.checkProcessRunning(command)
+                raise RuntimeError('Error, %s command is already running' % command)
         try:
             import errno
             if j.system.platformtype.isUnix():
