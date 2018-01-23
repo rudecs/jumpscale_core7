@@ -1366,7 +1366,7 @@ class SystemProcess:
         j.logger.log("system.process.execute [%s]" % command, 8)
 
         if noDuplicates:
-            if self.checkProcessRunning(command)
+            if self.checkProcessRunning(command):
                 raise RuntimeError('Error, %s command is already running' % command)
         try:
             import errno
