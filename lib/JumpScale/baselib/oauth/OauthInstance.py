@@ -116,7 +116,7 @@ class ItsYouOnline(OauthInstance):
 
 
     def getJWT(self, access_token):
-        url = 'https://itsyou.online/v1/oauth/jwt?scope=user:memberof:{0}.0-access,user:publickey:ssh'.format(self.id)
+        url = 'https://itsyou.online/v1/oauth/jwt?scope=user:memberof:{0}.0-access,user:publickey:ssh,offline_access'.format(self.id)
         headers = {'Authorization': 'token {0}'.format(access_token['access_token'])}
         resp = requests.get(url, headers=headers)
         jwt = ""
@@ -145,4 +145,5 @@ class ItsYouOnline(OauthInstance):
                 jwt = resp.content
                 if session:
                     session['jwt'] = jwt
+                    session.save()
         return jwt
