@@ -198,8 +198,9 @@ if '--help' in sys.argv or '-h' in sys.argv:
     print help
 
 args = parser.parse_args()
-args.deps = not args.nodeps
-
+args.deps = False 
+if args.name or args.domain:
+    args.deps = not args.nodeps
 # aysargs = {}
 # if args.node!=None:
 #     aysargs["node2execute"]=args.node
@@ -211,7 +212,7 @@ args.deps = not args.nodeps
 
 
 j.application.debug = args.verbose
-
+exit_code = 0
 
 if args.quiet:
     class NullDevice():
@@ -325,7 +326,7 @@ else:
             try:
                 service.start(deps=args.deps)
             except:
-                continue
+                exit_code = 1
 
     elif args.action == 'stop':
         for service in sorted(services, cmp=sorter):
@@ -392,15 +393,18 @@ else:
                           'ports': 'Ports'}
             print '=' * 70
             print ''
+            code = 0
             for service in sorted(services, cmp=sorter):
                 if not service.getProcessDicts():
                     continue
                 isrunning = service.actions.check_up_local(service, wait=False)
+                if not isrunning:
+                    code = 1
                 status = 'RUNNING' if isrunning else 'HALTED'
                 ports = ', '.join(str(x) for x in service.getTCPPorts())
                 print form % {'name': service.name, 'domain': service.domain, 'instance': service.instance, 'prio': service.getPriority(), 'status': status, 'ports': ports}
-
-        printServices(services)
+            return code
+        exit_code = printServices(services)
 
     elif args.action == 'nodes':
         def printNodes(allNodes):
@@ -415,5 +419,5 @@ else:
         allNodes = getServices(args, onlyRemote=True)
         printNodes(allNodes)
 
-j.application.stop()
+j.application.stop(exit_code)
 j.logger.enabled = False

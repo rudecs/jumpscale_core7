@@ -15,13 +15,12 @@ import paramiko
 # except ImportError:
 #     from . import interactive
 
-import paramiko_gevent
 
 class SSHClient:
 
     client = None  # object of type client
 
-    def __init__(self, host="", username="root", password=None, timeout=10,port=22,pkey=None,keypath=None,gevent=False):
+    def __init__(self, host="", username="root", password=None, timeout=10,port=22,pkey=None,keypath=None):
         self.host = host
         self.port = 22
         self.timeout = timeout
@@ -69,16 +68,20 @@ class SSHClient:
         #         except paramiko.SSHException:
         #             print('... nope.')
 
-        if gevent:
-            self.client = paramiko_gevent.SSHClient()        
-        else:
-            self.client = paramiko.SSHClient()        
+        self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         self.client.connect(self.host, port=self.port, username=username, password=password, pkey=pkey, key_filename=keypath, \
             timeout=timeout, allow_agent=True, look_for_keys=True, compress=False, sock=None, gss_auth=False, gss_kex=False, \
             gss_deleg_creds=False, gss_host=None, banner_timeout=None)
         
+    def rawExecute(self, command):
+        j.logger.log("Execute ssh command %s on %s" % (command, self.host))
+        _, channel_out, channel_err = self.client.exec_command(command)
+        out = channel_out.read()
+        error = channel_err.read()
+        exit_code = channel_out.channel.recv_exit_status()
+        return exit_code, out, error
 
     def execute(self, command, dieOnError=True):
         """
