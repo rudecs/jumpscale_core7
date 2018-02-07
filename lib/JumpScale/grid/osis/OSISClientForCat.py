@@ -177,7 +177,7 @@ class OSISClientForCat():
                                   start=start, size=size)
 
     def searchOne(self, query, default=None):
-        return next(iter(self.search(query)[1:]), None)
+        return next(iter(self.search(query)[1:]), default)
 
     def aggregate(self, query):
 
