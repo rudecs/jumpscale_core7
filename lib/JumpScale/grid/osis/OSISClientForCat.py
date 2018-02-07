@@ -176,6 +176,9 @@ class OSISClientForCat():
         return self.client.search(namespace=self.namespace, categoryname=self.cat, query=query,
                                   start=start, size=size)
 
+    def searchOne(self, query, default=None):
+        return next(iter(self.search(query)[1:]), None)
+
     def aggregate(self, query):
 
         return self.client.aggregate(namespace=self.namespace, categoryname=self.cat, query=query)
