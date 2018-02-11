@@ -17,6 +17,14 @@ else:
 
 IPREGEX = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 
+CURSORUP = u'\u001b[{n}A'
+CLEAREOL = u'\u001b[0K'
+COLORESET = u'\u001b[0m'
+COLORRED = u'\u001b[31m'
+COLORGREEN = u'\u001b[32m'
+COLORYELLOW = u'\u001b[33m'
+COLORBLUE = u'\u001b[34m'
+
 class Console:
     """
     class which groups functionality to print to a console
@@ -160,6 +168,13 @@ class Console:
 
     def message(self, text):
         print('\033[1;37m[+] %s\033[0m' % text)
+
+    def messages(self, messages, clear=False):
+        if clear:
+            sys.stdout.write(CURSORUP.format(n=len(messages)))
+        for msg in messages:
+            line = msg + CLEAREOL
+            print(line)
 
     def echoListItem(self, msg):
         """
