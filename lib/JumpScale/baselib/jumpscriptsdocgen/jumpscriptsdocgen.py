@@ -73,6 +73,8 @@ class JumpscriptsDocumentGenerator(object):
             if os.path.basename(dirname):
                 summarytext += "- %s\n" % os.path.basename(dirname)
             for f in sorted(files):
+                if not f.endswith('.py'):
+                    continue
                 fullsrcpath = os.path.join(src, dirname, f)
                 dirname = os.path.basename(dirname)
                 docsdest = os.path.join(dest, dirname)
