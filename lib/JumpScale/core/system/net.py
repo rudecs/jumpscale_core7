@@ -1156,7 +1156,7 @@ class SystemNet:
         if md5_checksum and not j.tools.hash.md5(destination_file_path) == md5_checksum:
             raise RuntimeError('The provided MD5 checksum did not match that of a freshly-downloaded file!')
 
-    def download(self, url, localpath, username=None, passwd=None):
+    def download(self, url, localpath, username=None, passwd=None, reporthook=None):
         '''Download a url to a file or a directory, supported protocols: http, https, ftp, file
         @param url: URL to download from
         @type url: string
@@ -1204,7 +1204,7 @@ class SystemNet:
         if username and passwd and splittype(url)[0] == 'ftp':
             url = url.split('://')[0]+'://%s:%s@'%(username,passwd)+url.split('://')[1]
         if filename != '-':
-            urlopener.retrieve(url, filename, None, None)
+            urlopener.retrieve(url, filename, reporthook, None)
             j.logger.log('URL %s is downloaded to local path %s'%(url, filename), 4)
         else:
             return urlopener.open(url).read()
