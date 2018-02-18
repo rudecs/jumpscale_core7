@@ -121,7 +121,7 @@ class Admin():
         import JumpScale.grid.osis
         oscl = j.clients.osis.getByInstance('main')
         ncl = j.clients.osis.getCategory(oscl, 'system', 'node')
-        return ncl.simpleSearch({'active': True})
+        return ncl.simpleSearch({'status': 'ENABLED'})
     
     def raiseError(self,action,msg,e=None):
         #@todo make better

@@ -281,6 +281,9 @@ class ControllerCMDS():
         if session.user != 'root' or not self._adminAuth(session.user, session.passwd):
             raise RuntimeError("Only admin can register new nodes")
         node = self.nodeclient.new()
+        nodedata = self.nodeclient.searchOne({'machineguid': machineguid})
+        if nodedata:
+            node.load(nodedata)
         node.roles = session.roles
         node.gid = session.gid
         node.name = hostname

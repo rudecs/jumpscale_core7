@@ -196,13 +196,13 @@
     prop:hostkey str,, @index
     prop:machineguid str,,
     prop:ipaddr list(str),,
-    prop:active bool,,
     prop:peer_stats int,, node which has stats for this node
     prop:peer_log int,, node which has transactionlog or other logs for this node
     prop:peer_backup int,, node which has backups for this node
     prop:description str,,
     prop:lastcheck int,,
     prop:memory int,, amount of memory in mb
+    prop:status str,, node status 'ENABLED', 'MAINTENANCE', 'DECOMMISSIONED', 'ERROR'
     prop:_meta list(str),, osisrootobj,$namespace,$category,$version
 
 [rootmodel:process] @index

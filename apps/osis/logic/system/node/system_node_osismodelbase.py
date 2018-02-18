@@ -12,7 +12,6 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P_hostkey=""
         self._P_machineguid=""
         self._P_ipaddr=list()
-        self._P_active=True
         self._P_peer_stats=0
         self._P_peer_log=0
         self._P_peer_backup=0
@@ -22,6 +21,7 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P__meta=list()
         self._P_guid=""
         self._P__meta=list()
+        self._P_status = 'ENABLED'
         self._P__meta=["osismodel","system","node",1] #@todo version not implemented now, just already foreseen
 
     @property
@@ -196,24 +196,25 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
         del self._P_ipaddr
 
     @property
-    def active(self):
-        return self._P_active
+    def status(self):
+        return self._P_status
+        
+    @status.setter
+    def status(self, value):
+        if not isinstance(value, str) and value is not None:
+            if isinstance(value, basestring) and j.basetype.boolean.checkString(value) and value in ['ENABLED', 'MAINTENANCE', 'DECOMMISSIONED', 'ERROR']:
+                value = j.basetype.string.fromString(value)
 
-    @active.setter
-    def active(self, value):
-        if not isinstance(value, bool) and value is not None:
-            if isinstance(value, basestring) and j.basetype.boolean.checkString(value):
-                value = j.basetype.boolean.fromString(value)
             else:
-                msg="property active input error, needs to be bool, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: node, value was:" + str(value)
+                msg="property status input error, needs to be string ['ENABLED', 'MAINTENANCE', 'DECOMMISSIONED', 'ERROR'], specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: node, value was:" + str(value)
                 raise TypeError(msg)
 
-        self._P_active=value
+        self._P_status = value
 
-    @active.deleter
-    def active(self):
-        del self._P_active
-
+    @status.deleter
+    def status(self):
+        del self._P_status
+        
     @property
     def peer_stats(self):
         return self._P_peer_stats
