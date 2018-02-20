@@ -37,7 +37,8 @@ parser.add_argument('-d', '--deletechanges', required=False, action='store_true'
 
 parser.add_argument('-o', '--onlychanges', required=False, action='store_true',
                     help='will only do an action where modified files are found')
-
+parser.add_argument('--https', required=False, action='store_true',
+                    help='Will use https instead of ssh')
 
 opts = parser.parse_args()
 
@@ -74,7 +75,6 @@ repos = j.clients.git.find(opts.accounts, opts.name, interactive=True, returnGit
 
 repos = [(r.type, r.account, r.name, r.branchName, r, r.baseDir) for r in repos]
 
-
 C="""
 Host *
    StrictHostKeyChecking no
@@ -102,11 +102,13 @@ for provider, account, reponame, branch, client, path in repos:
     else:
         _, url, _ = j.do.execute("cd %s;git config --get remote.origin.url" % path)
         url = url.strip()
-        if str(url).find("@") == -1:
+        if str(url).find('@') and opts.https:
+             _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url), protocol='https')
+        elif str(url).find("@") == -1 and not opts.https:
             login = j.application.config.get("whoami.git.login")
             passwd = j.application.config.get("whoami.git.passwd")
             _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url), login=login, passwd=passwd)
-            j.do.executeInteractive("cd %s;git remote set-url origin '%s'" % (path, repository_url))
+        j.do.executeInteractive("cd %s;git remote set-url origin '%s'" % (path, repository_url))
 
     if opts.action == "update" and opts.deletechanges:
         print(("force update %s/%s/%s" % (provider, account, reponame)))

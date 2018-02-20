@@ -1132,7 +1132,7 @@ class InstallTools():
 
 
 
-    def rewriteGitRepoUrl(self, url="", login=None, passwd=None):
+    def rewriteGitRepoUrl(self, url="", login=None, passwd=None, protocol=None):
         """
         Rewrite the url of a git repo with login and passwd if specified
 
@@ -1140,6 +1140,7 @@ class InstallTools():
             url (str): the HTTP URL of the Git repository. ex: 'https://github.com/odoo/odoo'
             login (str): authentication login name
             passwd (str): authentication login password
+            protocol (str): rewrite url to either https or ssh
 
         Returns:
             (repository_host, repository_type, repository_account, repository_name, repository_url)
@@ -1147,18 +1148,23 @@ class InstallTools():
         parseresult = urlparse.urlparse(url)
         if not parseresult:
             raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
+        if protocol and protocol not in ['ssh', 'https']:
+            raise RuntimeError("protocol must be either https or ssh")
         pathparts = parseresult.path.strip('/').split('/')
+        login = protocol if not login and protocol == 'ssh' else login
         if len(pathparts) != 2:
             raise RuntimeError("Url is invalid. Must be in the form of 'http(s)://hostname/account/repo'")
         if parseresult.path == url:
             # this is git/ssh url
-            login = 'ssh'
-            protocol = 'ssh'
+            if protocol is None:
+                login = 'ssh'
+                protocol = 'ssh'
             userandhost, path = parseresult.path.split(':')
             repository_account, repository_name = path.split('/')
             repository_host = userandhost.split('@')[-1]
         else:
-            protocol = parseresult.scheme
+            if protocol is None:
+                protocol = parseresult.scheme
             repository_host = parseresult.hostname
             repository_account, repository_name = pathparts
             if login is None:
