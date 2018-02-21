@@ -2128,7 +2128,7 @@ class Installer():
             do.pullGitRepo("https://docs.greenitglobe.com/binary/%s"%gitbase,depth=1,offline=offline)
 
             print ("copy binaries")
-            basepath = "%s/git/binary/%s/root" % (do.CODEDIR, gitbase)
+            basepath = "%s/docs/binary/%s/root" % (do.CODEDIR, gitbase)
             for path in ('bin', 'lib'):
                 dest = "%s/%s" % (base, path)
                 src = "%s/%s"%(basepath,  path)
