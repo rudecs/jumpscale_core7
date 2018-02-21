@@ -18,10 +18,10 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
         self._P_description=""
         self._P_lastcheck=0
         self._P_memory=0
+        self._P_status=""
         self._P__meta=list()
         self._P_guid=""
         self._P__meta=list()
-        self._P_status = 'ENABLED'
         self._P__meta=["osismodel","system","node",1] #@todo version not implemented now, just already foreseen
 
     @property
@@ -196,26 +196,6 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
         del self._P_ipaddr
 
     @property
-    def status(self):
-        return self._P_status
-        
-    @status.setter
-    def status(self, value):
-        if not isinstance(value, str) and value is not None:
-            if isinstance(value, basestring) and j.basetype.boolean.checkString(value) and value in ['ENABLED', 'MAINTENANCE', 'DECOMMISSIONED', 'ERROR']:
-                value = j.basetype.string.fromString(value)
-
-            else:
-                msg="property status input error, needs to be string ['ENABLED', 'MAINTENANCE', 'DECOMMISSIONED', 'ERROR'], specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: node, value was:" + str(value)
-                raise TypeError(msg)
-
-        self._P_status = value
-
-    @status.deleter
-    def status(self):
-        del self._P_status
-        
-    @property
     def peer_stats(self):
         return self._P_peer_stats
 
@@ -328,6 +308,25 @@ class system_node_osismodelbase(j.code.classGetJSRootModelBase()):
     @memory.deleter
     def memory(self):
         del self._P_memory
+
+    @property
+    def status(self):
+        return self._P_status
+
+    @status.setter
+    def status(self, value):
+        if not isinstance(value, str) and value is not None:
+            if isinstance(value, basestring) and j.basetype.string.checkString(value):
+                value = j.basetype.string.fromString(value)
+            else:
+                msg="property status input error, needs to be str, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: node, value was:" + str(value)
+                raise TypeError(msg)
+
+        self._P_status=value
+
+    @status.deleter
+    def status(self):
+        del self._P_status
 
     @property
     def _meta(self):

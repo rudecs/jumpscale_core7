@@ -135,7 +135,7 @@ class GridHealthChecker(object):
         for node in nodes:
             self._nodenames[node['id']] = node['name']
             self._nodegids[node['id']] = node['gid']
-            if node["active"]==True:
+            if node["status"] == "ENABLED":
                 self._nids.append(node['id'])
             else:
                 self._nidsNonActive.append(node['id'])
