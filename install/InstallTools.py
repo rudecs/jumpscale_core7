@@ -2125,7 +2125,7 @@ class Installer():
 
             print ("pull binaries")
             gitbase="base_python"
-            do.pullGitRepo("http://git.aydo.com/binary/%s"%gitbase,depth=1,offline=offline)
+            do.pullGitRepo("https://docs.greenitglobe.com/binary/%s"%gitbase,depth=1,offline=offline)
 
             print ("copy binaries")
             basepath = "%s/git/binary/%s/root" % (do.CODEDIR, gitbase)
