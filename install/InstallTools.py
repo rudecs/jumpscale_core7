@@ -1169,9 +1169,9 @@ class InstallTools():
             if parseresult.port:
                 repository_host += ":{}".format(parseresult.port)
             repository_account, repository_name = pathparts
-            if login is None:
+            if not login:
                 login = parseresult.username
-            if passwd is None:
+            if not passwd:
                 passwd = parseresult.password
 
         if not repository_name.endswith('.git'):
