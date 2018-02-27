@@ -1166,6 +1166,8 @@ class InstallTools():
             if protocol is None:
                 protocol = parseresult.scheme
             repository_host = parseresult.hostname
+            if parseresult.port:
+                repository_host += ":{}".format(parseresult.port)
             repository_account, repository_name = pathparts
             if login is None:
                 login = parseresult.username
@@ -1176,26 +1178,21 @@ class InstallTools():
             repository_name += '.git'
 
         if login == 'ssh':
-            repository_url = 'git@%(host)s:%(account)s/%(name)s' % {
-                'host': repository_host,
-                'account': repository_account,
-                'name': repository_name,
-            }
-
+            repository_url = 'git@%(host)s:%(account)s/%(name)s'
         elif login and login != 'guest':
-            repository_url = '%(protocol)s://%(login)s:%(password)s@%(host)s/%(account)s/%(repo)s' % {
+            if passwd:
+                repository_url = '%(protocol)s://%(login)s:%(password)s@%(host)s/%(account)s/%(repo)s'
+            else:
+                repository_url = '%(protocol)s://%(login)s@%(host)s/%(account)s/%(repo)s'
+
+        else:
+            repository_url = '%(protocol)s://%(host)s/%(account)s/%(repo)s'
+        repository_url = repository_url % {
                 'protocol': protocol,
                 'login': login,
                 'password': passwd,
                 'host': repository_host,
-                'account': repository_account,
-                'repo': repository_name,
-            }
-
-        else:
-            repository_url = '%(protocol)s://%(host)s/%(account)s/%(repo)s' % {
-                'protocol': protocol,
-                'host': repository_host,
+                'name': repository_name,
                 'account': repository_account,
                 'repo': repository_name,
             }
