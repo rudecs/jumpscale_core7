@@ -100,15 +100,17 @@ for provider, account, reponame, branch, client, path in repos:
         raise RuntimeError(
             "git configuration not found, please install github_client service (ays install -n github_client)")
     else:
+        repository_url = ''
         _, url, _ = j.do.execute("cd %s;git config --get remote.origin.url" % path)
         url = url.strip()
         if str(url).find('@') and opts.https:
-             _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url), protocol='https')
+            _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url), protocol='https')
         elif str(url).find("@") == -1 and not opts.https:
             login = j.application.config.get("whoami.git.login")
             passwd = j.application.config.get("whoami.git.passwd")
             _, _, _, _, repository_url = j.do.rewriteGitRepoUrl(url=str(url), login=login, passwd=passwd)
-        j.do.executeInteractive("cd %s;git remote set-url origin '%s'" % (path, repository_url))
+        if repository_url:
+            j.do.executeInteractive("cd %s;git remote set-url origin '%s'" % (path, repository_url))
 
     if opts.action == "update" and opts.deletechanges:
         print(("force update %s/%s/%s" % (provider, account, reponame)))
