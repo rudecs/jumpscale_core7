@@ -329,6 +329,7 @@
     Information about the versions of the software
     """
     prop:name str,, version name
+    prop:url str,,  raw download url for manifest
     prop:manifest str,, software versions Information
     prop:status str,, indicates the status of the software can be (PREVIOUS, INSTALLING, CURRENT)
     prop:creationTime int,, epoch time of veriosn install in seconds
