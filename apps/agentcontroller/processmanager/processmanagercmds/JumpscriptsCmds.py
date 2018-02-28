@@ -27,13 +27,18 @@ class JumpscriptsCmds():
         self.lastMonitorTime=None
 
         self.redis = j.clients.redis.getByInstance("system", gevent=True)
+        self.osis = j.clients.osis.getNamespace("system")
+
+    @property
+    def nodeStatus(self):
+        return self.osis.node.get(j.application.whoAmI.nid).status
 
     def _init(self):
         self.loadJumpscripts(init=True)
 
     def loadJumpscripts(self, path="jumpscripts", session=None,init=False):
         print "LOAD JUMPSCRIPTS"
-        if session<>None:
+        if session is not None:
             self._adminAuth(session.user,session.passwd)
 
         self.agentcontroller_client = j.clients.agentcontroller.getByInstance()
@@ -59,6 +64,20 @@ class JumpscriptsCmds():
 
         return "ok"
 
+
+    def _clean_periods(self, unscheduleperiods):
+        """
+        remove the priods specified in the unscheduleperiods list
+        
+        @param unscheduleperiods,, list(str) list of periods
+        """
+        for period in unscheduleperiods:
+            loopkey = "loop%s" % period
+            greenlet = j.core.processmanager.daemon.greenlets.pop(loopkey, None)
+            if greenlet:
+                greenlet.kill()
+            self.jumpscriptsByPeriod.pop(period, None)
+
     def loadJumpscript(self, jumpscript, session=None):
         if session is not None:
             self._adminAuth(session.user, session.passwd)
@@ -70,35 +89,65 @@ class JumpscriptsCmds():
                 jumpscripts.remove(jumpscript)
             if not jumpscripts:
                 unscheduleperiods.append(period)
-
-        for period in unscheduleperiods:
-            loopkey = "loop%s" % period
-            greenlet = j.core.processmanager.daemon.greenlets.pop(loopkey, None)
-            if greenlet:
-                greenlet.kill()
-            self.jumpscriptsByPeriod.pop(period, None)
-            
-
+        
+            self._clean_periods(unscheduleperiods)
+        
         self._processJumpscript(jumpscript, self.startatboot)
 
         j.core.processmanager.reloadWorkers()
         self._configureScheduling()
+
+    def unscheduleJumpscripts(self, name=None, category=None, session=None):
+        """
+        Unschedule jumpscripts  specified from the agent loaded, if no name of category is passed all jumpscripts are unscheduled
+        @param name,, str name of the jumpscript to unschedule
+        @param category ,, str category of jumpscipts to unschedule 
+        """
+        if session is not None:
+            self._adminAuth(session.user,session.passwd)
+        
+        unscheduleperiods = []
+        for _, jumpscripts in self.jumpscriptsByPeriod.iteritems():
+            for jumpscript in jumpscripts[:]:
+                if name == jumpscript.name or not name:
+                    if category == jumpscript.category or not category:
+                        jumpscripts.remove(jumpscript)
+            if not jumpscripts:
+                unscheduleperiods.append(period)
+        
+        self._clean_periods(unscheduleperiods)
+
+
+    def scheduleJumpscripts(self, name=None, category=None, session=None):
+        """
+        Schedule the jumpscipt specified from the agent loaded
+        @param name,, str name of the jumpscript to unschedule
+        @param category ,, str category of jumpscipts to unschedule 
+        """
+        if session is not None:
+            self._adminAuth(session.user,session.passwd)
+        nodeStatus = self.nodeStatus
+        unscheduleperiods = []
+        for jumpscript in self.jumpscripts:
+            if name == jumpscript.name or not name:
+                if category == jumpscript.category or not category:
+                    self._processJumpscript(jumpscript, self.startatboot, nodeStatus)
 
     def schedule(self):
         self._configureScheduling()
         self._startAtBoot()
 
     def _loadFromPath(self, path):
-        self.startatboot = list()
+        self.startatboot = set()
         jumpscripts = self.agentcontroller_client.listJumpscripts()
         iddict = { (org, name): jsid for jsid, org, name, role in jumpscripts }
+        nodeStatus = self.nodeStatus
         for jscriptpath in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
             js = Jumpscript(path=jscriptpath)
             js.id = iddict.get((js.organization, js.name))
-            # print "from local:",
-            self._processJumpscript(js, self.startatboot)
+            self._processJumpscript(js, self.startatboot, nodeStatus)
 
-    def _processJumpscript(self, jumpscript, startatboot):
+    def _processJumpscript(self, jumpscript, startatboot, nodeStatus):
         roles = set(j.core.grid.roles)
         if '*' in jumpscript.roles:
             jumpscript.roles.remove('*')
@@ -109,16 +158,17 @@ class JumpscriptsCmds():
 
             print "found jumpscript:%s " %("%s_%s" % (organization, name))
             # self.jumpscripts["%s_%s" % (organization, name)] = jumpscript
-            period = jumpscript.period
-            if period<>None:
-                if period:
-                    if period not in self.jumpscriptsByPeriod:
-                        self.jumpscriptsByPeriod[period]=[]
-                    print "schedule jumpscript %s on period:%s"%(jumpscript.name,period)
-                    self.jumpscriptsByPeriod[period].append(jumpscript)
+            if not (nodeStatus == 'MAINTENANCE' and 'monitor.healthcheck' == jumpscript.category):         
+                period = jumpscript.period
+                if period is not None:
+                    if period:
+                        if period not in self.jumpscriptsByPeriod:
+                            self.jumpscriptsByPeriod[period]=set()
+                        print "schedule jumpscript %s on period:%s"%(jumpscript.name,period)
+                        self.jumpscriptsByPeriod[period].add(jumpscript)
 
             if jumpscript.startatboot:
-                startatboot.append(jumpscript)
+                startatboot.add(jumpscript)
 
             self.redis.hset("workers:jumpscripts:id",jumpscript.id, ujson.dumps(jumpscript.getDict()))
 
@@ -131,7 +181,7 @@ class JumpscriptsCmds():
         """
         make sure all running greenlets stop
         """
-        if session<>None:
+        if session is not None:
             self._adminAuth(session.user,session.passwd)
         todelete=[]
 
