@@ -81,7 +81,6 @@
     prop:id int,,
     prop:name str,, @index
     prop:useavahi bool,,
-    prop:manifestUrl str,, 
     prop:settings dict(str),,
     prop:nid int,,
 
