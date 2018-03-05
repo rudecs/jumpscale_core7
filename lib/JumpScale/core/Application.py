@@ -44,25 +44,19 @@ class Application:
             self.sandbox=False
 
         self.interactive=True
-
         self.redis=None
 
     def init(self):
-
         self.initWhoAmI()
-
-        self.connectRedis()
-
-        if j.logger.enabled:
-            j.logger.redis=self.redis
-            j.logger.init()
 
     def loadConfig(self):
         self.config = j.core.hrd.get(path="%s/system" % j.dirs.hrdDir)
 
     def connectRedis(self):
         if j.logger.enabled:
-            if j.system.net.tcpPortConnectionTest("localhost", 9999, timeout=None):
+            waittime = 60 if self.appname not in ['starting', 'jsshell', 'ays'] else 0
+            if j.system.net.waitConnectionTest("localhost", 9999, timeout=waittime):
+                j.logger.connectRedis()
                 self.redis=j.logger.redis
                 # import JumpScale.baselib.redis
                 # if j.clients.redis.isRunning('system'):
@@ -116,6 +110,11 @@ class Application:
         j.Application.stop(). Don't call sys.exit yourself, don't try to run
         to end-of-script, I will find you anyway!
         '''
+        self.connectRedis()
+
+        if j.logger.enabled:
+            j.logger.redis=self.redis
+            j.logger.init()
         if name:
             self.appname = name
 
