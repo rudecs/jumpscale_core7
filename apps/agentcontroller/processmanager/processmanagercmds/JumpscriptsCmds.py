@@ -107,8 +107,8 @@ class JumpscriptsCmds():
             self._adminAuth(session.user,session.passwd)
         
         unscheduleperiods = []
-        for _, jumpscripts in self.jumpscriptsByPeriod.iteritems():
-            for jumpscript in jumpscripts[:]:
+        for period, jumpscripts in self.jumpscriptsByPeriod.iteritems():
+            for jumpscript in list(jumpscripts)[:]:
                 if name == jumpscript.name or not name:
                     if category == jumpscript.category or not category:
                         jumpscripts.remove(jumpscript)
