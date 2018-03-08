@@ -99,12 +99,22 @@ class ControllerCMDS():
         self._log("schedule cmd:%s_%s %s %s"%(gid,nid,cmdcategory,cmdname))
         if not nid and not roles:
             raise RuntimeError("Either nid or roles should be given")
+        
+        action = None
+        if jscriptid is None and session<>None:
+            action = self.getJumpscript(cmdcategory, cmdname, session=session)
+            jscriptid = action.id
 
         if session<>None:
             sessionid=session.id
         else:
             sessionid=None
         self._log("getjob osis client")
+        if not timeout:
+            if action:
+                timeout = action.timeout if action.timeout else 600
+            else:
+                timeout = 600
         job=self.jobclient.new(sessionid=sessionid,gid=gid,nid=nid,category=cmdcategory,cmd=cmdname,queue=queue,args=args,log=log,timeout=timeout,roles=roles,wait=wait,errorreport=errorreport)
 
         self._log("redis incr for job")
@@ -114,10 +124,6 @@ class ControllerCMDS():
         jobid=self.redis.hincrby("jobs:last", str(gid), 1)
         self._log("jobid found (incr done):%s"%jobid)
         job.id=int(jobid)
-
-        if jscriptid is None and session<>None:
-            action = self.getJumpscript(cmdcategory, cmdname, session=session)
-            jscriptid = action.id
         job.jscriptid = jscriptid
 
         self._log("save 2 osis")
@@ -461,14 +467,14 @@ class ControllerCMDS():
             raise RuntimeError("Cannot find jumpscript %s %s"%(organization,name))
         if not queue:
             queue = action.queue
-        if role<>None:
+        if role is not None:
             self._log("ROLE NOT NONE")
             role = role.lower()
             if role in self.roles2agents:
                 if not all:
-                    job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait)
+                    job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,roles=[role],session=session,jscriptid=action.id, wait=wait)
                     if wait:
-                        return self.waitJumpscript(job=job,session=session)
+                        return self.waitJumpscript(job=job,session=session, timeout=timeout)
                     else:
                         return job
                 else:
