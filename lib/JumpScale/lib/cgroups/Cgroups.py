@@ -28,7 +28,7 @@ class Cgroups():
         # processes_pids are pids for the processes as a list
         processes_pids = map(lambda x: str(x), processes_pids)
         processes_pids = " ".join(processes_pids)
-        command = "cgclassify -g cpu,memory:{name} {processes_pids}".format(name, processes_pids)
+        command = "cgclassify -g cpuset,memory:{name} {processes_pids}".format(name, processes_pids)
         return self.execute(command)
 
     def get_cpu_mem(self, name):
