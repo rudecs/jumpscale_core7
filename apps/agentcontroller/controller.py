@@ -254,9 +254,8 @@ class ControllerCMDS():
                 return None
 
         queues = list()
-        nodeid="%s_%s"%(session.gid,session.nid)
         queues.append("queues:commands:queue:%s:%s" % (session.gid, session.nid))
-        for role in self.agents2roles[nodeid]:
+        for role in session.roles:
             queues.append("queues:commands:queue:%s:%s" % (session.gid, role))
 
         return MultiKeyQueue(queues)
@@ -557,6 +556,8 @@ class ControllerCMDS():
         returns job as dict
         """
         nodeid = "%s_%s" % (session.gid, session.nid)
+        if nodeid not in self.agents2roles:
+            return -1
         self.sessionsUpdateTime[nodeid]=j.base.time.getTimeEpoch()
         self._log("getwork %s" % session)
         q = self._getWorkQueue(session)

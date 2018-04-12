@@ -59,6 +59,11 @@ class AgentCmds():
                     job = client.getWork(transporttimeout=65)
                     if job is not None:
                         self.log("WORK FOUND: jobid:%(id)s cmd:%(cmd)s" % job)
+                    elif job == -1:
+                        # agentcontroller does not know us anymore lets reconnect
+                        self.log("Need to reconnect cause agentcontroller does not know us")
+                        client = self.reconnect(acip, config)
+                        continue
                     else:
                         continue
                 except Exception, e:
