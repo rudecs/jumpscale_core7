@@ -50,8 +50,8 @@ if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole
 
 
     if opts.action == 'list':
-        form = '%(gid)-8s %(nid)-8s %(name)-11s %(ips)-60s %(active)-8s %(roles)-25s'
-        print(form % {'gid': 'GRID ID', 'nid': 'NODE ID', 'name': 'NAME', 'ips': 'IP ADDRESS', 'active': 'ACTIVE', \
+        form = '%(gid)-8s %(nid)-8s %(name)-11s %(ips)-60s %(status)-8s %(roles)-25s'
+        print(form % {'gid': 'GRID ID', 'nid': 'NODE ID', 'name': 'NAME', 'ips': 'IP ADDRESS', 'status': 'STATUS', \
             'roles':'ROLES'})
         print('=' * 100)
         print('')
@@ -66,7 +66,7 @@ if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole
             ips=', '.join(node['ipaddr'])
             if len(ips)>60:
                 ips=ips[:51]
-            noded={'gid': node['gid'], 'nid': node['id'], 'name': name, 'ips': ips, 'active': node['active'], 'roles': ', '.join(node['roles'])}
+            noded={'gid': node['gid'], 'nid': node['id'], 'name': name, 'ips': ips, 'status': node['status'], 'roles': ', '.join(node['roles'])}
             print(form % noded)
 
     else:
@@ -97,10 +97,10 @@ if opts.action in ['delete', 'enable', 'disable', 'addrole', 'list', 'deleterole
             if opts.action == 'delete':
                 _deleteNode(node['nid'])
             elif opts.action == 'enable':
-                node['active'] = True
+                node['status'] = 'ENABLED'
                 ncl.set(node)
             elif opts.action == 'disable':
-                node['active'] = False
+                node['status'] = 'DISABLED'
                 ncl.set(node)
             elif opts.action == 'addrole':
                 r = node['roles']
