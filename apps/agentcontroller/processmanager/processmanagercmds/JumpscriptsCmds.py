@@ -5,7 +5,7 @@ import ujson
 # import JumpScale.baselib.redisworker
 from JumpScale.baselib.redisworker.RedisWorker import RedisWorkerFactory
 import crontab
-import JumpScale.baselib.stataggregator
+import time
 from JumpScale.grid.jumpscripts.JumpscriptFactory import Jumpscript
 
 class JumpscriptsCmds():    
@@ -13,6 +13,8 @@ class JumpscriptsCmds():
     def __init__(self,daemon=None):
         self.ORDER = 1
         self._name="jumpscripts"
+        self._nodestatustime = 0
+        self._nodestatus = None
 
         if daemon==None:
             return
@@ -31,7 +33,10 @@ class JumpscriptsCmds():
 
     @property
     def nodeStatus(self):
-        return self.osis.node.get(j.application.whoAmI.nid).status
+        now = time.time()
+        if now > self._nodestatustime + 10 or self._nodestatus is None:
+            self._nodestatus = self.osis.node.get(j.application.whoAmI.nid).status
+        return self._nodestatus
 
     def _init(self):
         self.loadJumpscripts(init=True)
@@ -46,7 +51,6 @@ class JumpscriptsCmds():
         self.jumpscriptsByPeriod={}
         self.jumpscripts={}
 
-        import JumpScale.grid.jumpscripts
         j.core.jumpscripts.loadFromAC(self.agentcontroller_client)
 
         jspath = j.system.fs.joinPaths(j.dirs.baseDir, 'apps', 'processmanager', 'jumpscripts')
@@ -127,7 +131,6 @@ class JumpscriptsCmds():
         if session is not None:
             self._adminAuth(session.user,session.passwd)
         nodeStatus = self.nodeStatus
-        unscheduleperiods = []
         for jumpscript in self.jumpscripts:
             if name == jumpscript.name or not name:
                 if category == jumpscript.category or not category:
@@ -147,7 +150,8 @@ class JumpscriptsCmds():
             js.id = iddict.get((js.organization, js.name))
             self._processJumpscript(js, self.startatboot, nodeStatus)
 
-    def _processJumpscript(self, jumpscript, startatboot, nodeStatus):
+    def _processJumpscript(self, jumpscript, startatboot, nodeStatus=None):
+        nodeStatus = nodeStatus or self.nodeStatus
         roles = set(j.core.grid.roles)
         if '*' in jumpscript.roles:
             jumpscript.roles.remove('*')

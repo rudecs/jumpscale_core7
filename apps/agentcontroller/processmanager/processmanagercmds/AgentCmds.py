@@ -90,9 +90,6 @@ class AgentCmds():
                     client.notifyWorkCompleted(job)
                     continue
 
-                if job["jscriptid"]==None:
-                    raise RuntimeError("jscript id needs to be filled in")
-
                 jscriptkey = "%(category)s_%(cmd)s" % job
                 if jscriptkey not in  j.core.processmanager.cmds.jumpscripts.jumpscripts:
                     msg = "could not find jumpscript %s on processmanager"%jscriptkey
@@ -119,6 +116,7 @@ class AgentCmds():
                             timeout.cancel()
                     gevent.spawn(run, job)
             except Exception, e:
+                print('Failed {}'.format(e))
                 j.errorconditionhandler.processPythonExceptionObject(e)
 
 

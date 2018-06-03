@@ -16,8 +16,6 @@ except:
     import json
 import time
 
-import JumpScale.grid.jumpscripts   # To make j.core.jumpscripts available
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--instance', help="Agentcontroller instance", required=True)
 opts = parser.parse_args()
@@ -32,7 +30,6 @@ j.application.initGrid()
 
 j.logger.consoleloglevel = 2
 
-import JumpScale.baselib.redis
 from JumpScale.grid.jumpscripts.JumpscriptFactory import Jumpscript
 
 
@@ -63,7 +60,6 @@ class ControllerCMDS():
         self.acuniquekey = j.application.getUniqueMachineId()
         self.jumpscripts = {}
         self.jumpscriptsFromKeys = {}
-        self.jumpscriptsId={}
 
         self.osisclient = j.clients.osis.getByInstance(gevent=True)
         self.jobclient = j.clients.osis.getCategory(self.osisclient, 'system', 'job')
@@ -169,7 +165,6 @@ class ControllerCMDS():
     def reloadjumpscripts(self,session=None):
         self.jumpscripts = {}
         self.jumpscriptsFromKeys = {}
-        self.jumpscriptsId={}
         self.loadJumpscripts()
         self.loadLuaJumpscripts()
         print "want processmanagers to reload js:",
@@ -366,14 +361,10 @@ class ControllerCMDS():
 
         t=self.jumpscriptclient.new(name=name, action=script.module.action)
         t.__dict__.update(script.getDict())
-
-        guid,r,r=self.jumpscriptclient.set(t)
-        t=self.jumpscriptclient.get(guid)
-        self._log("found jumpscript:%s " %("id:%s %s_%s" % (t.id,t.organization, t.name)))
-        idkey = "%s_%s" % (t.gid,t.id)
+        self.jumpscriptclient.set(t)
+        self._log("found jumpscript:{}:{}".format(t.organization, t.name))
         namekey = "%s_%s" % (t.organization, t.name)
         self.jumpscripts[namekey] = t
-        self.jumpscriptsId[idkey] = t
         return script
 
     def getJumpscript(self, organization, name,gid=None,reload=False, session=None):
@@ -396,19 +387,6 @@ class ControllerCMDS():
         else:
             j.errorconditionhandler.raiseOperationalCritical("Cannot find jumpscript %s:%s" % (organization, name), category="action.notfound", die=False)
             return ""
-
-    def getJumpscriptFromId(self,id,gid=None,session=None):
-        if session<>None:
-            self._adminAuth(session.user,session.passwd)
-        if gid==None and session <> None:
-            gid = session.gid
-
-        key = "%s_%s" % (gid,id)
-
-        if key in self.jumpscriptsId:
-            return self.jumpscriptsId[key]
-        else:
-            j.errorconditionhandler.raiseOperationalCritical("Cannot find jumpscript %s" % (key), category="action.notfound", die=False)
 
     def existsJumpscript(self, organization, name,gid=None, session=None):
         if session<>None:
