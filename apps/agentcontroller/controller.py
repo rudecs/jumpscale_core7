@@ -374,7 +374,7 @@ class ControllerCMDS():
         if gid==None and session <> None:
             gid = session.gid
 
-        key = "%s_%s" % (organization, name)
+        key = "%s_%s" % (organization, name.lower())
 
         if key in self.jumpscripts:
             if reload:
@@ -387,17 +387,6 @@ class ControllerCMDS():
         else:
             j.errorconditionhandler.raiseOperationalCritical("Cannot find jumpscript %s:%s" % (organization, name), category="action.notfound", die=False)
             return ""
-
-    def existsJumpscript(self, organization, name,gid=None, session=None):
-        if session<>None:
-            self._adminAuth(session.user,session.passwd)
-            gid = session.gid
-
-        key = "%s_%s_%s" % (gid,organization, name)
-        if key in self.jumpscripts:
-            return self.jumpscripts[key]
-        else:
-            j.errorconditionhandler.raiseOperationalCritical("Cannot find jumpscript %s:%s" % (organization, name), category="action.notfound", die=False)
 
     def listJumpscripts(self, organization=None, cat=None, session=None):
         """
