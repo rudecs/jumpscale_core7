@@ -6,12 +6,12 @@ monkey.patch_time()
 monkey.patch_ssl()
 from JumpScale import j
 from gevent.pywsgi import WSGIServer
-import JumpScale.grid.serverbase
 from JumpScale.grid.serverbase import returnCodes
 import time
 import json
 import gevent
 
+MAXSIZE = 100 * 1024 ** 2 # 100MiB
 
 def jsonrpc(func):
 
@@ -115,7 +115,12 @@ class GeventWSServer():
         return ['<h1>Not Found</h1>']
 
     def rpcRequest(self, environ, start_response):
+        payloadsize = int(environ.get('CONTENT_LENGTH', 0))
         if environ["CONTENT_TYPE"]=='application/raw' and environ["REQUEST_METHOD"]=='POST':
+            if payloadsize > MAXSIZE:
+                eco = j.errorhandler.getErrorConditionObject(msg="Payload size too big")
+                resultdata = j.servers.base._serializeBinReturn(returnCodes.ERROR, "m", self.daemon.errorconditionserializer.dumps(eco.__dict__))
+                return self.responseRaw(resultdata, start_response)
             data=environ["wsgi.input"].read()
             category, cmd, data2, informat, returnformat, sessionid = j.servers.base._unserializeBinSend(data)
             if self.verbose:
@@ -124,12 +129,14 @@ class GeventWSServer():
             data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
             return self.responseRaw(data3,start_response)
         elif environ['CONTENT_TYPE'].startswith('application/json') and environ["REQUEST_METHOD"] == 'POST':
+            if payloadsize > MAXSIZE:
+                return self.invalidRequest("Payload size too big")
             return self.handleJSONRPC(environ, start_response)
         else:
             return self.responseNotFound(start_response)
 
-    def invalidRequest(self):
-        msg = {'error': {'code': -32600, 'message': 'Invalid Request'}, 'id': None, 'jsonrpc': '2.0'}
+    def invalidRequest(self, msg="Invalid Request"):
+        msg = {'error': {'code': -32600, 'message': msg}, 'id': None, 'jsonrpc': '2.0'}
         return msg
 
     @jsonrpc

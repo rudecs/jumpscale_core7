@@ -188,7 +188,6 @@ class Daemon(object):
             2= method not found
             2+ any other error
         """
-
         inputisdict = isinstance(data, dict)
 
         ffunction = self.command_handler(command_category=category, command=cmd)
