@@ -11,7 +11,7 @@ import time
 import json
 import gevent
 
-MAXSIZE = 100 * 1024 ** 2 # 100MiB
+MAXSIZE = 10 * 1024 ** 2 # 10MiB
 
 def jsonrpc(func):
 
@@ -118,8 +118,9 @@ class GeventWSServer():
         payloadsize = int(environ.get('CONTENT_LENGTH', 0))
         if environ["CONTENT_TYPE"]=='application/raw' and environ["REQUEST_METHOD"]=='POST':
             if payloadsize > MAXSIZE:
-                eco = j.errorhandler.getErrorConditionObject(msg="Payload size too big")
+                eco = j.errorconditionhandler.getErrorConditionObject(msg="Payload size too big")
                 resultdata = j.servers.base._serializeBinReturn(returnCodes.ERROR, "m", self.daemon.errorconditionserializer.dumps(eco.__dict__))
+                print(eco)
                 return self.responseRaw(resultdata, start_response)
             data=environ["wsgi.input"].read()
             category, cmd, data2, informat, returnformat, sessionid = j.servers.base._unserializeBinSend(data)
