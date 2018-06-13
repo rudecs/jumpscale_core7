@@ -111,20 +111,16 @@ class ControllerCMDS():
                 timeout = action.timeout if action.timeout else 600
             else:
                 timeout = 600
+        log = log and action.category != 'monitor.healthcheck'
         job=self.jobclient.new(sessionid=sessionid,gid=gid,nid=nid,category=cmdcategory,cmd=cmdname,queue=queue,args=args,log=log,timeout=timeout,roles=roles,wait=wait,errorreport=errorreport)
 
         self._log("redis incr for job")
-        # if session<>None:
-        #     # jobid=self.redis.hincrby("jobs:last",str(session.gid),1)
-        # else:
         jobid=self.redis.hincrby("jobs:last", str(gid), 1)
         self._log("jobid found (incr done):%s"%jobid)
         job.id=int(jobid)
         job.jscriptid = jscriptid
-
-        self._log("save 2 osis")
-
         saveinosis = True if nid and log else False
+        self._log("save 2 osis {}".format(saveinosis))
         jobdict = job.dump()
         self._setJob(jobdict, osis=saveinosis)
         jobs=json.dumps(jobdict)
@@ -197,8 +193,6 @@ class ControllerCMDS():
         jobs=json.dumps(job)
         self.redis.hset("jobs:%s"%job["gid"], job["guid"], jobs)
         if osis:
-            # we need to make sure that job['result'] is always of the same type hence we serialize
-            # otherwise elasticsearch will have issues
             self.saveJob(job)
 
     def saveJob(self, job, session=None):
@@ -537,9 +531,9 @@ class ControllerCMDS():
             job['nid'] = session.nid
             saveinosis = job['log']
             job['state'] = 'STARTED'
-            if saveinosis:
+            if saveinosis or job['wait']:
                 self._setJob(job, saveinosis)
-            elif not job['wait']:
+            else:
                 self._deleteJobFromCache(job)
             self._log("getwork found for node:%s for jsid:%s"%(session.nid,job["jscriptid"]))
             return job
