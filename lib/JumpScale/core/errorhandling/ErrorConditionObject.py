@@ -290,11 +290,12 @@ class ErrorConditionObject():
                 for (k, v) in sorted(frame.f_locals.items()):
                     if self._filterLocals(k, v):
                         try:
-                            result += "    %s : %s\n" % (str(k), str(v))
+                            result += "    %.50s : %.1000s\n" % (str(k), str(v))
                         except:
                             pass
 
-        return result
+        lines = result.split('\n')[:-1000]
+        return '\n'.join(lines)
 
     def getCategory(self):
         return "eco"
