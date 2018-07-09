@@ -131,7 +131,7 @@ class JumpscriptsCmds():
         if session is not None:
             self._adminAuth(session.user,session.passwd)
         nodeStatus = self.nodeStatus
-        for jumpscript in self.jumpscripts:
+        for jumpscript in self.jumpscripts.values():
             if name == jumpscript.name or not name:
                 if category == jumpscript.category or not category:
                     self._processJumpscript(jumpscript, self.startatboot, nodeStatus)

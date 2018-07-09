@@ -34,11 +34,11 @@ class JumpscriptsDocumentGenerator(object):
                         elif type(value) == ast.List:
                             els = []
                             for x in value.elts:
-                                if "s" in dir(x):
+                                if hasattr(x, 's'):
                                     els.append(x.s)
-                                elif "n" in dir(x):
+                                elif hasattr(x, 'n'):
                                     els.append(x.n)
-                                elif "id" in dir(x):
+                                elif hasattr(x, 'id'):
                                     els.append(x.id)
                             info[id_] = str(els)
                     except:
