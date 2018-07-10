@@ -23,7 +23,7 @@ j.application.instanceconfig = j.application.getAppInstanceHRD(name="agentcontro
 
 while not j.clients.redis.isRunning('system'):
     time.sleep(0.1)
-    print "cannot connect to redis system, will keep on trying forever, please start redis system"
+    print("cannot connect to redis system, will keep on trying forever, please start redis system")
 
 j.application.start("jumpscale:agentcontroller")
 j.application.initGrid()
@@ -47,7 +47,7 @@ class JumpscriptHandler(FileSystemEventHandler):
             try:
                 self.agentcontroller.reloadjumpscript(event.src_path)
             except Exception as e:
-                print "Failed to reload jumpscript", e
+                print("Failed to reload jumpscript", e)
 
 class ControllerCMDS():
 
@@ -87,7 +87,7 @@ class ControllerCMDS():
     def authenticate(self, session):
         return self.nodeclient.authenticate(session.user, session.passwd)
 
-    def scheduleCmd(self,gid,nid,cmdcategory,cmdname,args={},jscriptid=None,queue="",log=True,timeout=None,roles=[],wait=False,errorreport=False, session=None):
+    def scheduleCmd(self,gid,nid,cmdcategory,cmdname,args={},jscriptid=None,queue="",log=True,timeout=None,roles=[],wait=False,errorreport=False,tags=None,session=None):
         """
         new preferred method for scheduling work
         @name is name of cmdserver method or name of jumpscript
@@ -97,11 +97,11 @@ class ControllerCMDS():
             raise RuntimeError("Either nid or roles should be given")
         
         action = None
-        if jscriptid is None and session<>None:
+        if jscriptid is None and session is not None:
             action = self.getJumpscript(cmdcategory, cmdname, session=session)
             jscriptid = action.id
 
-        if session<>None:
+        if session is not None:
             sessionid=session.id
         else:
             sessionid=None
@@ -112,7 +112,7 @@ class ControllerCMDS():
             else:
                 timeout = 600
         log = log and action.category != 'monitor.healthcheck'
-        job=self.jobclient.new(sessionid=sessionid,gid=gid,nid=nid,category=cmdcategory,cmd=cmdname,queue=queue,args=args,log=log,timeout=timeout,roles=roles,wait=wait,errorreport=errorreport)
+        job=self.jobclient.new(sessionid=sessionid,gid=gid,nid=nid,category=cmdcategory,cmd=cmdname,queue=queue,args=args,log=log,timeout=timeout,roles=roles,wait=wait,errorreport=errorreport,tags=tags)
 
         self._log("redis incr for job")
         jobid=self.redis.hincrby("jobs:last", str(gid), 1)
@@ -163,15 +163,15 @@ class ControllerCMDS():
         self.jumpscriptsFromKeys = {}
         self.loadJumpscripts()
         self.loadLuaJumpscripts()
-        print "want processmanagers to reload js:",
+        print("want processmanagers to reload js:")
         for item in self.osisclient.list("system","node"):
             gid,nid=item.split("_")
             cmds.scheduleCmd(gid,nid,cmdcategory="pm",jscriptid=0,cmdname="reloadjumpscripts",args={},queue="internal",log=False,timeout=60,roles=[],session=session)
-        print "OK"
+        print("OK")
 
     def reloadjumpscript(self, path, session=None):
         script = self.loadJumpscript(path)
-        print "want processmanagers to reload js:",
+        print("want processmanagers to reload js:")
         for item in self.osisclient.list("system","node"):
             gid,nid=item.split("_")
             cmds.scheduleCmd(gid, nid, cmdcategory="jumpscripts", jscriptid=0, cmdname="loadJumpscript",
@@ -330,7 +330,7 @@ class ControllerCMDS():
             self.jumpscripts[key] = jumpscript_metadata
 
     def loadJumpscripts(self, path="jumpscripts", session=None):
-        if session<>None:
+        if session is not None:
             self._adminAuth(session.user,session.passwd)
         for filepath in j.system.fs.listFilesInDir(path=path, recursive=True, filter="*.py", followSymlinks=True):
             self.loadJumpscript(filepath)
@@ -362,10 +362,10 @@ class ControllerCMDS():
         return script
 
     def getJumpscript(self, organization, name,gid=None,reload=False, session=None):
-        if session<>None:
+        if session is not None:
             self._adminAuth(session.user,session.passwd)
 
-        if gid==None and session <> None:
+        if gid is None and session is not None:
             gid = session.gid
 
         key = "%s_%s" % (organization, name.lower())
@@ -386,7 +386,7 @@ class ControllerCMDS():
         """
         @return [[org,name,category,descr, roles],...]
         """
-        if session<>None:
+        if session is not None:
             self._adminAuth(session.user,session.passwd)
 
         def myfilter(entry):
@@ -402,7 +402,7 @@ class ControllerCMDS():
         return [[t.id,t.organization, t.name, (t.roles)] for t in filter(myfilter, self.jumpscripts.values()) ]
 
     def executeJumpscript(self, organization, name, nid=None, role=None, args={},all=False, \
-        timeout=600,wait=True,queue="", gid=None,errorreport=True, session=None):
+        timeout=600,wait=True,queue="", gid=None,errorreport=True, tags=None, session=None):
         """
         @param roles defines which of the agents which need to execute this action
         @all if False will be executed only once by the first found agent, if True will be executed by all matched agents
@@ -413,7 +413,7 @@ class ControllerCMDS():
         def noWork():
             sessionid = session.id
             ngid = gid or j.application.whoAmI.gid
-            job=self.jobclient.new(sessionid=sessionid,gid=ngid,nid=nid,category=organization,cmd=name,queue=queue,args=args,log=True,timeout=timeout,roles=[role],wait=wait,errorreport=errorreport)
+            job=self.jobclient.new(sessionid=sessionid,gid=ngid,nid=nid,category=organization,cmd=name,queue=queue,args=args,log=True,timeout=timeout,roles=[role],wait=wait,errorreport=errorreport,tags=tags)
             self._log("nothingtodo")
             job.state="NOWORK"
             job.timeStop=job.timeStart
@@ -432,7 +432,7 @@ class ControllerCMDS():
             role = role.lower()
             if role in self.roles2agents:
                 if not all:
-                    job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,roles=[role],session=session,jscriptid=action.id, wait=wait)
+                    job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,roles=[role],session=session,jscriptid=action.id, wait=wait, tags=tags)
                     if wait:
                         return self.waitJumpscript(job=job,session=session, timeout=timeout)
                     else:
@@ -440,11 +440,11 @@ class ControllerCMDS():
                 else:
                     job = list()
                     for node_guid in self.roles2agents[role]:
-                        if len(node_guid.split("_"))<>2:
+                        if len(node_guid.split("_")) != 2:
                             raise RuntimeError("node_guid needs to be of format: '$gid_$nid' ")
                         ngid,nid=node_guid.split("_")
                         if gid is None or int(gid) == int(ngid):
-                            jobd=self.scheduleCmd(gid=ngid,nid=nid,cmdcategory=organization,cmdname=name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait,errorreport=errorreport)
+                            jobd=self.scheduleCmd(gid=ngid,nid=nid,cmdcategory=organization,cmdname=name,args=args,queue=queue,log=action.log,timeout=timeout,roles=[role],session=session,jscriptid=action.id, wait=wait,errorreport=errorreport,tags=tags)
                             job.append(jobd)
                     if wait:
                         results = list()
@@ -452,10 +452,10 @@ class ControllerCMDS():
                             results.append(self.waitJumpscript(job=jobitem,session=session))
                         return results
             return noWork()
-        elif nid<>None:
+        elif nid is not None:
             self._log("NID KNOWN")
             gid = gid or session.gid
-            job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,session=session,jscriptid=action.id,wait=wait)
+            job=self.scheduleCmd(gid,nid,organization,name,args=args,queue=queue,log=action.log,timeout=timeout,session=session,jscriptid=action.id,wait=wait,tags=tags)
             if wait:
                 return self.waitJumpscript(job=job,session=session)
             return job
@@ -489,7 +489,7 @@ class ControllerCMDS():
             res = q.fetch()
         self._deleteJobFromCache(job)
         q.set_expire(5)  #@todo ????
-        if res<>None:
+        if res is not None:
             return json.loads(res)
         else:
             job["resultcode"]=1
@@ -527,7 +527,7 @@ class ControllerCMDS():
             self._log("NO WORK")
             return None
         job=json.loads(jobstr)
-        if job<>None:
+        if job is not None:
             job['nid'] = session.nid
             saveinosis = job['log']
             job['state'] = 'STARTED'
@@ -681,7 +681,7 @@ class ControllerCMDS():
         """
         list all work active for 1 agent
         """
-        if session<>None:
+        if session is not None:
             self._adminAuth(session.user,session.passwd)
         jobs = list()
         qname = 'queues:commands:queue:%s:%s' % (session.gid, agentid)
@@ -708,7 +708,7 @@ class ControllerCMDS():
 
     def _log(self, msg):
         if self.debug:
-            print msg
+            print(msg)
 
     def listSessions(self,session=None):
         agents = self.agents2roles.copy()
@@ -776,16 +776,16 @@ port = 4444
 daemon = j.servers.geventws.getServer(port=port)
 daemon.addCMDsInterface(ControllerCMDS, category="agent")  # pass as class not as object !!! chose category if only 1 then can leave ""
 
-print "load processmanager cmds"
+print("load processmanager cmds")
 # j.system.fs.changeDir("processmanager")
 import sys
 sys.path.append(j.system.fs.joinPaths(j.system.fs.getcwd(),"processmanager"))
 for item in j.system.fs.listFilesInDir("processmanager/processmanagercmds",filter="*.py"):
     name=j.system.fs.getBaseName(item).replace(".py","")
-    if name[0]<>"_":
+    if name[0] != "_":
         module = importlib.import_module('processmanagercmds.%s' % name)
         classs = getattr(module, name)
-        print "load cmds:%s"%name
+        print("load cmds:%s"%name)
         tmp=classs()
         daemon.addCMDsInterface(classs, category="processmanager_%s" % tmp._name, proxy=True)
 

@@ -133,6 +133,7 @@
     prop:timeStop int,, @index
     prop:log bool,,
     prop:errorreport bool,,
+    prop:tags list(str),,
 
 [rootmodel:jumpscript] @index
     prop:id int,,

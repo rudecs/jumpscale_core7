@@ -9,7 +9,7 @@ class Job(OsisBaseObject):
     """
 
     def __init__(self, ddict={}, gid="", roles=None, args=None, timeout=60, sessionid=None, jscriptid=None,\
-            nid=0,cmd="",category="",log=True, queue=None, wait=False,errorreport=True):
+            nid=0,cmd="",category="",log=True, queue=None, wait=False,errorreport=True,tags=None):
         if ddict != {}:
             self.load(ddict)
         else:
@@ -37,6 +37,7 @@ class Job(OsisBaseObject):
             self.timeStop=0
             self.log=log
             self.errorreport=errorreport
+            self.tags=tags
 
     def getSetGuid(self):
         """
