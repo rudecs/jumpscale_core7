@@ -578,17 +578,20 @@ class ControllerCMDS():
                                        'lasterror': job['timeStop'],
                                        'uid': 'execution_failed'})
             health_checks.append(health)
-        else:
+        else:       
             if job['result']:
                 msgs = copy.deepcopy(job['result'])
                 for msg in msgs:
                     if 'nid' in msg:
                         health = copy.deepcopy(health_tmpl)
-                        health['nid'] = msg['nid']
+                        health['nid'] = msg['nid']    
                         health['messages'] = [msg]
                         health['jobguid'] = None
                         health_checks.append(health)
                         job['result'].remove(msg)
+
+                    if 'eid' in msg:
+                        health['eid'] = msg['eid']
             else:
                 health = copy.deepcopy(health_tmpl)
                 health['jobguid'] = None  # job is not saved so dont store job guid

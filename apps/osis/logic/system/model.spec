@@ -99,6 +99,7 @@
     """
     prop:nid int,,
     prop:gid int,,
+    prop:eid int,,
     prop:lastcheck int,,
 
 [rootmodel:info] @index
