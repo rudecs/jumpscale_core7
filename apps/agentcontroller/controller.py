@@ -584,7 +584,8 @@ class ControllerCMDS():
                 for msg in msgs:
                     if 'nid' in msg:
                         health = copy.deepcopy(health_tmpl)
-                        health['nid'] = msg['nid']
+                        health['nid'] = msg['nid'] 
+                        health['eid'] = job['nid']
                         health['messages'] = [msg]
                         health['jobguid'] = None
                         health_checks.append(health)
