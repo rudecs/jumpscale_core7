@@ -245,6 +245,7 @@ class GridHealthChecker(object):
         healthdata = self._healthcl.search(query, size=0)[1:]
         for health in healthdata:
             for message in health['messages']:
+                message['eid'] = health.get('eid', None)
                 message['guid'] = health['jobguid']
                 message['interval'] = health['interval']
                 message['cmd'] = health['cmd']
