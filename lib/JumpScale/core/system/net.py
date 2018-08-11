@@ -11,7 +11,7 @@ from JumpScale import j
 IPBLOCKS = re.compile("(^|\n)(?P<block>\d+:.*?)(?=(\n\d+)|$)", re.S)
 IPMAC = re.compile("^\s+link/\w+\s+(?P<mac>(\w+:){5}\w{2})", re.M)
 IPIP = re.compile("^\s+inet\s(?P<ip>(\d+\.){3}\d+)/(?P<cidr>\d+)", re.M)
-IPNAME = re.compile("^\d+: (?P<name>.*?)(?=[:@]).+ mtu (?P<mtu>\d+)", re.M)
+IPNAME = re.compile("^(?P<index>\d+): (?P<name>.*?)(?=[:@]).+ mtu (?P<mtu>\d+)", re.M)
 
 def parseBlock(block):
     result = {'ip': [], 'cidr': [], 'mac': '', 'name': '', 'mtu': 0}
@@ -21,6 +21,8 @@ def parseBlock(block):
             mydict = match.groupdict()
             if 'mtu' in mydict:
                 mydict['mtu'] = int(mydict['mtu'])
+            if 'index' in mydict:
+                mydict['index'] = int(mydict['index'])
             result.update(mydict)
     for mrec in (IPIP, ):
         for m in mrec.finditer(block):
@@ -28,8 +30,11 @@ def parseBlock(block):
                 result[key].append(value)
     return result
 
-def getNetworkInfo():
-    exitcode,output = j.system.process.execute("ip a", outputToStdout=False)
+def getNetworkInfo(namespace=None):
+    cmd = "ip"
+    if namespace:
+        cmd += " -n {}".format(namespace)
+    exitcode,output = j.system.process.execute("{} a".format(cmd), outputToStdout=False)
     for m in IPBLOCKS.finditer(output):
         block = m.group('block')
         yield parseBlock(block)
@@ -750,7 +755,7 @@ class SystemNet:
         else:
             return netaddr
 
-    def getNetworkInfo(self, startwith_filter=None):
+    def getNetworkInfo(self, startwith_filter=None, namespace=None):
         """
         returns {macaddr_name:[ipaddr,ipaddr],...}
         :param startwith_filter tuple of strings to filter by. If an interface starts with a string in the tuple it won't be returned
@@ -762,12 +767,7 @@ class SystemNet:
         """
         netaddr={}
         if j.system.platformtype.isLinux():
-            return self._networkInfoFilter([item for item in getNetworkInfo()], startwith_filter)
-            # ERROR: THIS DOES NOT WORK FOR BRIDGED INTERFACES !!! because macaddr is same as host interface
-            # for ipinfo in getNetworkInfo():
-            #     print ipinfo
-            #     ip = ','.join(ipinfo['ip'])
-            #     netaddr[ipinfo['mac']] = [ ipinfo['name'], ip ]
+            return self._networkInfoFilter([item for item in getNetworkInfo(namespace)], startwith_filter)
         else:
             nics=self.getNics()
             for nic in nics:

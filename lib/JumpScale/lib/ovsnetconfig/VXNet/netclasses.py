@@ -1,6 +1,11 @@
 __author__ = 'delandtj'
 
-from .utils import *
+from .utils import (
+        createVXlan, destroyVXlan, disable_ipv6, 
+        createBridge, destroyBridge, connectIfToBridge,
+        listBridgeConnections, removeIfFromBridge,
+        createNameSpace, connectIfToNameSpace, destroyNameSpace,
+        createVethPair, destroyVethPair, addBond)
 
 
 class VXlan(object):
@@ -100,7 +105,5 @@ class VethPair(object):
         self.right = 'veth-right-%s' % oid.tostring()
     def create(self):
         createVethPair(self.left, self.right)
-        # left has never an ip
-        disable_ipv6(self.left)
     def destroy(self):
         destroyVethPair(self.left)

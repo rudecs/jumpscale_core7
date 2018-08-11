@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import netaddr
 import pprint
-import re
+import os
 
 from JumpScale import j
 import VXNet.vxlan as vxlan
 import VXNet.netclasses as netcl
-from .VXNet.utils import *
+from .VXNet.utils import addVlanPatch, createVethPair, ip_link_set
 from JumpScale.core.system.fs import FileLock
 
 class NetConfigFactory():
@@ -89,12 +89,50 @@ class NetConfigFactory():
     def newVlanBridge(self, name, parentbridge, vlanid, mtu=None):
         addVlanPatch(parentbridge, name, vlanid, mtu=mtu)
 
+    def createExtNetwork(self, vlan):
+        bridgename = self.getVlanBridge(vlan)
+        nics = j.system.net.getNics()
+        if bridgename not in nics:
+            extbridge = 'ext-bridge'
+            if extbridge not in nics:
+                extbridge = 'backplane1'
+            j.system.ovsnetconfig.newVlanBridge(bridgename, extbridge, vlan)
+        return bridgename
+
     def ensureVXNet(self, networkid, backend):
         vxnet = vxlan.VXNet(networkid, backend)
         vxnet.innamespace=False
         vxnet.inbridge = True
         vxnet.apply()
         return vxnet
+
+    def _generatenewdevname(self, prefix='veth'):
+        length = 15 - len(prefix)
+        devname = 'veth{}'.format(j.base.idgenerator.generateXCharID(length))
+        while devname in j.system.net.getNics():
+            devname = 'veth{}'.format(j.base.idgenerator.generateXCharID(length))
+        return devname
+
+    def connectInNameSpace(self, ovsbridge, namespace, ipaddress=None, gateway=None, name=None):
+        namespace = netcl.NameSpace(namespace)
+        bridge = netcl.Bridge(ovsbridge)
+        namespace.create()
+
+        iin = self._generatenewdevname()
+        iout = self._generatenewdevname()
+        createVethPair(iin, iout)
+        namespace.connect(iin)
+        bridge.connect(iout)
+        if name:
+            ip_link_set(iin, 'name {}'.format(name), namespace.name)
+        else:
+            name = iin
+        ip_link_set(name, 'up', namespace.name)
+        if ipaddress:
+            self._exec('ip -n {} address add {} dev {}'.format(namespace.name, ipaddress, name))
+        if gateway:
+            self._exec('ip -n {} route add default via {}'.format(namespace.name, gateway))
+        return name, iout
 
     def cleanupIfUnused(self, networkid):
         with FileLock('vxlan_%s' % networkid):
@@ -115,7 +153,11 @@ class NetConfigFactory():
             bridgename = 'ext-%04x' % vlan
         return bridgename
 
-    def cleanupIfUnusedVlanBridge(self, bridgename):
+    def cleanupIfUnusedVlanBridge(self, bridgename=None, vlan=None):
+        if bridgename is None and vlan is None:
+            raise ValueError('Requires at least bridgename or vlan')
+        if bridgename is None:
+            bridgename = self.getVlanBridge(vlan)
         with FileLock('vlan_%s' % bridgename):
             bridge = netcl.Bridge(bridgename)
             connections = bridge.listConnections()

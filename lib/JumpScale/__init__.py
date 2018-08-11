@@ -69,7 +69,7 @@ def loadSubModules(filepath, prefix='JumpScale'):
             continue
         try:
             __import__(moduleload, locals(), globals())
-        except ImportError, e:
+        except ImportError:
             pass
 
 

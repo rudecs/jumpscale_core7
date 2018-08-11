@@ -36,6 +36,15 @@ def doexec(args):
     stderr = proc.stderr
     return rc, stdout, stderr
 
+def get_peer(name, namespace=None):
+    path = '/sys/class/net/{}/iflink'.format(name)
+    if namespace is None:
+        with open(path) as fd:
+            return int(fd.read())
+    else:
+        rc, stdout, stderr = doexec('{} netns exec {} cat {}'.format(ip, namespace, path).split())
+        return int(stdout.read())
+
 
 def dobigexec(args):
     """Execute a subprocess, then return its return code, stdout and stderr"""
@@ -47,9 +56,9 @@ def dobigexec(args):
 
 
 def get_all_namespaces():
-    cmd = '%s netns ls' % ip
-    r, s, e = doexec(cmd.split())
-    return [line.strip() for line in s.readlines()]
+    if not os.path.exists('/var/run/netns'):
+        return []
+    return os.listdir('/var/run/netns')
 
 
 def get_all_ifaces():
@@ -80,8 +89,11 @@ def get_all_bridges():
     return l
 
 
-def ip_link_set(device, args):
-    cmd = "ip l set " + device + " " + args
+def ip_link_set(device, args, ns=None):
+    cmd = ip
+    if ns:
+        cmd += " -n {}".format(ns)
+    cmd += " l set {} {}".format(device, args)
     doexec(cmd.split())
 
 
