@@ -90,12 +90,11 @@ class NetConfigFactory():
         addVlanPatch(parentbridge, name, vlanid, mtu=mtu)
 
     def ensureVXNet(self, networkid, backend):
-        with FileLock('vxlan_%s' % networkid):
-            vxnet = vxlan.VXNet(networkid, backend)
-            vxnet.innamespace=False
-            vxnet.inbridge = True
-            vxnet.apply()
-            return vxnet
+        vxnet = vxlan.VXNet(networkid, backend)
+        vxnet.innamespace=False
+        vxnet.inbridge = True
+        vxnet.apply()
+        return vxnet
 
     def cleanupIfUnused(self, networkid):
         with FileLock('vxlan_%s' % networkid):
@@ -108,6 +107,13 @@ class NetConfigFactory():
                 vxlan.destroy()
                 bridge.destroy()
                 return True
+
+    def getVlanBridge(self, vlan):
+        if vlan is None or vlan == 0:
+            bridgename = 'public'
+        else:
+            bridgename = 'ext-%04x' % vlan
+        return bridgename
 
     def cleanupIfUnusedVlanBridge(self, bridgename):
         with FileLock('vlan_%s' % bridgename):

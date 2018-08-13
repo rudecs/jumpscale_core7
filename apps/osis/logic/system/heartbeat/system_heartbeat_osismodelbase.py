@@ -5,6 +5,7 @@ class system_heartbeat_osismodelbase(j.code.classGetJSRootModelBase()):
         pass
         self._P_nid=0
         self._P_gid=0
+        self._P_eid=0
         self._P_lastcheck=0
         self._P_id=0
         self._P_guid=""
@@ -48,6 +49,25 @@ class system_heartbeat_osismodelbase(j.code.classGetJSRootModelBase()):
     @gid.deleter
     def gid(self):
         del self._P_gid
+
+    @property
+    def eid(self):
+        return self._P_eid
+
+    @eid.setter
+    def eid(self, value):
+        if not isinstance(value, int) and value is not None:
+            if isinstance(value, basestring) and j.basetype.integer.checkString(value):
+                value = j.basetype.integer.fromString(value)
+            else:
+                msg="property eid input error, needs to be int, specfile: /opt/jumpscale7/apps/osis/logic/system/model.spec, name model: heartbeat, value was:" + str(value)
+                raise TypeError(msg)
+
+        self._P_eid=value
+
+    @eid.deleter
+    def eid(self):
+        del self._P_eid
 
     @property
     def lastcheck(self):
