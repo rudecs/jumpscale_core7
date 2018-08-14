@@ -111,7 +111,8 @@ class ControllerCMDS():
                 timeout = action.timeout if action.timeout else 600
             else:
                 timeout = 600
-        log = log and action.category != 'monitor.healthcheck'
+        if action and action.category == 'monitor.healthcheck':
+            log = True
         job=self.jobclient.new(sessionid=sessionid,gid=gid,nid=nid,category=cmdcategory,cmd=cmdname,queue=queue,args=args,log=log,timeout=timeout,roles=roles,wait=wait,errorreport=errorreport,tags=tags)
 
         self._log("redis incr for job")
