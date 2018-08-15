@@ -155,7 +155,8 @@ class Worker(object):
                     self.log("Job started:%s script:%s %s/%s"%(job.id, jscript.id,jscript.organization,jscript.name))
 
                     j.logger.enabled = job.log
-
+                    if jscript.category == 'monitor.healthcheck':
+                        job.log = True
                     job.timeStart = time.time()
                     if not jscript.timeout:
                         jscript.timeout = WORKERTIMEOUTS.get(self.queuename, DEFAULTTIMEOUT)
