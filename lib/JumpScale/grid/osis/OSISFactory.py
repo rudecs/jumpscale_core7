@@ -308,8 +308,9 @@ class OSISFactory:
                     return
                 sys.path.append(basepath)
                 module = imp.load_source(key, modelpath)
-                for membername, object in inspect.getmembers(module):
-                    if membername != OSISBaseObject.__name__ and inspect.isclass(object) and (issubclass(object, OSISBaseObject) or issubclass(object, OSISBaseObjectComplexType)):
+                classes = inspect.getmembers(module, inspect.isclass)
+                for membername, object in classes:
+                    if membername != OSISBaseObject.__name__ and issubclass(object, (OSISBaseObject, OSISBaseObjectComplexType)):
                         name = membername
                         break
                 else:

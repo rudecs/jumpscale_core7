@@ -1,6 +1,7 @@
 from JumpScale import j
 import gevent
 import time
+import re
 
 
 class OSISCMDS(object):
@@ -241,7 +242,7 @@ class OSISCMDS(object):
             model = j.system.fs.fileGetContents(path)
             if j.system.fs.exists(osismodelpath):
                 model = j.system.fs.fileGetContents(osismodelpath) + model
-                model = model.replace("from %s import %s" % (genclassname, genclassname), "")
+                model = re.sub('from {}[^#]*'.format(genclassname), '', model, re.DOTALL)
             return 2, model
         else:
             return 3, ""
