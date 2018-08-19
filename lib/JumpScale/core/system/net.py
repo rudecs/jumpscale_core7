@@ -3,7 +3,9 @@
 import time
 import socket
 import re
-
+from urlparse import urlparse
+import requests
+import ftplib
 from JumpScale import j
 
 IPBLOCKS = re.compile("(^|\n)(?P<block>\d+:.*?)(?=(\n\d+)|$)", re.S)
@@ -387,6 +389,22 @@ class SystemNet:
                     return int(match.group('speed'))
         raise ValueError("Could not find network speed")
 
+    def getServerFileLastModified(self, url):
+        """
+        Gets last modified date of a file on a server
+        :param url: path of the file on the server
+        :return time epoch
+        """
+        parsed_url = urlparse(url)
+        if parsed_url.scheme == 'ftp':
+            ftp = ftplib.FTP(parsed_url.hostname)
+            ftp.login(parsed_url.username, parsed_url.password)
+            res = ftp.sendcmd('MDTM {}'.format(parsed_url.path))
+            modified_time = int(time.mktime(time.strptime(res.split(' ')[-1], '%Y%m%d%H%M%S')))
+        else:
+            res = requests.head(url)
+            modified_time = int(time.mktime(time.strptime(res.headers['Last-Modified'], '%a, %d %b %Y %H:%M:%S GMT')))
+        return modified_time
 
     def getVlanTag(self,interface,nicType=None):
         """Get VLan tag on the specified interface and vlan type"""
