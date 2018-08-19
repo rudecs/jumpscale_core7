@@ -306,17 +306,15 @@ class OSISFactory:
             if j.system.fs.exists(path=modelpath):
                 if '__pycache__' in modelpath:
                     return
-                klass = j.system.fs.fileGetContents(modelpath)
-                name = ""
-                for line in klass.split("\n"):
-                    if line.find("(OsisBaseObject") != -1 and line.find("class ") != -1:
-                        name = line.split("(")[0].lstrip("class").strip()
-                if name == "":
-                    raise RuntimeError(
-                        "could not find: class $modelName(OsisBaseObject) in model class file, should always be there")
-
                 sys.path.append(basepath)
                 module = imp.load_source(key, modelpath)
+                for membername, object in inspect.getmembers(module):
+                    if membername != OSISBaseObject.__name__ and inspect.isclass(object) and (issubclass(object, OSISBaseObject) or issubclass(object, OSISBaseObjectComplexType)):
+                        name = membername
+                        break
+                else:
+                    raise RuntimeError(
+                        "could not find: class $modelName(OsisBaseObject) in model class file ({}), should always be there".format(modelpath))
                 self.osisModels[key] = module.__dict__[name]
             else:
                 raise RuntimeError("Could not find model.py in %s" % basepath)
