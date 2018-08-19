@@ -310,7 +310,7 @@ class OSISFactory:
                 module = imp.load_source(key, modelpath)
                 classes = inspect.getmembers(module, inspect.isclass)
                 for membername, object in classes:
-                    if membername != OSISBaseObject.__name__ and issubclass(object, (OSISBaseObject, OSISBaseObjectComplexType)):
+                    if object not in (OSISBaseObject, OSISBaseObjectComplexType) and issubclass(object, (OSISBaseObject, OSISBaseObjectComplexType)):
                         name = membername
                         break
                 else:
