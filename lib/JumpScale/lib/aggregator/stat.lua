@@ -34,6 +34,10 @@ if prev then
         else
             diff = value - v.val
         end
+        -- if same time no need to continue
+        if now == v.epoch then
+            return
+        end
         difftime = now - v.epoch
         -- calculate diff per second.
         stat = diff / difftime
