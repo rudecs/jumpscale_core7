@@ -125,7 +125,7 @@ class DaemonClient(object):
             passwd = self.passwd
 
         session = Session(id=self._id, organization=self.org, user=self.user, passwd=passwd,
-                          encrkey=encrkey, netinfo=j.system.net.getNetworkInfo(), roles=self.roles)
+                          encrkey=encrkey, netinfo=j.system.net.getNetworkInfo(startwith_filter=("vx-", "space_", "gw_", "gwm-", "spc-")), roles=self.roles)
         # ser=j.db.serializers.getMessagePack()
         # sessiondictstr=ser.dumps(session.__dict__)
         self.key = session.encrkey

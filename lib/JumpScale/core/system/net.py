@@ -744,11 +744,16 @@ class SystemNet:
 
         return interface,ipaddr,mask,gw
 
+    def _networkInfoFilter(self, netaddr, startwith_filter):
+        if startwith_filter:
+           return [net for net in netaddr if not net['name'].startswith(startwith_filter)]
+        else:
+            return netaddr
 
-
-    def getNetworkInfo(self):
+    def getNetworkInfo(self, startwith_filter=None):
         """
         returns {macaddr_name:[ipaddr,ipaddr],...}
+        :param startwith_filter tuple of strings to filter by. If an interface starts with a string in the tuple it won't be returned
 
         REMARK: format changed because there was bug which could not work with bridges
 
@@ -757,7 +762,7 @@ class SystemNet:
         """
         netaddr={}
         if j.system.platformtype.isLinux():
-            return [item for item in getNetworkInfo()]
+            return self._networkInfoFilter([item for item in getNetworkInfo()], startwith_filter)
             # ERROR: THIS DOES NOT WORK FOR BRIDGED INTERFACES !!! because macaddr is same as host interface
             # for ipinfo in getNetworkInfo():
             #     print ipinfo
@@ -770,7 +775,7 @@ class SystemNet:
                 ips=[item[0] for item in self.getIpAddress(nic)]
                 if nic.lower()!="lo":
                     netaddr[mac]=[nic.lower(),",".join(ips)]
-        return  netaddr
+        return self._networkInfoFilter(netaddr, startwith_filter)
 
     def getIpAddress(self, interface):
         """Return a list of ip addresses and netmasks assigned to this interface"""
