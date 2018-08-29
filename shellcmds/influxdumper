@@ -1,0 +1,25 @@
+#!/usr/bin/env jspython
+"""
+InfluxDumper is a process that will scan the network specified by scan-dir for open ports specified by redis-port.
+The dumper will then read from the redis server found and dump the aggregated statistics into influxdb
+"""
+from JumpScale import j
+from JumpScale.baselib import cmdutils
+
+parser = cmdutils.ArgumentParser()
+
+parser.add_argument('--influx-host', default='127.0.0.1', help='address of the influxdb server')
+parser.add_argument('--influx-port', default=8086, type=int, help='port of the http interface of influxdb server')
+parser.add_argument('--influx-login', default='root', help='login of influxdb server')
+parser.add_argument('--influx-pasword', help='password of influxdb server')
+parser.add_argument('--db', default='statistics', help='database name to use')
+parser.add_argument('--scan-cidr', default='127.0.0.1/24', help='cidr on which scan for redis server')
+parser.add_argument('--workers', default=4, type=int, help='Add amount of workers')
+parser.add_argument('--redis-port', default=[9999], nargs='+', type=int, help='listening redis port')
+parser.add_argument('--rentention-duration', default='5d', help='default retention policy duration to set to the influxdb database used')
+
+opts = parser.parse_args()
+
+influx_client = j.clients.influxdb.get(host=opts.influx_host, port=opts.influx_port, username=opts.influx_login, password=opts.influx_pasword, database=opts.db)
+j.tools.realityprocess.influxpump(influx_client, cidr=opts.scan_cidr, ports=opts.redis_port, rentention_duration=opts.rentention_duration, workers=opts.workers)
+

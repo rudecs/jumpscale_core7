@@ -4,15 +4,15 @@ import collections
 import json
 
 
-Stats = collections.namedtuple("Stats", "node key epoch stat avg max")
-
+Stats = collections.namedtuple("Stats", "node key epoch stat avg max total")
+CHUNK_SIZE = 1000
 
 class InfluxDumper(Dumper.BaseDumper):
     QUEUE_MIN = 'queues:stats:min'
     QUEUE_HOUR = 'queues:stats:hour'
     QUEUES = [QUEUE_MIN, QUEUE_HOUR]
 
-    def __init__(self, influx, database=None, cidr='127.0.0.1', ports=[9999]):
+    def __init__(self, influx, database=None, cidr='127.0.0.1', ports=[9999], rentention_duration='5d'):
         """
         Create a new instance of influx dumper
 
@@ -26,6 +26,7 @@ class InfluxDumper(Dumper.BaseDumper):
         :param port: Find all redis instances that listens on that port on the given CIDR
         """
         super(InfluxDumper, self).__init__(cidr, ports)
+        self._points = []
 
         self.influxdb = influx
 
@@ -39,6 +40,16 @@ class InfluxDumper(Dumper.BaseDumper):
                 break
         else:
             self.influxdb.create_database(database)
+
+        for policy in self.influxdb.get_list_retention_policies(database):
+            if policy['name'] == 'default':
+                if policy['duration'] != rentention_duration:
+                    self.influxdb.alter_retention_policy('default', database=database,
+                                                         duration=rentention_duration,
+                                                         replication='1', default=True)
+                break
+        else:
+            self.influxdb.create_retention_policy('default', rentention_duration, '1', database=database, default=True)
 
     def _parse_line(self, line):
         """
@@ -67,6 +78,13 @@ class InfluxDumper(Dumper.BaseDumper):
     def _dump_hour(self, stats):
         print(stats)
 
+    def _flush(self):
+        if len(self._points) == 0:
+            return
+
+        self.influxdb.write_points(self._points, database=self.database, time_precision='s')
+        self._points = []
+
     def dump(self, redis):
         """
         Process redis connection until the queue is empty, then return None
@@ -76,6 +94,7 @@ class InfluxDumper(Dumper.BaseDumper):
         while True:
             data = redis.blpop(self.QUEUES, 1)
             if data is None:
+                self._flush()
                 return
 
             queue, line = data
@@ -85,8 +104,9 @@ class InfluxDumper(Dumper.BaseDumper):
             stats = self._parse_line(line)
             info = redis.get("stats:%s:%s" % (stats.node, stats.key))
 
-            if stats.key.find('@') != -1:
-                stats.key = stats.key.split('@')[0]
+            stats_key = stats.key
+            if stats_key.find('@') != -1:
+                stats_key = stats.key.split('@')[0]
 
             if info is not None:
                 info = json.loads(info)
@@ -95,13 +115,13 @@ class InfluxDumper(Dumper.BaseDumper):
 
             info['tags'] = j.core.tags.getObject(info.get('tags', []))
             info['tags'].tags['node'] = stats.node
-            points = []
 
             tags = info['tags'].tags
             if queue == self.QUEUE_MIN:
-                points.append(self._mk_point("%s|m" % (stats.key,), stats.epoch, stats.avg, stats.max, tags))
-                points.append(self._mk_point("%s|t" % (stats.key,), stats.epoch, stats.total, stats.max, tags))
+                self._points.append(self._mk_point("%s|m" % (stats_key,), stats.epoch, stats.avg, stats.max, tags))
+                self._points.append(self._mk_point("%s|t" % (stats_key,), stats.epoch, stats.total, stats.max, tags))
             else:
-                points.append(self._mk_point("%s|h" % (stats.key,), stats.epoch, stats.avg, stats.max, tags))
+                self._points.append(self._mk_point("%s|h" % (stats_key,), stats.epoch, stats.avg, stats.max, tags))
 
-            self.influxdb.write_points(points, database=self.database, time_precision='s')
+            if len(self._points) >= CHUNK_SIZE:
+                self._flush()
