@@ -73,13 +73,14 @@ class ControllerCMDS():
         self.agents2roles = dict()
 
         self.start()
-
+    
     def start(self):
         gevent.spawn(self._cleanScheduledJobs, 3600*24)
         observer = Observer()
         handler = JumpscriptHandler(self)
         observer.schedule(handler, "jumpscripts", recursive=True)
         observer.start()
+        gevent.spawn(self._monitorAgents)
 
     def _adminAuth(self,user,passwd):
         return self.nodeclient.authenticate(user, passwd)
@@ -133,6 +134,27 @@ class ControllerCMDS():
         q.put(jobs)
         self._log("schedule done")
         return jobdict
+
+    def _monitorAgents(self):
+        session = None
+        while not session:
+            sessions = self.daemon.sessions
+            session = [v for k, v in sessions.items() if 'master' in v.roles]
+            if session:
+                session = session[0]
+            time.sleep(5)
+
+        while True:
+            sessions = self.listSessions()
+            nodes = self.nodeclient.search({'status':'ENABLED', 'roles':{'$in':['storagedriver', 'cpunode']}})[1:]
+            for node in nodes:
+                node_session = sessions.get(node['guid'])
+                if not node_session:
+                    continue
+                if time.time() - node_session[0] < 60:
+                    continue
+                self.executeJumpscript('jumpscale', 'node_maintenance', role='master', gid=node["gid"], args={'nid':node["id"]}, wait=False, session=session)
+            time.sleep(30)
 
     def _cleanScheduledJobs(self, expiretime):
         while True:
