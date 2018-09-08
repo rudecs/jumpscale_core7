@@ -124,6 +124,8 @@ from JumpScale import j
                     except Exception as e:
                         eco = str(e)
                     pipe.send(("TIMEOUT", eco))
+                    # when handling sigterm we need to exit
+                    sys.exit(2)
 
                 signal.signal(signal.SIGTERM, errorhandler)
                 try:
@@ -146,7 +148,12 @@ from JumpScale import j
                 proc.terminate()
                 proc.join(5)
                 if proc.is_alive():
-                    os.kill(proc.pid, signal.SIGKILL)
+                    try:
+                        os.kill(proc.pid, signal.SIGKILL)
+                    except (ProcessLookupError, OSError):
+                        pass
+                    # reap process
+                    proc.join(5)
                     msg = 'Failed to execute job on time and failed to kill cleanly'
                     eco = j.errorconditionhandler.getErrorConditionObject(msg=msg)
                     eco.errormessagePub = 'JumpScript died unexpectedly %s'
