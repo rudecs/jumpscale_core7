@@ -135,6 +135,7 @@ class JumpscriptsCmds():
             if name == jumpscript.name or not name:
                 if category == jumpscript.category or not category:
                     self._processJumpscript(jumpscript, self.startatboot, nodeStatus)
+        self._configureScheduling()
 
     def schedule(self):
         self._configureScheduling()
