@@ -12,6 +12,7 @@ import os
 import base64
 import traceback
 import signal
+import sys
 
 class Jumpscript(object):
     def __init__(self, ddict=None, path=None):
