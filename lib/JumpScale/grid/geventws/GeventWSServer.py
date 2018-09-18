@@ -116,25 +116,25 @@ class GeventWSServer():
 
     def rpcRequest(self, environ, start_response):
         payloadsize = int(environ.get('CONTENT_LENGTH', 0))
-        if environ["CONTENT_TYPE"]=='application/raw' and environ["REQUEST_METHOD"]=='POST':
-            if payloadsize > MAXSIZE:
-                eco = j.errorconditionhandler.getErrorConditionObject(msg="Payload size too big")
-                resultdata = j.servers.base._serializeBinReturn(returnCodes.ERROR, "m", self.daemon.errorconditionserializer.dumps(eco.__dict__))
-                print(eco)
-                return self.responseRaw(resultdata, start_response)
-            data=environ["wsgi.input"].read()
-            category, cmd, data2, informat, returnformat, sessionid = j.servers.base._unserializeBinSend(data)
-            if self.verbose:
-                print(category, cmd, data2)
-            resultcode, returnformat, result = self.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
-            data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
-            return self.responseRaw(data3,start_response)
-        elif environ['CONTENT_TYPE'].startswith('application/json') and environ["REQUEST_METHOD"] == 'POST':
-            if payloadsize > MAXSIZE:
-                return self.invalidRequest("Payload size too big")
-            return self.handleJSONRPC(environ, start_response)
-        else:
-            return self.responseNotFound(start_response)
+        if environ['REQUEST_METHOD'] == 'POST':
+            if environ["CONTENT_TYPE"]=='application/raw':
+                if payloadsize > MAXSIZE:
+                    eco = j.errorconditionhandler.getErrorConditionObject(msg="Payload size too big")
+                    resultdata = j.servers.base._serializeBinReturn(returnCodes.ERROR, "m", self.daemon.errorconditionserializer.dumps(eco.__dict__))
+                    print(eco)
+                    return self.responseRaw(resultdata, start_response)
+                data=environ["wsgi.input"].read()
+                category, cmd, data2, informat, returnformat, sessionid = j.servers.base._unserializeBinSend(data)
+                if self.verbose:
+                    print(category, cmd, data2)
+                resultcode, returnformat, result = self.daemon.processRPCUnSerialized(cmd, informat, returnformat, data2, sessionid, category=category)
+                data3 = j.servers.base._serializeBinReturn(resultcode, returnformat, result)
+                return self.responseRaw(data3,start_response)
+            elif environ['CONTENT_TYPE'].startswith('application/json'):
+                if payloadsize > MAXSIZE:
+                    return self.invalidRequest("Payload size too big")
+                return self.handleJSONRPC(environ, start_response)
+        return self.responseNotFound(start_response)
 
     def invalidRequest(self, msg="Invalid Request"):
         msg = {'error': {'code': -32600, 'message': msg}, 'id': None, 'jsonrpc': '2.0'}
