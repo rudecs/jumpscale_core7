@@ -116,6 +116,8 @@ class GeventWSServer():
 
     def rpcRequest(self, environ, start_response):
         payloadsize = int(environ.get('CONTENT_LENGTH', 0))
+        if environ["PATH_INFO"].strip("/") == "ping":
+            return self.responseRaw("pong", start_response)
         if environ['REQUEST_METHOD'] == 'POST':
             if environ["CONTENT_TYPE"]=='application/raw':
                 if payloadsize > MAXSIZE:
