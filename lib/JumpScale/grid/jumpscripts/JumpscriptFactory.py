@@ -108,65 +108,72 @@ from JumpScale import j
         if self.debug:
             result = self.executeInProcess(*args, **kwargs)
             return result
-        else:
-            def helper(pipe):
-                def errorhandler(sig, frame):
-                    try:
-                        msg = 'Failed to execute job on time'
-                        eco = j.errorconditionhandler.getErrorConditionObject(msg=msg)
-                        eco.backtrace = eco.getBacktraceDetailed(frame=frame.f_back, startframe=9)
-                        eco.backtraceDetailed = eco.backtrace
-                        eco.tb = None
-                        eco.tags = "jscategory:%s"%self.category
-                        eco.jid = j.application.jid
-                        eco.tags += " jsorganization:%s"%self.organization
-                        eco.tags +=" jsname:%s"%self.name
-                        j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
-                    except Exception as e:
-                        eco = str(e)
-                    pipe.send(("TIMEOUT", eco))
-                    # when handling sigterm we need to exit
-                    sys.exit(2)
+        def helper(pipe):
+            def get_timeout_backtrace():
+                proc = multiprocessing.current_process()
+                _, stdout, _ = j.do.execute(
+                    "py-spy --pid {} --dump".format(proc.pid), 
+                    outputStdout=False, 
+                    dieOnNonZeroExitCode=False
+                )
+                return stdout
 
-                signal.signal(signal.SIGTERM, errorhandler)
+            def errorhandler(sig, frame):
                 try:
-                    result = self.executeInProcess(*args, **kwargs)
-                    pipe.send(result)
-                except Exception as e:
-                    try:
-                        result = self._getECO(e)
-                    except Exception, e:
-                        msg = 'Failed parsing original exception: %s' % e
-                        result = j.errorconditionhandler.getErrorConditionObject(msg=msg)
-                    pipe.send((False, result))
-
-            ppipe, cpipe = multiprocessing.Pipe()
-            proc = multiprocessing.Process(target=helper, args=(cpipe,))
-            proc.start()
-            cpipe.close()
-            proc.join(self.timeout)
-            if proc.is_alive():
-                proc.terminate()
-                proc.join(5)
-                if proc.is_alive():
-                    try:
-                        os.kill(proc.pid, signal.SIGKILL)
-                    except (ProcessLookupError, OSError):
-                        pass
-                    # reap process
-                    proc.join(5)
-                    msg = 'Failed to execute job on time and failed to kill cleanly'
+                    msg = 'Failed to execute job on time'
                     eco = j.errorconditionhandler.getErrorConditionObject(msg=msg)
-                    eco.errormessagePub = 'JumpScript died unexpectedly %s'
-                    eco.tb = False
-                    return "TIMEOUT", eco.dump()
+                    eco.backtrace = get_timeout_backtrace()
+                    eco.tb = None
+                    eco.tags = "jscategory:%s"%self.category
+                    eco.jid = j.application.jid
+                    eco.tags += " jsorganization:%s"%self.organization
+                    eco.tags +=" jsname:%s"%self.name
+                    j.errorconditionhandler.raiseOperationalCritical(eco=eco,die=False)
+                except Exception as e:
+                    eco = str(e)
+                pipe.send(("TIMEOUT", eco))
+                # when handling sigterm we need to exit
+                sys.exit(2)
 
+            signal.signal(signal.SIGTERM, errorhandler)
             try:
-                return ppipe.recv()
+                result = self.executeInProcess(*args, **kwargs)
+                pipe.send(result)
             except Exception as e:
-                eco = j.errorconditionhandler.parsePythonErrorObject(e)
-                eco['errormessagePub'] = 'JumpScript died unexpectedly %s'
-                return False, result
+                try:
+                    result = self._getECO(e)
+                except Exception as e:
+                    msg = 'Failed parsing original exception: %s' % e
+                    result = j.errorconditionhandler.getErrorConditionObject(msg=msg)
+                pipe.send((False, result))
+
+        ppipe, cpipe = multiprocessing.Pipe()
+        proc = multiprocessing.Process(target=helper, args=(cpipe,))
+        proc.start()
+        cpipe.close()
+        proc.join(self.timeout)
+        if proc.is_alive():
+            proc.terminate()
+            proc.join(5)
+            if proc.is_alive():
+                try:
+                    os.kill(proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, OSError):
+                    pass
+                # reap process
+                proc.join(5)
+                msg = 'Failed to execute job on time and failed to kill cleanly'
+                eco = j.errorconditionhandler.getErrorConditionObject(msg=msg)
+                eco.errormessagePub = 'JumpScript died unexpectedly %s'
+                eco.tb = False
+                return "TIMEOUT", eco.dump()
+
+        try:
+            return ppipe.recv()
+        except Exception as e:
+            eco = j.errorconditionhandler.parsePythonErrorObject(e)
+            eco['errormessagePub'] = 'JumpScript died unexpectedly %s'
+            return False, result
 
     def _getECO(self, e):
         eco = j.errorconditionhandler.parsePythonErrorObject(e)
