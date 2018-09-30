@@ -1,0 +1,3 @@
+#!/bin/bash
+source /opt/jumpscale7/env.sh
+exec python "$@"
