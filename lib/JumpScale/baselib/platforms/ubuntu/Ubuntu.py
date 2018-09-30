@@ -1,5 +1,6 @@
 from JumpScale import j
 from collections import namedtuple
+import os
 
 Package = namedtuple('Package', 'name version arch')
 
@@ -438,9 +439,10 @@ WantedBy=multi-user.target
 
     def serviceUninstall(self, servicename):
         self.stopService(servicename)
-        filename = '%s.service'
-        for file_ in j.system.fs.find('/etc/systemd/', filename):
-            j.system.fs.remove(file_)
+        filename = '%s.service' % servicename
+        for curdir, _, files in os.walk('/etc/systemd'):
+            if filename in files:
+                j.system.fs.remove(os.path.join(curdir, filename))
 
     def listServices(self):
         exitcode, output = j.system.process.execute('systemctl list-unit-files --no-pager --no-legend')
