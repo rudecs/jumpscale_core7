@@ -6,6 +6,7 @@ import re
 from .ActionsBase import ActionsBase
 import AYSdb
 import json
+import os
 
 class AtYourServiceFactory():
 
@@ -52,7 +53,8 @@ class AtYourServiceFactory():
 
             # always load base domaim
             items=j.application.config.getDictFromPrefix("atyourservice.metadata")
-            repos=j.do.getGitReposListLocal()
+            repos=j.do.getGitReposListLocal(errorIfNone=False)
+            pullrepos = 'AYS_RO' not in os.environ
             for domain, repo in items.iteritems():
                 url=repo['url']
                 branch = repo.get('branch') or None
@@ -60,7 +62,7 @@ class AtYourServiceFactory():
                 if not tag and not branch:
                     branch = 'master'
                 reponame=url.rpartition("/")[-1]
-                if not reponame in repos.keys():
+                if not reponame in repos.keys() and pullrepos:
                     #means git has not been pulled yet
                     if login!="":
                         dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch=branch, tag=tag)

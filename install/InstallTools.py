@@ -1599,20 +1599,21 @@ class InstallTools():
 
     def getGitReposListLocal(self,provider="",account="",name="",errorIfNone=True):
         repos={}
-        for top in self.listDirsInDir(self.CODEDIR, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-            if provider!="" and provider!=top:
-                continue
-            for accountfound in self.listDirsInDir("%s/%s"%(self.CODEDIR,top), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                if account!="" and account!=accountfound:
+        if self.exists(self.CODEDIR):
+            for top in self.listDirsInDir(self.CODEDIR, recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+                if provider!="" and provider!=top:
                     continue
-                accountfounddir="/%s/%s/%s"%(self.CODEDIR,top,accountfound)
-                for reponame in self.listDirsInDir("%s/%s/%s"%(self.CODEDIR,top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
-                    if name!="" and name!=reponame:
+                for accountfound in self.listDirsInDir("%s/%s"%(self.CODEDIR,top), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+                    if account!="" and account!=accountfound:
                         continue
-                    repodir="%s/%s/%s/%s"%(self.CODEDIR,top,accountfound,reponame)
-                    if self.exists(path="%s/.git"%repodir):
-                        repos[reponame]=repodir
-        if len(list(repos.keys()))==0:
+                    accountfounddir="/%s/%s/%s"%(self.CODEDIR,top,accountfound)
+                    for reponame in self.listDirsInDir("%s/%s/%s"%(self.CODEDIR,top,accountfound), recursive=False, dirNameOnly=True, findDirectorySymlinks=True):
+                        if name!="" and name!=reponame:
+                            continue
+                        repodir="%s/%s/%s/%s"%(self.CODEDIR,top,accountfound,reponame)
+                        if self.exists(path="%s/.git"%repodir):
+                            repos[reponame]=repodir
+        if len(list(repos.keys()))==0 and errorIfNone:
             raise RuntimeError("Cannot find git repo '%s':'%s':'%s'"%(provider,account,name))
         return repos
 
