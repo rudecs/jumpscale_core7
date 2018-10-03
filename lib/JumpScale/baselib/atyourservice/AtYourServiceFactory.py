@@ -62,20 +62,16 @@ class AtYourServiceFactory():
                 if not tag and not branch:
                     branch = 'master'
                 reponame=url.rpartition("/")[-1]
-                if not reponame in repos.keys() and pullrepos:
+                if reponame not in repos.keys() and pullrepos:
                     #means git has not been pulled yet
                     if login!="":
                         dest=j.do.pullGitRepo(url,dest=None,login=login,passwd=passwd,depth=1,ignorelocalchanges=False,reset=False,branch=branch, tag=tag)
                     else:
                         dest=j.do.pullGitRepo(url,dest=None,depth=1,ignorelocalchanges=False,reset=False,branch=branch, tag=tag)
-
-                repos=j.do.getGitReposListLocal()
-
-                dest=repos[reponame]
-                self.domains[domain]=dest
-
-            self_init=True
-
+                    repos=j.do.getGitReposListLocal()
+                if reponame in repos:
+                    dest=repos[reponame]
+                    self.domains[domain]=dest
 
     def updateTemplatesRepo(self, repos=[]):
         """
