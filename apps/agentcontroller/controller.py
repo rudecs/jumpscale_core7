@@ -163,7 +163,6 @@ class ControllerCMDS():
         self.jumpscripts = {}
         self.jumpscriptsFromKeys = {}
         self.loadJumpscripts()
-        self.loadLuaJumpscripts()
         print("want processmanagers to reload js:")
         for item in self.osisclient.list("system","node"):
             gid,nid=item.split("_")
@@ -310,25 +309,6 @@ class ControllerCMDS():
         if isinstance(eco, dict):
             eco = j.errorconditionhandler.getErrorConditionObject(eco)
         eco.process()
-
-    def loadLuaJumpscripts(self):
-        """
-        Like self.loadJumpscripts() but for Lua jumpscripts.
-        """
-        lua_jumpscript_path = 'luajumpscripts'
-        available_jumpscripts = list()
-        if j.system.fs.exists(lua_jumpscript_path):
-            available_jumpscripts =\
-                j.system.fs.listFilesInDir(path=lua_jumpscript_path, recursive=True, filter='*.lua', followSymlinks=True)
-
-        for jumpscript_path in available_jumpscripts:
-            jumpscript_metadata = j.core.jumpscripts.introspectLuaJumpscript(jumpscript_path)
-
-            key = "%(organization)s_%(name)s" % {
-                'organization': jumpscript_metadata.organization,
-                'name': jumpscript_metadata.name
-            }
-            self.jumpscripts[key] = jumpscript_metadata
 
     def loadJumpscripts(self, path="jumpscripts", session=None):
         if session is not None:
