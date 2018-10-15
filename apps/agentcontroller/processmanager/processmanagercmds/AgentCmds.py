@@ -30,9 +30,9 @@ class AgentCmds():
             self._adminAuth(session.user,session.passwd)
 
         self._killGreenLets()
-        acinstance = j.application.instanceconfig.get('instance.agentcontroller.connection')
+        acinstance = j.application.instanceconfig.get('connections', {}).get('agentcontroller', 'main')
         config = j.clients.agentcontroller.getInstanceConfig(acinstance)
-        ipaddr = tuple(addr.strip() for addr in config.pop('addr').split(','))
+        ipaddr = tuple(addr.strip() for addr in config.pop('addr'))
         j.core.processmanager.daemon.schedule("agent", self.loop, ipaddr, config)
 
     def reconnect(self, acip, config):
