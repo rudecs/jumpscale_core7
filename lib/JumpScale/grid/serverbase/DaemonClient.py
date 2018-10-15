@@ -34,7 +34,7 @@ class SimpleClient(object):
 
 class DaemonClient(object):
 
-    def __init__(self, org="myorg", user="root", passwd="passwd", ssl=False, encrkey="", reset=False, roles=[], \
+    def __init__(self, org="myorg", user="root", passwd="passwd", ssl=False, encrkey="", reset=False, roles=None, \
         transport=None, defaultSerialization="j",id=None):
         """
         @param encrkey (use for simple blowfish shared key encryption, better to use SSL though, will do the same but dynamically exchange the keys)
@@ -56,9 +56,8 @@ class DaemonClient(object):
         self.passwd = passwd
         self.ssl = ssl
 
-        if roles==[] and j.application.config.exists("grid.node.roles"):
-            roles=j.application.config.get("grid.node.roles")
-            roles=[item.strip().lower() for item in roles]
+        roles = j.application.config["grid"]["node"]["roles"]
+        roles=[item.strip().lower() for item in roles]
 
         # WARNING: Do not put this back this makes it impossible to register a node
         #if j.application.whoAmI.gid==0 or j.application.whoAmI.nid==0:

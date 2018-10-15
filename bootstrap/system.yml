@@ -1,0 +1,13 @@
+logging: True
+paths:
+  app: /opt/jumpscale7/apps 
+  base: /opt/jumpscale7
+  bin: /opt/jumpscale7/bin
+  cfg: /opt/jumpscale7/cfg
+  code: /opt/code
+  lib: /opt/jumpscale7/lib
+  log: /opt/jumpscale7/var/log
+  pid: /opt/jumpscale7/var/pid
+  libExt: /opt/jumpscale7/libext
+  jsLib : /opt/jumpscale7/lib/JumpScale
+  var: /opt/jumpscale7/var

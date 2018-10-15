@@ -15,8 +15,8 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', help='Enable verbose logging', default=False, action='store_true')
     parser.add_argument('osisinstance', help='Choose osis instance to use', default="main")
     options = parser.parse_args()
-    osishrd = j.application.getAppInstanceHRD(name="osis",instance=options.osisinstance)
-    connectionsconfig = osishrd.getDictFromPrefix('instance.param.osis.connection')
+    config_osis = j.core.config.get("osis", options.osisinstance)
+    connectionsconfig = config_osis.get('connections')
     connections = {}
 
     for dbname, instancename in connectionsconfig.items():
@@ -37,8 +37,8 @@ if __name__ == '__main__':
             import JumpScale.baselib.influxdb
             client = j.clients.influxdb.getByInstance(instancename)
             databases = [db['name'] for db in client.get_list_database()]
-            hrd = j.application.getAppInstanceHRD(instance=instancename, name='influxdb_client')
-            database_name = hrd.getStr('instance.param.influxdb.client.dbname')
+            config = j.core.config.get('influxdb_client', instancename)
+            database_name = config.get('dbname')
             if database_name not in databases:
                 client.create_database(database_name)
             else:
@@ -47,8 +47,8 @@ if __name__ == '__main__':
 
         connections["%s_%s"%(dbname,instancename)]=client
 
-    superadminpasswd = osishrd.get("instance.param.osis.superadmin.passwd")
+    superadminpasswd = config_osis.get("passwd")
 
-    j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=osishrd, verbose=options.verbose)
+    j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=config_osis, verbose=options.verbose)
 
     j.application.stop()

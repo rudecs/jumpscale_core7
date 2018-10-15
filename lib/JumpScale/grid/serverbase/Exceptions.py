@@ -26,7 +26,7 @@ Client BackTrace
 %s
 
 """ % (eco['backtrace'], ''.join(backtrace))
-        self.eco = eco
+        self.eco = j.errorconditionhandler.getErrorConditionObject(eco)
 
 
 class LockException(BaseException):

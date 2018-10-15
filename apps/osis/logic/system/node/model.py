@@ -56,15 +56,15 @@ class Node(OsisBaseObject):
         """
 
         self.machineguid = j.application.getUniqueMachineId().replace(":", "")
-        self.roles= j.application.config.get("grid.node.roles").split(",")
+        self.roles = j.application.config["grid"]["node"]["roles"]
 
-        self.ipaddr=[item for item in j.system.net.getIpAddresses() if item !="127.0.0.1"]
+        self.ipaddr = [item for item in j.system.net.getIpAddresses() if item != "127.0.0.1"]
 
         self.netaddr=j.system.net.getNetworkInfo(startwith_filter=("vx-", "space_", "gw_", "gwm-", "spc-"))
         self.name = j.system.net.getHostname()
 
-        self.gid=j.application.config.getInt("grid.id")
-        if j.application.config.exists('grid.node.id'):
-            self.id=j.application.config.getInt("grid.node.id")
-        if self.gid==0:
+        self.gid = j.application.config["grid"]["id"]
+        if j.application.config["grid"]["node"]["id"]:
+            self.id = j.application.config["grid"]["node"]["id"]
+        if self.gid == 0:
             raise RuntimeError("grid id cannot be 0")

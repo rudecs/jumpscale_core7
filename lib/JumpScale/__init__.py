@@ -100,11 +100,11 @@ j.basetype = pmtypes.register_types()
 from .core.Console import Console
 j.console = Console()
 
-from .baselib import hrd
+from .baselib import config
 
-j.application.config = j.core.hrd.get(path="%s/hrd/system" % base)
+j.application.loadConfig()
 
-j.logger.enabled = j.application.config.getBool("system.logging", default=False)
+j.logger.enabled = j.application.config['system'].get("logging", False)
 
 from .core.Dirs import Dirs
 j.dirs = Dirs()

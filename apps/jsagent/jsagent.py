@@ -113,26 +113,8 @@ class ProcessManager():
         self.processes = list()
         self.services = list()
 
-        self.dir_data=j.system.fs.joinPaths(j.dirs.baseDir,"jsagent_data")
-        self.dir_hekadconfig=j.system.fs.joinPaths(self.dir_data,"dir_hekadconfig")
-        self.dir_actions=j.system.fs.joinPaths(self.dir_data,"actions")
-        j.system.fs.createDir(self.dir_data)
-        if j.system.net.tcpPortConnectionTest("localhost",9999)==False:
-            redisServices = j.atyourservice.findServices('jumpscale', 'redis', 'system')
-            if len(redisServices) <= 0:
-                args = {'instance.param.port': 9999,
-                        'instance.param.disk': 0,
-                        'instance.param.mem': 40,
-                        'instance.param.ip': '127.0.0.1',
-                        'instance.param.passwd': '',
-                        'instance.param.unixsocket': 0}
-                redisService = j.atyourservice.new('jumpscale', 'redis', 'system', args=args)
-                redisService.install()
-            else:
-                redisService = redisServices[0]
-                redisService.start()
-            if j.system.net.waitConnectionTest("localhost",9999,10)==False:
-                j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
+        if not j.system.net.waitConnectionTest("localhost",9999,10):
+            j.events.opserror_critical("could not start redis on port 9999 inside processmanager",category="processmanager.redis.start")
 
         self.redis_mem=j.clients.redis.getByInstance('system')
 
@@ -144,52 +126,45 @@ class ProcessManager():
 
         j.processmanager=self
 
-        self.hrd=j.application.instanceconfig
+        self.config=j.application.instanceconfig
 
-        acclientinstancename = self.hrd.get('instance.agentcontroller.connection')
-        osisinstance = self.hrd.get('instance.osis.connection')
-        osisconfig = j.application.getAppInstanceHRD('osis_client', osisinstance)
-        acconfig = j.application.getAppInstanceHRD('agentcontroller_client', acclientinstancename)
+        connections = self.config.get('connections')
+        if not connections:
+            raise RuntimeError("Connections data not set for jsagent server")
+        acclientinstancename = connections.get('agentcontroller')
+        osisinstance = connections.get('osis')
+        osisconfig = j.core.config.get('osis_client', osisinstance)
+        acconfig = j.core.config.get('agentcontroller_client', acclientinstancename)
 
-        acip = acconfig.getList("instance.agentcontroller.client.addr",default="")[0]
+        if not j.application.config["grid"]["id"]:
+            raise RuntimeError("Grid id should be set")
 
-        if acip!="":
+        acip = acconfig["addr"]
+        if isinstance(acip, list):
+            acip = acip[0]
 
-            if j.application.config.exists("grid.id"):
-                if j.application.config.get("grid.id")=="" or j.application.config.getInt("grid.id")==0:
-                    j.application.config.set("grid.id",self.hrd.get("instance.grid.id"))
+        acport = acconfig["port"]
+        osislogin = osisconfig['login']
+        osispassword = osisconfig['passwd']
 
-            acport = acconfig.getInt("instance.agentcontroller.client.port")
-            aclogin = acconfig.get("instance.agentcontroller.client.login",default="node")
-            acpasswd = acconfig.get("instance.agentcontroller.client.passwd",default="")
+        #processmanager enabled
+        while not j.system.net.waitConnectionTest(acip, acport,2):
+            print("cannot connect to agentcontroller, will retry forever: '%s:%s'"%(acip,acport))
 
-            osislogin = osisconfig.get('instance.param.osis.client.login')
-            osispassword = osisconfig.get('instance.param.osis.client.passwd')
+        #now register to agentcontroller with osis credentials
+        self.acclient = j.clients.agentcontroller.get(acip, login=osislogin, passwd=osispassword, new=True)
+        memory = psutil.virtual_memory().total / 1024**2
+        machineguid = j.application.getUniqueMachineId()
+        res=self.acclient.registerNode(hostname=socket.gethostname(), 
+                                        machineguid=machineguid,
+                                        memory=memory)
 
-            #processmanager enabled
-            while j.system.net.waitConnectionTest(acip,acport,2)==False:
-                print("cannot connect to agentcontroller, will retry forever: '%s:%s'"%(acip,acport))
+        nid=res["node"]["id"]
+        j.application.config['grid']['node']['id'] = nid
+        j.core.config.set('system', 'grid', j.application.config['grid'])
+        j.application.initWhoAmI(True)
 
-            #now register to agentcontroller with osis credentials
-            self.acclient = j.clients.agentcontroller.get(acip, login=osislogin, passwd=osispassword, new=True)
-            memory = psutil.virtual_memory().total / 1024**2
-            res=self.acclient.registerNode(hostname=socket.gethostname(), 
-                                           machineguid=j.application.getUniqueMachineId(),
-                                           memory=memory)
-
-            nid=res["node"]["id"]
-            jsagentService = j.atyourservice.get('jumpscale', 'jsagent', parent=None)
-            jsagentService.hrd.set("grid.node.id",nid)
-            j.application.config.set('grid.node.id',nid)
-
-            jsagentService.hrd.set("grid.id",res["node"]["gid"])
-            jsagentService.hrd.set("grid.node.machineguid",j.application.getUniqueMachineId())
-            j.application.loadConfig()
-            j.application.initWhoAmI(True)
-
-            self.acclient=j.clients.agentcontroller.getByInstance(acclientinstancename)
-        else:
-            self.acclient=None
+        self.acclient = j.clients.agentcontroller.getByInstance(acclientinstancename)
 
 
     def start(self):
@@ -251,13 +226,13 @@ def kill_subprocesses():
         p.kill()
 
 parser = cmdutils.ArgumentParser()
-parser.add_argument("-i", '--instance', default="0", help='jsagent instance', required=False)
+parser.add_argument("-i", '--instance', default="main", help='jsagent instance', required=False)
 parser.add_argument("-r", '--reset', action='store_true',help='jsagent reset', required=False,default=False)
 parser.add_argument("-s", '--services', help='list of services to run e.g heka, agentcontroller,web', required=False,default="")
 
 opts = parser.parse_args()
 
-j.application.instanceconfig = j.application.getAppInstanceHRD('jsagent', 'main')
+j.application.instanceconfig = j.core.config.get('jsagent', opts.instance)
 
 #first start processmanager with all required stuff
 pm=ProcessManager(reset=opts.reset)

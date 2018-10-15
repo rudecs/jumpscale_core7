@@ -8,10 +8,10 @@ class GrafanaFactory(object):
         return GrafanaClient(url, username, password)
 
     def getByInstance(self, instance):
-        hrd = j.application.getAppInstanceHRD(name="grafana_client",instance=instance)
-        url = hrd.get("instance.param.url")
-        username = hrd.get("instance.param.username")
-        password = hrd.get("instance.param.password")
+        config = j.core.config.get("grafana_client",instance)
+        url = config.get("url")
+        username = config.get("username")
+        password = config.get("password")
         return self.get(url, username, password)
 
 class GrafanaClient(object):

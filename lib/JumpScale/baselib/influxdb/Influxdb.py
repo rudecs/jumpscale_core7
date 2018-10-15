@@ -18,11 +18,11 @@ class InfluxdbFactory:
         return db
 
     def getByInstance(self, instancename):
-        hrd = j.application.getAppInstanceHRD(name="influxdb_client",instance=instancename)
-        ipaddr=hrd.get("instance.param.influxdb.client.address")
-        port=hrd.getInt("instance.param.influxdb.client.port")        
-        login=hrd.get("instance.param.influxdb.client.login")
-        passwd=hrd.get("instance.param.influxdb.client.passwd")
+        config = j.core.config.get("influxdb_client", instancename)
+        ipaddr=config.get("address")
+        port=config.get("port")        
+        login=config.get("login")
+        passwd=config.get("passwd")
         return j.clients.influxdb.get(host=ipaddr, port=port,username=login, password=passwd, database="main")
 
     def postraw(self,data,host='localhost', port=8086,username='root', password='root', database="main"):

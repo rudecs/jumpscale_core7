@@ -16,6 +16,8 @@ from .ErrorConditionObject import ErrorConditionObject, LEVELMAP, REVERSEMAP
 class BaseException(Exception):
     def __init__(self, message="", eco=None):
         self.message = message
+        if isinstance(eco, dict):
+            eco = j.errorconditionhandler.getErrorConditionObject(eco)
         self.eco = eco
 
     def __str__(self):
@@ -69,11 +71,8 @@ class ErrorConditionHandler():
     @property
     def blacklist(self):
         if self._blacklist is None:
-            key = 'application.eco.blacklist'
-            if j.application.config.exists(key):
-                self._blacklist = j.application.config.getList(key)
-            else:
-                self._blacklist = list()
+            key = 'eco_blacklist'
+            self._blacklist = j.application.config['system'].get(key, [])
         return self._blacklist
 
     def toolStripNonAsciFromText(text):

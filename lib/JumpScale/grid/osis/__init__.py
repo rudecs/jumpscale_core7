@@ -3,14 +3,12 @@ from JumpScale import j
 def cb():
     import JumpScale.grid.serverbase
     from .OSISFactory import OSISFactory
-    import JumpScale.baselib.hrd
     import JumpScale.baselib.key_value_store
     return OSISFactory()
 
 def cbc():
     import JumpScale.grid.serverbase
     from .OSISFactory import OSISClientFactory
-    import JumpScale.baselib.hrd
     import JumpScale.baselib.key_value_store
     return OSISClientFactory()
 

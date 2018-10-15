@@ -31,17 +31,9 @@ class AgentControllerFactory(object):
 
     def getInstanceConfig(self, instance=None):
         if instance is None:
-            instance = j.application.instanceconfig.get('instance.agentcontroller.connection')
-        hrd = j.application.getAppInstanceHRD('agentcontroller_client', instance)
-        prefix = 'instance.agentcontroller.client.'
-        result = dict()
-        for key in hrd.prefix(prefix):
-            attrib = key[len(prefix):]
-            value = hrd.get(key)
-            if attrib == 'port':
-                value = int(value)
-            result[attrib] = value
-        return result
+            instance = j.application.instanceconfig.get('connections', {}).get('agentcontroller', 'main')
+        config = j.core.config.get("agentcontroller_client", instance)
+        return config
 
     def getByInstance(self, instance=None, new=False):
         config = self.getInstanceConfig(instance)
@@ -58,27 +50,15 @@ class AgentControllerFactory(object):
 class AgentControllerProxyClient():
     def __init__(self,category,agentControllerIP, port, login, passwd):
         self.category=category
-        import JumpScale.grid.geventws
-        if agentControllerIP==None:
-            acipkey = "grid.agentcontroller.ip"
-            if j.application.config.exists(acipkey):
-                self.ipaddr=j.application.config.get(acipkey)
-            else:
-                self.ipaddr=j.application.config.get("grid.master.ip")
-        else:
-            self.ipaddr=agentControllerIP
-        instances = j.application.getAppHRDInstanceNames('agentcontroller_client')
-        if not instances:
-            raise RuntimeError('AgentController Client must be configured')
-        acconfig = j.application.getAppInstanceHRD('agentcontroller_client', instances[0])
-        passwd = acconfig.get("instance.agentcontroller.client.passwd")
+        acconfig = j.core.config.get('agentcontroller_client', "main")
+        self.ipaddr = acconfig['addr'][0]
+        passwd = acconfig.get("passwd")
         login = 'root'
         client= j.servers.geventws.getClient(self.ipaddr, PORT, user=login, passwd=passwd,category="processmanager_%s"%category)
         self.__dict__.update(client.__dict__)
 
 class AgentControllerClient():
     def __init__(self,addr, port=PORT, login='root', passwd=None):
-        import JumpScale.grid.geventws
 
         if isinstance(addr, basestring):
             connections = list()

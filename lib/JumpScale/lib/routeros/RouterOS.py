@@ -393,11 +393,6 @@ class RouterOS(object):
                 raise RuntimeError("Could not find port 21 or 9021 to open ftp connection to %s"%self.host)
         return self._ftp
 
-    def networkId2NetworkAddr(self,networkid):
-        netrange=j.application.config.get("vfw.netrange.internal")
-        net=netaddr.IPNetwork(netrange)
-        return str(netaddr.IPAddress(net.first+int(networkid)))
-
     def close(self):
         self._s.close()
         self.ftp.close()

@@ -71,6 +71,7 @@ class ErrorConditionObject():
 
             self.occurrences = 1  # nr of times this error condition happened
             self.noreraise = False
+            self.exceptionclassname = None
 
             self.getUniqueKey()
             self.guid = str(uuid.UUID(self.uniquekey))

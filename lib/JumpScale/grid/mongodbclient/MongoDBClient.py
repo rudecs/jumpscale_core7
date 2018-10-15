@@ -13,18 +13,15 @@ class MongoDBClient:
             return client
 
     def getByInstance(self, instancename):
-        hrd = j.application.getAppInstanceHRD(name="mongodb_client",instance=instancename)
-        if hrd is None:
+        config = j.core.config.get("mongodb_client", instancename)
+        if config is None:
             j.events.opserror_critical("Could not find mongodb_client for instance %s" % instancename)
-        ipaddr = hrd.get("instance.param.addr")
-        port = hrd.getInt("instance.param.port")    
-        ssl = False
-        if hrd.exists('instance.param.ssl'):
-            ssl = hrd.getBool('instance.param.ssl')
-        replicaset = ""
-        if hrd.exists('instance.param.replicaset'):
-            replicaset = hrd.get('instance.param.replicaset')
-        if replicaset == "":
-            return MongoClient(host=ipaddr, port=port, ssl=ssl)
-        else:
+        ipaddr = config.get("addr")
+        port = config.get("port")
+        ssl = config.get("ssl", False)
+        replicaset = config.get("replicaset")
+        if replicaset:
             return MongoReplicaSetClient(ipaddr, port=port, ssl=ssl, replicaSet=replicaset)
+        else:
+            return MongoClient(host=ipaddr, port=port, ssl=ssl)
+            

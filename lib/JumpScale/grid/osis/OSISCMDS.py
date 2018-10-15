@@ -112,21 +112,6 @@ class OSISCMDS(object):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.native(methodname=methodname, session=session, kwargs=kwargs)
 
-    def checkChangeLog(self):
-        rediscl = None
-        if not j.application.config.exists("rediskvs.master.addr"):
-            return
-        while True:
-            if j.system.net.tcpPortConnectionTest('127.0.0.1', port=7771):
-                try:
-                    if rediscl == None:
-                        rediscl = j.db.keyvaluestore.getRedisStore(namespace='', host='127.0.0.1', port=7771)
-                    rediscl.checkChangeLog()
-                except Exception as e:
-                    j.errorconditionhandler.processPythonExceptionObject(e)
-            yield gen.Task(self.loop.add_timeout, time.time() + 2)
-            # gevent.sleep(2)
-
     def _rebuildindex(self, namespace, categoryname, session=None):
         oi = self._doAuth(namespace, categoryname, session)
         return oi.rebuildindex(session)
@@ -185,10 +170,7 @@ class OSISCMDS(object):
 
         if user == "root":
             if j.core.osis.superadminpasswd is None:
-                j.application.loadConfig()
-                j.core.osis.superadminpasswd = j.application.config.get("osis.superadmin.passwd")
-                if j.core.osis.superadminpasswd == "":
-                    raise RuntimeError("osis.superadmin.passwd cannot be empty in hrd")
+                raise RuntimeError("osis superadminpasswd cannot be empty")
 
             if passwd == j.core.osis.superadminpasswd:
                 return True

@@ -1870,7 +1870,7 @@ class Installer():
         from JumpScale import j
 
         #make sure all configured paths are created
-        for item in j.application.config.getListFromPrefix("system.paths"):
+        for item in j.application.config["system"]["paths"].values():
             do.createDir(item)
 
         if do.TYPE == "UBUNTU64":
@@ -1897,8 +1897,8 @@ class Installer():
         paths.code=$CODEDIR
         paths.lib=$(paths.base)/lib
 
-        paths.python.lib.js=$(paths.lib)/JumpScale
-        paths.python.lib.ext=$(paths.base)/libext
+        paths.jsLib=$(paths.lib)/JumpScale
+        paths.libExt=$(paths.base)/libext
         paths.app=$(paths.base)/apps
         paths.var=$(paths.base)/var
         paths.log=$(paths.var)/log

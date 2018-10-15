@@ -24,16 +24,8 @@ class Grid(OsisBaseObject):
         get ipaddr info & gid & nid from local config
         """
         self.ipaddr=[item for item in j.system.net.getIpAddresses() if item !="127.0.0.1"]
-        self.id= j.application.config.getInt("gridmaster.grid.id")
-
-        if not j.application.config.exists("grid.node.id"):
-            #register the own masternode to the grid
-            ays = j.atyourservice.get("jumpscale", "grid_node")
-            ays.configure()
-            if j.application.config.getInt("grid.node.id")==0:
-                raise RuntimeError("grid nid cannot be 0")
-
-        self.nid=j.application.config.getInt("grid.node.id")
+        self.id = j.application.whoAmI.gid
+        self.nid = j.application.whoAmI.nid
 
     def getUniqueKey(self):
         """

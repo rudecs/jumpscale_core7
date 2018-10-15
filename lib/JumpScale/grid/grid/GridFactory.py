@@ -55,9 +55,7 @@ class GridFactory():
     def init(self,description="",instance=1):
         self._loadConfig(test=False)
 
-        roles = list()
-        if self.config.exists("grid.node.roles"):
-            roles = j.application.config.getList('grid.node.roles')
+        roles = j.application.config['grid']['node']['roles']
         roles = [ role.lower() for role in roles ]
         self.roles = roles
         j.logger.consoleloglevel = 5

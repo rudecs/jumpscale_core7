@@ -19,7 +19,7 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--instance', help="Agentcontroller instance", required=True)
 opts = parser.parse_args()
-j.application.instanceconfig = j.application.getAppInstanceHRD(name="agentcontroller",instance=opts.instance)
+j.application.instanceconfig = j.core.config.get("agentcontroller", opts.instance)
 
 while not j.clients.redis.isRunning('system'):
     time.sleep(0.1)

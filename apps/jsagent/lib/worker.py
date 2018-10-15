@@ -258,13 +258,13 @@ if __name__ == '__main__':
 
     opts = parser.parse_args()
 
-    j.application.instanceconfig = j.application.getAppInstanceHRD(name="jsagent", instance=opts.instance)
+    j.application.instanceconfig = j.core.config.get("jsagent", opts.instance)
 
     j.core.osis.client = j.clients.osis.getByInstance(die=False)
 
     j.application.start("jumpscale:worker:%s" % opts.queuename)
 
-    if j.application.config.exists("grid.id"):
+    if j.application.config['grid']['id']:
         j.application.initGrid()
 
     j.logger.consoleloglevel = 2

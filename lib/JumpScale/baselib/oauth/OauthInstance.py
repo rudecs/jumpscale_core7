@@ -24,15 +24,15 @@ class OauthInstance(object):
 
     def __init__(self, addr, accesstokenaddr, id, secret, scope, redirect_url, user_info_url, logout_url, instance):
         if not addr:
-            hrd = j.application.getAppInstanceHRD('oauth_client', instance)
-            self.addr = hrd.get('instance.oauth.client.url')
-            self.accesstokenaddress = hrd.get('instance.oauth.client.url2')
-            self.id = hrd.get('instance.oauth.client.id')
-            self.scope = hrd.get('instance.oauth.client.scope')
-            self.redirect_url = hrd.get('instance.oauth.client.redirect_url')
-            self.secret = hrd.get('instance.oauth.client.secret')
-            self.user_info_url = hrd.get('instance.oauth.client.user_info_url')
-            self.logout_url = hrd.get('instance.oauth.client.logout_url')
+            config = j.core.config.get('oauth_client', instance)
+            self.addr = config['url']
+            self.accesstokenaddress = config['url2']
+            self.id = config['id']
+            self.scope = config['scope']
+            self.redirect_url = config['redirect_url']
+            self.secret = config['secret']
+            self.user_info_url = config['user_info_url']
+            self.logout_url = config['logout_url']
         else:
             self.addr = addr
             self.id = id

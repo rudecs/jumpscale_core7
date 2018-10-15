@@ -50,7 +50,10 @@ class Application:
         self.initWhoAmI()
 
     def loadConfig(self):
-        self.config = j.core.hrd.get(path="%s/system" % j.dirs.hrdDir)
+        config = {}
+        for instance in j.core.config.list('system'):
+            config[instance] = j.core.config.get('system', instance)
+        self.config = config
 
     def connectRedis(self):
         if j.logger.enabled:
@@ -73,21 +76,11 @@ class Application:
         """
 
         if not self.whoAmIBytestr or reload:
-
-            if self.config != None and self.config.exists('grid.node.id'):
-                nodeid = self.config.getInt("grid.node.id")
-                gridid = self.config.getInt("grid.id")
-                j.logger.log("gridid:%s,nodeid:%s"%(gridid, nodeid), level=3, category="application.startup")
-            else:
-                gridid = 0
-                nodeid = 0
-
+            nodeid = self.config["grid"]["node"]['id'] or 0
+            gridid = self.config["grid"]['id'] or 0
             self.systempid=os.getpid()
-
             self.whoAmI = WhoAmI(gid=gridid, nid=nodeid, pid=0)
-
             self.whoAmIBytestr = struct.pack("<hhh", self.whoAmI.pid, self.whoAmI.nid, self.whoAmI.gid)
-
 
     def initGrid(self):
         if not self.gridInitialized:
@@ -132,7 +125,7 @@ class Application:
         j.dirs.init(reinit=True)
 
         if hasattr(self, 'config'):
-            self.debug = j.application.config.getBool('system.debug', default=False)
+            self.debug = j.application.config['system'].get('debug', False)
 
         if self.redis!=None:
             if self.redis.hexists("application",self.appname):
@@ -214,62 +207,6 @@ class Application:
         if not self._calledexit:
             self.stop(stop=False)
 
-    def existAppInstanceHRD(self,name,instance,domain="jumpscale"):
-        """
-        returns hrd for specific appname & instance name (default domain=jumpscale or not used when inside a config git repo)
-        """
-        if j.atyourservice.type!="c":
-            path='%s/%s__%s__%s.hrd' % (j.dirs.getHrdDir(),domain,name,instance)
-        else:
-            path='%s/%s__%s.hrd' % (j.dirs.getHrdDir(),name,instance)
-        if not j.system.fs.exists(path=path):
-            return False
-        return True
-
-    def getAppInstanceHRD(self,name,instance,domain="jumpscale", parent=None):
-        """
-        returns hrd for specific domain,name and & instance name
-        """
-        service = j.atyourservice.get(domain=domain, name=name, instance=instance, parent=parent)
-        return service.hrd
-        # if parent:
-        #     path = j.system.fs.joinPaths(parent.path,"%s__%s"%(name,instance),"service.hrd")
-        # else:
-        #     path = j.system.fs.joinPaths(j.dirs.hrdDir,"%s__%s"%(name,instance),"service.hrd")
-        # if not j.system.fs.exists(path=path):
-        #     j.events.inputerror_critical("Could not find hrd for app: %s/%s, please install, looked on location:%s"%(name,instance,path))
-
-        # return j.core.hrd.get(path,prefixWithName=False)
-
-    def getAppInstanceHRDs(self,name,domain="jumpscale"):
-        """
-        returns list of hrd instances for specified app
-        """
-        res=[]
-        for instance in self.getAppHRDInstanceNames(name,domain):
-            res.append(self.getAppInstanceHRD(name,instance,domain))
-        return res
-
-    def getAppHRDInstanceNames(self,name,domain="jumpscale"):
-        """
-        returns hrd instance names for specific appname (default domain=jumpscale)
-        """
-        names = [item.instance for item in j.atyourservice.findServices(domain=domain, name=name)]
-        names.sort()
-        return names
-        # names=[j.system.fs.getBaseName(item) for item in j.system.fs.listDirsInDir(j.dirs.getHrdDir(),False)]
-        # res=[]
-        # from ipdb import set_trace;set_trace()
-        # for name1 in names:
-        #     if j.atyourservice.type!="c":
-        #         if name1.startswith(domain):
-        #             name1=name1[len(domain)+1:]
-        #     if name1.startswith(name):
-        #         instance=name1.split("__")[1]
-        #         if instance not in res:
-        #             res.append(instance)
-        # return res
-
     def getCPUUsage(self):
         """
         try to get cpu usage, if it doesn't work will return 0
@@ -323,32 +260,17 @@ class Application:
         """
         will look for network interface and return a hash calculated from lowest mac address from all physical nics
         """
-        # if unique machine id is set in grid.hrd, then return it
-        uniquekey = 'grid.node.machineguid'
-        if j.application.config.exists(uniquekey):
-            machineguid = j.application.config.get(uniquekey)
-            if machineguid.strip():
-                return machineguid
+        # if unique machine id is set in grid.yml, then return it
+        grid = j.application.config['grid']
+        machineguid = grid['node']['machineguid']
+        if machineguid:
+            return machineguid
 
-        nics = j.system.net.getNics()
-        if j.system.platformtype.isWindows():
-            order = ["local area", "wifi"]
-            for item in order:
-                for nic in nics:
-                    if nic.lower().find(item) != -1:
-                        return j.system.net.getMacAddress(nic)
-        macaddr = []
-        for nic in nics:
-            if nic.find("lo") == -1:
-                nicmac = j.system.net.getMacAddress(nic)
-                macaddr.append(nicmac.replace(":", ""))
-        macaddr.sort()
-        if len(macaddr) < 1:
-            raise RuntimeError("Cannot find macaddress of nics in machine.")
-
-        if j.application.config.exists(uniquekey):
-            j.application.config.set(uniquekey, macaddr[0])
-        return macaddr[0]
+        gwnic, _ = j.system.net.getDefaultIPConfig()
+        machineguid = j.system.net.getMacAddress(gwnic).replace(':', '')
+        grid['node']['machineguid'] = machineguid
+        j.core.config.set('system', 'grid', grid)
+        return machineguid
 
     def _setWriteExitcodeOnExit(self, value):
         if not j.basetype.boolean.check(value):

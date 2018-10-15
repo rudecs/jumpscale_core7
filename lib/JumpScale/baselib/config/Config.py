@@ -1,6 +1,7 @@
 import yaml
-from JumpScale import j
+import os
 
+CFGDIR = "/opt/jumpscale7/cfg"
 
 class Config(object):
     def get(self, app, instance):
@@ -10,7 +11,7 @@ class Config(object):
         :param instance (str) instance of that app
         :return: (dict) instance data
         """
-        with open("{}/{}/{}.yml".format(j.dirs.cfgDir, app, instance)) as cfg:
+        with open("{}/{}/{}.yml".format(CFGDIR, app, instance)) as cfg:
             return yaml.load(cfg)
 
     def set(self, app, instance, data):
@@ -22,8 +23,9 @@ class Config(object):
         """
         if not isinstance(data, dict):
             raise TypeError("data needs to be a dict")
-        dir_path = "{}/{}".format(j.dirs.cfgDir, app)
-        j.system.fs.createDir(dir_path)
+        dir_path = "{}/{}".format(CFGDIR, app)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path, 0o755)
         with open("{}/{}.yml".format(dir_path, instance), "w") as cfg:
             yaml.safe_dump(data, cfg, default_flow_style=False)
     
@@ -34,8 +36,11 @@ class Config(object):
         :param instance (str) instance of that app
         :return: (list) available instances of that app
         """
-        instances = j.system.fs.listFilesInDir("{}/{}".format(j.dirs.cfgDir, app))
-        return [j.system.fs.getBaseName(instance).split(".yml")[0] for instance in instances]
+        dir_path = "{}/{}".format(CFGDIR, app)
+        if not os.path.exists(dir_path):
+            return []
+        instances = os.listdir(dir_path)
+        return [instance.split(".yml")[0] for instance in instances]
 
     def delete(self, app, instance):
         """
@@ -43,4 +48,4 @@ class Config(object):
         :param app: (str) name of the app
         :param instance (str) instance of that app
         """
-        j.system.fs.remove("{}/{}/{}.yml".format(j.dirs.cfgDir, app, instance))
+        os.remove("{}/{}/{}.yml".format(CFGDIR, app, instance))

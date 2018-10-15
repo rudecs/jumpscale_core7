@@ -64,10 +64,7 @@ class Docker():
     @property
     def basepath(self):
         if not self._basepath:
-            if j.application.config.exists('docker.basepath'):
-                self._basepath = j.application.config.get('docker.basepath')
-            else:
-                self._basepath="/mnt/vmstor/docker" #btrfs subvol create
+            self._basepath = j.application.config['system'].get('docker_basepath', '/mnt/vmstor/docker')
         return self._basepath
 
     def _getChildren(self,pid,children):
@@ -152,7 +149,7 @@ class Docker():
     def exportRsync(self,name,backupname,key="pub"):
         raise RuntimeError("not implemented")
         self.removeRedundantFiles(name)
-        ipaddr=j.application.config.get("jssync.addr")
+        ipaddr = j.application.config['system'].get('jssync_addr')
         path=self._getMachinePath(name)
         if not j.system.fs.exists(path):
             raise RuntimeError("cannot find machine:%s"%path)
@@ -228,7 +225,7 @@ class Docker():
         @param basename is the name of a start of a machine locally, will be used as basis and then the source will be synced over it
         """
         raise RuntimeError("not implemented")
-        ipaddr=j.application.config.get("jssync.addr")
+        ipaddr = j.application.config['system'].get('jssync_addr')
         path=self._getMachinePath(name)
 
         self.btrfsSubvolNew(name)

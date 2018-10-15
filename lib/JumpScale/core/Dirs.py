@@ -32,16 +32,8 @@ class Dirs(object):
         self._hrdDir=None
         self._serviceTemplateDir=None
 
-        self.baseDir=j.application.config.get("system.paths.base")
-        self.appDir = j.application.config.get("system.paths.app")
-        self.varDir = j.application.config.get("system.paths.var")
-        self.cfgDir = j.application.config.get("system.paths.cfg")
-        self.libDir = j.application.config.get("system.paths.lib")
-        self.jsLibDir = j.application.config.get("system.paths.python.lib.js")
-        self.logDir = j.application.config.get("system.paths.log")
-        self.pidDir = j.application.config.get("system.paths.pid")
-        self.codeDir = j.application.config.get("system.paths.code")
-        self.libExtDir = j.application.config.get("system.paths.python.lib.ext")
+        for name, path in j.application.config["system"]["paths"].items():
+            setattr(self, "{}Dir".format(name), path)
 
         self.tmpDir = tempfile.gettempdir()
 
@@ -62,11 +54,6 @@ class Dirs(object):
         if self.libExtDir in sys.path:
             sys.path.pop(sys.path.index(self.libExtDir))
         sys.path.insert(2,self.libExtDir)
-
-        if 'JSBASE' in os.environ:
-            self.binDir = os.path.join(self.baseDir, 'bin')
-        else:
-            self.binDir = j.application.config.get("system.paths.bin")
 
     def replaceTxtDirVars(self,txt,additionalArgs={}):
         """
@@ -105,29 +92,6 @@ class Dirs(object):
     def _createDir(self,path):
         if not os.path.exists(path):
             os.makedirs(path)
-
-    @property
-    def hrdDir(self):
-        if self.amInGitConfigRepo()!=None:
-            self._hrdDir="%s/services/"%(self.amInGitConfigRepo())
-        else:
-            # path = j.system.fs.joinPaths(j.application.config.get("system.paths.hrd"),"apps")
-            self._hrdDir = j.application.config.get("system.paths.hrd")
-        return self._hrdDir
-
-    def getHrdDir(self,system=False):
-        hrdDir = ""
-        if system==False :
-            hrdDir = self.amInGitConfigRepo()
-            if hrdDir != None:
-                hrdDir = self.hrdDir
-            else:
-                hrdDir = self.hrdDir+"/apps"
-        else:
-            hrdDir = self.hrdDir+"/system"
-        if not j.system.fs.exists(hrdDir):
-            j.system.fs.createDir(hrdDir)
-        return  hrdDir
 
     @property
     def serviceTemplateDir(self):

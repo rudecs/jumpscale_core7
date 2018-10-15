@@ -11,13 +11,13 @@ from email.mime.text import MIMEText
 
 class EmailClient(object):
     def __init__(self):
-        hrd=j.application.getAppInstanceHRD("mailclient","main")
-        self._server = hrd.getStr("instance.smtp.server",None)
-        self._port = hrd.getInt("instance.smtp.port",None)
-        self._ssl = False
-        self._username = hrd.getStr("instance.smtp.login",None)
-        self._password = hrd.getStr("instance.smtp.passwd",None)
-        self._sender = hrd.getStr("instance.smtp.sender",'')
+        cfg = j.core.config.get("mailclient", "main")
+        self._server = cfg['server']
+        self._port = cfg.get('port', 25)
+        self._ssl = cfg.get('ssl', False)
+        self._username = cfg.get('login')
+        self._password = cfg.get("passwd")
+        self._sender = cfg.get("sender", '')
 
     def __str__(self):
         out="server=%s\n"%(self._server)

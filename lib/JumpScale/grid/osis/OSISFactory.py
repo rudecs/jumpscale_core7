@@ -56,19 +56,19 @@ class OSISClientFactory(object):
 
     def get(self, ipaddr=None, port=5544, user=None, passwd=None, ssl=False, gevent=False, poolsize=100):
         if ipaddr == None or user == None or passwd == None:
-            osisInstances = j.atyourservice.findServices(name="osis_client", domain="jumpscale")
+            osisInstances = j.core.config.list("osis_client")
             # inames=osisays.listInstances()
             if len(osisInstances) > 0:
                 osisService = osisInstances[0]
                 # osisays=osisays.load(instance=inames[0])
-                hrd = osisService.hrd
+                config = j.core.config.get("osis_client", osisService)
                 if ipaddr == None:
-                    ipaddr = hrd.get("instance.param.osis.client.addr")
+                    ipaddr = config.get("addr")
                 if user == None:
-                    user = hrd.get("instance.param.osis.client.login")
+                    user = config.get("login")
                 if passwd == None:
-                    passwd = hrd.get("instance.param.osis.client.passwd")
-                port = int(hrd.get("instance.param.osis.client.port"))
+                    passwd = config.get("passwd")
+                port = int(config.get("port"))
 
         if passwd == "EMPTY":
             passwd = ""
@@ -78,10 +78,8 @@ class OSISClientFactory(object):
                 ips = [ipaddr]
             else:
                 ips = ipaddr
-        elif j.application.config.exists('osis.ip'):
-            ips = j.application.config.getList('osis.ip')
         else:
-            ips = [j.application.config.get('grid.master.ip')]
+            raise RuntimeError("IP address of osis client not set")
         connections = [(ip, port) for ip in ips]
         key = "%s_%s_%s" % (connections, user, passwd)
         if key in self.osisConnections:
@@ -89,13 +87,10 @@ class OSISClientFactory(object):
 
         if user == None or user == "node":
             user = "node"
-            passwd = j.application.config.get("grid.node.machineguid")
+            passwd = j.application.config["grid"]["node"]["machineguid"]
         elif user == "root" and not passwd:
-            if j.application.config.exists("osis.superadmin.passwd"):
-                passwd = j.application.config.get("osis.superadmin.passwd")
-            else:
-                raise RuntimeError(
-                    "Osis superadmin passwd has not been defined on this node, please put in #hrd (osis.superadmin.passwd) or use argument 'passwd'.")
+            raise RuntimeError(
+                "Could not get password for osis client")
 
         with j.logger.nostdout():
             client = j.servers.geventws.getHAClient(connections, user=user, passwd=passwd, category="osis", poolsize=poolsize)
@@ -105,16 +100,16 @@ class OSISClientFactory(object):
     def getByInstance(self, instance=None, ssl=False, gevent=False, die=True):
         if instance is None:
             if hasattr(j.application, 'instanceconfig'):
-                instance = j.application.instanceconfig.get('instance.osis.connection')
+                instance = j.application.instanceconfig.get('connections', {}).get('osis', 'main')
             else:
                 instance = 'main'
-        hrdinstance = j.application.getAppInstanceHRD(name="osis_client", instance=instance)
-        if hrdinstance:
-            ipaddr = hrdinstance.getList("instance.param.osis.client.addr")
-            port = int(hrdinstance.get("instance.param.osis.client.port"))
-            user = hrdinstance.get("instance.param.osis.client.login")
-            passwd = hrdinstance.get("instance.param.osis.client.passwd")
-            poolsize = hrdinstance.getInt("instance.param.osis.client.poolsize", 100)
+        config = j.core.config.get("osis_client", instance)
+        if config:
+            ipaddr = config.get("addr")
+            port = int(config.get("port"))
+            user = config.get("login")
+            passwd = config.get("passwd")
+            poolsize = config.get("poolsize", 100)
             return self.get(ipaddr=ipaddr, port=port, user=user, passwd=passwd, ssl=ssl, gevent=gevent, poolsize=poolsize)
         if die:
             j.events.inputerror_critical("Could not find osis_client with instance:%s, could not load osis," % instance)
@@ -171,7 +166,7 @@ class OSISFactory:
             val = ujson.loads(val)
         return val
 
-    def getLocal(self, path="", overwriteHRD=False, overwriteImplementation=False, namespacename=None):
+    def getLocal(self, path="", overwriteImplementation=False, namespacename=None):
         """
         create local instance starting from path
         """
@@ -179,12 +174,10 @@ class OSISFactory:
         osis.init()
         return osis
 
-    def startDaemon(self, path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=None, dbconnections={}, hrd=None, verbose=False):
+    def startDaemon(self, path="", overwriteImplementation=False, key="", port=5544, superadminpasswd=None, dbconnections={}, verbose=False):
         """
         start deamon
         """
-        if hrd != None:
-            self.hrd = hrd
         self.key = key
         self.superadminpasswd = superadminpasswd
         self.dbconnections = dbconnections
