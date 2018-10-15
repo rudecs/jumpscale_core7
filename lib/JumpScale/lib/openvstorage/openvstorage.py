@@ -1,6 +1,7 @@
 from requests.auth import HTTPBasicAuth
 from JumpScale.lib.openvstorage.client import OVSClient
 import requests
+import redis
 from JumpScale import j
 
 
@@ -8,7 +9,10 @@ class OpenvStorageFactory(object):
 
     def _cache_token(self, token):
         redis_client = j.clients.redis.getByInstance('system')
-        redis_client.set('ovs_rest_api_access_code', token)
+        try:
+            redis_client.set('ovs_rest_api_access_code', token)
+        except redis.exceptions.ConnectionError:
+            pass
 
     def get(self, ips, credentials, verify=False):
         """
@@ -16,7 +20,10 @@ class OpenvStorageFactory(object):
 
         """
         redis_client = j.clients.redis.getByInstance('system')
-        token = redis_client.get('ovs_rest_api_access_code')
+        try:
+            token = redis_client.get('ovs_rest_api_access_code')
+        except redis.exceptions.ConnectionError:
+            token = None
         while ips:
             ip = ips.pop()
             try:
