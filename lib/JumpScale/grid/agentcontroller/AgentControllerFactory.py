@@ -16,7 +16,7 @@ class AgentControllerFactory(object):
         """
         if addr is None:
             addr, port, login, passwd = self._getConnectionTuple('main')
-        connection = (addr, port, login, passwd)
+        connection = (tuple(addr), port, login, passwd)
         if connection not in self._agentControllerClients or new:
             self._agentControllerClients[connection]=AgentControllerClient(addr, port, login, passwd)
         return self._agentControllerClients[connection]
@@ -70,12 +70,6 @@ class AgentControllerClient():
             raise ValueError("AgentControllerIP shoudl be either string or iterable")
 
         self.ipaddr = connections[0][0]
-        if login == 'root' and passwd is None:
-            instances = j.application.getAppHRDInstanceNames('agentcontroller_client')
-            if not instances:
-                raise RuntimeError('AgentController Client must be configured')
-            acconfig = j.application.getAppInstanceHRD('agentcontroller_client', instances[0])
-            passwd = acconfig.get("instance.agentcontroller.client.passwd")
         if login == 'node' and passwd is None:
             passwd = j.application.getUniqueMachineId()
         client= j.servers.geventws.getHAClient(connections, user=login, passwd=passwd,category="agent", reconnect=True)
