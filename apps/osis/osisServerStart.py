@@ -49,6 +49,6 @@ if __name__ == '__main__':
 
     superadminpasswd = config_osis.get("passwd")
 
-    j.core.osis.startDaemon(path="", overwriteHRD=False, overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, hrd=config_osis, verbose=options.verbose)
+    j.core.osis.startDaemon(path="", overwriteImplementation=False, key="", port=5544, superadminpasswd=superadminpasswd, dbconnections=connections, verbose=options.verbose)
 
     j.application.stop()

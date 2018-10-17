@@ -11,3 +11,4 @@ paths:
   libExt: /opt/jumpscale7/libext
   jsLib : /opt/jumpscale7/lib/JumpScale
   var: /opt/jumpscale7/var
+version: $VERSION
