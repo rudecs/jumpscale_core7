@@ -6,6 +6,7 @@ from JumpScale import j
 from jose import jwt as jose_jwt
 import datetime
 import json
+import yaml
 
 
 class AuthError(Exception):
