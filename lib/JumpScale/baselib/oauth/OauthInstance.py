@@ -77,6 +77,26 @@ class OauthInstance(object):
 
 class ItsYouOnline(OauthInstance):
 
+    def __init__(self, path="/opt/cfg/system/system-config.yaml"):
+        with open(path) as file_discriptor:
+            data = yaml.load(file_discriptor)
+        self.config = data
+        self.__authheaders = None
+        if not self.config["itsyouonline"].get("clientId"):
+            raise RuntimeError("clientId is not set")
+        if not self.config["itsyouonline"].get("clientSecret"):
+            raise RuntimeError("clientSecret is not set")
+        if not self.config["itsyouonline"].get("iyoURL"):
+            raise RuntimeError("iyoURL is not set")
+
+        self.client_id = self.config["itsyouonline"]["clientId"]
+        self.client_secret = self.config["itsyouonline"]["clientSecret"]
+        self.fqdn = "%s.%s" % (
+            self.config["environment"]["subdomain"],
+            self.config["environment"]["basedomain"],
+        )
+        self.baseurl = self.config["itsyouonline"]["iyoURL"]
+
     def extra(self, session, accesstoken):
         jwt = self.getJWT(accesstoken)
         session['jwt'] = jwt
@@ -116,7 +136,7 @@ class ItsYouOnline(OauthInstance):
 
 
     def getJWT(self, access_token):
-        url = 'https://itsyou.online/v1/oauth/jwt?scope=user:memberof:{0}.0-access,user:publickey:ssh,offline_access'.format(self.id)
+        url = '{1}/v1/oauth/jwt?scope=user:memberof:{0}.0-access,user:publickey:ssh,offline_access'.format(self.id, self.baseurl)
         headers = {'Authorization': 'token {0}'.format(access_token['access_token'])}
         resp = requests.get(url, headers=headers)
         jwt = ""
@@ -137,7 +157,7 @@ class ItsYouOnline(OauthInstance):
         exp_date = datetime.datetime.fromtimestamp(jwt_data["exp"])
         now = datetime.datetime.now()
         if now > exp_date:
-            url = 'https://itsyou.online/v1/oauth/jwt/refresh'
+            url = '{}/v1/oauth/jwt/refresh'.format(self.baseurl)
             headers = {'Authorization': 'bearer {0}'.format(jwt)}
             resp = requests.get(url, headers=headers)
             jwt = ""
